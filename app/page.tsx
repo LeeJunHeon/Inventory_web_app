@@ -5,8 +5,11 @@ import { Menu, Bell } from "lucide-react";
 import Sidebar, { PageId } from "@/components/Sidebar";
 import DashboardPage from "@/components/DashboardPage";
 import InventoryPage from "@/components/InventoryPage";
+import StatusPage from "@/components/StatusPage";
+import PeriodPage from "@/components/PeriodPage";
 import TargetUsagePage from "@/components/TargetUsagePage";
-import PlaceholderPage from "@/components/PlaceholderPage";
+import BarcodePage from "@/components/BarcodePage";
+import AdminPage from "@/components/AdminPage";
 
 export default function Home() {
   const [page, setPage] = useState<PageId>("dashboard");
@@ -26,11 +29,11 @@ export default function Home() {
     switch (page) {
       case "dashboard": return <DashboardPage />;
       case "inventory": return <InventoryPage />;
+      case "status": return <StatusPage />;
+      case "period": return <PeriodPage />;
       case "target": return <TargetUsagePage />;
-      case "status": return <PlaceholderPage title="보유 현황" desc="품목별 세부 보유현황을 확인합니다" />;
-      case "period": return <PlaceholderPage title="기간별 조회" desc="기간을 지정하여 입출고 내역을 조회합니다" />;
-      case "barcode": return <PlaceholderPage title="바코드 관리" desc="바코드 조회, 생성, 출력을 관리합니다" />;
-      case "admin": return <PlaceholderPage title="관리자 설정" desc="사용자 권한 및 시스템 설정을 관리합니다" />;
+      case "barcode": return <BarcodePage />;
+      case "admin": return <AdminPage />;
       default: return <DashboardPage />;
     }
   };
