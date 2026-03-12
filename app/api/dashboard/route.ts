@@ -18,7 +18,6 @@ export async function GET() {
 
     // 재고 부족 품목 수
     const requiredQtys = await prisma.requiredQty.findMany({
-      include: { item: true },
       where: { quantity: { gt: 0 } },
     });
 
