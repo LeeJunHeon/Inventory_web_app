@@ -3,8 +3,27 @@
 import { useState, useEffect, useCallback } from "react";
 import { Search, Plus, Download, Edit, Trash2, ArrowUpDown, ArrowDown, ArrowUp, ChevronDown, Loader2 } from "lucide-react";
 import { CATEGORIES, TYPES, TYPE_COLORS, CATEGORY_COLORS, formatPrice, formatQty, InventoryItem } from "@/lib/data";
-import TransactionModal from "./TransactionModal";
+import TransactionModal     from "./TransactionModal";
 import EditTransactionModal from "./EditTransactionModal";
+
+// ── CSV 다운로드 헬퍼 ──────────────────────────────────
+function downloadCSV(data: InventoryItem[], filename: string) {
+  const headers = ["ID", "날짜", "구분", "품목군", "품목코드", "품목명", "수량", "단가", "금액", "거래처", "담당자", "바코드", "메모"];
+  const rows = data.map(i => [
+    i.id, i.date, i.type, i.category, i.code, i.name,
+    i.qty, i.price, i.amount, i.partner, i.handler, i.barcode, i.memo,
+  ]);
+  const csv = [headers, ...rows]
+    .map(row => row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" }); // BOM for Korean Excel
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function InventoryPage() {
   const [items, setItems]               = useState<InventoryItem[]>([]);
@@ -22,17 +41,14 @@ export default function InventoryPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (search) params.set("search", search);
-      if (typeFilter !== "전체") params.set("type", typeFilter);
+      if (search)               params.set("search", search);
+      if (typeFilter !== "전체")    params.set("type", typeFilter);
       if (categoryFilter !== "전체") params.set("category", categoryFilter);
       const res = await fetch(`/api/inventory?${params}`);
       if (!res.ok) throw new Error("조회 실패");
       setItems(await res.json());
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
   }, [search, typeFilter, categoryFilter]);
 
   useEffect(() => {
@@ -59,23 +75,26 @@ export default function InventoryPage() {
     try {
       const res = await fetch(`/api/inventory?id=${id}`, { method: "DELETE" });
       if (res.ok) fetchData();
-      else {
-        const d = await res.json();
-        alert(d.error || "삭제 실패");
-      }
+      else { const d = await res.json(); alert(d.error || "삭제 실패"); }
     } catch { alert("네트워크 오류"); }
+  };
+
+  // ── CSV 내보내기 ──────────────────────────────────────
+  const handleExport = () => {
+    if (sorted.length === 0) { alert("내보낼 데이터가 없습니다."); return; }
+    const now      = new Date();
+    const dateStr  = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}`;
+    const filename = `재고내역_${dateStr}.csv`;
+    downloadCSV(sorted, filename);
   };
 
   const SortIcon = ({ field }: { field: string }) => {
     if (sortField !== field) return <ArrowUpDown size={14} className="text-gray-300" />;
-    return sortDir === "asc"
-      ? <ArrowUp   size={14} className="text-blue-500" />
-      : <ArrowDown size={14} className="text-blue-500" />;
+    return sortDir === "asc" ? <ArrowUp size={14} className="text-blue-500" /> : <ArrowDown size={14} className="text-blue-500" />;
   };
 
   return (
     <div className="space-y-4 sm:space-y-5">
-
       {/* 헤더 */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -83,7 +102,10 @@ export default function InventoryPage() {
           <p className="text-sm text-gray-500 mt-0.5">입고 / 출고 / 불출 기록을 관리합니다</p>
         </div>
         <div className="flex gap-2">
-          <button className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50">
+          {/* ✅ 내보내기 버튼 — CSV 다운로드 */}
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50">
             <Download size={16} /><span className="hidden sm:inline">내보내기</span>
           </button>
           <button onClick={() => setModalOpen(true)}
@@ -123,7 +145,6 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      {/* 로딩 */}
       {loading ? (
         <div className="flex items-center justify-center h-32">
           <Loader2 size={24} className="animate-spin text-blue-500" />
@@ -131,24 +152,20 @@ export default function InventoryPage() {
         </div>
       ) : (
         <>
-          {/* ─── 데스크탑 테이블 ─── */}
+          {/* 데스크탑 테이블 */}
           <div className="hidden lg:block bg-white rounded-2xl border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("id")}>
-                      <div className="flex items-center gap-1">ID <SortIcon field="id" /></div></th>
-                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("date")}>
-                      <div className="flex items-center gap-1">날짜 <SortIcon field="date" /></div></th>
+                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("id")}><div className="flex items-center gap-1">ID <SortIcon field="id" /></div></th>
+                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("date")}><div className="flex items-center gap-1">날짜 <SortIcon field="date" /></div></th>
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">구분</th>
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">품목군</th>
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">바코드</th>
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">품목</th>
-                    <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("qty")}>
-                      <div className="flex items-center justify-end gap-1">수량 <SortIcon field="qty" /></div></th>
-                    <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("amount")}>
-                      <div className="flex items-center justify-end gap-1">금액 <SortIcon field="amount" /></div></th>
+                    <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("qty")}><div className="flex items-center justify-end gap-1">수량 <SortIcon field="qty" /></div></th>
+                    <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("amount")}><div className="flex items-center justify-end gap-1">금액 <SortIcon field="amount" /></div></th>
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">거래처</th>
                     <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">작업</th>
                   </tr>
@@ -165,27 +182,16 @@ export default function InventoryPage() {
                           <span className={`w-1.5 h-1.5 rounded-full ${TYPE_COLORS[item.type]?.dot}`} />{item.type}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5">
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[item.category] || ""}`}>{item.category}</span>
-                      </td>
+                      <td className="px-5 py-3.5"><span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[item.category] || ""}`}>{item.category}</span></td>
                       <td className="px-5 py-3.5 text-sm text-gray-500 font-mono">{item.barcode || "-"}</td>
-                      <td className="px-5 py-3.5">
-                        <p className="text-sm font-medium text-gray-900">{item.name}</p>
-                        <p className="text-xs text-gray-400">{item.code}</p>
-                      </td>
+                      <td className="px-5 py-3.5"><p className="text-sm font-medium text-gray-900">{item.name}</p><p className="text-xs text-gray-400">{item.code}</p></td>
                       <td className="px-5 py-3.5 text-sm text-right font-semibold text-gray-900">{formatQty(item.qty)}</td>
                       <td className="px-5 py-3.5 text-sm text-right text-gray-600">{formatPrice(item.amount)}</td>
                       <td className="px-5 py-3.5 text-sm text-gray-600">{item.partner}</td>
                       <td className="px-5 py-3.5">
                         <div className="flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => setEditItem(item)}
-                            className="p-1.5 rounded-lg hover:bg-blue-100 text-gray-400 hover:text-blue-600" title="수정">
-                            <Edit size={15} />
-                          </button>
-                          <button onClick={() => handleDelete(item.id)}
-                            className="p-1.5 rounded-lg hover:bg-rose-100 text-gray-400 hover:text-rose-600" title="삭제">
-                            <Trash2 size={15} />
-                          </button>
+                          <button onClick={() => setEditItem(item)} className="p-1.5 rounded-lg hover:bg-blue-100 text-gray-400 hover:text-blue-600" title="수정"><Edit size={15} /></button>
+                          <button onClick={() => handleDelete(item.id)} className="p-1.5 rounded-lg hover:bg-rose-100 text-gray-400 hover:text-rose-600" title="삭제"><Trash2 size={15} /></button>
                         </div>
                       </td>
                     </tr>
@@ -199,7 +205,7 @@ export default function InventoryPage() {
             </div>
           </div>
 
-          {/* ─── 모바일 카드 ─── */}
+          {/* 모바일 카드 */}
           <div className="lg:hidden space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-xs text-gray-500">총 <span className="font-semibold">{sorted.length}건</span></p>
@@ -230,13 +236,8 @@ export default function InventoryPage() {
                     <div><p className="text-[10px] text-gray-400">거래처</p><p className="text-sm text-gray-600 max-w-[120px] truncate">{item.partner}</p></div>
                   </div>
                   <div className="flex gap-1">
-                    {/* ✅ Bug1 수정: 모바일 Edit 버튼에 onClick 추가 */}
-                    <button onClick={() => setEditItem(item)} className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600">
-                      <Edit size={16} />
-                    </button>
-                    <button onClick={() => handleDelete(item.id)} className="p-2 rounded-lg hover:bg-rose-50 text-gray-400 hover:text-rose-600">
-                      <Trash2 size={16} />
-                    </button>
+                    <button onClick={() => setEditItem(item)} className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600"><Edit size={16} /></button>
+                    <button onClick={() => handleDelete(item.id)} className="p-2 rounded-lg hover:bg-rose-50 text-gray-400 hover:text-rose-600"><Trash2 size={16} /></button>
                   </div>
                 </div>
               </div>
@@ -245,7 +246,6 @@ export default function InventoryPage() {
         </>
       )}
 
-      {/* 모달 */}
       <TransactionModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}

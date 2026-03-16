@@ -4,13 +4,42 @@ import { useState } from "react";
 import { Search, Download, Calendar, Loader2 } from "lucide-react";
 import { TYPE_COLORS, CATEGORY_COLORS, formatPrice, formatQty, InventoryItem } from "@/lib/data";
 
+// ── CSV 다운로드 헬퍼 ──────────────────────────────
+function downloadCSV(data: InventoryItem[], startDate: string, endDate: string) {
+  const headers = ["날짜", "구분", "품목군", "품목코드", "품목명", "수량", "단가", "금액", "거래처", "담당자", "바코드", "메모"];
+  const rows = data.map(i => [
+    i.date, i.type, i.category, i.code, i.name,
+    i.qty, i.price, i.amount, i.partner, i.handler, i.barcode, i.memo,
+  ]);
+  const csv = [headers, ...rows]
+    .map(row => row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = `재고내역_${startDate}_${endDate}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// 이번 달 1일 ~ 오늘 기본값
+function getDefaultDates() {
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth() + 1).padStart(2, "0");
+  const d = String(today.getDate()).padStart(2, "0");
+  return { start: `${y}-${m}-01`, end: `${y}-${m}-${d}` };
+}
+
 export default function PeriodPage() {
-  const [startDate, setStartDate] = useState("2026-03-01");
-  const [endDate, setEndDate] = useState("2026-03-31");
+  const defaults = getDefaultDates();
+  const [startDate, setStartDate]       = useState(defaults.start);
+  const [endDate, setEndDate]           = useState(defaults.end);
   const [categoryFilter, setCategoryFilter] = useState("전체");
-  const [items, setItems] = useState<InventoryItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
+  const [items, setItems]               = useState<InventoryItem[]>([]);
+  const [loading, setLoading]           = useState(false);
+  const [searched, setSearched]         = useState(false);
 
   const handleSearch = async () => {
     setLoading(true);
@@ -22,6 +51,11 @@ export default function PeriodPage() {
       if (res.ok) setItems(await res.json());
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
+  };
+
+  const handleCSV = () => {
+    if (items.length === 0) { alert("내보낼 데이터가 없습니다."); return; }
+    downloadCSV(items, startDate, endDate);
   };
 
   const summary = { 입고: { count: 0, qty: 0, amount: 0 }, 출고: { count: 0, qty: 0, amount: 0 }, 불출: { count: 0, qty: 0, amount: 0 } };
@@ -43,7 +77,8 @@ export default function PeriodPage() {
             <label className="block text-xs font-semibold text-gray-500 mb-1.5">시작일</label>
             <div className="relative">
               <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+                className="pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
           </div>
           <span className="text-gray-300 pb-2.5">~</span>
@@ -51,19 +86,26 @@ export default function PeriodPage() {
             <label className="block text-xs font-semibold text-gray-500 mb-1.5">종료일</label>
             <div className="relative">
               <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)}
+                className="pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1.5">품목군</label>
-            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}
+              className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
               <option>전체</option><option>웨이퍼</option><option>타겟</option><option>가스</option><option>기자재/소모품</option>
             </select>
           </div>
-          <button onClick={handleSearch} className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600">
+          <button onClick={handleSearch}
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600">
             <Search size={16} />조회
           </button>
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50">
+          {/* ✅ CSV 버튼 — 실제 다운로드 */}
+          <button
+            onClick={handleCSV}
+            disabled={!searched || items.length === 0}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
             <Download size={16} />CSV
           </button>
         </div>
@@ -139,6 +181,7 @@ export default function PeriodPage() {
                       <div className="flex items-center gap-4 text-sm">
                         <span>수량 <span className="font-bold">{item.qty}</span></span>
                         <span className="text-gray-400">{formatPrice(item.amount)}</span>
+                        <span className="text-gray-400 truncate">{item.partner}</span>
                       </div>
                     </div>
                   ))}
