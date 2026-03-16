@@ -105,3 +105,58 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "저장 실패" }, { status: 500 });
   }
 }
+
+// PUT /api/inventory — 트랜잭션 수정
+export async function PUT(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    if (!id) {
+      return NextResponse.json({ error: "id 파라미터 필요" }, { status: 400 });
+    }
+
+    const body = await request.json();
+
+    const tx = await prisma.inventoryTx.update({
+      where: { id: Number(id) },
+      data: {
+        date:           body.date ? new Date(body.date) : undefined,
+        type:           body.type ?? undefined,
+        itemId:         body.itemId ?? undefined,
+        quantity:       body.quantity ?? undefined,
+        unitPrice:      body.unitPrice ?? undefined,
+        currency:       body.currency ?? undefined,
+        amount:         body.amount ?? undefined,
+        partnerId:      body.partnerId ?? undefined,
+        handlerName:    body.handlerName ?? undefined,
+        handlerContact: body.handlerContact ?? undefined,
+        memo:           body.memo ?? undefined,
+        location:       body.location ?? undefined,
+        barcodeId:      body.barcodeId ?? undefined,
+      },
+    });
+
+    return NextResponse.json(tx);
+  } catch (error) {
+    console.error("PUT /api/inventory error:", error);
+    return NextResponse.json({ error: "수정 실패" }, { status: 500 });
+  }
+}
+
+// DELETE /api/inventory?id=123 — 트랜잭션 삭제
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    if (!id) {
+      return NextResponse.json({ error: "id 파라미터 필요" }, { status: 400 });
+    }
+
+    await prisma.inventoryTx.delete({ where: { id: Number(id) } });
+
+    return NextResponse.json({ message: "삭제 완료" });
+  } catch (error) {
+    console.error("DELETE /api/inventory error:", error);
+    return NextResponse.json({ error: "삭제 실패" }, { status: 500 });
+  }
+}

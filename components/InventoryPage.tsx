@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Search, Plus, Download, Edit, Trash2, ArrowUpDown, ArrowDown, ArrowUp, ChevronDown, Loader2 } from "lucide-react";
 import { CATEGORIES, TYPES, TYPE_COLORS, CATEGORY_COLORS, formatPrice, formatQty, InventoryItem } from "@/lib/data";
 import TransactionModal from "./TransactionModal";
+import EditTransactionModal from "./EditTransactionModal";
 
 export default function InventoryPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -15,6 +16,7 @@ export default function InventoryPage() {
   const [sortField, setSortField] = useState("id");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [showFilters, setShowFilters] = useState(false);
+  const [editItem, setEditItem] = useState<InventoryItem | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -155,7 +157,9 @@ export default function InventoryPage() {
                       <td className="px-5 py-3.5 text-sm text-gray-600">{item.partner}</td>
                       <td className="px-5 py-3.5">
                         <div className="flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button className="p-1.5 rounded-lg hover:bg-blue-100 text-gray-400 hover:text-blue-600" title="수정"><Edit size={15} /></button>
+                          <button onClick={() => setEditItem(item)} className="p-1.5 rounded-lg hover:bg-blue-100 text-gray-400 hover:text-blue-600" title="수정">
+                              <Edit size={15} />
+                          </button>
                           <button onClick={() => handleDelete(item.id)} className="p-1.5 rounded-lg hover:bg-rose-100 text-gray-400 hover:text-rose-600" title="삭제"><Trash2 size={15} /></button>
                         </div>
                       </td>
@@ -212,6 +216,13 @@ export default function InventoryPage() {
       )}
 
       <TransactionModal isOpen={modalOpen} onClose={() => { setModalOpen(false); fetchData(); }} />
+      {editItem && (
+        <EditTransactionModal
+          item={editItem}
+          onClose={() => setEditItem(null)}
+          onSuccess={() => { setEditItem(null); fetchData(); }}
+        />
+      )}
     </div>
   );
 }
