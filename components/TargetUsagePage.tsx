@@ -8,17 +8,18 @@ interface TargetInfo { id: number; barcodeCode: string; itemCode: string; itemNa
 interface LogItem { id: number; targetId: number; timestamp: string; type: string; weight: number | null; location: string; reason: string; userName: string; barcodeCode: string; itemName: string; }
 
 export default function TargetUsagePage() {
-  const [barcodeInput, setBarcodeInput] = useState("");
+  const [barcodeInput, setBarcodeInput]     = useState("");
   const [selectedTarget, setSelectedTarget] = useState<TargetInfo | null>(null);
-  const [logs, setLogs] = useState<LogItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [weight, setWeight] = useState("");
-  const [location, setLocation] = useState("");
-  const [reason, setReason] = useState("");
-  const [sortField, setSortField] = useState("timestamp");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [logs, setLogs]                     = useState<LogItem[]>([]);
+  const [loading, setLoading]               = useState(true);
+  const [weight, setWeight]                 = useState("");
+  const [location, setLocation]             = useState("");
+  const [reason, setReason]                 = useState("");
+  const [sortField, setSortField]           = useState("timestamp");
+  const [sortDir, setSortDir]               = useState<"asc" | "desc">("desc");
+  const [saving, setSaving]                 = useState(false);
+  const [disposeConfirm, setDisposeConfirm] = useState(false);
 
-  // 초기: 전체 로그 로드
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -36,36 +37,76 @@ export default function TargetUsagePage() {
   const handleSearch = async () => {
     const code = barcodeInput.trim();
     if (!code) { setSelectedTarget(null); return; }
-
     setLoading(true);
     try {
       const res = await fetch(`/api/targets?barcode=${encodeURIComponent(code)}`);
       if (!res.ok) {
         const err = await res.json();
         alert(err.error || "조회 실패");
-        setSelectedTarget(null);
-        return;
+        setSelectedTarget(null); return;
       }
       const data = await res.json();
       setSelectedTarget(data.target);
       setLogs(data.logs || []);
-    } catch (e) { console.error(e); alert("조회 중 오류 발생"); }
+    } catch { alert("조회 중 오류 발생"); }
     finally { setLoading(false); }
   };
 
+  // 무게 측정값 저장
   const handleSaveWeight = async () => {
     if (!selectedTarget || !weight) { alert("무게를 입력하세요"); return; }
+    setSaving(true);
     try {
       const res = await fetch("/api/targets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ targetUnitId: selectedTarget.id, type: "측정", weight: parseFloat(weight), location, reason }),
       });
-      if (res.ok) {
-        setWeight(""); setLocation(""); setReason("");
-        handleSearch(); // 리로드
-      }
-    } catch (e) { console.error(e); alert("저장 실패"); }
+      if (!res.ok) { const e = await res.json(); alert(e.error || "저장 실패"); return; }
+      setWeight(""); setLocation(""); setReason("");
+      handleSearch();
+    } catch { alert("저장 실패"); }
+    finally { setSaving(false); }
+  };
+
+  // 타겟 정보 저장 (materialName 등 메타 업데이트)
+  const handleSaveInfo = async () => {
+    if (!selectedTarget) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/targets/${selectedTarget.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ materialName: selectedTarget.materialName }),
+      });
+      if (!res.ok) { const e = await res.json(); alert(e.error || "저장 실패"); return; }
+      alert("저장되었습니다.");
+    } catch { alert("저장 실패"); }
+    finally { setSaving(false); }
+  };
+
+  // 폐기 처리
+  const handleDispose = async () => {
+    if (!selectedTarget) return;
+    if (!disposeConfirm) { setDisposeConfirm(true); return; } // 첫 클릭: 확인 요청
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/targets/${selectedTarget.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "disposed" }),
+      });
+      if (!res.ok) { const e = await res.json(); alert(e.error || "폐기 처리 실패"); return; }
+      // 폐기 로그도 함께 기록
+      await fetch("/api/targets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUnitId: selectedTarget.id, type: "폐기", weight: weight ? parseFloat(weight) : null, location, reason: reason || "수명 종료 폐기" }),
+      });
+      setDisposeConfirm(false);
+      handleSearch();
+    } catch { alert("처리 실패"); }
+    finally { setSaving(false); }
   };
 
   const sorted = [...logs].sort((a, b) => {
@@ -100,7 +141,8 @@ export default function TargetUsagePage() {
         <div className="flex gap-2">
           <div className="relative flex-1 max-w-md">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input type="text" placeholder="타겟 바코드를 스캔하거나 입력 (예: T-0187)" value={barcodeInput} onChange={(e) => setBarcodeInput(e.target.value)}
+            <input type="text" placeholder="타겟 바코드를 스캔하거나 입력 (예: T-0187)"
+              value={barcodeInput} onChange={(e) => setBarcodeInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
           </div>
@@ -111,6 +153,7 @@ export default function TargetUsagePage() {
       {/* 타겟 정보 + 측정 입력 */}
       {selectedTarget && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* 타겟 정보 카드 */}
           <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="font-bold text-gray-900">타겟 정보</h2>
@@ -121,33 +164,61 @@ export default function TargetUsagePage() {
               <div><p className="text-xs text-gray-400 mb-1">바코드</p><p className="text-sm font-mono font-semibold text-gray-900">{selectedTarget.barcodeCode}</p></div>
               <div><p className="text-xs text-gray-400 mb-1">품목코드</p><p className="text-sm text-gray-700">{selectedTarget.itemCode}</p></div>
               <div><p className="text-xs text-gray-400 mb-1">품목명</p><p className="text-sm text-gray-700">{selectedTarget.itemName}</p></div>
-              <div className="col-span-2"><p className="text-xs text-gray-400 mb-1">물질명</p><p className="text-sm text-gray-700">{selectedTarget.materialName}</p></div>
+              <div className="col-span-2">
+                <p className="text-xs text-gray-400 mb-1">물질명</p>
+                <input type="text" value={selectedTarget.materialName}
+                  onChange={e => setSelectedTarget({ ...selectedTarget, materialName: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
             </div>
             <div className="flex gap-2">
-              <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600"><Save size={16} />정보 저장</button>
+              {/* ✅ 정보 저장 버튼 연결 */}
+              <button onClick={handleSaveInfo} disabled={saving}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 disabled:opacity-60">
+                <Save size={16} />정보 저장
+              </button>
+              {/* ✅ 폐기 처리 버튼 연결 (2번 클릭 확인) */}
               {selectedTarget.status !== "disposed" && (
-                <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-500 text-white rounded-xl text-sm font-semibold hover:bg-rose-600"><AlertTriangle size={16} />폐기 처리</button>
+                <button onClick={handleDispose} disabled={saving}
+                  className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-60 transition-all ${
+                    disposeConfirm
+                      ? "bg-rose-600 text-white hover:bg-rose-700 animate-pulse"
+                      : "bg-rose-500 text-white hover:bg-rose-600"
+                  }`}>
+                  <AlertTriangle size={16} />{disposeConfirm ? "확인 (재클릭)" : "폐기 처리"}
+                </button>
               )}
             </div>
+            {disposeConfirm && (
+              <p className="text-xs text-rose-500 text-center">한 번 더 클릭하면 폐기 처리됩니다. <button onClick={() => setDisposeConfirm(false)} className="underline">취소</button></p>
+            )}
           </div>
 
+          {/* 무게 측정 입력 */}
           <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
             <h2 className="font-bold text-gray-900">무게 측정 기록</h2>
             <div>
               <label className="block text-xs text-gray-400 mb-1"><span className="inline-flex items-center gap-1"><Weight size={12} />무게 (g)</span></label>
-              <input type="text" placeholder="예: 182.450" value={weight} onChange={(e) => setWeight(e.target.value)} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="text" placeholder="예: 182.450" value={weight} onChange={(e) => setWeight(e.target.value)}
+                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
             <div>
               <label className="block text-xs text-gray-400 mb-1"><span className="inline-flex items-center gap-1"><MapPin size={12} />사용/보관처</span></label>
-              <select value={location} onChange={(e) => setLocation(e.target.value)} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none">
-                <option value="">선택하세요</option><option>Chamber-A</option><option>Chamber-B</option><option>Storage-A</option><option>Storage-B</option>
+              <select value={location} onChange={(e) => setLocation(e.target.value)}
+                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none">
+                <option value="">선택하세요</option>
+                <option>Chamber-A</option><option>Chamber-B</option><option>Storage-A</option><option>Storage-B</option>
               </select>
             </div>
             <div>
               <label className="block text-xs text-gray-400 mb-1"><span className="inline-flex items-center gap-1"><FileText size={12} />사유</span></label>
-              <input type="text" placeholder="예: 공정 후 측정" value={reason} onChange={(e) => setReason(e.target.value)} className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="text" placeholder="예: 공정 후 측정" value={reason} onChange={(e) => setReason(e.target.value)}
+                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
-            <button onClick={handleSaveWeight} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600"><Save size={16} />측정값 저장</button>
+            <button onClick={handleSaveWeight} disabled={saving}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:opacity-60">
+              <Save size={16} />{saving ? "저장 중..." : "측정값 저장"}
+            </button>
           </div>
         </div>
       )}
@@ -158,7 +229,6 @@ export default function TargetUsagePage() {
           <h2 className="font-bold text-gray-900">{selectedTarget ? `${selectedTarget.barcodeCode} 측정 기록` : "전체 타겟 측정 기록"}</h2>
           <span className="text-xs text-gray-400">{sorted.length}건</span>
         </div>
-
         {loading ? (
           <div className="flex items-center justify-center py-12"><Loader2 size={24} className="animate-spin text-blue-500" /></div>
         ) : (

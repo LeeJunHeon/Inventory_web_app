@@ -29,37 +29,35 @@ export async function GET(request: NextRequest) {
         });
         const currentQty = (inSum._sum.quantity || 0) - (outSum._sum.quantity || 0);
 
-        const rq = await prisma.requiredQty.findUnique({
-          where: { itemId: item.id },
-        });
-
-        // 웨이퍼/타겟 속성 가져오기 (최신 입고 기록에서)
-        const latestTx = await prisma.inventoryTx.findFirst({
-          where: { itemId: item.id, type: "입고" },
-          orderBy: { id: "desc" },
-        });
+        const rq = await prisma.requiredQty.findUnique({ where: { itemId: item.id } });
 
         const attrs: Record<string, string> = {};
-        if (item.category.name === "웨이퍼" && latestTx) {
-          if (latestTx.waferResistance) attrs["저항"] = latestTx.waferResistance;
-          if (latestTx.waferThickness) attrs["두께"] = latestTx.waferThickness;
-          if (latestTx.waferDirection) attrs["방향"] = latestTx.waferDirection;
-          if (latestTx.waferSurface) attrs["표면"] = latestTx.waferSurface;
+        if (item.category.name === "웨이퍼") {
+          const latestTx = await prisma.inventoryTx.findFirst({
+            where: { itemId: item.id, type: "입고" },
+            orderBy: { id: "desc" },
+          });
+          if (latestTx) {
+            if (latestTx.waferResistance) attrs["저항"] = latestTx.waferResistance;
+            if (latestTx.waferThickness)  attrs["두께"] = latestTx.waferThickness;
+            if (latestTx.waferDirection)  attrs["방향"] = latestTx.waferDirection;
+            if (latestTx.waferSurface)    attrs["표면"] = latestTx.waferSurface;
+          }
         }
-
         if (item.category.name === "타겟") {
           const tu = await prisma.targetUnit.findFirst({
             where: { itemId: item.id },
             orderBy: { id: "desc" },
           });
-          if (tu?.purity) attrs["순도"] = tu.purity;
+          if (tu?.purity)    attrs["순도"]   = tu.purity;
           if (tu?.hasCopper) attrs["Copper"] = tu.hasCopper;
         }
 
         return {
-          code: item.code,
-          name: item.name,
-          category: item.category.name,
+          id:          item.id,
+          code:        item.code,
+          name:        item.name,
+          category:    item.category.name,
           currentQty,
           requiredQty: rq?.quantity || 0,
           attrs,
@@ -71,5 +69,29 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("GET /api/status error:", error);
     return NextResponse.json({ error: "보유현황 조회 실패" }, { status: 500 });
+  }
+}
+
+// PUT /api/status — 필요수량 저장
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json();
+    // body: { itemId: number, quantity: number }
+    const { itemId, quantity } = body;
+
+    if (!itemId || quantity === undefined) {
+      return NextResponse.json({ error: "itemId, quantity 필요" }, { status: 400 });
+    }
+
+    const rq = await prisma.requiredQty.upsert({
+      where:  { itemId: Number(itemId) },
+      update: { quantity: Number(quantity) },
+      create: { itemId: Number(itemId), quantity: Number(quantity) },
+    });
+
+    return NextResponse.json(rq);
+  } catch (error) {
+    console.error("PUT /api/status error:", error);
+    return NextResponse.json({ error: "필요수량 저장 실패" }, { status: 500 });
   }
 }
