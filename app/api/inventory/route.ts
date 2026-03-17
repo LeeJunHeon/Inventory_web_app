@@ -1,42 +1,48 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// GET /api/inventory — 재고 트랜잭션 목록 조회
+// GET /api/inventory
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const search = searchParams.get("search") || "";
-    const type = searchParams.get("type") || "";
-    const category = searchParams.get("category") || "";
+    const search    = searchParams.get("search")    || "";
+    const type      = searchParams.get("type")      || "";
+    const category  = searchParams.get("category")  || "";
     const startDate = searchParams.get("startDate") || "";
-    const endDate = searchParams.get("endDate") || "";
+    const endDate   = searchParams.get("endDate")   || "";
 
-    const where: any = {};
+    // ✅ 버그 수정: AND 배열로 조건을 명확하게 분리
+    // category + search 동시 사용 시 where.item 충돌 방지
+    const andConditions: any[] = [];
 
     if (type && type !== "전체") {
-      where.type = type;
-    }
-
-    if (category && category !== "전체") {
-      where.item = { category: { name: category } };
+      andConditions.push({ type });
     }
 
     if (startDate && endDate) {
-      where.date = { gte: new Date(startDate), lte: new Date(endDate) };
+      andConditions.push({ date: { gte: new Date(startDate), lte: new Date(endDate) } });
+    }
+
+    if (category && category !== "전체") {
+      andConditions.push({ item: { category: { name: category } } });
     }
 
     if (search) {
-      where.OR = [
-        { item: { name: { contains: search, mode: "insensitive" } } },
-        { item: { code: { contains: search, mode: "insensitive" } } },
-        { barcode: { code: { contains: search, mode: "insensitive" } } },
-      ];
+      andConditions.push({
+        OR: [
+          { item: { name: { contains: search, mode: "insensitive" } } },
+          { item: { code: { contains: search, mode: "insensitive" } } },
+          { barcode: { code: { contains: search, mode: "insensitive" } } },
+        ],
+      });
     }
+
+    const where = andConditions.length > 0 ? { AND: andConditions } : {};
 
     const transactions = await prisma.inventoryTx.findMany({
       where,
       include: {
-        item: { include: { category: true } },
+        item:    { include: { category: true } },
         partner: true,
         barcode: true,
         creator: true,
@@ -45,21 +51,21 @@ export async function GET(request: NextRequest) {
     });
 
     const result = transactions.map((tx) => ({
-      id: tx.id,
-      date: tx.date.toISOString().split("T")[0].replace(/-/g, "."),
-      type: tx.type,
+      id:       tx.id,
+      date:     tx.date.toISOString().split("T")[0].replace(/-/g, "."),
+      type:     tx.type,
       category: tx.item.category.name,
-      code: tx.item.code,
-      name: tx.item.name,
-      price: Number(tx.unitPrice),
-      qty: tx.quantity,
-      amount: Number(tx.amount),
+      code:     tx.item.code,
+      name:     tx.item.name,
+      price:    Number(tx.unitPrice),
+      qty:      tx.quantity,
+      amount:   Number(tx.amount),
       currency: tx.currency,
-      partner: tx.partner?.name || "",
-      handler: tx.handlerName || "",
-      memo: tx.memo || "",
-      barcode: tx.barcode?.code || "",
-      location: tx.location || "",
+      partner:  tx.partner?.name    || "",
+      handler:  tx.handlerName      || "",
+      memo:     tx.memo             || "",
+      barcode:  tx.barcode?.code    || "",
+      location: tx.location         || "",
     }));
 
     return NextResponse.json(result);
@@ -76,26 +82,26 @@ export async function POST(request: NextRequest) {
 
     const tx = await prisma.inventoryTx.create({
       data: {
-        date: new Date(body.date),
-        type: body.type,
-        itemId: body.itemId,
-        quantity: body.quantity,
-        unitPrice: body.unitPrice || 0,
-        currency: body.currency || "KRW",
-        amount: body.amount || 0,
-        partnerId: body.partnerId || null,
-        handlerName: body.handlerName || null,
+        date:           new Date(body.date),
+        type:           body.type,
+        itemId:         body.itemId,
+        quantity:       body.quantity,
+        unitPrice:      body.unitPrice      || 0,
+        currency:       body.currency       || "KRW",
+        amount:         body.amount         || 0,
+        partnerId:      body.partnerId      || null,
+        handlerName:    body.handlerName    || null,
         handlerContact: body.handlerContact || null,
-        memo: body.memo || null,
-        targetUnitId: body.targetUnitId || null,
-        refInboundId: body.refInboundId || null,
-        barcodeId: body.barcodeId || null,
-        location: body.location || null,
+        memo:           body.memo           || null,
+        targetUnitId:   body.targetUnitId   || null,
+        refInboundId:   body.refInboundId   || null,
+        barcodeId:      body.barcodeId      || null,
+        location:       body.location       || null,
         waferResistance: body.waferResistance || null,
-        waferThickness: body.waferThickness || null,
-        waferDirection: body.waferDirection || null,
-        waferSurface: body.waferSurface || null,
-        createdBy: body.createdBy || null,
+        waferThickness:  body.waferThickness  || null,
+        waferDirection:  body.waferDirection  || null,
+        waferSurface:    body.waferSurface    || null,
+        createdBy:      body.createdBy      || null,
       },
     });
 
@@ -106,7 +112,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT /api/inventory — 트랜잭션 수정
+// PUT /api/inventory?id=123 — 트랜잭션 수정
 export async function PUT(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -121,18 +127,18 @@ export async function PUT(request: NextRequest) {
       where: { id: Number(id) },
       data: {
         date:           body.date ? new Date(body.date) : undefined,
-        type:           body.type ?? undefined,
-        itemId:         body.itemId ?? undefined,
-        quantity:       body.quantity ?? undefined,
-        unitPrice:      body.unitPrice ?? undefined,
-        currency:       body.currency ?? undefined,
-        amount:         body.amount ?? undefined,
-        partnerId:      body.partnerId ?? undefined,
-        handlerName:    body.handlerName ?? undefined,
+        type:           body.type           ?? undefined,
+        itemId:         body.itemId         ?? undefined,
+        quantity:       body.quantity       ?? undefined,
+        unitPrice:      body.unitPrice      ?? undefined,
+        currency:       body.currency       ?? undefined,
+        amount:         body.amount         ?? undefined,
+        partnerId:      body.partnerId      ?? undefined,
+        handlerName:    body.handlerName    ?? undefined,
         handlerContact: body.handlerContact ?? undefined,
-        memo:           body.memo ?? undefined,
-        location:       body.location ?? undefined,
-        barcodeId:      body.barcodeId ?? undefined,
+        memo:           body.memo           ?? undefined,
+        location:       body.location       ?? undefined,
+        barcodeId:      body.barcodeId      ?? undefined,
       },
     });
 
@@ -153,7 +159,6 @@ export async function DELETE(request: NextRequest) {
     }
 
     await prisma.inventoryTx.delete({ where: { id: Number(id) } });
-
     return NextResponse.json({ message: "삭제 완료" });
   } catch (error) {
     console.error("DELETE /api/inventory error:", error);

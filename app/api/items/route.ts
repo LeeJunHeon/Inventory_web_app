@@ -7,8 +7,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category") || "";
     const search   = searchParams.get("search")   || "";
+    // ✅ 버그 수정: ItemsPage에서 showAll=true로 호출 시 비활성 품목도 표시
+    const showAll  = searchParams.get("showAll")  === "true";
 
-    const where: any = { isActive: true };
+    const where: any = showAll ? {} : { isActive: true };
+
     if (category && category !== "전체") {
       where.category = { name: category };
     }
@@ -26,15 +29,15 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json(items.map((item) => ({
-      id:       item.id,
-      code:     item.code,
-      name:     item.name,
-      category: item.category.name,
+      id:         item.id,
+      code:       item.code,
+      name:       item.name,
+      category:   item.category.name,
       categoryId: item.categoryId,
-      unit:     item.unit,
-      spec:     item.spec,
-      note:     item.note,
-      isActive: item.isActive,
+      unit:       item.unit,
+      spec:       item.spec,
+      note:       item.note,
+      isActive:   item.isActive,
     })));
   } catch (error) {
     console.error("GET /api/items error:", error);
@@ -115,14 +118,13 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE /api/items?id=1 — 품목 비활성화 (실제 삭제 대신 isActive=false)
+// DELETE /api/items?id=1 — 품목 비활성화 또는 삭제
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id 파라미터 필요" }, { status: 400 });
 
-    // 연결된 재고 트랜잭션이 있으면 실제 삭제 불가 → 비활성화
     const txCount = await prisma.inventoryTx.count({ where: { itemId: Number(id) } });
     if (txCount > 0) {
       await prisma.item.update({ where: { id: Number(id) }, data: { isActive: false } });

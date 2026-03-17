@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// PUT /api/targets/[id] — 타겟 상태 변경 (using / disposed 등)
+// PUT /api/targets/[id] — 타겟 상태 변경 및 물질명 업데이트
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
