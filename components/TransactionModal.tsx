@@ -22,6 +22,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const [itemCode, setItemCode]   = useState("");
   const [itemName, setItemName]   = useState("");
   const [barcodeInput, setBarcodeInput] = useState("");
+  const [barcodeId, setBarcodeId] = useState<number | null>(null);
   const [quantity, setQuantity]   = useState("");
   const [unitPrice, setUnitPrice] = useState("");
   // ✅ Bug2 수정: partnerId 대신 name으로 관리 (DB 조회 후 ID 매핑)
@@ -66,18 +67,30 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // 바코드 스캔 → 품목 자동 입력
+  // 바코드 스캔 → 품목 자동 입력 (카테고리 자동 전환 + barcodeId 저장)
   const handleBarcodeLookup = async () => {
     if (!barcodeInput) return;
     try {
-      const res = await fetch(`/api/barcodes?search=${barcodeInput}`);
+      const res = await fetch(`/api/barcodes?search=${encodeURIComponent(barcodeInput)}`);
       const data = await res.json();
       if (data.length > 0) {
         const bc = data[0];
+        setBarcodeId(bc.id);
         setItemCode(bc.itemCode);
         setItemName(bc.itemName);
-        const found = itemOptions.find(i => i.code === bc.itemCode);
-        if (found) setItemId(found.id);
+        // 바코드의 카테고리가 현재 선택과 다르면 자동 전환
+        if (bc.category && bc.category !== category) {
+          setCategory(bc.category);
+          // 카테고리 변경 후 아이템 목록이 새로 로드되므로, 직접 아이템 조회
+          const itemRes = await fetch(`/api/items?category=${encodeURIComponent(bc.category)}`);
+          const items = await itemRes.json();
+          setItemOptions(items);
+          const found = items.find((i: ItemOption) => i.code === bc.itemCode);
+          if (found) setItemId(found.id);
+        } else {
+          const found = itemOptions.find(i => i.code === bc.itemCode);
+          if (found) setItemId(found.id);
+        }
       } else {
         setError("해당 바코드를 찾을 수 없습니다.");
       }
@@ -105,7 +118,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           partnerId: partnerId || null,
           handlerName: partnerId ? null : (partnerName || null),
           memo,
-          barcodeId: null,
+          barcodeId: barcodeId || null,
           location: null,
         }),
       });
@@ -118,7 +131,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       // 초기화
       setQuantity(""); setUnitPrice(""); setMemo(""); setBarcodeInput("");
       setItemId(null); setItemCode(""); setItemName("");
-      setPartnerId(null); setPartnerName("");
+      setPartnerId(null); setPartnerName(""); setBarcodeId(null);
     } catch {
       setError("네트워크 오류");
     } finally {

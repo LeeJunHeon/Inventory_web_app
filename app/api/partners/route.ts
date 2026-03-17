@@ -73,13 +73,17 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { name, type, managerName, contact, isActive } = body;
 
+    if (type !== undefined && !["vendor", "disburse"].includes(type)) {
+      return NextResponse.json({ error: "type은 vendor 또는 disburse여야 합니다." }, { status: 400 });
+    }
+
     const partner = await prisma.partner.update({
       where: { id: Number(id) },
       data: {
         ...(name        !== undefined && { name:        name.trim() }),
         ...(type        !== undefined && { type }),
-        ...(managerName !== undefined && { managerName }),
-        ...(contact     !== undefined && { contact }),
+        ...(managerName !== undefined && { managerName: managerName?.trim() || null }),
+        ...(contact     !== undefined && { contact:     contact?.trim() || null }),
         ...(isActive    !== undefined && { isActive }),
       },
     });

@@ -9,10 +9,16 @@ export interface InventoryItem {
   price: number;
   qty: number;
   amount: number;
+  currency: string;
   partner: string;
   handler: string;
   memo: string;
   barcode: string;
+  location: string;
+  waferResistance: string;
+  waferThickness: string;
+  waferDirection: string;
+  waferSurface: string;
 }
 
 export interface TargetUnit {

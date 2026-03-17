@@ -16,24 +16,37 @@ export async function GET() {
     const todayIn = todayTxs.filter((t) => t.type === "입고");
     const todayOut = todayTxs.filter((t) => t.type === "출고");
 
-    // 재고 부족 품목 수
+    // 재고 부족 품목 수 — 배치 쿼리로 최적화 (N+1 → 2 쿼리)
     const requiredQtys = await prisma.requiredQty.findMany({
       where: { quantity: { gt: 0 } },
     });
 
-    // 품목별 현재 보유수량 계산
     let shortageCount = 0;
-    for (const rq of requiredQtys) {
-      const inSum = await prisma.inventoryTx.aggregate({
-        where: { itemId: rq.itemId, type: "입고" },
+
+    if (requiredQtys.length > 0) {
+      const itemIds = requiredQtys.map((rq) => rq.itemId);
+
+      // 품목별 입고 합계를 한 번에 조회
+      const inSums = await prisma.inventoryTx.groupBy({
+        by: ["itemId"],
+        where: { itemId: { in: itemIds }, type: "입고" },
         _sum: { quantity: true },
       });
-      const outSum = await prisma.inventoryTx.aggregate({
-        where: { itemId: rq.itemId, type: { in: ["출고", "불출"] } },
+
+      // 품목별 출고+불출 합계를 한 번에 조회
+      const outSums = await prisma.inventoryTx.groupBy({
+        by: ["itemId"],
+        where: { itemId: { in: itemIds }, type: { in: ["출고", "불출"] } },
         _sum: { quantity: true },
       });
-      const current = (inSum._sum.quantity || 0) - (outSum._sum.quantity || 0);
-      if (current < rq.quantity) shortageCount++;
+
+      const inMap = new Map(inSums.map((s) => [s.itemId, s._sum.quantity || 0]));
+      const outMap = new Map(outSums.map((s) => [s.itemId, s._sum.quantity || 0]));
+
+      for (const rq of requiredQtys) {
+        const current = (inMap.get(rq.itemId) || 0) - (outMap.get(rq.itemId) || 0);
+        if (current < rq.quantity) shortageCount++;
+      }
     }
 
     // 총 품목 수

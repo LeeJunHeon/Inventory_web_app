@@ -4,10 +4,11 @@ import { prisma } from "@/lib/prisma";
 // PUT /api/targets/[id] — 타겟 상태 변경 및 물질명 업데이트
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id   = Number(params.id);
+    const { id: idParam } = await params;
+    const id = Number(idParam);
     const body = await request.json();
     const { status, materialName, purity, hasCopper } = body;
 

@@ -17,53 +17,86 @@ export async function GET(request: NextRequest) {
       orderBy: { code: "asc" },
     });
 
-    const result = await Promise.all(
-      items.map(async (item) => {
-        const inSum = await prisma.inventoryTx.aggregate({
-          where: { itemId: item.id, type: "입고" },
-          _sum: { quantity: true },
-        });
-        const outSum = await prisma.inventoryTx.aggregate({
-          where: { itemId: item.id, type: { in: ["출고", "불출"] } },
-          _sum: { quantity: true },
-        });
-        const currentQty = (inSum._sum.quantity || 0) - (outSum._sum.quantity || 0);
+    if (items.length === 0) return NextResponse.json([]);
 
-        const rq = await prisma.requiredQty.findUnique({ where: { itemId: item.id } });
+    const itemIds = items.map((item) => item.id);
 
-        const attrs: Record<string, string> = {};
-        if (item.category.name === "웨이퍼") {
-          const latestTx = await prisma.inventoryTx.findFirst({
-            where: { itemId: item.id, type: "입고" },
-            orderBy: { id: "desc" },
-          });
-          if (latestTx) {
-            if (latestTx.waferResistance) attrs["저항"] = latestTx.waferResistance;
-            if (latestTx.waferThickness)  attrs["두께"] = latestTx.waferThickness;
-            if (latestTx.waferDirection)  attrs["방향"] = latestTx.waferDirection;
-            if (latestTx.waferSurface)    attrs["표면"] = latestTx.waferSurface;
-          }
+    // 배치 쿼리: 품목별 입고 합계
+    const inSums = await prisma.inventoryTx.groupBy({
+      by: ["itemId"],
+      where: { itemId: { in: itemIds }, type: "입고" },
+      _sum: { quantity: true },
+    });
+
+    // 배치 쿼리: 품목별 출고+불출 합계
+    const outSums = await prisma.inventoryTx.groupBy({
+      by: ["itemId"],
+      where: { itemId: { in: itemIds }, type: { in: ["출고", "불출"] } },
+      _sum: { quantity: true },
+    });
+
+    // 배치 쿼리: 필요수량
+    const requiredQtys = await prisma.requiredQty.findMany({
+      where: { itemId: { in: itemIds } },
+    });
+
+    const inMap = new Map(inSums.map((s) => [s.itemId, s._sum.quantity || 0]));
+    const outMap = new Map(outSums.map((s) => [s.itemId, s._sum.quantity || 0]));
+    const rqMap = new Map(requiredQtys.map((rq) => [rq.itemId, rq.quantity]));
+
+    // 웨이퍼 품목의 최신 입고 속성 (한 번에 조회)
+    const waferItemIds = items.filter((i) => i.category.name === "웨이퍼").map((i) => i.id);
+    const waferTxs = waferItemIds.length > 0
+      ? await prisma.inventoryTx.findMany({
+          where: { itemId: { in: waferItemIds }, type: "입고" },
+          orderBy: { id: "desc" },
+          distinct: ["itemId"],
+          select: { itemId: true, waferResistance: true, waferThickness: true, waferDirection: true, waferSurface: true },
+        })
+      : [];
+    const waferMap = new Map(waferTxs.map((tx) => [tx.itemId, tx]));
+
+    // 타겟 품목의 최신 타겟유닛 속성 (한 번에 조회)
+    const targetItemIds = items.filter((i) => i.category.name === "타겟").map((i) => i.id);
+    const targetUnits = targetItemIds.length > 0
+      ? await prisma.targetUnit.findMany({
+          where: { itemId: { in: targetItemIds } },
+          orderBy: { id: "desc" },
+          distinct: ["itemId"],
+          select: { itemId: true, purity: true, hasCopper: true },
+        })
+      : [];
+    const targetMap = new Map(targetUnits.map((tu) => [tu.itemId, tu]));
+
+    const result = items.map((item) => {
+      const currentQty = (inMap.get(item.id) || 0) - (outMap.get(item.id) || 0);
+
+      const attrs: Record<string, string> = {};
+      if (item.category.name === "웨이퍼") {
+        const wt = waferMap.get(item.id);
+        if (wt) {
+          if (wt.waferResistance) attrs["저항"] = wt.waferResistance;
+          if (wt.waferThickness)  attrs["두께"] = wt.waferThickness;
+          if (wt.waferDirection)  attrs["방향"] = wt.waferDirection;
+          if (wt.waferSurface)    attrs["표면"] = wt.waferSurface;
         }
-        if (item.category.name === "타겟") {
-          const tu = await prisma.targetUnit.findFirst({
-            where: { itemId: item.id },
-            orderBy: { id: "desc" },
-          });
-          if (tu?.purity)    attrs["순도"]   = tu.purity;
-          if (tu?.hasCopper) attrs["Copper"] = tu.hasCopper;
-        }
+      }
+      if (item.category.name === "타겟") {
+        const tu = targetMap.get(item.id);
+        if (tu?.purity)    attrs["순도"]   = tu.purity;
+        if (tu?.hasCopper) attrs["Copper"] = tu.hasCopper;
+      }
 
-        return {
-          id:          item.id,
-          code:        item.code,
-          name:        item.name,
-          category:    item.category.name,
-          currentQty,
-          requiredQty: rq?.quantity || 0,
-          attrs,
-        };
-      })
-    );
+      return {
+        id:          item.id,
+        code:        item.code,
+        name:        item.name,
+        category:    item.category.name,
+        currentQty,
+        requiredQty: rqMap.get(item.id) || 0,
+        attrs,
+      };
+    });
 
     return NextResponse.json(result);
   } catch (error) {
@@ -76,17 +109,21 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    // body: { itemId: number, quantity: number }
     const { itemId, quantity } = body;
 
     if (!itemId || quantity === undefined) {
       return NextResponse.json({ error: "itemId, quantity 필요" }, { status: 400 });
     }
 
+    const qty = Number(quantity);
+    if (isNaN(qty) || qty < 0) {
+      return NextResponse.json({ error: "수량은 0 이상의 숫자여야 합니다." }, { status: 400 });
+    }
+
     const rq = await prisma.requiredQty.upsert({
       where:  { itemId: Number(itemId) },
-      update: { quantity: Number(quantity) },
-      create: { itemId: Number(itemId), quantity: Number(quantity) },
+      update: { quantity: qty },
+      create: { itemId: Number(itemId), quantity: qty },
     });
 
     return NextResponse.json(rq);

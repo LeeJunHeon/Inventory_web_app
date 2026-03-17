@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+const VALID_TYPES = ["입고", "출고", "불출"];
+
 // GET /api/inventory
 export async function GET(request: NextRequest) {
   try {
@@ -66,6 +68,11 @@ export async function GET(request: NextRequest) {
       memo:     tx.memo             || "",
       barcode:  tx.barcode?.code    || "",
       location: tx.location         || "",
+      // 웨이퍼 속성
+      waferResistance: tx.waferResistance || "",
+      waferThickness:  tx.waferThickness  || "",
+      waferDirection:  tx.waferDirection  || "",
+      waferSurface:    tx.waferSurface    || "",
     }));
 
     return NextResponse.json(result);
@@ -80,12 +87,26 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
+    // 입력 검증
+    if (!body.type || !VALID_TYPES.includes(body.type)) {
+      return NextResponse.json({ error: "구분은 입고/출고/불출 중 하나여야 합니다." }, { status: 400 });
+    }
+    if (!body.itemId) {
+      return NextResponse.json({ error: "품목을 선택해주세요." }, { status: 400 });
+    }
+    if (!body.quantity || Number(body.quantity) <= 0) {
+      return NextResponse.json({ error: "수량은 1 이상이어야 합니다." }, { status: 400 });
+    }
+    if (!body.date || isNaN(new Date(body.date).getTime())) {
+      return NextResponse.json({ error: "유효한 날짜를 입력해주세요." }, { status: 400 });
+    }
+
     const tx = await prisma.inventoryTx.create({
       data: {
         date:           new Date(body.date),
         type:           body.type,
-        itemId:         body.itemId,
-        quantity:       body.quantity,
+        itemId:         Number(body.itemId),
+        quantity:       Number(body.quantity),
         unitPrice:      body.unitPrice      || 0,
         currency:       body.currency       || "KRW",
         amount:         body.amount         || 0,
@@ -117,11 +138,22 @@ export async function PUT(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
-    if (!id) {
-      return NextResponse.json({ error: "id 파라미터 필요" }, { status: 400 });
+    if (!id || isNaN(Number(id))) {
+      return NextResponse.json({ error: "유효한 id 파라미터가 필요합니다." }, { status: 400 });
     }
 
     const body = await request.json();
+
+    // 입력 검증
+    if (body.type !== undefined && !VALID_TYPES.includes(body.type)) {
+      return NextResponse.json({ error: "구분은 입고/출고/불출 중 하나여야 합니다." }, { status: 400 });
+    }
+    if (body.quantity !== undefined && Number(body.quantity) <= 0) {
+      return NextResponse.json({ error: "수량은 1 이상이어야 합니다." }, { status: 400 });
+    }
+    if (body.date !== undefined && isNaN(new Date(body.date).getTime())) {
+      return NextResponse.json({ error: "유효한 날짜를 입력해주세요." }, { status: 400 });
+    }
 
     const tx = await prisma.inventoryTx.update({
       where: { id: Number(id) },
@@ -154,8 +186,8 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
-    if (!id) {
-      return NextResponse.json({ error: "id 파라미터 필요" }, { status: 400 });
+    if (!id || isNaN(Number(id))) {
+      return NextResponse.json({ error: "유효한 id 파라미터가 필요합니다." }, { status: 400 });
     }
 
     await prisma.inventoryTx.delete({ where: { id: Number(id) } });

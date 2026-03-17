@@ -99,9 +99,9 @@ export async function PUT(request: NextRequest) {
       data: {
         ...(name       !== undefined && { name:       name.trim() }),
         ...(categoryId !== undefined && { categoryId: Number(categoryId) }),
-        ...(unit       !== undefined && { unit }),
-        ...(spec       !== undefined && { spec }),
-        ...(note       !== undefined && { note }),
+        ...(unit       !== undefined && { unit: unit?.trim() || null }),
+        ...(spec       !== undefined && { spec: spec?.trim() || null }),
+        ...(note       !== undefined && { note: note?.trim() || null }),
         ...(isActive   !== undefined && { isActive }),
       },
       include: { category: true },

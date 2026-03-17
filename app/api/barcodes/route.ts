@@ -73,26 +73,49 @@ export async function POST(request: NextRequest) {
     }
     const newCode = `${prefix}-${String(nextNum).padStart(4, "0")}`;
 
-    // 타겟 품목인 경우 TargetUnit 함께 생성
-    let targetUnitId: number | null = null;
+    // 타겟 품목인 경우 TargetUnit + Barcode를 트랜잭션으로 원자적 생성
     if (item.category.name === "타겟") {
-      const targetUnit = await prisma.targetUnit.create({
-        data: {
-          itemId: item.id,
-          materialName: materialName || null,
-          purity: purity || null,
-          hasCopper: hasCopper || null,
-          status: "available",
-        },
+      const result = await prisma.$transaction(async (tx) => {
+        const targetUnit = await tx.targetUnit.create({
+          data: {
+            itemId: item.id,
+            materialName: materialName || null,
+            purity: purity || null,
+            hasCopper: hasCopper || null,
+            status: "available",
+          },
+        });
+
+        const barcode = await tx.barcode.create({
+          data: {
+            code: newCode,
+            itemId: item.id,
+            targetUnitId: targetUnit.id,
+            isActive: true,
+          },
+          include: { item: { include: { category: true } }, targetUnit: true },
+        });
+
+        return barcode;
       });
-      targetUnitId = targetUnit.id;
+
+      return NextResponse.json({
+        id:       result.id,
+        code:     result.code,
+        itemCode: result.item?.code || "",
+        itemName: result.item?.name || "",
+        category: result.item?.category.name || "",
+        targetId: result.targetUnit ? `TU-${String(result.targetUnit.id).padStart(3, "0")}` : "",
+        isActive: result.isActive,
+      }, { status: 201 });
     }
 
+    // 타겟이 아닌 경우 바코드만 생성
     const barcode = await prisma.barcode.create({
       data: {
         code: newCode,
         itemId: item.id,
-        targetUnitId,
+        targetUnitId: null,
         isActive: true,
       },
       include: { item: { include: { category: true } }, targetUnit: true },
@@ -104,7 +127,7 @@ export async function POST(request: NextRequest) {
       itemCode: barcode.item?.code || "",
       itemName: barcode.item?.name || "",
       category: barcode.item?.category.name || "",
-      targetId: barcode.targetUnit ? `TU-${String(barcode.targetUnit.id).padStart(3, "0")}` : "",
+      targetId: "",
       isActive: barcode.isActive,
     }, { status: 201 });
   } catch (error) {
