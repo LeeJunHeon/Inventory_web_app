@@ -29,13 +29,14 @@ export default function StatusPage() {
   const [editingId, setEditingId]           = useState<number | null>(null);
   const [editValue, setEditValue]           = useState("");
   const [savingId, setSavingId]             = useState<number | null>(null);
+  const [toast, setToast]                   = useState("");
 
   const fetchData = async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/status");
       if (res.ok) setItems(await res.json());
-    } catch (e) { console.error(e); }
+    } catch { setToast("데이터 조회에 실패했습니다."); setTimeout(() => setToast(""), 3000); }
     finally { setLoading(false); }
   };
 
@@ -44,7 +45,11 @@ export default function StatusPage() {
   // 필요수량 저장
   const handleSaveRequired = async (item: StockItem) => {
     const qty = Number(editValue);
-    if (isNaN(qty) || qty < 0) { setEditingId(null); return; }
+    if (isNaN(qty) || qty < 0) {
+      setToast("0 이상의 숫자를 입력해주세요.");
+      setTimeout(() => setToast(""), 3000);
+      return;
+    }
     setSavingId(item.id);
     try {
       const res = await fetch("/api/status", {
@@ -55,7 +60,7 @@ export default function StatusPage() {
       if (res.ok) {
         setItems(prev => prev.map(i => i.id === item.id ? { ...i, requiredQty: qty } : i));
       }
-    } catch { console.error("필요수량 저장 실패"); }
+    } catch { setToast("필요수량 저장에 실패했습니다."); setTimeout(() => setToast(""), 3000); }
     finally { setSavingId(null); setEditingId(null); }
   };
 
@@ -77,6 +82,13 @@ export default function StatusPage() {
 
   return (
     <div className="space-y-5">
+      {/* 토스트 */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-gray-900 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-lg">
+          {toast}
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">보유 현황</h1>
@@ -201,6 +213,7 @@ export default function StatusPage() {
                             {editing ? (
                               <span className="inline-flex items-center gap-1">
                                 <input type="number" min="0" value={editValue} onChange={e => setEditValue(e.target.value)}
+                                  onKeyDown={e => { if (e.key === "Enter") handleSaveRequired(item); if (e.key === "Escape") setEditingId(null); }}
                                   autoFocus className="w-16 px-1 py-0.5 border border-blue-400 rounded text-sm text-right" />
                                 <button onClick={() => handleSaveRequired(item)} className="text-emerald-600"><Check size={13} /></button>
                                 <button onClick={() => setEditingId(null)} className="text-gray-400"><X size={13} /></button>

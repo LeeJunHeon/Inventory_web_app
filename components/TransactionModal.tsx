@@ -48,12 +48,25 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       .then(r => r.json()).then(setPartnerOptions).catch(console.error);
   }, [isOpen, category]);
 
+  // 모달 닫힐 때 전체 폼 초기화
+  useEffect(() => {
+    if (!isOpen) {
+      setType("입고"); setCategory("웨이퍼"); setDate(new Date().toISOString().split("T")[0]);
+      setItemId(null); setItemCode(""); setItemName("");
+      setBarcodeInput(""); setBarcodeId(null);
+      setQuantity(""); setUnitPrice("");
+      setPartnerId(null); setPartnerName("");
+      setMemo(""); setError(""); setShowItemSelector(false);
+    }
+  }, [isOpen]);
+
   // 품목군 바뀔 때 품목 목록 새로 로드 + 선택 초기화
   useEffect(() => {
     if (!isOpen) return;
     fetch(`/api/items?category=${encodeURIComponent(category)}`)
       .then(r => r.json()).then(setItemOptions).catch(console.error);
     setItemId(null); setItemCode(""); setItemName("");
+    setShowItemSelector(false);
   }, [category]);
 
   // 드롭다운 외부 클릭 시 닫기
@@ -128,10 +141,6 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       }
       onSuccess?.();
       onClose();
-      // 초기화
-      setQuantity(""); setUnitPrice(""); setMemo(""); setBarcodeInput("");
-      setItemId(null); setItemCode(""); setItemName("");
-      setPartnerId(null); setPartnerName(""); setBarcodeId(null);
     } catch {
       setError("네트워크 오류");
     } finally {

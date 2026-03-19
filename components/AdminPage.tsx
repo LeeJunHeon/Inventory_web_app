@@ -84,9 +84,10 @@ export default function AdminPage() {
   };
 
   // 사용자 추가
+  const [adding, setAdding] = useState(false);
   const handleAddUser = async () => {
     if (!newName.trim() || !newEmail.trim()) { setAddError("이름과 이메일을 입력해주세요."); return; }
-    setAddError("");
+    setAddError(""); setAdding(true);
     try {
       const res = await fetch("/api/admin/users", {
         method: "POST",
@@ -102,6 +103,7 @@ export default function AdminPage() {
       setShowAdd(false);
       showToast("✅ 사용자가 추가되었습니다.");
     } catch { setAddError("네트워크 오류"); }
+    finally { setAdding(false); }
   };
 
   if (loading) return (
@@ -166,16 +168,16 @@ export default function AdminPage() {
             </div>
           </div>
           {addError && <p className="text-sm text-red-500">{addError}</p>}
-          <button onClick={handleAddUser}
-            className="px-5 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600">
-            추가
+          <button onClick={handleAddUser} disabled={adding}
+            className="px-5 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 disabled:opacity-60">
+            {adding ? "추가 중..." : "추가"}
           </button>
         </div>
       )}
 
       <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
         <p className="text-sm text-amber-800">
-          <span className="font-semibold">참고:</span> employee 권한은 단가/금액이 숨겨지며, 수정/삭제 기능이 제한됩니다.
+          <span className="font-semibold">참고:</span> 각 페이지별 접근 권한을 토글로 설정할 수 있습니다. 로그인 기능 구현 후 적용됩니다.
         </p>
       </div>
 

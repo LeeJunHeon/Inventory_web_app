@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Home, Package, BarChart3, Clock, Target, QrCode, Users, LogOut, Boxes, X, Layers, Building2 } from "lucide-react";
 
 export type PageId =
@@ -37,11 +38,9 @@ export default function Sidebar({
     if (window.innerWidth < 1024) onClose();
   };
 
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const handleLogout = () => {
-    // 로그인 기능 구현 전 임시 안내
-    if (confirm("로그아웃 하시겠습니까?\n(현재는 로그인 기능이 구현 중입니다)")) {
-      alert("로그아웃 처리되었습니다.");
-    }
+    setShowLogoutConfirm(true);
   };
 
   // 구분선 렌더링 (마스터 그룹 직전)
@@ -130,6 +129,27 @@ export default function Sidebar({
           </div>
         </div>
       </aside>
+
+      {/* 로그아웃 확인 모달 */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.4)" }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <h3 className="text-lg font-bold text-gray-900">로그아웃</h3>
+            <p className="text-sm text-gray-500">로그아웃 하시겠습니까?</p>
+            <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">로그인 기능이 아직 구현되지 않아 로그아웃이 동작하지 않습니다.</p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowLogoutConfirm(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200">
+                취소
+              </button>
+              <button onClick={() => setShowLogoutConfirm(false)}
+                className="px-4 py-2 text-sm font-bold text-white bg-gray-400 rounded-xl cursor-not-allowed" disabled>
+                로그아웃
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

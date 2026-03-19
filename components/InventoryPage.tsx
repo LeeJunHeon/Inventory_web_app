@@ -36,6 +36,7 @@ export default function InventoryPage() {
   const [sortDir, setSortDir]           = useState<"asc" | "desc">("desc");
   const [showFilters, setShowFilters]   = useState(false);
   const [editItem, setEditItem]         = useState<InventoryItem | null>(null);
+  const [toast, setToast]               = useState("");
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -47,7 +48,7 @@ export default function InventoryPage() {
       const res = await fetch(`/api/inventory?${params}`);
       if (!res.ok) throw new Error("조회 실패");
       setItems(await res.json());
-    } catch (e) { console.error(e); }
+    } catch { setToast("데이터 조회에 실패했습니다."); setTimeout(() => setToast(""), 3000); }
     finally { setLoading(false); }
   }, [search, typeFilter, categoryFilter]);
 
@@ -74,14 +75,14 @@ export default function InventoryPage() {
     if (!confirm("정말 삭제하시겠습니까?")) return;
     try {
       const res = await fetch(`/api/inventory?id=${id}`, { method: "DELETE" });
-      if (res.ok) fetchData();
-      else { const d = await res.json(); alert(d.error || "삭제 실패"); }
-    } catch { alert("네트워크 오류"); }
+      if (res.ok) { fetchData(); setToast("삭제되었습니다."); setTimeout(() => setToast(""), 3000); }
+      else { const d = await res.json(); setToast(d.error || "삭제 실패"); setTimeout(() => setToast(""), 3000); }
+    } catch { setToast("네트워크 오류"); setTimeout(() => setToast(""), 3000); }
   };
 
   // ── CSV 내보내기 ──────────────────────────────────────
   const handleExport = () => {
-    if (sorted.length === 0) { alert("내보낼 데이터가 없습니다."); return; }
+    if (sorted.length === 0) { setToast("내보낼 데이터가 없습니다."); setTimeout(() => setToast(""), 3000); return; }
     const now      = new Date();
     const dateStr  = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}`;
     const filename = `재고내역_${dateStr}.csv`;
@@ -95,6 +96,13 @@ export default function InventoryPage() {
 
   return (
     <div className="space-y-4 sm:space-y-5">
+      {/* 토스트 */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-gray-900 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-lg">
+          {toast}
+        </div>
+      )}
+
       {/* 헤더 */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>

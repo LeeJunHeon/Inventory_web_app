@@ -45,11 +45,12 @@ export async function GET(request: NextRequest) {
     const rqMap = new Map(requiredQtys.map((rq) => [rq.itemId, rq.quantity]));
 
     // 웨이퍼 품목의 최신 입고 속성 (한 번에 조회)
+    // distinct + orderBy는 반드시 동일 필드를 포함해야 함 (PostgreSQL DISTINCT ON 제약)
     const waferItemIds = items.filter((i) => i.category.name === "웨이퍼").map((i) => i.id);
     const waferTxs = waferItemIds.length > 0
       ? await prisma.inventoryTx.findMany({
           where: { itemId: { in: waferItemIds }, type: "입고" },
-          orderBy: { id: "desc" },
+          orderBy: [{ itemId: "asc" }, { id: "desc" }],
           distinct: ["itemId"],
           select: { itemId: true, waferResistance: true, waferThickness: true, waferDirection: true, waferSurface: true },
         })
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest) {
     const targetUnits = targetItemIds.length > 0
       ? await prisma.targetUnit.findMany({
           where: { itemId: { in: targetItemIds } },
-          orderBy: { id: "desc" },
+          orderBy: [{ itemId: "asc" }, { id: "desc" }],
           distinct: ["itemId"],
           select: { itemId: true, purity: true, hasCopper: true },
         })

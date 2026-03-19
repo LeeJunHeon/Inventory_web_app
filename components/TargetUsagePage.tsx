@@ -19,6 +19,10 @@ export default function TargetUsagePage() {
   const [sortDir, setSortDir]               = useState<"asc" | "desc">("desc");
   const [saving, setSaving]                 = useState(false);
   const [disposeConfirm, setDisposeConfirm] = useState(false);
+  const [toast, setToast]                   = useState("");
+  const [searchError, setSearchError]       = useState("");
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3000); };
 
   useEffect(() => {
     (async () => {
@@ -36,25 +40,26 @@ export default function TargetUsagePage() {
 
   const handleSearch = async () => {
     const code = barcodeInput.trim();
-    if (!code) { setSelectedTarget(null); return; }
-    setLoading(true);
+    if (!code) { setSelectedTarget(null); setSearchError(""); return; }
+    setLoading(true); setSearchError("");
     try {
       const res = await fetch(`/api/targets?barcode=${encodeURIComponent(code)}`);
       if (!res.ok) {
         const err = await res.json();
-        alert(err.error || "조회 실패");
+        setSearchError(err.error || "조회 실패");
         setSelectedTarget(null); return;
       }
       const data = await res.json();
       setSelectedTarget(data.target);
       setLogs(data.logs || []);
-    } catch { alert("조회 중 오류 발생"); }
+      setSearchError("");
+    } catch { setSearchError("조회 중 오류가 발생했습니다."); }
     finally { setLoading(false); }
   };
 
   // 무게 측정값 저장
   const handleSaveWeight = async () => {
-    if (!selectedTarget || !weight) { alert("무게를 입력하세요"); return; }
+    if (!selectedTarget || !weight) { showToast("무게를 입력하세요."); return; }
     setSaving(true);
     try {
       const res = await fetch("/api/targets", {
@@ -62,10 +67,11 @@ export default function TargetUsagePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ targetUnitId: selectedTarget.id, type: "측정", weight: parseFloat(weight), location, reason }),
       });
-      if (!res.ok) { const e = await res.json(); alert(e.error || "저장 실패"); return; }
+      if (!res.ok) { const e = await res.json(); showToast(e.error || "저장 실패"); return; }
+      showToast("측정값이 저장되었습니다.");
       setWeight(""); setLocation(""); setReason("");
       handleSearch();
-    } catch { alert("저장 실패"); }
+    } catch { showToast("저장에 실패했습니다."); }
     finally { setSaving(false); }
   };
 
@@ -79,9 +85,9 @@ export default function TargetUsagePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ materialName: selectedTarget.materialName }),
       });
-      if (!res.ok) { const e = await res.json(); alert(e.error || "저장 실패"); return; }
-      alert("저장되었습니다.");
-    } catch { alert("저장 실패"); }
+      if (!res.ok) { const e = await res.json(); showToast(e.error || "저장 실패"); return; }
+      showToast("정보가 저장되었습니다.");
+    } catch { showToast("저장에 실패했습니다."); }
     finally { setSaving(false); }
   };
 
@@ -96,7 +102,7 @@ export default function TargetUsagePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "disposed" }),
       });
-      if (!res.ok) { const e = await res.json(); alert(e.error || "폐기 처리 실패"); return; }
+      if (!res.ok) { const e = await res.json(); showToast(e.error || "폐기 처리 실패"); return; }
       // 폐기 로그도 함께 기록
       await fetch("/api/targets", {
         method: "POST",
@@ -105,7 +111,7 @@ export default function TargetUsagePage() {
       });
       setDisposeConfirm(false);
       handleSearch();
-    } catch { alert("처리 실패"); }
+    } catch { showToast("처리에 실패했습니다."); }
     finally { setSaving(false); }
   };
 
@@ -130,24 +136,32 @@ export default function TargetUsagePage() {
 
   return (
     <div className="space-y-5">
+      {/* 토스트 */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-gray-900 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-lg">
+          {toast}
+        </div>
+      )}
+
       <div>
         <h1 className="text-2xl font-bold text-gray-900">타겟 사용현황</h1>
         <p className="text-sm text-gray-500 mt-1">바코드로 타겟을 조회하고, 무게 측정 / 상태 / 폐기를 관리합니다</p>
       </div>
 
       {/* 바코드 조회 */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-5">
+      <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-2">
         <label className="block text-sm font-semibold text-gray-700 mb-2">바코드 조회</label>
         <div className="flex gap-2">
           <div className="relative flex-1 max-w-md">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input type="text" placeholder="타겟 바코드를 스캔하거나 입력 (예: T-0187)"
-              value={barcodeInput} onChange={(e) => setBarcodeInput(e.target.value)}
+              value={barcodeInput} onChange={(e) => { setBarcodeInput(e.target.value); setSearchError(""); }}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
           </div>
           <button onClick={handleSearch} className="px-5 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600">조회</button>
         </div>
+        {searchError && <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-xl">{searchError}</p>}
       </div>
 
       {/* 타겟 정보 + 측정 입력 */}
@@ -175,7 +189,7 @@ export default function TargetUsagePage() {
               {/* ✅ 정보 저장 버튼 연결 */}
               <button onClick={handleSaveInfo} disabled={saving}
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 disabled:opacity-60">
-                <Save size={16} />정보 저장
+                <Save size={16} />{saving ? "저장 중..." : "정보 저장"}
               </button>
               {/* ✅ 폐기 처리 버튼 연결 (2번 클릭 확인) */}
               {selectedTarget.status !== "disposed" && (

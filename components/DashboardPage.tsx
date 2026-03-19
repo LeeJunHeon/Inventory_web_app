@@ -1,6 +1,6 @@
 "use client";
 
-import { TrendingUp, TrendingDown, AlertTriangle, Boxes, Loader2 } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertTriangle, Boxes, Loader2, RefreshCw } from "lucide-react";
 import { TYPE_COLORS, CATEGORY_COLORS, formatPrice } from "@/lib/data";
 import { useApi } from "@/lib/useApi";
 
@@ -24,13 +24,13 @@ const DEFAULT: DashboardData = {
 };
 
 export default function DashboardPage() {
-  const { data, loading } = useApi<DashboardData>("/api/dashboard", DEFAULT);
+  const { data, loading, error } = useApi<DashboardData>("/api/dashboard", DEFAULT);
 
   const stats = [
     { label: "오늘 입고", value: `${data.todayIn.count}건`, sub: formatPrice(data.todayIn.amount), icon: TrendingUp, color: "text-blue-600", bg: "bg-blue-50" },
     { label: "오늘 출고", value: `${data.todayOut.count}건`, sub: formatPrice(data.todayOut.amount), icon: TrendingDown, color: "text-rose-600", bg: "bg-rose-50" },
     { label: "재고 부족 품목", value: `${data.shortageCount}건`, sub: "확인 필요", icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50" },
-    { label: "총 보유 품목", value: `${data.totalItems}종`, sub: "4개 품목군", icon: Boxes, color: "text-emerald-600", bg: "bg-emerald-50" },
+    { label: "총 보유 품목", value: `${data.totalItems}종`, sub: "활성 품목 기준", icon: Boxes, color: "text-emerald-600", bg: "bg-emerald-50" },
   ];
 
   if (loading) {
@@ -38,6 +38,16 @@ export default function DashboardPage() {
       <div className="flex items-center justify-center h-64">
         <Loader2 size={24} className="animate-spin text-blue-500" />
         <span className="ml-2 text-sm text-gray-500">로딩 중...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-3">
+        <AlertTriangle size={32} className="text-amber-500" />
+        <p className="text-sm text-gray-500">대시보드 데이터를 불러오지 못했습니다.</p>
+        <p className="text-xs text-gray-400">서버 연결을 확인하세요.</p>
       </div>
     );
   }

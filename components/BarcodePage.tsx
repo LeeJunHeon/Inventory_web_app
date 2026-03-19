@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Search, Plus, Trash2, Printer, QrCode, Check, X, Loader2 } from "lucide-react";
+import { Search, Plus, Trash2, Copy, QrCode, Check, X, Loader2 } from "lucide-react";
 import { CATEGORY_COLORS } from "@/lib/data";
 
 interface BarcodeItem {
@@ -30,6 +30,7 @@ export default function BarcodePage() {
   const [creating, setCreating]             = useState(false);
   const [createError, setCreateError]       = useState("");
   const [createSuccess, setCreateSuccess]   = useState("");
+  const [toast, setToast]                   = useState("");
   const itemDropRef = useRef<HTMLDivElement>(null);
 
   const fetchData = useCallback(async () => {
@@ -40,7 +41,7 @@ export default function BarcodePage() {
       if (categoryFilter !== "전체") params.set("category", categoryFilter);
       const res = await fetch(`/api/barcodes?${params}`);
       if (res.ok) setBarcodes(await res.json());
-    } catch (e) { console.error(e); }
+    } catch { setToast("바코드 목록 조회 실패"); setTimeout(() => setToast(""), 3000); }
     finally { setLoading(false); }
   }, [search, categoryFilter]);
 
@@ -104,12 +105,25 @@ export default function BarcodePage() {
 
   return (
     <div className="space-y-5">
+      {/* 토스트 */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-gray-900 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-lg">
+          {toast}
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">바코드 관리</h1>
           <p className="text-sm text-gray-500 mt-0.5">바코드 조회, 생성, 출력을 관리합니다</p>
         </div>
-        <button onClick={() => { setShowCreate(!showCreate); setCreateError(""); setCreateSuccess(""); }}
+        <button onClick={() => {
+            if (showCreate) {
+              // 닫을 때 폼 전체 리셋
+              setCreateItemId(null); setCreateItemCode(""); setCreateItemName(""); setCreateMaterial("");
+            }
+            setShowCreate(!showCreate); setCreateError(""); setCreateSuccess("");
+          }}
           className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-blue-500 rounded-xl hover:bg-blue-600 shadow-sm">
           <Plus size={16} />새 바코드 생성
         </button>
@@ -247,9 +261,9 @@ export default function BarcodePage() {
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => window.print()}
-                          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400" title="출력">
-                          <Printer size={15} />
+                        <button onClick={() => { navigator.clipboard.writeText(b.code); setToast(`${b.code} 복사됨`); setTimeout(() => setToast(""), 2000); }}
+                          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600" title="바코드 복사">
+                          <Copy size={15} />
                         </button>
                         <button onClick={() => handleDelete(b)}
                           className="p-1.5 rounded-lg hover:bg-rose-100 text-gray-400 hover:text-rose-600" title="삭제">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu, Bell } from "lucide-react";
 import Sidebar, { PageId } from "@/components/Sidebar";
 import DashboardPage    from "@/components/DashboardPage";
@@ -16,6 +16,16 @@ import AdminPage        from "@/components/AdminPage";
 export default function Home() {
   const [page, setPage]             = useState<PageId>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [shortageCount, setShortageCount] = useState(0);
+  const [showNotif, setShowNotif]   = useState(false);
+
+  // 재고 부족 알림 수 조회
+  useEffect(() => {
+    fetch("/api/dashboard")
+      .then(r => r.json())
+      .then(data => setShortageCount(data.shortageCount || 0))
+      .catch(() => {});
+  }, [page]); // 페이지 전환 시마다 갱신
 
   const PAGE_TITLES: Record<PageId, string> = {
     dashboard: "대시보드",
@@ -51,7 +61,6 @@ export default function Home() {
         onNavigate={setPage}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        // TODO: 로그인 구현 후 실제 사용자 정보로 교체
         userName="관리자"
         userRole="admin"
       />
@@ -69,12 +78,40 @@ export default function Home() {
               {PAGE_TITLES[page]}
             </span>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative">
+          <div className="flex items-center gap-3 relative">
+            <button
+              onClick={() => setShowNotif(!showNotif)}
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
+            >
               <Bell size={18} className="text-gray-500" />
-              {/* TODO: 재고 부족 알림 수 뱃지 */}
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full" />
+              {shortageCount > 0 && (
+                <span className="absolute top-1 right-1 min-w-[16px] h-4 bg-rose-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white px-1">
+                  {shortageCount}
+                </span>
+              )}
             </button>
+
+            {/* 알림 드롭다운 */}
+            {showNotif && (
+              <div className="absolute top-full right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-lg z-50">
+                <div className="px-4 py-3 border-b border-gray-100">
+                  <p className="text-sm font-bold text-gray-900">알림</p>
+                </div>
+                <div className="px-4 py-3">
+                  {shortageCount > 0 ? (
+                    <button
+                      onClick={() => { setPage("status"); setShowNotif(false); }}
+                      className="w-full text-left space-y-1 hover:bg-gray-50 -mx-2 px-2 py-2 rounded-lg transition-colors"
+                    >
+                      <p className="text-sm text-rose-600 font-semibold">재고 부족 {shortageCount}건</p>
+                      <p className="text-xs text-gray-400">보유 현황에서 확인하세요</p>
+                    </button>
+                  ) : (
+                    <p className="text-sm text-gray-400 text-center py-2">새로운 알림이 없습니다</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </header>
 
