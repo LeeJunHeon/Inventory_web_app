@@ -29,105 +29,86 @@ export type AggregateInventoryTx = {
 export type InventoryTxAvgAggregateOutputType = {
   id: number | null
   itemId: number | null
-  quantity: number | null
+  targetUnitId: number | null
+  qty: number | null
   unitPrice: runtime.Decimal | null
   amount: runtime.Decimal | null
   partnerId: number | null
-  targetUnitId: number | null
-  refInboundId: number | null
+  txReasonId: number | null
+  locationId: number | null
+  userId: number | null
   barcodeId: number | null
-  createdBy: number | null
 }
 
 export type InventoryTxSumAggregateOutputType = {
   id: number | null
   itemId: number | null
-  quantity: number | null
+  targetUnitId: number | null
+  qty: number | null
   unitPrice: runtime.Decimal | null
   amount: runtime.Decimal | null
   partnerId: number | null
-  targetUnitId: number | null
-  refInboundId: number | null
+  txReasonId: number | null
+  locationId: number | null
+  userId: number | null
   barcodeId: number | null
-  createdBy: number | null
 }
 
 export type InventoryTxMinAggregateOutputType = {
   id: number | null
-  date: Date | null
-  type: string | null
+  txNo: string | null
+  txDate: Date | null
+  txType: string | null
   itemId: number | null
-  quantity: number | null
+  targetUnitId: number | null
+  qty: number | null
   unitPrice: runtime.Decimal | null
-  currency: string | null
   amount: runtime.Decimal | null
   partnerId: number | null
-  handlerName: string | null
-  handlerContact: string | null
+  txReasonId: number | null
+  locationId: number | null
+  userId: number | null
   memo: string | null
-  targetUnitId: number | null
-  refInboundId: number | null
+  refTxNo: string | null
   barcodeId: number | null
-  location: string | null
-  waferResistance: string | null
-  waferThickness: string | null
-  waferDirection: string | null
-  waferSurface: string | null
-  createdBy: number | null
-  createdAt: Date | null
-  updatedAt: Date | null
 }
 
 export type InventoryTxMaxAggregateOutputType = {
   id: number | null
-  date: Date | null
-  type: string | null
+  txNo: string | null
+  txDate: Date | null
+  txType: string | null
   itemId: number | null
-  quantity: number | null
+  targetUnitId: number | null
+  qty: number | null
   unitPrice: runtime.Decimal | null
-  currency: string | null
   amount: runtime.Decimal | null
   partnerId: number | null
-  handlerName: string | null
-  handlerContact: string | null
+  txReasonId: number | null
+  locationId: number | null
+  userId: number | null
   memo: string | null
-  targetUnitId: number | null
-  refInboundId: number | null
+  refTxNo: string | null
   barcodeId: number | null
-  location: string | null
-  waferResistance: string | null
-  waferThickness: string | null
-  waferDirection: string | null
-  waferSurface: string | null
-  createdBy: number | null
-  createdAt: Date | null
-  updatedAt: Date | null
 }
 
 export type InventoryTxCountAggregateOutputType = {
   id: number
-  date: number
-  type: number
+  txNo: number
+  txDate: number
+  txType: number
   itemId: number
-  quantity: number
+  targetUnitId: number
+  qty: number
   unitPrice: number
-  currency: number
   amount: number
   partnerId: number
-  handlerName: number
-  handlerContact: number
+  txReasonId: number
+  locationId: number
+  userId: number
   memo: number
-  targetUnitId: number
-  refInboundId: number
+  refTxNo: number
   barcodeId: number
-  location: number
-  waferResistance: number
-  waferThickness: number
-  waferDirection: number
-  waferSurface: number
-  createdBy: number
-  createdAt: number
-  updatedAt: number
   _all: number
 }
 
@@ -135,105 +116,86 @@ export type InventoryTxCountAggregateOutputType = {
 export type InventoryTxAvgAggregateInputType = {
   id?: true
   itemId?: true
-  quantity?: true
+  targetUnitId?: true
+  qty?: true
   unitPrice?: true
   amount?: true
   partnerId?: true
-  targetUnitId?: true
-  refInboundId?: true
+  txReasonId?: true
+  locationId?: true
+  userId?: true
   barcodeId?: true
-  createdBy?: true
 }
 
 export type InventoryTxSumAggregateInputType = {
   id?: true
   itemId?: true
-  quantity?: true
+  targetUnitId?: true
+  qty?: true
   unitPrice?: true
   amount?: true
   partnerId?: true
-  targetUnitId?: true
-  refInboundId?: true
+  txReasonId?: true
+  locationId?: true
+  userId?: true
   barcodeId?: true
-  createdBy?: true
 }
 
 export type InventoryTxMinAggregateInputType = {
   id?: true
-  date?: true
-  type?: true
+  txNo?: true
+  txDate?: true
+  txType?: true
   itemId?: true
-  quantity?: true
+  targetUnitId?: true
+  qty?: true
   unitPrice?: true
-  currency?: true
   amount?: true
   partnerId?: true
-  handlerName?: true
-  handlerContact?: true
+  txReasonId?: true
+  locationId?: true
+  userId?: true
   memo?: true
-  targetUnitId?: true
-  refInboundId?: true
+  refTxNo?: true
   barcodeId?: true
-  location?: true
-  waferResistance?: true
-  waferThickness?: true
-  waferDirection?: true
-  waferSurface?: true
-  createdBy?: true
-  createdAt?: true
-  updatedAt?: true
 }
 
 export type InventoryTxMaxAggregateInputType = {
   id?: true
-  date?: true
-  type?: true
+  txNo?: true
+  txDate?: true
+  txType?: true
   itemId?: true
-  quantity?: true
+  targetUnitId?: true
+  qty?: true
   unitPrice?: true
-  currency?: true
   amount?: true
   partnerId?: true
-  handlerName?: true
-  handlerContact?: true
+  txReasonId?: true
+  locationId?: true
+  userId?: true
   memo?: true
-  targetUnitId?: true
-  refInboundId?: true
+  refTxNo?: true
   barcodeId?: true
-  location?: true
-  waferResistance?: true
-  waferThickness?: true
-  waferDirection?: true
-  waferSurface?: true
-  createdBy?: true
-  createdAt?: true
-  updatedAt?: true
 }
 
 export type InventoryTxCountAggregateInputType = {
   id?: true
-  date?: true
-  type?: true
+  txNo?: true
+  txDate?: true
+  txType?: true
   itemId?: true
-  quantity?: true
+  targetUnitId?: true
+  qty?: true
   unitPrice?: true
-  currency?: true
   amount?: true
   partnerId?: true
-  handlerName?: true
-  handlerContact?: true
+  txReasonId?: true
+  locationId?: true
+  userId?: true
   memo?: true
-  targetUnitId?: true
-  refInboundId?: true
+  refTxNo?: true
   barcodeId?: true
-  location?: true
-  waferResistance?: true
-  waferThickness?: true
-  waferDirection?: true
-  waferSurface?: true
-  createdBy?: true
-  createdAt?: true
-  updatedAt?: true
   _all?: true
 }
 
@@ -325,28 +287,21 @@ export type InventoryTxGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inte
 
 export type InventoryTxGroupByOutputType = {
   id: number
-  date: Date
-  type: string
+  txNo: string | null
+  txDate: Date
+  txType: string
   itemId: number
-  quantity: number
-  unitPrice: runtime.Decimal
-  currency: string
-  amount: runtime.Decimal
-  partnerId: number | null
-  handlerName: string | null
-  handlerContact: string | null
-  memo: string | null
   targetUnitId: number | null
-  refInboundId: number | null
+  qty: number
+  unitPrice: runtime.Decimal | null
+  amount: runtime.Decimal | null
+  partnerId: number | null
+  txReasonId: number | null
+  locationId: number
+  userId: number | null
+  memo: string | null
+  refTxNo: string | null
   barcodeId: number | null
-  location: string | null
-  waferResistance: string | null
-  waferThickness: string | null
-  waferDirection: string | null
-  waferSurface: string | null
-  createdBy: number | null
-  createdAt: Date
-  updatedAt: Date
   _count: InventoryTxCountAggregateOutputType | null
   _avg: InventoryTxAvgAggregateOutputType | null
   _sum: InventoryTxSumAggregateOutputType | null
@@ -374,130 +329,105 @@ export type InventoryTxWhereInput = {
   OR?: Prisma.InventoryTxWhereInput[]
   NOT?: Prisma.InventoryTxWhereInput | Prisma.InventoryTxWhereInput[]
   id?: Prisma.IntFilter<"InventoryTx"> | number
-  date?: Prisma.DateTimeFilter<"InventoryTx"> | Date | string
-  type?: Prisma.StringFilter<"InventoryTx"> | string
+  txNo?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
+  txDate?: Prisma.DateTimeFilter<"InventoryTx"> | Date | string
+  txType?: Prisma.StringFilter<"InventoryTx"> | string
   itemId?: Prisma.IntFilter<"InventoryTx"> | number
-  quantity?: Prisma.IntFilter<"InventoryTx"> | number
-  unitPrice?: Prisma.DecimalFilter<"InventoryTx"> | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFilter<"InventoryTx"> | string
-  amount?: Prisma.DecimalFilter<"InventoryTx"> | runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
-  handlerName?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
-  handlerContact?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
-  memo?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
   targetUnitId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
-  refInboundId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
+  qty?: Prisma.IntFilter<"InventoryTx"> | number
+  unitPrice?: Prisma.DecimalNullableFilter<"InventoryTx"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.DecimalNullableFilter<"InventoryTx"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
+  txReasonId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
+  locationId?: Prisma.IntFilter<"InventoryTx"> | number
+  userId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
+  memo?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
+  refTxNo?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
   barcodeId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
-  location?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
-  waferResistance?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
-  waferThickness?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
-  waferDirection?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
-  waferSurface?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
-  createdBy?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
-  createdAt?: Prisma.DateTimeFilter<"InventoryTx"> | Date | string
-  updatedAt?: Prisma.DateTimeFilter<"InventoryTx"> | Date | string
   item?: Prisma.XOR<Prisma.ItemScalarRelationFilter, Prisma.ItemWhereInput>
-  partner?: Prisma.XOR<Prisma.PartnerNullableScalarRelationFilter, Prisma.PartnerWhereInput> | null
   targetUnit?: Prisma.XOR<Prisma.TargetUnitNullableScalarRelationFilter, Prisma.TargetUnitWhereInput> | null
-  refInbound?: Prisma.XOR<Prisma.InventoryTxNullableScalarRelationFilter, Prisma.InventoryTxWhereInput> | null
-  refOutbounds?: Prisma.InventoryTxListRelationFilter
+  partner?: Prisma.XOR<Prisma.PartnerNullableScalarRelationFilter, Prisma.PartnerWhereInput> | null
+  txReason?: Prisma.XOR<Prisma.TxReasonNullableScalarRelationFilter, Prisma.TxReasonWhereInput> | null
+  location?: Prisma.XOR<Prisma.LocationScalarRelationFilter, Prisma.LocationWhereInput>
+  user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   barcode?: Prisma.XOR<Prisma.BarcodeNullableScalarRelationFilter, Prisma.BarcodeWhereInput> | null
-  creator?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
+  barcodeScans?: Prisma.BarcodeScanListRelationFilter
 }
 
 export type InventoryTxOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  date?: Prisma.SortOrder
-  type?: Prisma.SortOrder
+  txNo?: Prisma.SortOrderInput | Prisma.SortOrder
+  txDate?: Prisma.SortOrder
+  txType?: Prisma.SortOrder
   itemId?: Prisma.SortOrder
-  quantity?: Prisma.SortOrder
-  unitPrice?: Prisma.SortOrder
-  currency?: Prisma.SortOrder
-  amount?: Prisma.SortOrder
-  partnerId?: Prisma.SortOrderInput | Prisma.SortOrder
-  handlerName?: Prisma.SortOrderInput | Prisma.SortOrder
-  handlerContact?: Prisma.SortOrderInput | Prisma.SortOrder
-  memo?: Prisma.SortOrderInput | Prisma.SortOrder
   targetUnitId?: Prisma.SortOrderInput | Prisma.SortOrder
-  refInboundId?: Prisma.SortOrderInput | Prisma.SortOrder
+  qty?: Prisma.SortOrder
+  unitPrice?: Prisma.SortOrderInput | Prisma.SortOrder
+  amount?: Prisma.SortOrderInput | Prisma.SortOrder
+  partnerId?: Prisma.SortOrderInput | Prisma.SortOrder
+  txReasonId?: Prisma.SortOrderInput | Prisma.SortOrder
+  locationId?: Prisma.SortOrder
+  userId?: Prisma.SortOrderInput | Prisma.SortOrder
+  memo?: Prisma.SortOrderInput | Prisma.SortOrder
+  refTxNo?: Prisma.SortOrderInput | Prisma.SortOrder
   barcodeId?: Prisma.SortOrderInput | Prisma.SortOrder
-  location?: Prisma.SortOrderInput | Prisma.SortOrder
-  waferResistance?: Prisma.SortOrderInput | Prisma.SortOrder
-  waferThickness?: Prisma.SortOrderInput | Prisma.SortOrder
-  waferDirection?: Prisma.SortOrderInput | Prisma.SortOrder
-  waferSurface?: Prisma.SortOrderInput | Prisma.SortOrder
-  createdBy?: Prisma.SortOrderInput | Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
   item?: Prisma.ItemOrderByWithRelationInput
-  partner?: Prisma.PartnerOrderByWithRelationInput
   targetUnit?: Prisma.TargetUnitOrderByWithRelationInput
-  refInbound?: Prisma.InventoryTxOrderByWithRelationInput
-  refOutbounds?: Prisma.InventoryTxOrderByRelationAggregateInput
+  partner?: Prisma.PartnerOrderByWithRelationInput
+  txReason?: Prisma.TxReasonOrderByWithRelationInput
+  location?: Prisma.LocationOrderByWithRelationInput
+  user?: Prisma.UserOrderByWithRelationInput
   barcode?: Prisma.BarcodeOrderByWithRelationInput
-  creator?: Prisma.UserOrderByWithRelationInput
+  barcodeScans?: Prisma.BarcodeScanOrderByRelationAggregateInput
 }
 
 export type InventoryTxWhereUniqueInput = Prisma.AtLeast<{
   id?: number
+  txNo?: string
   AND?: Prisma.InventoryTxWhereInput | Prisma.InventoryTxWhereInput[]
   OR?: Prisma.InventoryTxWhereInput[]
   NOT?: Prisma.InventoryTxWhereInput | Prisma.InventoryTxWhereInput[]
-  date?: Prisma.DateTimeFilter<"InventoryTx"> | Date | string
-  type?: Prisma.StringFilter<"InventoryTx"> | string
+  txDate?: Prisma.DateTimeFilter<"InventoryTx"> | Date | string
+  txType?: Prisma.StringFilter<"InventoryTx"> | string
   itemId?: Prisma.IntFilter<"InventoryTx"> | number
-  quantity?: Prisma.IntFilter<"InventoryTx"> | number
-  unitPrice?: Prisma.DecimalFilter<"InventoryTx"> | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFilter<"InventoryTx"> | string
-  amount?: Prisma.DecimalFilter<"InventoryTx"> | runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
-  handlerName?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
-  handlerContact?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
-  memo?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
   targetUnitId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
-  refInboundId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
+  qty?: Prisma.IntFilter<"InventoryTx"> | number
+  unitPrice?: Prisma.DecimalNullableFilter<"InventoryTx"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.DecimalNullableFilter<"InventoryTx"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
+  txReasonId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
+  locationId?: Prisma.IntFilter<"InventoryTx"> | number
+  userId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
+  memo?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
+  refTxNo?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
   barcodeId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
-  location?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
-  waferResistance?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
-  waferThickness?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
-  waferDirection?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
-  waferSurface?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
-  createdBy?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
-  createdAt?: Prisma.DateTimeFilter<"InventoryTx"> | Date | string
-  updatedAt?: Prisma.DateTimeFilter<"InventoryTx"> | Date | string
   item?: Prisma.XOR<Prisma.ItemScalarRelationFilter, Prisma.ItemWhereInput>
-  partner?: Prisma.XOR<Prisma.PartnerNullableScalarRelationFilter, Prisma.PartnerWhereInput> | null
   targetUnit?: Prisma.XOR<Prisma.TargetUnitNullableScalarRelationFilter, Prisma.TargetUnitWhereInput> | null
-  refInbound?: Prisma.XOR<Prisma.InventoryTxNullableScalarRelationFilter, Prisma.InventoryTxWhereInput> | null
-  refOutbounds?: Prisma.InventoryTxListRelationFilter
+  partner?: Prisma.XOR<Prisma.PartnerNullableScalarRelationFilter, Prisma.PartnerWhereInput> | null
+  txReason?: Prisma.XOR<Prisma.TxReasonNullableScalarRelationFilter, Prisma.TxReasonWhereInput> | null
+  location?: Prisma.XOR<Prisma.LocationScalarRelationFilter, Prisma.LocationWhereInput>
+  user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   barcode?: Prisma.XOR<Prisma.BarcodeNullableScalarRelationFilter, Prisma.BarcodeWhereInput> | null
-  creator?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
-}, "id">
+  barcodeScans?: Prisma.BarcodeScanListRelationFilter
+}, "id" | "txNo">
 
 export type InventoryTxOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  date?: Prisma.SortOrder
-  type?: Prisma.SortOrder
+  txNo?: Prisma.SortOrderInput | Prisma.SortOrder
+  txDate?: Prisma.SortOrder
+  txType?: Prisma.SortOrder
   itemId?: Prisma.SortOrder
-  quantity?: Prisma.SortOrder
-  unitPrice?: Prisma.SortOrder
-  currency?: Prisma.SortOrder
-  amount?: Prisma.SortOrder
-  partnerId?: Prisma.SortOrderInput | Prisma.SortOrder
-  handlerName?: Prisma.SortOrderInput | Prisma.SortOrder
-  handlerContact?: Prisma.SortOrderInput | Prisma.SortOrder
-  memo?: Prisma.SortOrderInput | Prisma.SortOrder
   targetUnitId?: Prisma.SortOrderInput | Prisma.SortOrder
-  refInboundId?: Prisma.SortOrderInput | Prisma.SortOrder
+  qty?: Prisma.SortOrder
+  unitPrice?: Prisma.SortOrderInput | Prisma.SortOrder
+  amount?: Prisma.SortOrderInput | Prisma.SortOrder
+  partnerId?: Prisma.SortOrderInput | Prisma.SortOrder
+  txReasonId?: Prisma.SortOrderInput | Prisma.SortOrder
+  locationId?: Prisma.SortOrder
+  userId?: Prisma.SortOrderInput | Prisma.SortOrder
+  memo?: Prisma.SortOrderInput | Prisma.SortOrder
+  refTxNo?: Prisma.SortOrderInput | Prisma.SortOrder
   barcodeId?: Prisma.SortOrderInput | Prisma.SortOrder
-  location?: Prisma.SortOrderInput | Prisma.SortOrder
-  waferResistance?: Prisma.SortOrderInput | Prisma.SortOrder
-  waferThickness?: Prisma.SortOrderInput | Prisma.SortOrder
-  waferDirection?: Prisma.SortOrderInput | Prisma.SortOrder
-  waferSurface?: Prisma.SortOrderInput | Prisma.SortOrder
-  createdBy?: Prisma.SortOrderInput | Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
   _count?: Prisma.InventoryTxCountOrderByAggregateInput
   _avg?: Prisma.InventoryTxAvgOrderByAggregateInput
   _max?: Prisma.InventoryTxMaxOrderByAggregateInput
@@ -510,205 +440,148 @@ export type InventoryTxScalarWhereWithAggregatesInput = {
   OR?: Prisma.InventoryTxScalarWhereWithAggregatesInput[]
   NOT?: Prisma.InventoryTxScalarWhereWithAggregatesInput | Prisma.InventoryTxScalarWhereWithAggregatesInput[]
   id?: Prisma.IntWithAggregatesFilter<"InventoryTx"> | number
-  date?: Prisma.DateTimeWithAggregatesFilter<"InventoryTx"> | Date | string
-  type?: Prisma.StringWithAggregatesFilter<"InventoryTx"> | string
+  txNo?: Prisma.StringNullableWithAggregatesFilter<"InventoryTx"> | string | null
+  txDate?: Prisma.DateTimeWithAggregatesFilter<"InventoryTx"> | Date | string
+  txType?: Prisma.StringWithAggregatesFilter<"InventoryTx"> | string
   itemId?: Prisma.IntWithAggregatesFilter<"InventoryTx"> | number
-  quantity?: Prisma.IntWithAggregatesFilter<"InventoryTx"> | number
-  unitPrice?: Prisma.DecimalWithAggregatesFilter<"InventoryTx"> | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringWithAggregatesFilter<"InventoryTx"> | string
-  amount?: Prisma.DecimalWithAggregatesFilter<"InventoryTx"> | runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: Prisma.IntNullableWithAggregatesFilter<"InventoryTx"> | number | null
-  handlerName?: Prisma.StringNullableWithAggregatesFilter<"InventoryTx"> | string | null
-  handlerContact?: Prisma.StringNullableWithAggregatesFilter<"InventoryTx"> | string | null
-  memo?: Prisma.StringNullableWithAggregatesFilter<"InventoryTx"> | string | null
   targetUnitId?: Prisma.IntNullableWithAggregatesFilter<"InventoryTx"> | number | null
-  refInboundId?: Prisma.IntNullableWithAggregatesFilter<"InventoryTx"> | number | null
+  qty?: Prisma.IntWithAggregatesFilter<"InventoryTx"> | number
+  unitPrice?: Prisma.DecimalNullableWithAggregatesFilter<"InventoryTx"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.DecimalNullableWithAggregatesFilter<"InventoryTx"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: Prisma.IntNullableWithAggregatesFilter<"InventoryTx"> | number | null
+  txReasonId?: Prisma.IntNullableWithAggregatesFilter<"InventoryTx"> | number | null
+  locationId?: Prisma.IntWithAggregatesFilter<"InventoryTx"> | number
+  userId?: Prisma.IntNullableWithAggregatesFilter<"InventoryTx"> | number | null
+  memo?: Prisma.StringNullableWithAggregatesFilter<"InventoryTx"> | string | null
+  refTxNo?: Prisma.StringNullableWithAggregatesFilter<"InventoryTx"> | string | null
   barcodeId?: Prisma.IntNullableWithAggregatesFilter<"InventoryTx"> | number | null
-  location?: Prisma.StringNullableWithAggregatesFilter<"InventoryTx"> | string | null
-  waferResistance?: Prisma.StringNullableWithAggregatesFilter<"InventoryTx"> | string | null
-  waferThickness?: Prisma.StringNullableWithAggregatesFilter<"InventoryTx"> | string | null
-  waferDirection?: Prisma.StringNullableWithAggregatesFilter<"InventoryTx"> | string | null
-  waferSurface?: Prisma.StringNullableWithAggregatesFilter<"InventoryTx"> | string | null
-  createdBy?: Prisma.IntNullableWithAggregatesFilter<"InventoryTx"> | number | null
-  createdAt?: Prisma.DateTimeWithAggregatesFilter<"InventoryTx"> | Date | string
-  updatedAt?: Prisma.DateTimeWithAggregatesFilter<"InventoryTx"> | Date | string
 }
 
 export type InventoryTxCreateInput = {
-  date?: Date | string
-  type: string
-  quantity: number
-  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: string
-  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  handlerName?: string | null
-  handlerContact?: string | null
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   memo?: string | null
-  location?: string | null
-  waferResistance?: string | null
-  waferThickness?: string | null
-  waferDirection?: string | null
-  waferSurface?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
+  refTxNo?: string | null
   item: Prisma.ItemCreateNestedOneWithoutInventoryTxsInput
-  partner?: Prisma.PartnerCreateNestedOneWithoutInventoryTxsInput
   targetUnit?: Prisma.TargetUnitCreateNestedOneWithoutInventoryTxsInput
-  refInbound?: Prisma.InventoryTxCreateNestedOneWithoutRefOutboundsInput
-  refOutbounds?: Prisma.InventoryTxCreateNestedManyWithoutRefInboundInput
+  partner?: Prisma.PartnerCreateNestedOneWithoutInventoryTxsInput
+  txReason?: Prisma.TxReasonCreateNestedOneWithoutInventoryTxsInput
+  location: Prisma.LocationCreateNestedOneWithoutInventoryTxsInput
+  user?: Prisma.UserCreateNestedOneWithoutInventoryTxsInput
   barcode?: Prisma.BarcodeCreateNestedOneWithoutInventoryTxsInput
-  creator?: Prisma.UserCreateNestedOneWithoutInventoryTxsInput
+  barcodeScans?: Prisma.BarcodeScanCreateNestedManyWithoutInventoryTxInput
 }
 
 export type InventoryTxUncheckedCreateInput = {
   id?: number
-  date?: Date | string
-  type: string
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
   itemId: number
-  quantity: number
-  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: string
-  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: number | null
-  handlerName?: string | null
-  handlerContact?: string | null
-  memo?: string | null
   targetUnitId?: number | null
-  refInboundId?: number | null
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: number | null
+  txReasonId?: number | null
+  locationId: number
+  userId?: number | null
+  memo?: string | null
+  refTxNo?: string | null
   barcodeId?: number | null
-  location?: string | null
-  waferResistance?: string | null
-  waferThickness?: string | null
-  waferDirection?: string | null
-  waferSurface?: string | null
-  createdBy?: number | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  refOutbounds?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutRefInboundInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutInventoryTxInput
 }
 
 export type InventoryTxUpdateInput = {
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   item?: Prisma.ItemUpdateOneRequiredWithoutInventoryTxsNestedInput
-  partner?: Prisma.PartnerUpdateOneWithoutInventoryTxsNestedInput
   targetUnit?: Prisma.TargetUnitUpdateOneWithoutInventoryTxsNestedInput
-  refInbound?: Prisma.InventoryTxUpdateOneWithoutRefOutboundsNestedInput
-  refOutbounds?: Prisma.InventoryTxUpdateManyWithoutRefInboundNestedInput
+  partner?: Prisma.PartnerUpdateOneWithoutInventoryTxsNestedInput
+  txReason?: Prisma.TxReasonUpdateOneWithoutInventoryTxsNestedInput
+  location?: Prisma.LocationUpdateOneRequiredWithoutInventoryTxsNestedInput
+  user?: Prisma.UserUpdateOneWithoutInventoryTxsNestedInput
   barcode?: Prisma.BarcodeUpdateOneWithoutInventoryTxsNestedInput
-  creator?: Prisma.UserUpdateOneWithoutInventoryTxsNestedInput
+  barcodeScans?: Prisma.BarcodeScanUpdateManyWithoutInventoryTxNestedInput
 }
 
 export type InventoryTxUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
   itemId?: Prisma.IntFieldUpdateOperationsInput | number
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetUnitId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  refInboundId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  txReasonId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  locationId?: Prisma.IntFieldUpdateOperationsInput | number
+  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdBy?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  refOutbounds?: Prisma.InventoryTxUncheckedUpdateManyWithoutRefInboundNestedInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutInventoryTxNestedInput
 }
 
 export type InventoryTxCreateManyInput = {
   id?: number
-  date?: Date | string
-  type: string
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
   itemId: number
-  quantity: number
-  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: string
-  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: number | null
-  handlerName?: string | null
-  handlerContact?: string | null
-  memo?: string | null
   targetUnitId?: number | null
-  refInboundId?: number | null
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: number | null
+  txReasonId?: number | null
+  locationId: number
+  userId?: number | null
+  memo?: string | null
+  refTxNo?: string | null
   barcodeId?: number | null
-  location?: string | null
-  waferResistance?: string | null
-  waferThickness?: string | null
-  waferDirection?: string | null
-  waferSurface?: string | null
-  createdBy?: number | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
 }
 
 export type InventoryTxUpdateManyMutationInput = {
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type InventoryTxUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
   itemId?: Prisma.IntFieldUpdateOperationsInput | number
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetUnitId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  refInboundId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  txReasonId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  locationId?: Prisma.IntFieldUpdateOperationsInput | number
+  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdBy?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type InventoryTxListRelationFilter = {
@@ -721,196 +594,177 @@ export type InventoryTxOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type InventoryTxNullableScalarRelationFilter = {
-  is?: Prisma.InventoryTxWhereInput | null
-  isNot?: Prisma.InventoryTxWhereInput | null
-}
-
 export type InventoryTxCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  date?: Prisma.SortOrder
-  type?: Prisma.SortOrder
+  txNo?: Prisma.SortOrder
+  txDate?: Prisma.SortOrder
+  txType?: Prisma.SortOrder
   itemId?: Prisma.SortOrder
-  quantity?: Prisma.SortOrder
+  targetUnitId?: Prisma.SortOrder
+  qty?: Prisma.SortOrder
   unitPrice?: Prisma.SortOrder
-  currency?: Prisma.SortOrder
   amount?: Prisma.SortOrder
   partnerId?: Prisma.SortOrder
-  handlerName?: Prisma.SortOrder
-  handlerContact?: Prisma.SortOrder
+  txReasonId?: Prisma.SortOrder
+  locationId?: Prisma.SortOrder
+  userId?: Prisma.SortOrder
   memo?: Prisma.SortOrder
-  targetUnitId?: Prisma.SortOrder
-  refInboundId?: Prisma.SortOrder
+  refTxNo?: Prisma.SortOrder
   barcodeId?: Prisma.SortOrder
-  location?: Prisma.SortOrder
-  waferResistance?: Prisma.SortOrder
-  waferThickness?: Prisma.SortOrder
-  waferDirection?: Prisma.SortOrder
-  waferSurface?: Prisma.SortOrder
-  createdBy?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
 }
 
 export type InventoryTxAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
   itemId?: Prisma.SortOrder
-  quantity?: Prisma.SortOrder
+  targetUnitId?: Prisma.SortOrder
+  qty?: Prisma.SortOrder
   unitPrice?: Prisma.SortOrder
   amount?: Prisma.SortOrder
   partnerId?: Prisma.SortOrder
-  targetUnitId?: Prisma.SortOrder
-  refInboundId?: Prisma.SortOrder
+  txReasonId?: Prisma.SortOrder
+  locationId?: Prisma.SortOrder
+  userId?: Prisma.SortOrder
   barcodeId?: Prisma.SortOrder
-  createdBy?: Prisma.SortOrder
 }
 
 export type InventoryTxMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  date?: Prisma.SortOrder
-  type?: Prisma.SortOrder
+  txNo?: Prisma.SortOrder
+  txDate?: Prisma.SortOrder
+  txType?: Prisma.SortOrder
   itemId?: Prisma.SortOrder
-  quantity?: Prisma.SortOrder
+  targetUnitId?: Prisma.SortOrder
+  qty?: Prisma.SortOrder
   unitPrice?: Prisma.SortOrder
-  currency?: Prisma.SortOrder
   amount?: Prisma.SortOrder
   partnerId?: Prisma.SortOrder
-  handlerName?: Prisma.SortOrder
-  handlerContact?: Prisma.SortOrder
+  txReasonId?: Prisma.SortOrder
+  locationId?: Prisma.SortOrder
+  userId?: Prisma.SortOrder
   memo?: Prisma.SortOrder
-  targetUnitId?: Prisma.SortOrder
-  refInboundId?: Prisma.SortOrder
+  refTxNo?: Prisma.SortOrder
   barcodeId?: Prisma.SortOrder
-  location?: Prisma.SortOrder
-  waferResistance?: Prisma.SortOrder
-  waferThickness?: Prisma.SortOrder
-  waferDirection?: Prisma.SortOrder
-  waferSurface?: Prisma.SortOrder
-  createdBy?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
 }
 
 export type InventoryTxMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  date?: Prisma.SortOrder
-  type?: Prisma.SortOrder
+  txNo?: Prisma.SortOrder
+  txDate?: Prisma.SortOrder
+  txType?: Prisma.SortOrder
   itemId?: Prisma.SortOrder
-  quantity?: Prisma.SortOrder
+  targetUnitId?: Prisma.SortOrder
+  qty?: Prisma.SortOrder
   unitPrice?: Prisma.SortOrder
-  currency?: Prisma.SortOrder
   amount?: Prisma.SortOrder
   partnerId?: Prisma.SortOrder
-  handlerName?: Prisma.SortOrder
-  handlerContact?: Prisma.SortOrder
+  txReasonId?: Prisma.SortOrder
+  locationId?: Prisma.SortOrder
+  userId?: Prisma.SortOrder
   memo?: Prisma.SortOrder
-  targetUnitId?: Prisma.SortOrder
-  refInboundId?: Prisma.SortOrder
+  refTxNo?: Prisma.SortOrder
   barcodeId?: Prisma.SortOrder
-  location?: Prisma.SortOrder
-  waferResistance?: Prisma.SortOrder
-  waferThickness?: Prisma.SortOrder
-  waferDirection?: Prisma.SortOrder
-  waferSurface?: Prisma.SortOrder
-  createdBy?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
 }
 
 export type InventoryTxSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
   itemId?: Prisma.SortOrder
-  quantity?: Prisma.SortOrder
+  targetUnitId?: Prisma.SortOrder
+  qty?: Prisma.SortOrder
   unitPrice?: Prisma.SortOrder
   amount?: Prisma.SortOrder
   partnerId?: Prisma.SortOrder
-  targetUnitId?: Prisma.SortOrder
-  refInboundId?: Prisma.SortOrder
+  txReasonId?: Prisma.SortOrder
+  locationId?: Prisma.SortOrder
+  userId?: Prisma.SortOrder
   barcodeId?: Prisma.SortOrder
-  createdBy?: Prisma.SortOrder
 }
 
-export type InventoryTxCreateNestedManyWithoutCreatorInput = {
-  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutCreatorInput, Prisma.InventoryTxUncheckedCreateWithoutCreatorInput> | Prisma.InventoryTxCreateWithoutCreatorInput[] | Prisma.InventoryTxUncheckedCreateWithoutCreatorInput[]
-  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutCreatorInput | Prisma.InventoryTxCreateOrConnectWithoutCreatorInput[]
-  createMany?: Prisma.InventoryTxCreateManyCreatorInputEnvelope
+export type InventoryTxNullableScalarRelationFilter = {
+  is?: Prisma.InventoryTxWhereInput | null
+  isNot?: Prisma.InventoryTxWhereInput | null
+}
+
+export type InventoryTxCreateNestedManyWithoutLocationInput = {
+  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutLocationInput, Prisma.InventoryTxUncheckedCreateWithoutLocationInput> | Prisma.InventoryTxCreateWithoutLocationInput[] | Prisma.InventoryTxUncheckedCreateWithoutLocationInput[]
+  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutLocationInput | Prisma.InventoryTxCreateOrConnectWithoutLocationInput[]
+  createMany?: Prisma.InventoryTxCreateManyLocationInputEnvelope
   connect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
 }
 
-export type InventoryTxUncheckedCreateNestedManyWithoutCreatorInput = {
-  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutCreatorInput, Prisma.InventoryTxUncheckedCreateWithoutCreatorInput> | Prisma.InventoryTxCreateWithoutCreatorInput[] | Prisma.InventoryTxUncheckedCreateWithoutCreatorInput[]
-  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutCreatorInput | Prisma.InventoryTxCreateOrConnectWithoutCreatorInput[]
-  createMany?: Prisma.InventoryTxCreateManyCreatorInputEnvelope
+export type InventoryTxUncheckedCreateNestedManyWithoutLocationInput = {
+  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutLocationInput, Prisma.InventoryTxUncheckedCreateWithoutLocationInput> | Prisma.InventoryTxCreateWithoutLocationInput[] | Prisma.InventoryTxUncheckedCreateWithoutLocationInput[]
+  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutLocationInput | Prisma.InventoryTxCreateOrConnectWithoutLocationInput[]
+  createMany?: Prisma.InventoryTxCreateManyLocationInputEnvelope
   connect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
 }
 
-export type InventoryTxUpdateManyWithoutCreatorNestedInput = {
-  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutCreatorInput, Prisma.InventoryTxUncheckedCreateWithoutCreatorInput> | Prisma.InventoryTxCreateWithoutCreatorInput[] | Prisma.InventoryTxUncheckedCreateWithoutCreatorInput[]
-  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutCreatorInput | Prisma.InventoryTxCreateOrConnectWithoutCreatorInput[]
-  upsert?: Prisma.InventoryTxUpsertWithWhereUniqueWithoutCreatorInput | Prisma.InventoryTxUpsertWithWhereUniqueWithoutCreatorInput[]
-  createMany?: Prisma.InventoryTxCreateManyCreatorInputEnvelope
+export type InventoryTxUpdateManyWithoutLocationNestedInput = {
+  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutLocationInput, Prisma.InventoryTxUncheckedCreateWithoutLocationInput> | Prisma.InventoryTxCreateWithoutLocationInput[] | Prisma.InventoryTxUncheckedCreateWithoutLocationInput[]
+  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutLocationInput | Prisma.InventoryTxCreateOrConnectWithoutLocationInput[]
+  upsert?: Prisma.InventoryTxUpsertWithWhereUniqueWithoutLocationInput | Prisma.InventoryTxUpsertWithWhereUniqueWithoutLocationInput[]
+  createMany?: Prisma.InventoryTxCreateManyLocationInputEnvelope
   set?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
   disconnect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
   delete?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
   connect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
-  update?: Prisma.InventoryTxUpdateWithWhereUniqueWithoutCreatorInput | Prisma.InventoryTxUpdateWithWhereUniqueWithoutCreatorInput[]
-  updateMany?: Prisma.InventoryTxUpdateManyWithWhereWithoutCreatorInput | Prisma.InventoryTxUpdateManyWithWhereWithoutCreatorInput[]
+  update?: Prisma.InventoryTxUpdateWithWhereUniqueWithoutLocationInput | Prisma.InventoryTxUpdateWithWhereUniqueWithoutLocationInput[]
+  updateMany?: Prisma.InventoryTxUpdateManyWithWhereWithoutLocationInput | Prisma.InventoryTxUpdateManyWithWhereWithoutLocationInput[]
   deleteMany?: Prisma.InventoryTxScalarWhereInput | Prisma.InventoryTxScalarWhereInput[]
 }
 
-export type InventoryTxUncheckedUpdateManyWithoutCreatorNestedInput = {
-  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutCreatorInput, Prisma.InventoryTxUncheckedCreateWithoutCreatorInput> | Prisma.InventoryTxCreateWithoutCreatorInput[] | Prisma.InventoryTxUncheckedCreateWithoutCreatorInput[]
-  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutCreatorInput | Prisma.InventoryTxCreateOrConnectWithoutCreatorInput[]
-  upsert?: Prisma.InventoryTxUpsertWithWhereUniqueWithoutCreatorInput | Prisma.InventoryTxUpsertWithWhereUniqueWithoutCreatorInput[]
-  createMany?: Prisma.InventoryTxCreateManyCreatorInputEnvelope
+export type InventoryTxUncheckedUpdateManyWithoutLocationNestedInput = {
+  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutLocationInput, Prisma.InventoryTxUncheckedCreateWithoutLocationInput> | Prisma.InventoryTxCreateWithoutLocationInput[] | Prisma.InventoryTxUncheckedCreateWithoutLocationInput[]
+  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutLocationInput | Prisma.InventoryTxCreateOrConnectWithoutLocationInput[]
+  upsert?: Prisma.InventoryTxUpsertWithWhereUniqueWithoutLocationInput | Prisma.InventoryTxUpsertWithWhereUniqueWithoutLocationInput[]
+  createMany?: Prisma.InventoryTxCreateManyLocationInputEnvelope
   set?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
   disconnect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
   delete?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
   connect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
-  update?: Prisma.InventoryTxUpdateWithWhereUniqueWithoutCreatorInput | Prisma.InventoryTxUpdateWithWhereUniqueWithoutCreatorInput[]
-  updateMany?: Prisma.InventoryTxUpdateManyWithWhereWithoutCreatorInput | Prisma.InventoryTxUpdateManyWithWhereWithoutCreatorInput[]
+  update?: Prisma.InventoryTxUpdateWithWhereUniqueWithoutLocationInput | Prisma.InventoryTxUpdateWithWhereUniqueWithoutLocationInput[]
+  updateMany?: Prisma.InventoryTxUpdateManyWithWhereWithoutLocationInput | Prisma.InventoryTxUpdateManyWithWhereWithoutLocationInput[]
   deleteMany?: Prisma.InventoryTxScalarWhereInput | Prisma.InventoryTxScalarWhereInput[]
 }
 
-export type InventoryTxCreateNestedManyWithoutItemInput = {
-  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutItemInput, Prisma.InventoryTxUncheckedCreateWithoutItemInput> | Prisma.InventoryTxCreateWithoutItemInput[] | Prisma.InventoryTxUncheckedCreateWithoutItemInput[]
-  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutItemInput | Prisma.InventoryTxCreateOrConnectWithoutItemInput[]
-  createMany?: Prisma.InventoryTxCreateManyItemInputEnvelope
+export type InventoryTxCreateNestedManyWithoutTxReasonInput = {
+  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutTxReasonInput, Prisma.InventoryTxUncheckedCreateWithoutTxReasonInput> | Prisma.InventoryTxCreateWithoutTxReasonInput[] | Prisma.InventoryTxUncheckedCreateWithoutTxReasonInput[]
+  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutTxReasonInput | Prisma.InventoryTxCreateOrConnectWithoutTxReasonInput[]
+  createMany?: Prisma.InventoryTxCreateManyTxReasonInputEnvelope
   connect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
 }
 
-export type InventoryTxUncheckedCreateNestedManyWithoutItemInput = {
-  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutItemInput, Prisma.InventoryTxUncheckedCreateWithoutItemInput> | Prisma.InventoryTxCreateWithoutItemInput[] | Prisma.InventoryTxUncheckedCreateWithoutItemInput[]
-  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutItemInput | Prisma.InventoryTxCreateOrConnectWithoutItemInput[]
-  createMany?: Prisma.InventoryTxCreateManyItemInputEnvelope
+export type InventoryTxUncheckedCreateNestedManyWithoutTxReasonInput = {
+  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutTxReasonInput, Prisma.InventoryTxUncheckedCreateWithoutTxReasonInput> | Prisma.InventoryTxCreateWithoutTxReasonInput[] | Prisma.InventoryTxUncheckedCreateWithoutTxReasonInput[]
+  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutTxReasonInput | Prisma.InventoryTxCreateOrConnectWithoutTxReasonInput[]
+  createMany?: Prisma.InventoryTxCreateManyTxReasonInputEnvelope
   connect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
 }
 
-export type InventoryTxUpdateManyWithoutItemNestedInput = {
-  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutItemInput, Prisma.InventoryTxUncheckedCreateWithoutItemInput> | Prisma.InventoryTxCreateWithoutItemInput[] | Prisma.InventoryTxUncheckedCreateWithoutItemInput[]
-  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutItemInput | Prisma.InventoryTxCreateOrConnectWithoutItemInput[]
-  upsert?: Prisma.InventoryTxUpsertWithWhereUniqueWithoutItemInput | Prisma.InventoryTxUpsertWithWhereUniqueWithoutItemInput[]
-  createMany?: Prisma.InventoryTxCreateManyItemInputEnvelope
+export type InventoryTxUpdateManyWithoutTxReasonNestedInput = {
+  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutTxReasonInput, Prisma.InventoryTxUncheckedCreateWithoutTxReasonInput> | Prisma.InventoryTxCreateWithoutTxReasonInput[] | Prisma.InventoryTxUncheckedCreateWithoutTxReasonInput[]
+  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutTxReasonInput | Prisma.InventoryTxCreateOrConnectWithoutTxReasonInput[]
+  upsert?: Prisma.InventoryTxUpsertWithWhereUniqueWithoutTxReasonInput | Prisma.InventoryTxUpsertWithWhereUniqueWithoutTxReasonInput[]
+  createMany?: Prisma.InventoryTxCreateManyTxReasonInputEnvelope
   set?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
   disconnect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
   delete?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
   connect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
-  update?: Prisma.InventoryTxUpdateWithWhereUniqueWithoutItemInput | Prisma.InventoryTxUpdateWithWhereUniqueWithoutItemInput[]
-  updateMany?: Prisma.InventoryTxUpdateManyWithWhereWithoutItemInput | Prisma.InventoryTxUpdateManyWithWhereWithoutItemInput[]
+  update?: Prisma.InventoryTxUpdateWithWhereUniqueWithoutTxReasonInput | Prisma.InventoryTxUpdateWithWhereUniqueWithoutTxReasonInput[]
+  updateMany?: Prisma.InventoryTxUpdateManyWithWhereWithoutTxReasonInput | Prisma.InventoryTxUpdateManyWithWhereWithoutTxReasonInput[]
   deleteMany?: Prisma.InventoryTxScalarWhereInput | Prisma.InventoryTxScalarWhereInput[]
 }
 
-export type InventoryTxUncheckedUpdateManyWithoutItemNestedInput = {
-  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutItemInput, Prisma.InventoryTxUncheckedCreateWithoutItemInput> | Prisma.InventoryTxCreateWithoutItemInput[] | Prisma.InventoryTxUncheckedCreateWithoutItemInput[]
-  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutItemInput | Prisma.InventoryTxCreateOrConnectWithoutItemInput[]
-  upsert?: Prisma.InventoryTxUpsertWithWhereUniqueWithoutItemInput | Prisma.InventoryTxUpsertWithWhereUniqueWithoutItemInput[]
-  createMany?: Prisma.InventoryTxCreateManyItemInputEnvelope
+export type InventoryTxUncheckedUpdateManyWithoutTxReasonNestedInput = {
+  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutTxReasonInput, Prisma.InventoryTxUncheckedCreateWithoutTxReasonInput> | Prisma.InventoryTxCreateWithoutTxReasonInput[] | Prisma.InventoryTxUncheckedCreateWithoutTxReasonInput[]
+  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutTxReasonInput | Prisma.InventoryTxCreateOrConnectWithoutTxReasonInput[]
+  upsert?: Prisma.InventoryTxUpsertWithWhereUniqueWithoutTxReasonInput | Prisma.InventoryTxUpsertWithWhereUniqueWithoutTxReasonInput[]
+  createMany?: Prisma.InventoryTxCreateManyTxReasonInputEnvelope
   set?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
   disconnect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
   delete?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
   connect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
-  update?: Prisma.InventoryTxUpdateWithWhereUniqueWithoutItemInput | Prisma.InventoryTxUpdateWithWhereUniqueWithoutItemInput[]
-  updateMany?: Prisma.InventoryTxUpdateManyWithWhereWithoutItemInput | Prisma.InventoryTxUpdateManyWithWhereWithoutItemInput[]
+  update?: Prisma.InventoryTxUpdateWithWhereUniqueWithoutTxReasonInput | Prisma.InventoryTxUpdateWithWhereUniqueWithoutTxReasonInput[]
+  updateMany?: Prisma.InventoryTxUpdateManyWithWhereWithoutTxReasonInput | Prisma.InventoryTxUpdateManyWithWhereWithoutTxReasonInput[]
   deleteMany?: Prisma.InventoryTxScalarWhereInput | Prisma.InventoryTxScalarWhereInput[]
 }
 
@@ -953,6 +807,90 @@ export type InventoryTxUncheckedUpdateManyWithoutPartnerNestedInput = {
   connect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
   update?: Prisma.InventoryTxUpdateWithWhereUniqueWithoutPartnerInput | Prisma.InventoryTxUpdateWithWhereUniqueWithoutPartnerInput[]
   updateMany?: Prisma.InventoryTxUpdateManyWithWhereWithoutPartnerInput | Prisma.InventoryTxUpdateManyWithWhereWithoutPartnerInput[]
+  deleteMany?: Prisma.InventoryTxScalarWhereInput | Prisma.InventoryTxScalarWhereInput[]
+}
+
+export type InventoryTxCreateNestedManyWithoutUserInput = {
+  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutUserInput, Prisma.InventoryTxUncheckedCreateWithoutUserInput> | Prisma.InventoryTxCreateWithoutUserInput[] | Prisma.InventoryTxUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutUserInput | Prisma.InventoryTxCreateOrConnectWithoutUserInput[]
+  createMany?: Prisma.InventoryTxCreateManyUserInputEnvelope
+  connect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
+}
+
+export type InventoryTxUncheckedCreateNestedManyWithoutUserInput = {
+  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutUserInput, Prisma.InventoryTxUncheckedCreateWithoutUserInput> | Prisma.InventoryTxCreateWithoutUserInput[] | Prisma.InventoryTxUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutUserInput | Prisma.InventoryTxCreateOrConnectWithoutUserInput[]
+  createMany?: Prisma.InventoryTxCreateManyUserInputEnvelope
+  connect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
+}
+
+export type InventoryTxUpdateManyWithoutUserNestedInput = {
+  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutUserInput, Prisma.InventoryTxUncheckedCreateWithoutUserInput> | Prisma.InventoryTxCreateWithoutUserInput[] | Prisma.InventoryTxUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutUserInput | Prisma.InventoryTxCreateOrConnectWithoutUserInput[]
+  upsert?: Prisma.InventoryTxUpsertWithWhereUniqueWithoutUserInput | Prisma.InventoryTxUpsertWithWhereUniqueWithoutUserInput[]
+  createMany?: Prisma.InventoryTxCreateManyUserInputEnvelope
+  set?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
+  disconnect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
+  delete?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
+  connect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
+  update?: Prisma.InventoryTxUpdateWithWhereUniqueWithoutUserInput | Prisma.InventoryTxUpdateWithWhereUniqueWithoutUserInput[]
+  updateMany?: Prisma.InventoryTxUpdateManyWithWhereWithoutUserInput | Prisma.InventoryTxUpdateManyWithWhereWithoutUserInput[]
+  deleteMany?: Prisma.InventoryTxScalarWhereInput | Prisma.InventoryTxScalarWhereInput[]
+}
+
+export type InventoryTxUncheckedUpdateManyWithoutUserNestedInput = {
+  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutUserInput, Prisma.InventoryTxUncheckedCreateWithoutUserInput> | Prisma.InventoryTxCreateWithoutUserInput[] | Prisma.InventoryTxUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutUserInput | Prisma.InventoryTxCreateOrConnectWithoutUserInput[]
+  upsert?: Prisma.InventoryTxUpsertWithWhereUniqueWithoutUserInput | Prisma.InventoryTxUpsertWithWhereUniqueWithoutUserInput[]
+  createMany?: Prisma.InventoryTxCreateManyUserInputEnvelope
+  set?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
+  disconnect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
+  delete?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
+  connect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
+  update?: Prisma.InventoryTxUpdateWithWhereUniqueWithoutUserInput | Prisma.InventoryTxUpdateWithWhereUniqueWithoutUserInput[]
+  updateMany?: Prisma.InventoryTxUpdateManyWithWhereWithoutUserInput | Prisma.InventoryTxUpdateManyWithWhereWithoutUserInput[]
+  deleteMany?: Prisma.InventoryTxScalarWhereInput | Prisma.InventoryTxScalarWhereInput[]
+}
+
+export type InventoryTxCreateNestedManyWithoutItemInput = {
+  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutItemInput, Prisma.InventoryTxUncheckedCreateWithoutItemInput> | Prisma.InventoryTxCreateWithoutItemInput[] | Prisma.InventoryTxUncheckedCreateWithoutItemInput[]
+  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutItemInput | Prisma.InventoryTxCreateOrConnectWithoutItemInput[]
+  createMany?: Prisma.InventoryTxCreateManyItemInputEnvelope
+  connect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
+}
+
+export type InventoryTxUncheckedCreateNestedManyWithoutItemInput = {
+  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutItemInput, Prisma.InventoryTxUncheckedCreateWithoutItemInput> | Prisma.InventoryTxCreateWithoutItemInput[] | Prisma.InventoryTxUncheckedCreateWithoutItemInput[]
+  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutItemInput | Prisma.InventoryTxCreateOrConnectWithoutItemInput[]
+  createMany?: Prisma.InventoryTxCreateManyItemInputEnvelope
+  connect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
+}
+
+export type InventoryTxUpdateManyWithoutItemNestedInput = {
+  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutItemInput, Prisma.InventoryTxUncheckedCreateWithoutItemInput> | Prisma.InventoryTxCreateWithoutItemInput[] | Prisma.InventoryTxUncheckedCreateWithoutItemInput[]
+  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutItemInput | Prisma.InventoryTxCreateOrConnectWithoutItemInput[]
+  upsert?: Prisma.InventoryTxUpsertWithWhereUniqueWithoutItemInput | Prisma.InventoryTxUpsertWithWhereUniqueWithoutItemInput[]
+  createMany?: Prisma.InventoryTxCreateManyItemInputEnvelope
+  set?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
+  disconnect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
+  delete?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
+  connect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
+  update?: Prisma.InventoryTxUpdateWithWhereUniqueWithoutItemInput | Prisma.InventoryTxUpdateWithWhereUniqueWithoutItemInput[]
+  updateMany?: Prisma.InventoryTxUpdateManyWithWhereWithoutItemInput | Prisma.InventoryTxUpdateManyWithWhereWithoutItemInput[]
+  deleteMany?: Prisma.InventoryTxScalarWhereInput | Prisma.InventoryTxScalarWhereInput[]
+}
+
+export type InventoryTxUncheckedUpdateManyWithoutItemNestedInput = {
+  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutItemInput, Prisma.InventoryTxUncheckedCreateWithoutItemInput> | Prisma.InventoryTxCreateWithoutItemInput[] | Prisma.InventoryTxUncheckedCreateWithoutItemInput[]
+  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutItemInput | Prisma.InventoryTxCreateOrConnectWithoutItemInput[]
+  upsert?: Prisma.InventoryTxUpsertWithWhereUniqueWithoutItemInput | Prisma.InventoryTxUpsertWithWhereUniqueWithoutItemInput[]
+  createMany?: Prisma.InventoryTxCreateManyItemInputEnvelope
+  set?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
+  disconnect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
+  delete?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
+  connect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
+  update?: Prisma.InventoryTxUpdateWithWhereUniqueWithoutItemInput | Prisma.InventoryTxUpdateWithWhereUniqueWithoutItemInput[]
+  updateMany?: Prisma.InventoryTxUpdateManyWithWhereWithoutItemInput | Prisma.InventoryTxUpdateManyWithWhereWithoutItemInput[]
   deleteMany?: Prisma.InventoryTxScalarWhereInput | Prisma.InventoryTxScalarWhereInput[]
 }
 
@@ -1040,147 +978,83 @@ export type InventoryTxUncheckedUpdateManyWithoutBarcodeNestedInput = {
   deleteMany?: Prisma.InventoryTxScalarWhereInput | Prisma.InventoryTxScalarWhereInput[]
 }
 
-export type InventoryTxCreateNestedOneWithoutRefOutboundsInput = {
-  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutRefOutboundsInput, Prisma.InventoryTxUncheckedCreateWithoutRefOutboundsInput>
-  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutRefOutboundsInput
+export type InventoryTxCreateNestedOneWithoutBarcodeScansInput = {
+  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutBarcodeScansInput, Prisma.InventoryTxUncheckedCreateWithoutBarcodeScansInput>
+  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutBarcodeScansInput
   connect?: Prisma.InventoryTxWhereUniqueInput
 }
 
-export type InventoryTxCreateNestedManyWithoutRefInboundInput = {
-  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutRefInboundInput, Prisma.InventoryTxUncheckedCreateWithoutRefInboundInput> | Prisma.InventoryTxCreateWithoutRefInboundInput[] | Prisma.InventoryTxUncheckedCreateWithoutRefInboundInput[]
-  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutRefInboundInput | Prisma.InventoryTxCreateOrConnectWithoutRefInboundInput[]
-  createMany?: Prisma.InventoryTxCreateManyRefInboundInputEnvelope
-  connect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
-}
-
-export type InventoryTxUncheckedCreateNestedManyWithoutRefInboundInput = {
-  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutRefInboundInput, Prisma.InventoryTxUncheckedCreateWithoutRefInboundInput> | Prisma.InventoryTxCreateWithoutRefInboundInput[] | Prisma.InventoryTxUncheckedCreateWithoutRefInboundInput[]
-  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutRefInboundInput | Prisma.InventoryTxCreateOrConnectWithoutRefInboundInput[]
-  createMany?: Prisma.InventoryTxCreateManyRefInboundInputEnvelope
-  connect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
-}
-
-export type DecimalFieldUpdateOperationsInput = {
-  set?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  increment?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  decrement?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
-}
-
-export type InventoryTxUpdateOneWithoutRefOutboundsNestedInput = {
-  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutRefOutboundsInput, Prisma.InventoryTxUncheckedCreateWithoutRefOutboundsInput>
-  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutRefOutboundsInput
-  upsert?: Prisma.InventoryTxUpsertWithoutRefOutboundsInput
+export type InventoryTxUpdateOneWithoutBarcodeScansNestedInput = {
+  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutBarcodeScansInput, Prisma.InventoryTxUncheckedCreateWithoutBarcodeScansInput>
+  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutBarcodeScansInput
+  upsert?: Prisma.InventoryTxUpsertWithoutBarcodeScansInput
   disconnect?: Prisma.InventoryTxWhereInput | boolean
   delete?: Prisma.InventoryTxWhereInput | boolean
   connect?: Prisma.InventoryTxWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.InventoryTxUpdateToOneWithWhereWithoutRefOutboundsInput, Prisma.InventoryTxUpdateWithoutRefOutboundsInput>, Prisma.InventoryTxUncheckedUpdateWithoutRefOutboundsInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.InventoryTxUpdateToOneWithWhereWithoutBarcodeScansInput, Prisma.InventoryTxUpdateWithoutBarcodeScansInput>, Prisma.InventoryTxUncheckedUpdateWithoutBarcodeScansInput>
 }
 
-export type InventoryTxUpdateManyWithoutRefInboundNestedInput = {
-  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutRefInboundInput, Prisma.InventoryTxUncheckedCreateWithoutRefInboundInput> | Prisma.InventoryTxCreateWithoutRefInboundInput[] | Prisma.InventoryTxUncheckedCreateWithoutRefInboundInput[]
-  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutRefInboundInput | Prisma.InventoryTxCreateOrConnectWithoutRefInboundInput[]
-  upsert?: Prisma.InventoryTxUpsertWithWhereUniqueWithoutRefInboundInput | Prisma.InventoryTxUpsertWithWhereUniqueWithoutRefInboundInput[]
-  createMany?: Prisma.InventoryTxCreateManyRefInboundInputEnvelope
-  set?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
-  disconnect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
-  delete?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
-  connect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
-  update?: Prisma.InventoryTxUpdateWithWhereUniqueWithoutRefInboundInput | Prisma.InventoryTxUpdateWithWhereUniqueWithoutRefInboundInput[]
-  updateMany?: Prisma.InventoryTxUpdateManyWithWhereWithoutRefInboundInput | Prisma.InventoryTxUpdateManyWithWhereWithoutRefInboundInput[]
-  deleteMany?: Prisma.InventoryTxScalarWhereInput | Prisma.InventoryTxScalarWhereInput[]
-}
-
-export type InventoryTxUncheckedUpdateManyWithoutRefInboundNestedInput = {
-  create?: Prisma.XOR<Prisma.InventoryTxCreateWithoutRefInboundInput, Prisma.InventoryTxUncheckedCreateWithoutRefInboundInput> | Prisma.InventoryTxCreateWithoutRefInboundInput[] | Prisma.InventoryTxUncheckedCreateWithoutRefInboundInput[]
-  connectOrCreate?: Prisma.InventoryTxCreateOrConnectWithoutRefInboundInput | Prisma.InventoryTxCreateOrConnectWithoutRefInboundInput[]
-  upsert?: Prisma.InventoryTxUpsertWithWhereUniqueWithoutRefInboundInput | Prisma.InventoryTxUpsertWithWhereUniqueWithoutRefInboundInput[]
-  createMany?: Prisma.InventoryTxCreateManyRefInboundInputEnvelope
-  set?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
-  disconnect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
-  delete?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
-  connect?: Prisma.InventoryTxWhereUniqueInput | Prisma.InventoryTxWhereUniqueInput[]
-  update?: Prisma.InventoryTxUpdateWithWhereUniqueWithoutRefInboundInput | Prisma.InventoryTxUpdateWithWhereUniqueWithoutRefInboundInput[]
-  updateMany?: Prisma.InventoryTxUpdateManyWithWhereWithoutRefInboundInput | Prisma.InventoryTxUpdateManyWithWhereWithoutRefInboundInput[]
-  deleteMany?: Prisma.InventoryTxScalarWhereInput | Prisma.InventoryTxScalarWhereInput[]
-}
-
-export type InventoryTxCreateWithoutCreatorInput = {
-  date?: Date | string
-  type: string
-  quantity: number
-  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: string
-  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  handlerName?: string | null
-  handlerContact?: string | null
+export type InventoryTxCreateWithoutLocationInput = {
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   memo?: string | null
-  location?: string | null
-  waferResistance?: string | null
-  waferThickness?: string | null
-  waferDirection?: string | null
-  waferSurface?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
+  refTxNo?: string | null
   item: Prisma.ItemCreateNestedOneWithoutInventoryTxsInput
-  partner?: Prisma.PartnerCreateNestedOneWithoutInventoryTxsInput
   targetUnit?: Prisma.TargetUnitCreateNestedOneWithoutInventoryTxsInput
-  refInbound?: Prisma.InventoryTxCreateNestedOneWithoutRefOutboundsInput
-  refOutbounds?: Prisma.InventoryTxCreateNestedManyWithoutRefInboundInput
+  partner?: Prisma.PartnerCreateNestedOneWithoutInventoryTxsInput
+  txReason?: Prisma.TxReasonCreateNestedOneWithoutInventoryTxsInput
+  user?: Prisma.UserCreateNestedOneWithoutInventoryTxsInput
   barcode?: Prisma.BarcodeCreateNestedOneWithoutInventoryTxsInput
+  barcodeScans?: Prisma.BarcodeScanCreateNestedManyWithoutInventoryTxInput
 }
 
-export type InventoryTxUncheckedCreateWithoutCreatorInput = {
+export type InventoryTxUncheckedCreateWithoutLocationInput = {
   id?: number
-  date?: Date | string
-  type: string
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
   itemId: number
-  quantity: number
-  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: string
-  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: number | null
-  handlerName?: string | null
-  handlerContact?: string | null
-  memo?: string | null
   targetUnitId?: number | null
-  refInboundId?: number | null
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: number | null
+  txReasonId?: number | null
+  userId?: number | null
+  memo?: string | null
+  refTxNo?: string | null
   barcodeId?: number | null
-  location?: string | null
-  waferResistance?: string | null
-  waferThickness?: string | null
-  waferDirection?: string | null
-  waferSurface?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  refOutbounds?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutRefInboundInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutInventoryTxInput
 }
 
-export type InventoryTxCreateOrConnectWithoutCreatorInput = {
+export type InventoryTxCreateOrConnectWithoutLocationInput = {
   where: Prisma.InventoryTxWhereUniqueInput
-  create: Prisma.XOR<Prisma.InventoryTxCreateWithoutCreatorInput, Prisma.InventoryTxUncheckedCreateWithoutCreatorInput>
+  create: Prisma.XOR<Prisma.InventoryTxCreateWithoutLocationInput, Prisma.InventoryTxUncheckedCreateWithoutLocationInput>
 }
 
-export type InventoryTxCreateManyCreatorInputEnvelope = {
-  data: Prisma.InventoryTxCreateManyCreatorInput | Prisma.InventoryTxCreateManyCreatorInput[]
+export type InventoryTxCreateManyLocationInputEnvelope = {
+  data: Prisma.InventoryTxCreateManyLocationInput | Prisma.InventoryTxCreateManyLocationInput[]
   skipDuplicates?: boolean
 }
 
-export type InventoryTxUpsertWithWhereUniqueWithoutCreatorInput = {
+export type InventoryTxUpsertWithWhereUniqueWithoutLocationInput = {
   where: Prisma.InventoryTxWhereUniqueInput
-  update: Prisma.XOR<Prisma.InventoryTxUpdateWithoutCreatorInput, Prisma.InventoryTxUncheckedUpdateWithoutCreatorInput>
-  create: Prisma.XOR<Prisma.InventoryTxCreateWithoutCreatorInput, Prisma.InventoryTxUncheckedCreateWithoutCreatorInput>
+  update: Prisma.XOR<Prisma.InventoryTxUpdateWithoutLocationInput, Prisma.InventoryTxUncheckedUpdateWithoutLocationInput>
+  create: Prisma.XOR<Prisma.InventoryTxCreateWithoutLocationInput, Prisma.InventoryTxUncheckedCreateWithoutLocationInput>
 }
 
-export type InventoryTxUpdateWithWhereUniqueWithoutCreatorInput = {
+export type InventoryTxUpdateWithWhereUniqueWithoutLocationInput = {
   where: Prisma.InventoryTxWhereUniqueInput
-  data: Prisma.XOR<Prisma.InventoryTxUpdateWithoutCreatorInput, Prisma.InventoryTxUncheckedUpdateWithoutCreatorInput>
+  data: Prisma.XOR<Prisma.InventoryTxUpdateWithoutLocationInput, Prisma.InventoryTxUncheckedUpdateWithoutLocationInput>
 }
 
-export type InventoryTxUpdateManyWithWhereWithoutCreatorInput = {
+export type InventoryTxUpdateManyWithWhereWithoutLocationInput = {
   where: Prisma.InventoryTxScalarWhereInput
-  data: Prisma.XOR<Prisma.InventoryTxUpdateManyMutationInput, Prisma.InventoryTxUncheckedUpdateManyWithoutCreatorInput>
+  data: Prisma.XOR<Prisma.InventoryTxUpdateManyMutationInput, Prisma.InventoryTxUncheckedUpdateManyWithoutLocationInput>
 }
 
 export type InventoryTxScalarWhereInput = {
@@ -1188,156 +1062,121 @@ export type InventoryTxScalarWhereInput = {
   OR?: Prisma.InventoryTxScalarWhereInput[]
   NOT?: Prisma.InventoryTxScalarWhereInput | Prisma.InventoryTxScalarWhereInput[]
   id?: Prisma.IntFilter<"InventoryTx"> | number
-  date?: Prisma.DateTimeFilter<"InventoryTx"> | Date | string
-  type?: Prisma.StringFilter<"InventoryTx"> | string
+  txNo?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
+  txDate?: Prisma.DateTimeFilter<"InventoryTx"> | Date | string
+  txType?: Prisma.StringFilter<"InventoryTx"> | string
   itemId?: Prisma.IntFilter<"InventoryTx"> | number
-  quantity?: Prisma.IntFilter<"InventoryTx"> | number
-  unitPrice?: Prisma.DecimalFilter<"InventoryTx"> | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFilter<"InventoryTx"> | string
-  amount?: Prisma.DecimalFilter<"InventoryTx"> | runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
-  handlerName?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
-  handlerContact?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
-  memo?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
   targetUnitId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
-  refInboundId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
+  qty?: Prisma.IntFilter<"InventoryTx"> | number
+  unitPrice?: Prisma.DecimalNullableFilter<"InventoryTx"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.DecimalNullableFilter<"InventoryTx"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
+  txReasonId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
+  locationId?: Prisma.IntFilter<"InventoryTx"> | number
+  userId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
+  memo?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
+  refTxNo?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
   barcodeId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
-  location?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
-  waferResistance?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
-  waferThickness?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
-  waferDirection?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
-  waferSurface?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
-  createdBy?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
-  createdAt?: Prisma.DateTimeFilter<"InventoryTx"> | Date | string
-  updatedAt?: Prisma.DateTimeFilter<"InventoryTx"> | Date | string
 }
 
-export type InventoryTxCreateWithoutItemInput = {
-  date?: Date | string
-  type: string
-  quantity: number
-  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: string
-  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  handlerName?: string | null
-  handlerContact?: string | null
+export type InventoryTxCreateWithoutTxReasonInput = {
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   memo?: string | null
-  location?: string | null
-  waferResistance?: string | null
-  waferThickness?: string | null
-  waferDirection?: string | null
-  waferSurface?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  partner?: Prisma.PartnerCreateNestedOneWithoutInventoryTxsInput
+  refTxNo?: string | null
+  item: Prisma.ItemCreateNestedOneWithoutInventoryTxsInput
   targetUnit?: Prisma.TargetUnitCreateNestedOneWithoutInventoryTxsInput
-  refInbound?: Prisma.InventoryTxCreateNestedOneWithoutRefOutboundsInput
-  refOutbounds?: Prisma.InventoryTxCreateNestedManyWithoutRefInboundInput
+  partner?: Prisma.PartnerCreateNestedOneWithoutInventoryTxsInput
+  location: Prisma.LocationCreateNestedOneWithoutInventoryTxsInput
+  user?: Prisma.UserCreateNestedOneWithoutInventoryTxsInput
   barcode?: Prisma.BarcodeCreateNestedOneWithoutInventoryTxsInput
-  creator?: Prisma.UserCreateNestedOneWithoutInventoryTxsInput
+  barcodeScans?: Prisma.BarcodeScanCreateNestedManyWithoutInventoryTxInput
 }
 
-export type InventoryTxUncheckedCreateWithoutItemInput = {
+export type InventoryTxUncheckedCreateWithoutTxReasonInput = {
   id?: number
-  date?: Date | string
-  type: string
-  quantity: number
-  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: string
-  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: number | null
-  handlerName?: string | null
-  handlerContact?: string | null
-  memo?: string | null
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
+  itemId: number
   targetUnitId?: number | null
-  refInboundId?: number | null
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: number | null
+  locationId: number
+  userId?: number | null
+  memo?: string | null
+  refTxNo?: string | null
   barcodeId?: number | null
-  location?: string | null
-  waferResistance?: string | null
-  waferThickness?: string | null
-  waferDirection?: string | null
-  waferSurface?: string | null
-  createdBy?: number | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  refOutbounds?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutRefInboundInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutInventoryTxInput
 }
 
-export type InventoryTxCreateOrConnectWithoutItemInput = {
+export type InventoryTxCreateOrConnectWithoutTxReasonInput = {
   where: Prisma.InventoryTxWhereUniqueInput
-  create: Prisma.XOR<Prisma.InventoryTxCreateWithoutItemInput, Prisma.InventoryTxUncheckedCreateWithoutItemInput>
+  create: Prisma.XOR<Prisma.InventoryTxCreateWithoutTxReasonInput, Prisma.InventoryTxUncheckedCreateWithoutTxReasonInput>
 }
 
-export type InventoryTxCreateManyItemInputEnvelope = {
-  data: Prisma.InventoryTxCreateManyItemInput | Prisma.InventoryTxCreateManyItemInput[]
+export type InventoryTxCreateManyTxReasonInputEnvelope = {
+  data: Prisma.InventoryTxCreateManyTxReasonInput | Prisma.InventoryTxCreateManyTxReasonInput[]
   skipDuplicates?: boolean
 }
 
-export type InventoryTxUpsertWithWhereUniqueWithoutItemInput = {
+export type InventoryTxUpsertWithWhereUniqueWithoutTxReasonInput = {
   where: Prisma.InventoryTxWhereUniqueInput
-  update: Prisma.XOR<Prisma.InventoryTxUpdateWithoutItemInput, Prisma.InventoryTxUncheckedUpdateWithoutItemInput>
-  create: Prisma.XOR<Prisma.InventoryTxCreateWithoutItemInput, Prisma.InventoryTxUncheckedCreateWithoutItemInput>
+  update: Prisma.XOR<Prisma.InventoryTxUpdateWithoutTxReasonInput, Prisma.InventoryTxUncheckedUpdateWithoutTxReasonInput>
+  create: Prisma.XOR<Prisma.InventoryTxCreateWithoutTxReasonInput, Prisma.InventoryTxUncheckedCreateWithoutTxReasonInput>
 }
 
-export type InventoryTxUpdateWithWhereUniqueWithoutItemInput = {
+export type InventoryTxUpdateWithWhereUniqueWithoutTxReasonInput = {
   where: Prisma.InventoryTxWhereUniqueInput
-  data: Prisma.XOR<Prisma.InventoryTxUpdateWithoutItemInput, Prisma.InventoryTxUncheckedUpdateWithoutItemInput>
+  data: Prisma.XOR<Prisma.InventoryTxUpdateWithoutTxReasonInput, Prisma.InventoryTxUncheckedUpdateWithoutTxReasonInput>
 }
 
-export type InventoryTxUpdateManyWithWhereWithoutItemInput = {
+export type InventoryTxUpdateManyWithWhereWithoutTxReasonInput = {
   where: Prisma.InventoryTxScalarWhereInput
-  data: Prisma.XOR<Prisma.InventoryTxUpdateManyMutationInput, Prisma.InventoryTxUncheckedUpdateManyWithoutItemInput>
+  data: Prisma.XOR<Prisma.InventoryTxUpdateManyMutationInput, Prisma.InventoryTxUncheckedUpdateManyWithoutTxReasonInput>
 }
 
 export type InventoryTxCreateWithoutPartnerInput = {
-  date?: Date | string
-  type: string
-  quantity: number
-  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: string
-  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  handlerName?: string | null
-  handlerContact?: string | null
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   memo?: string | null
-  location?: string | null
-  waferResistance?: string | null
-  waferThickness?: string | null
-  waferDirection?: string | null
-  waferSurface?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
+  refTxNo?: string | null
   item: Prisma.ItemCreateNestedOneWithoutInventoryTxsInput
   targetUnit?: Prisma.TargetUnitCreateNestedOneWithoutInventoryTxsInput
-  refInbound?: Prisma.InventoryTxCreateNestedOneWithoutRefOutboundsInput
-  refOutbounds?: Prisma.InventoryTxCreateNestedManyWithoutRefInboundInput
+  txReason?: Prisma.TxReasonCreateNestedOneWithoutInventoryTxsInput
+  location: Prisma.LocationCreateNestedOneWithoutInventoryTxsInput
+  user?: Prisma.UserCreateNestedOneWithoutInventoryTxsInput
   barcode?: Prisma.BarcodeCreateNestedOneWithoutInventoryTxsInput
-  creator?: Prisma.UserCreateNestedOneWithoutInventoryTxsInput
+  barcodeScans?: Prisma.BarcodeScanCreateNestedManyWithoutInventoryTxInput
 }
 
 export type InventoryTxUncheckedCreateWithoutPartnerInput = {
   id?: number
-  date?: Date | string
-  type: string
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
   itemId: number
-  quantity: number
-  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: string
-  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  handlerName?: string | null
-  handlerContact?: string | null
-  memo?: string | null
   targetUnitId?: number | null
-  refInboundId?: number | null
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  txReasonId?: number | null
+  locationId: number
+  userId?: number | null
+  memo?: string | null
+  refTxNo?: string | null
   barcodeId?: number | null
-  location?: string | null
-  waferResistance?: string | null
-  waferThickness?: string | null
-  waferDirection?: string | null
-  waferSurface?: string | null
-  createdBy?: number | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  refOutbounds?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutRefInboundInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutInventoryTxInput
 }
 
 export type InventoryTxCreateOrConnectWithoutPartnerInput = {
@@ -1366,55 +1205,167 @@ export type InventoryTxUpdateManyWithWhereWithoutPartnerInput = {
   data: Prisma.XOR<Prisma.InventoryTxUpdateManyMutationInput, Prisma.InventoryTxUncheckedUpdateManyWithoutPartnerInput>
 }
 
-export type InventoryTxCreateWithoutTargetUnitInput = {
-  date?: Date | string
-  type: string
-  quantity: number
-  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: string
-  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  handlerName?: string | null
-  handlerContact?: string | null
+export type InventoryTxCreateWithoutUserInput = {
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   memo?: string | null
-  location?: string | null
-  waferResistance?: string | null
-  waferThickness?: string | null
-  waferDirection?: string | null
-  waferSurface?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
+  refTxNo?: string | null
+  item: Prisma.ItemCreateNestedOneWithoutInventoryTxsInput
+  targetUnit?: Prisma.TargetUnitCreateNestedOneWithoutInventoryTxsInput
+  partner?: Prisma.PartnerCreateNestedOneWithoutInventoryTxsInput
+  txReason?: Prisma.TxReasonCreateNestedOneWithoutInventoryTxsInput
+  location: Prisma.LocationCreateNestedOneWithoutInventoryTxsInput
+  barcode?: Prisma.BarcodeCreateNestedOneWithoutInventoryTxsInput
+  barcodeScans?: Prisma.BarcodeScanCreateNestedManyWithoutInventoryTxInput
+}
+
+export type InventoryTxUncheckedCreateWithoutUserInput = {
+  id?: number
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
+  itemId: number
+  targetUnitId?: number | null
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: number | null
+  txReasonId?: number | null
+  locationId: number
+  memo?: string | null
+  refTxNo?: string | null
+  barcodeId?: number | null
+  barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutInventoryTxInput
+}
+
+export type InventoryTxCreateOrConnectWithoutUserInput = {
+  where: Prisma.InventoryTxWhereUniqueInput
+  create: Prisma.XOR<Prisma.InventoryTxCreateWithoutUserInput, Prisma.InventoryTxUncheckedCreateWithoutUserInput>
+}
+
+export type InventoryTxCreateManyUserInputEnvelope = {
+  data: Prisma.InventoryTxCreateManyUserInput | Prisma.InventoryTxCreateManyUserInput[]
+  skipDuplicates?: boolean
+}
+
+export type InventoryTxUpsertWithWhereUniqueWithoutUserInput = {
+  where: Prisma.InventoryTxWhereUniqueInput
+  update: Prisma.XOR<Prisma.InventoryTxUpdateWithoutUserInput, Prisma.InventoryTxUncheckedUpdateWithoutUserInput>
+  create: Prisma.XOR<Prisma.InventoryTxCreateWithoutUserInput, Prisma.InventoryTxUncheckedCreateWithoutUserInput>
+}
+
+export type InventoryTxUpdateWithWhereUniqueWithoutUserInput = {
+  where: Prisma.InventoryTxWhereUniqueInput
+  data: Prisma.XOR<Prisma.InventoryTxUpdateWithoutUserInput, Prisma.InventoryTxUncheckedUpdateWithoutUserInput>
+}
+
+export type InventoryTxUpdateManyWithWhereWithoutUserInput = {
+  where: Prisma.InventoryTxScalarWhereInput
+  data: Prisma.XOR<Prisma.InventoryTxUpdateManyMutationInput, Prisma.InventoryTxUncheckedUpdateManyWithoutUserInput>
+}
+
+export type InventoryTxCreateWithoutItemInput = {
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  memo?: string | null
+  refTxNo?: string | null
+  targetUnit?: Prisma.TargetUnitCreateNestedOneWithoutInventoryTxsInput
+  partner?: Prisma.PartnerCreateNestedOneWithoutInventoryTxsInput
+  txReason?: Prisma.TxReasonCreateNestedOneWithoutInventoryTxsInput
+  location: Prisma.LocationCreateNestedOneWithoutInventoryTxsInput
+  user?: Prisma.UserCreateNestedOneWithoutInventoryTxsInput
+  barcode?: Prisma.BarcodeCreateNestedOneWithoutInventoryTxsInput
+  barcodeScans?: Prisma.BarcodeScanCreateNestedManyWithoutInventoryTxInput
+}
+
+export type InventoryTxUncheckedCreateWithoutItemInput = {
+  id?: number
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
+  targetUnitId?: number | null
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: number | null
+  txReasonId?: number | null
+  locationId: number
+  userId?: number | null
+  memo?: string | null
+  refTxNo?: string | null
+  barcodeId?: number | null
+  barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutInventoryTxInput
+}
+
+export type InventoryTxCreateOrConnectWithoutItemInput = {
+  where: Prisma.InventoryTxWhereUniqueInput
+  create: Prisma.XOR<Prisma.InventoryTxCreateWithoutItemInput, Prisma.InventoryTxUncheckedCreateWithoutItemInput>
+}
+
+export type InventoryTxCreateManyItemInputEnvelope = {
+  data: Prisma.InventoryTxCreateManyItemInput | Prisma.InventoryTxCreateManyItemInput[]
+  skipDuplicates?: boolean
+}
+
+export type InventoryTxUpsertWithWhereUniqueWithoutItemInput = {
+  where: Prisma.InventoryTxWhereUniqueInput
+  update: Prisma.XOR<Prisma.InventoryTxUpdateWithoutItemInput, Prisma.InventoryTxUncheckedUpdateWithoutItemInput>
+  create: Prisma.XOR<Prisma.InventoryTxCreateWithoutItemInput, Prisma.InventoryTxUncheckedCreateWithoutItemInput>
+}
+
+export type InventoryTxUpdateWithWhereUniqueWithoutItemInput = {
+  where: Prisma.InventoryTxWhereUniqueInput
+  data: Prisma.XOR<Prisma.InventoryTxUpdateWithoutItemInput, Prisma.InventoryTxUncheckedUpdateWithoutItemInput>
+}
+
+export type InventoryTxUpdateManyWithWhereWithoutItemInput = {
+  where: Prisma.InventoryTxScalarWhereInput
+  data: Prisma.XOR<Prisma.InventoryTxUpdateManyMutationInput, Prisma.InventoryTxUncheckedUpdateManyWithoutItemInput>
+}
+
+export type InventoryTxCreateWithoutTargetUnitInput = {
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  memo?: string | null
+  refTxNo?: string | null
   item: Prisma.ItemCreateNestedOneWithoutInventoryTxsInput
   partner?: Prisma.PartnerCreateNestedOneWithoutInventoryTxsInput
-  refInbound?: Prisma.InventoryTxCreateNestedOneWithoutRefOutboundsInput
-  refOutbounds?: Prisma.InventoryTxCreateNestedManyWithoutRefInboundInput
+  txReason?: Prisma.TxReasonCreateNestedOneWithoutInventoryTxsInput
+  location: Prisma.LocationCreateNestedOneWithoutInventoryTxsInput
+  user?: Prisma.UserCreateNestedOneWithoutInventoryTxsInput
   barcode?: Prisma.BarcodeCreateNestedOneWithoutInventoryTxsInput
-  creator?: Prisma.UserCreateNestedOneWithoutInventoryTxsInput
+  barcodeScans?: Prisma.BarcodeScanCreateNestedManyWithoutInventoryTxInput
 }
 
 export type InventoryTxUncheckedCreateWithoutTargetUnitInput = {
   id?: number
-  date?: Date | string
-  type: string
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
   itemId: number
-  quantity: number
-  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: string
-  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   partnerId?: number | null
-  handlerName?: string | null
-  handlerContact?: string | null
+  txReasonId?: number | null
+  locationId: number
+  userId?: number | null
   memo?: string | null
-  refInboundId?: number | null
+  refTxNo?: string | null
   barcodeId?: number | null
-  location?: string | null
-  waferResistance?: string | null
-  waferThickness?: string | null
-  waferDirection?: string | null
-  waferSurface?: string | null
-  createdBy?: number | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  refOutbounds?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutRefInboundInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutInventoryTxInput
 }
 
 export type InventoryTxCreateOrConnectWithoutTargetUnitInput = {
@@ -1444,54 +1395,40 @@ export type InventoryTxUpdateManyWithWhereWithoutTargetUnitInput = {
 }
 
 export type InventoryTxCreateWithoutBarcodeInput = {
-  date?: Date | string
-  type: string
-  quantity: number
-  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: string
-  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  handlerName?: string | null
-  handlerContact?: string | null
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   memo?: string | null
-  location?: string | null
-  waferResistance?: string | null
-  waferThickness?: string | null
-  waferDirection?: string | null
-  waferSurface?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
+  refTxNo?: string | null
   item: Prisma.ItemCreateNestedOneWithoutInventoryTxsInput
-  partner?: Prisma.PartnerCreateNestedOneWithoutInventoryTxsInput
   targetUnit?: Prisma.TargetUnitCreateNestedOneWithoutInventoryTxsInput
-  refInbound?: Prisma.InventoryTxCreateNestedOneWithoutRefOutboundsInput
-  refOutbounds?: Prisma.InventoryTxCreateNestedManyWithoutRefInboundInput
-  creator?: Prisma.UserCreateNestedOneWithoutInventoryTxsInput
+  partner?: Prisma.PartnerCreateNestedOneWithoutInventoryTxsInput
+  txReason?: Prisma.TxReasonCreateNestedOneWithoutInventoryTxsInput
+  location: Prisma.LocationCreateNestedOneWithoutInventoryTxsInput
+  user?: Prisma.UserCreateNestedOneWithoutInventoryTxsInput
+  barcodeScans?: Prisma.BarcodeScanCreateNestedManyWithoutInventoryTxInput
 }
 
 export type InventoryTxUncheckedCreateWithoutBarcodeInput = {
   id?: number
-  date?: Date | string
-  type: string
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
   itemId: number
-  quantity: number
-  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: string
-  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: number | null
-  handlerName?: string | null
-  handlerContact?: string | null
-  memo?: string | null
   targetUnitId?: number | null
-  refInboundId?: number | null
-  location?: string | null
-  waferResistance?: string | null
-  waferThickness?: string | null
-  waferDirection?: string | null
-  waferSurface?: string | null
-  createdBy?: number | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  refOutbounds?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutRefInboundInput
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: number | null
+  txReasonId?: number | null
+  locationId: number
+  userId?: number | null
+  memo?: string | null
+  refTxNo?: string | null
+  barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutInventoryTxInput
 }
 
 export type InventoryTxCreateOrConnectWithoutBarcodeInput = {
@@ -1520,805 +1457,605 @@ export type InventoryTxUpdateManyWithWhereWithoutBarcodeInput = {
   data: Prisma.XOR<Prisma.InventoryTxUpdateManyMutationInput, Prisma.InventoryTxUncheckedUpdateManyWithoutBarcodeInput>
 }
 
-export type InventoryTxCreateWithoutRefOutboundsInput = {
-  date?: Date | string
-  type: string
-  quantity: number
-  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: string
-  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  handlerName?: string | null
-  handlerContact?: string | null
+export type InventoryTxCreateWithoutBarcodeScansInput = {
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   memo?: string | null
-  location?: string | null
-  waferResistance?: string | null
-  waferThickness?: string | null
-  waferDirection?: string | null
-  waferSurface?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
+  refTxNo?: string | null
   item: Prisma.ItemCreateNestedOneWithoutInventoryTxsInput
-  partner?: Prisma.PartnerCreateNestedOneWithoutInventoryTxsInput
   targetUnit?: Prisma.TargetUnitCreateNestedOneWithoutInventoryTxsInput
-  refInbound?: Prisma.InventoryTxCreateNestedOneWithoutRefOutboundsInput
-  barcode?: Prisma.BarcodeCreateNestedOneWithoutInventoryTxsInput
-  creator?: Prisma.UserCreateNestedOneWithoutInventoryTxsInput
-}
-
-export type InventoryTxUncheckedCreateWithoutRefOutboundsInput = {
-  id?: number
-  date?: Date | string
-  type: string
-  itemId: number
-  quantity: number
-  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: string
-  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: number | null
-  handlerName?: string | null
-  handlerContact?: string | null
-  memo?: string | null
-  targetUnitId?: number | null
-  refInboundId?: number | null
-  barcodeId?: number | null
-  location?: string | null
-  waferResistance?: string | null
-  waferThickness?: string | null
-  waferDirection?: string | null
-  waferSurface?: string | null
-  createdBy?: number | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-}
-
-export type InventoryTxCreateOrConnectWithoutRefOutboundsInput = {
-  where: Prisma.InventoryTxWhereUniqueInput
-  create: Prisma.XOR<Prisma.InventoryTxCreateWithoutRefOutboundsInput, Prisma.InventoryTxUncheckedCreateWithoutRefOutboundsInput>
-}
-
-export type InventoryTxCreateWithoutRefInboundInput = {
-  date?: Date | string
-  type: string
-  quantity: number
-  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: string
-  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  handlerName?: string | null
-  handlerContact?: string | null
-  memo?: string | null
-  location?: string | null
-  waferResistance?: string | null
-  waferThickness?: string | null
-  waferDirection?: string | null
-  waferSurface?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  item: Prisma.ItemCreateNestedOneWithoutInventoryTxsInput
   partner?: Prisma.PartnerCreateNestedOneWithoutInventoryTxsInput
-  targetUnit?: Prisma.TargetUnitCreateNestedOneWithoutInventoryTxsInput
-  refOutbounds?: Prisma.InventoryTxCreateNestedManyWithoutRefInboundInput
+  txReason?: Prisma.TxReasonCreateNestedOneWithoutInventoryTxsInput
+  location: Prisma.LocationCreateNestedOneWithoutInventoryTxsInput
+  user?: Prisma.UserCreateNestedOneWithoutInventoryTxsInput
   barcode?: Prisma.BarcodeCreateNestedOneWithoutInventoryTxsInput
-  creator?: Prisma.UserCreateNestedOneWithoutInventoryTxsInput
 }
 
-export type InventoryTxUncheckedCreateWithoutRefInboundInput = {
+export type InventoryTxUncheckedCreateWithoutBarcodeScansInput = {
   id?: number
-  date?: Date | string
-  type: string
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
   itemId: number
-  quantity: number
-  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: string
-  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: number | null
-  handlerName?: string | null
-  handlerContact?: string | null
-  memo?: string | null
   targetUnitId?: number | null
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: number | null
+  txReasonId?: number | null
+  locationId: number
+  userId?: number | null
+  memo?: string | null
+  refTxNo?: string | null
   barcodeId?: number | null
-  location?: string | null
-  waferResistance?: string | null
-  waferThickness?: string | null
-  waferDirection?: string | null
-  waferSurface?: string | null
-  createdBy?: number | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  refOutbounds?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutRefInboundInput
 }
 
-export type InventoryTxCreateOrConnectWithoutRefInboundInput = {
+export type InventoryTxCreateOrConnectWithoutBarcodeScansInput = {
   where: Prisma.InventoryTxWhereUniqueInput
-  create: Prisma.XOR<Prisma.InventoryTxCreateWithoutRefInboundInput, Prisma.InventoryTxUncheckedCreateWithoutRefInboundInput>
+  create: Prisma.XOR<Prisma.InventoryTxCreateWithoutBarcodeScansInput, Prisma.InventoryTxUncheckedCreateWithoutBarcodeScansInput>
 }
 
-export type InventoryTxCreateManyRefInboundInputEnvelope = {
-  data: Prisma.InventoryTxCreateManyRefInboundInput | Prisma.InventoryTxCreateManyRefInboundInput[]
-  skipDuplicates?: boolean
-}
-
-export type InventoryTxUpsertWithoutRefOutboundsInput = {
-  update: Prisma.XOR<Prisma.InventoryTxUpdateWithoutRefOutboundsInput, Prisma.InventoryTxUncheckedUpdateWithoutRefOutboundsInput>
-  create: Prisma.XOR<Prisma.InventoryTxCreateWithoutRefOutboundsInput, Prisma.InventoryTxUncheckedCreateWithoutRefOutboundsInput>
+export type InventoryTxUpsertWithoutBarcodeScansInput = {
+  update: Prisma.XOR<Prisma.InventoryTxUpdateWithoutBarcodeScansInput, Prisma.InventoryTxUncheckedUpdateWithoutBarcodeScansInput>
+  create: Prisma.XOR<Prisma.InventoryTxCreateWithoutBarcodeScansInput, Prisma.InventoryTxUncheckedCreateWithoutBarcodeScansInput>
   where?: Prisma.InventoryTxWhereInput
 }
 
-export type InventoryTxUpdateToOneWithWhereWithoutRefOutboundsInput = {
+export type InventoryTxUpdateToOneWithWhereWithoutBarcodeScansInput = {
   where?: Prisma.InventoryTxWhereInput
-  data: Prisma.XOR<Prisma.InventoryTxUpdateWithoutRefOutboundsInput, Prisma.InventoryTxUncheckedUpdateWithoutRefOutboundsInput>
+  data: Prisma.XOR<Prisma.InventoryTxUpdateWithoutBarcodeScansInput, Prisma.InventoryTxUncheckedUpdateWithoutBarcodeScansInput>
 }
 
-export type InventoryTxUpdateWithoutRefOutboundsInput = {
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+export type InventoryTxUpdateWithoutBarcodeScansInput = {
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   item?: Prisma.ItemUpdateOneRequiredWithoutInventoryTxsNestedInput
-  partner?: Prisma.PartnerUpdateOneWithoutInventoryTxsNestedInput
   targetUnit?: Prisma.TargetUnitUpdateOneWithoutInventoryTxsNestedInput
-  refInbound?: Prisma.InventoryTxUpdateOneWithoutRefOutboundsNestedInput
+  partner?: Prisma.PartnerUpdateOneWithoutInventoryTxsNestedInput
+  txReason?: Prisma.TxReasonUpdateOneWithoutInventoryTxsNestedInput
+  location?: Prisma.LocationUpdateOneRequiredWithoutInventoryTxsNestedInput
+  user?: Prisma.UserUpdateOneWithoutInventoryTxsNestedInput
   barcode?: Prisma.BarcodeUpdateOneWithoutInventoryTxsNestedInput
-  creator?: Prisma.UserUpdateOneWithoutInventoryTxsNestedInput
 }
 
-export type InventoryTxUncheckedUpdateWithoutRefOutboundsInput = {
+export type InventoryTxUncheckedUpdateWithoutBarcodeScansInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
   itemId?: Prisma.IntFieldUpdateOperationsInput | number
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetUnitId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  refInboundId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  txReasonId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  locationId?: Prisma.IntFieldUpdateOperationsInput | number
+  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdBy?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type InventoryTxUpsertWithWhereUniqueWithoutRefInboundInput = {
-  where: Prisma.InventoryTxWhereUniqueInput
-  update: Prisma.XOR<Prisma.InventoryTxUpdateWithoutRefInboundInput, Prisma.InventoryTxUncheckedUpdateWithoutRefInboundInput>
-  create: Prisma.XOR<Prisma.InventoryTxCreateWithoutRefInboundInput, Prisma.InventoryTxUncheckedCreateWithoutRefInboundInput>
-}
-
-export type InventoryTxUpdateWithWhereUniqueWithoutRefInboundInput = {
-  where: Prisma.InventoryTxWhereUniqueInput
-  data: Prisma.XOR<Prisma.InventoryTxUpdateWithoutRefInboundInput, Prisma.InventoryTxUncheckedUpdateWithoutRefInboundInput>
-}
-
-export type InventoryTxUpdateManyWithWhereWithoutRefInboundInput = {
-  where: Prisma.InventoryTxScalarWhereInput
-  data: Prisma.XOR<Prisma.InventoryTxUpdateManyMutationInput, Prisma.InventoryTxUncheckedUpdateManyWithoutRefInboundInput>
-}
-
-export type InventoryTxCreateManyCreatorInput = {
+export type InventoryTxCreateManyLocationInput = {
   id?: number
-  date?: Date | string
-  type: string
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
   itemId: number
-  quantity: number
-  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: string
-  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: number | null
-  handlerName?: string | null
-  handlerContact?: string | null
-  memo?: string | null
   targetUnitId?: number | null
-  refInboundId?: number | null
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: number | null
+  txReasonId?: number | null
+  userId?: number | null
+  memo?: string | null
+  refTxNo?: string | null
   barcodeId?: number | null
-  location?: string | null
-  waferResistance?: string | null
-  waferThickness?: string | null
-  waferDirection?: string | null
-  waferSurface?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
 }
 
-export type InventoryTxUpdateWithoutCreatorInput = {
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+export type InventoryTxUpdateWithoutLocationInput = {
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   item?: Prisma.ItemUpdateOneRequiredWithoutInventoryTxsNestedInput
-  partner?: Prisma.PartnerUpdateOneWithoutInventoryTxsNestedInput
   targetUnit?: Prisma.TargetUnitUpdateOneWithoutInventoryTxsNestedInput
-  refInbound?: Prisma.InventoryTxUpdateOneWithoutRefOutboundsNestedInput
-  refOutbounds?: Prisma.InventoryTxUpdateManyWithoutRefInboundNestedInput
+  partner?: Prisma.PartnerUpdateOneWithoutInventoryTxsNestedInput
+  txReason?: Prisma.TxReasonUpdateOneWithoutInventoryTxsNestedInput
+  user?: Prisma.UserUpdateOneWithoutInventoryTxsNestedInput
   barcode?: Prisma.BarcodeUpdateOneWithoutInventoryTxsNestedInput
+  barcodeScans?: Prisma.BarcodeScanUpdateManyWithoutInventoryTxNestedInput
 }
 
-export type InventoryTxUncheckedUpdateWithoutCreatorInput = {
+export type InventoryTxUncheckedUpdateWithoutLocationInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
   itemId?: Prisma.IntFieldUpdateOperationsInput | number
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetUnitId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  refInboundId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  txReasonId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  refOutbounds?: Prisma.InventoryTxUncheckedUpdateManyWithoutRefInboundNestedInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutInventoryTxNestedInput
 }
 
-export type InventoryTxUncheckedUpdateManyWithoutCreatorInput = {
+export type InventoryTxUncheckedUpdateManyWithoutLocationInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
   itemId?: Prisma.IntFieldUpdateOperationsInput | number
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetUnitId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  refInboundId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  txReasonId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type InventoryTxCreateManyItemInput = {
+export type InventoryTxCreateManyTxReasonInput = {
   id?: number
-  date?: Date | string
-  type: string
-  quantity: number
-  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: string
-  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: number | null
-  handlerName?: string | null
-  handlerContact?: string | null
-  memo?: string | null
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
+  itemId: number
   targetUnitId?: number | null
-  refInboundId?: number | null
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: number | null
+  locationId: number
+  userId?: number | null
+  memo?: string | null
+  refTxNo?: string | null
   barcodeId?: number | null
-  location?: string | null
-  waferResistance?: string | null
-  waferThickness?: string | null
-  waferDirection?: string | null
-  waferSurface?: string | null
-  createdBy?: number | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
 }
 
-export type InventoryTxUpdateWithoutItemInput = {
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+export type InventoryTxUpdateWithoutTxReasonInput = {
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  partner?: Prisma.PartnerUpdateOneWithoutInventoryTxsNestedInput
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item?: Prisma.ItemUpdateOneRequiredWithoutInventoryTxsNestedInput
   targetUnit?: Prisma.TargetUnitUpdateOneWithoutInventoryTxsNestedInput
-  refInbound?: Prisma.InventoryTxUpdateOneWithoutRefOutboundsNestedInput
-  refOutbounds?: Prisma.InventoryTxUpdateManyWithoutRefInboundNestedInput
+  partner?: Prisma.PartnerUpdateOneWithoutInventoryTxsNestedInput
+  location?: Prisma.LocationUpdateOneRequiredWithoutInventoryTxsNestedInput
+  user?: Prisma.UserUpdateOneWithoutInventoryTxsNestedInput
   barcode?: Prisma.BarcodeUpdateOneWithoutInventoryTxsNestedInput
-  creator?: Prisma.UserUpdateOneWithoutInventoryTxsNestedInput
+  barcodeScans?: Prisma.BarcodeScanUpdateManyWithoutInventoryTxNestedInput
 }
 
-export type InventoryTxUncheckedUpdateWithoutItemInput = {
+export type InventoryTxUncheckedUpdateWithoutTxReasonInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
+  itemId?: Prisma.IntFieldUpdateOperationsInput | number
   targetUnitId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  refInboundId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  locationId?: Prisma.IntFieldUpdateOperationsInput | number
+  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdBy?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  refOutbounds?: Prisma.InventoryTxUncheckedUpdateManyWithoutRefInboundNestedInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutInventoryTxNestedInput
 }
 
-export type InventoryTxUncheckedUpdateManyWithoutItemInput = {
+export type InventoryTxUncheckedUpdateManyWithoutTxReasonInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
+  itemId?: Prisma.IntFieldUpdateOperationsInput | number
   targetUnitId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  refInboundId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  locationId?: Prisma.IntFieldUpdateOperationsInput | number
+  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdBy?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type InventoryTxCreateManyPartnerInput = {
   id?: number
-  date?: Date | string
-  type: string
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
   itemId: number
-  quantity: number
-  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: string
-  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  handlerName?: string | null
-  handlerContact?: string | null
-  memo?: string | null
   targetUnitId?: number | null
-  refInboundId?: number | null
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  txReasonId?: number | null
+  locationId: number
+  userId?: number | null
+  memo?: string | null
+  refTxNo?: string | null
   barcodeId?: number | null
-  location?: string | null
-  waferResistance?: string | null
-  waferThickness?: string | null
-  waferDirection?: string | null
-  waferSurface?: string | null
-  createdBy?: number | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
 }
 
 export type InventoryTxUpdateWithoutPartnerInput = {
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   item?: Prisma.ItemUpdateOneRequiredWithoutInventoryTxsNestedInput
   targetUnit?: Prisma.TargetUnitUpdateOneWithoutInventoryTxsNestedInput
-  refInbound?: Prisma.InventoryTxUpdateOneWithoutRefOutboundsNestedInput
-  refOutbounds?: Prisma.InventoryTxUpdateManyWithoutRefInboundNestedInput
+  txReason?: Prisma.TxReasonUpdateOneWithoutInventoryTxsNestedInput
+  location?: Prisma.LocationUpdateOneRequiredWithoutInventoryTxsNestedInput
+  user?: Prisma.UserUpdateOneWithoutInventoryTxsNestedInput
   barcode?: Prisma.BarcodeUpdateOneWithoutInventoryTxsNestedInput
-  creator?: Prisma.UserUpdateOneWithoutInventoryTxsNestedInput
+  barcodeScans?: Prisma.BarcodeScanUpdateManyWithoutInventoryTxNestedInput
 }
 
 export type InventoryTxUncheckedUpdateWithoutPartnerInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
   itemId?: Prisma.IntFieldUpdateOperationsInput | number
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetUnitId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  refInboundId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  txReasonId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  locationId?: Prisma.IntFieldUpdateOperationsInput | number
+  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdBy?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  refOutbounds?: Prisma.InventoryTxUncheckedUpdateManyWithoutRefInboundNestedInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutInventoryTxNestedInput
 }
 
 export type InventoryTxUncheckedUpdateManyWithoutPartnerInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
   itemId?: Prisma.IntFieldUpdateOperationsInput | number
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetUnitId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  refInboundId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  txReasonId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  locationId?: Prisma.IntFieldUpdateOperationsInput | number
+  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdBy?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type InventoryTxCreateManyUserInput = {
+  id?: number
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
+  itemId: number
+  targetUnitId?: number | null
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: number | null
+  txReasonId?: number | null
+  locationId: number
+  memo?: string | null
+  refTxNo?: string | null
+  barcodeId?: number | null
+}
+
+export type InventoryTxUpdateWithoutUserInput = {
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item?: Prisma.ItemUpdateOneRequiredWithoutInventoryTxsNestedInput
+  targetUnit?: Prisma.TargetUnitUpdateOneWithoutInventoryTxsNestedInput
+  partner?: Prisma.PartnerUpdateOneWithoutInventoryTxsNestedInput
+  txReason?: Prisma.TxReasonUpdateOneWithoutInventoryTxsNestedInput
+  location?: Prisma.LocationUpdateOneRequiredWithoutInventoryTxsNestedInput
+  barcode?: Prisma.BarcodeUpdateOneWithoutInventoryTxsNestedInput
+  barcodeScans?: Prisma.BarcodeScanUpdateManyWithoutInventoryTxNestedInput
+}
+
+export type InventoryTxUncheckedUpdateWithoutUserInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
+  itemId?: Prisma.IntFieldUpdateOperationsInput | number
+  targetUnitId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  txReasonId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  locationId?: Prisma.IntFieldUpdateOperationsInput | number
+  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutInventoryTxNestedInput
+}
+
+export type InventoryTxUncheckedUpdateManyWithoutUserInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
+  itemId?: Prisma.IntFieldUpdateOperationsInput | number
+  targetUnitId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  txReasonId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  locationId?: Prisma.IntFieldUpdateOperationsInput | number
+  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+}
+
+export type InventoryTxCreateManyItemInput = {
+  id?: number
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
+  targetUnitId?: number | null
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: number | null
+  txReasonId?: number | null
+  locationId: number
+  userId?: number | null
+  memo?: string | null
+  refTxNo?: string | null
+  barcodeId?: number | null
+}
+
+export type InventoryTxUpdateWithoutItemInput = {
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetUnit?: Prisma.TargetUnitUpdateOneWithoutInventoryTxsNestedInput
+  partner?: Prisma.PartnerUpdateOneWithoutInventoryTxsNestedInput
+  txReason?: Prisma.TxReasonUpdateOneWithoutInventoryTxsNestedInput
+  location?: Prisma.LocationUpdateOneRequiredWithoutInventoryTxsNestedInput
+  user?: Prisma.UserUpdateOneWithoutInventoryTxsNestedInput
+  barcode?: Prisma.BarcodeUpdateOneWithoutInventoryTxsNestedInput
+  barcodeScans?: Prisma.BarcodeScanUpdateManyWithoutInventoryTxNestedInput
+}
+
+export type InventoryTxUncheckedUpdateWithoutItemInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
+  targetUnitId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  txReasonId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  locationId?: Prisma.IntFieldUpdateOperationsInput | number
+  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutInventoryTxNestedInput
+}
+
+export type InventoryTxUncheckedUpdateManyWithoutItemInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
+  targetUnitId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  txReasonId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  locationId?: Prisma.IntFieldUpdateOperationsInput | number
+  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
 }
 
 export type InventoryTxCreateManyTargetUnitInput = {
   id?: number
-  date?: Date | string
-  type: string
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
   itemId: number
-  quantity: number
-  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: string
-  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   partnerId?: number | null
-  handlerName?: string | null
-  handlerContact?: string | null
+  txReasonId?: number | null
+  locationId: number
+  userId?: number | null
   memo?: string | null
-  refInboundId?: number | null
+  refTxNo?: string | null
   barcodeId?: number | null
-  location?: string | null
-  waferResistance?: string | null
-  waferThickness?: string | null
-  waferDirection?: string | null
-  waferSurface?: string | null
-  createdBy?: number | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
 }
 
 export type InventoryTxUpdateWithoutTargetUnitInput = {
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   item?: Prisma.ItemUpdateOneRequiredWithoutInventoryTxsNestedInput
   partner?: Prisma.PartnerUpdateOneWithoutInventoryTxsNestedInput
-  refInbound?: Prisma.InventoryTxUpdateOneWithoutRefOutboundsNestedInput
-  refOutbounds?: Prisma.InventoryTxUpdateManyWithoutRefInboundNestedInput
+  txReason?: Prisma.TxReasonUpdateOneWithoutInventoryTxsNestedInput
+  location?: Prisma.LocationUpdateOneRequiredWithoutInventoryTxsNestedInput
+  user?: Prisma.UserUpdateOneWithoutInventoryTxsNestedInput
   barcode?: Prisma.BarcodeUpdateOneWithoutInventoryTxsNestedInput
-  creator?: Prisma.UserUpdateOneWithoutInventoryTxsNestedInput
+  barcodeScans?: Prisma.BarcodeScanUpdateManyWithoutInventoryTxNestedInput
 }
 
 export type InventoryTxUncheckedUpdateWithoutTargetUnitInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
   itemId?: Prisma.IntFieldUpdateOperationsInput | number
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txReasonId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  locationId?: Prisma.IntFieldUpdateOperationsInput | number
+  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  refInboundId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdBy?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  refOutbounds?: Prisma.InventoryTxUncheckedUpdateManyWithoutRefInboundNestedInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutInventoryTxNestedInput
 }
 
 export type InventoryTxUncheckedUpdateManyWithoutTargetUnitInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
   itemId?: Prisma.IntFieldUpdateOperationsInput | number
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txReasonId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  locationId?: Prisma.IntFieldUpdateOperationsInput | number
+  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  refInboundId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdBy?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type InventoryTxCreateManyBarcodeInput = {
   id?: number
-  date?: Date | string
-  type: string
+  txNo?: string | null
+  txDate?: Date | string
+  txType: string
   itemId: number
-  quantity: number
-  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: string
-  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: number | null
-  handlerName?: string | null
-  handlerContact?: string | null
-  memo?: string | null
   targetUnitId?: number | null
-  refInboundId?: number | null
-  location?: string | null
-  waferResistance?: string | null
-  waferThickness?: string | null
-  waferDirection?: string | null
-  waferSurface?: string | null
-  createdBy?: number | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
+  qty: number
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: number | null
+  txReasonId?: number | null
+  locationId: number
+  userId?: number | null
+  memo?: string | null
+  refTxNo?: string | null
 }
 
 export type InventoryTxUpdateWithoutBarcodeInput = {
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   item?: Prisma.ItemUpdateOneRequiredWithoutInventoryTxsNestedInput
-  partner?: Prisma.PartnerUpdateOneWithoutInventoryTxsNestedInput
   targetUnit?: Prisma.TargetUnitUpdateOneWithoutInventoryTxsNestedInput
-  refInbound?: Prisma.InventoryTxUpdateOneWithoutRefOutboundsNestedInput
-  refOutbounds?: Prisma.InventoryTxUpdateManyWithoutRefInboundNestedInput
-  creator?: Prisma.UserUpdateOneWithoutInventoryTxsNestedInput
+  partner?: Prisma.PartnerUpdateOneWithoutInventoryTxsNestedInput
+  txReason?: Prisma.TxReasonUpdateOneWithoutInventoryTxsNestedInput
+  location?: Prisma.LocationUpdateOneRequiredWithoutInventoryTxsNestedInput
+  user?: Prisma.UserUpdateOneWithoutInventoryTxsNestedInput
+  barcodeScans?: Prisma.BarcodeScanUpdateManyWithoutInventoryTxNestedInput
 }
 
 export type InventoryTxUncheckedUpdateWithoutBarcodeInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
   itemId?: Prisma.IntFieldUpdateOperationsInput | number
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetUnitId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  refInboundId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdBy?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  refOutbounds?: Prisma.InventoryTxUncheckedUpdateManyWithoutRefInboundNestedInput
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  txReasonId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  locationId?: Prisma.IntFieldUpdateOperationsInput | number
+  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutInventoryTxNestedInput
 }
 
 export type InventoryTxUncheckedUpdateManyWithoutBarcodeInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
+  txNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txDate?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  txType?: Prisma.StringFieldUpdateOperationsInput | string
   itemId?: Prisma.IntFieldUpdateOperationsInput | number
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetUnitId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  refInboundId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdBy?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-}
-
-export type InventoryTxCreateManyRefInboundInput = {
-  id?: number
-  date?: Date | string
-  type: string
-  itemId: number
-  quantity: number
-  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: string
-  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: number | null
-  handlerName?: string | null
-  handlerContact?: string | null
-  memo?: string | null
-  targetUnitId?: number | null
-  barcodeId?: number | null
-  location?: string | null
-  waferResistance?: string | null
-  waferThickness?: string | null
-  waferDirection?: string | null
-  waferSurface?: string | null
-  createdBy?: number | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-}
-
-export type InventoryTxUpdateWithoutRefInboundInput = {
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  item?: Prisma.ItemUpdateOneRequiredWithoutInventoryTxsNestedInput
-  partner?: Prisma.PartnerUpdateOneWithoutInventoryTxsNestedInput
-  targetUnit?: Prisma.TargetUnitUpdateOneWithoutInventoryTxsNestedInput
-  refOutbounds?: Prisma.InventoryTxUpdateManyWithoutRefInboundNestedInput
-  barcode?: Prisma.BarcodeUpdateOneWithoutInventoryTxsNestedInput
-  creator?: Prisma.UserUpdateOneWithoutInventoryTxsNestedInput
-}
-
-export type InventoryTxUncheckedUpdateWithoutRefInboundInput = {
-  id?: Prisma.IntFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
-  itemId?: Prisma.IntFieldUpdateOperationsInput | number
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  qty?: Prisma.IntFieldUpdateOperationsInput | number
+  unitPrice?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  txReasonId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  locationId?: Prisma.IntFieldUpdateOperationsInput | number
+  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  targetUnitId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdBy?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  refOutbounds?: Prisma.InventoryTxUncheckedUpdateManyWithoutRefInboundNestedInput
-}
-
-export type InventoryTxUncheckedUpdateManyWithoutRefInboundInput = {
-  id?: Prisma.IntFieldUpdateOperationsInput | number
-  date?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  type?: Prisma.StringFieldUpdateOperationsInput | string
-  itemId?: Prisma.IntFieldUpdateOperationsInput | number
-  quantity?: Prisma.IntFieldUpdateOperationsInput | number
-  unitPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  currency?: Prisma.StringFieldUpdateOperationsInput | string
-  amount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
-  partnerId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  handlerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  handlerContact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  targetUnitId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferResistance?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferThickness?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferDirection?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  waferSurface?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdBy?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 
@@ -2327,11 +2064,11 @@ export type InventoryTxUncheckedUpdateManyWithoutRefInboundInput = {
  */
 
 export type InventoryTxCountOutputType = {
-  refOutbounds: number
+  barcodeScans: number
 }
 
 export type InventoryTxCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  refOutbounds?: boolean | InventoryTxCountOutputTypeCountRefOutboundsArgs
+  barcodeScans?: boolean | InventoryTxCountOutputTypeCountBarcodeScansArgs
 }
 
 /**
@@ -2347,198 +2084,170 @@ export type InventoryTxCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.
 /**
  * InventoryTxCountOutputType without action
  */
-export type InventoryTxCountOutputTypeCountRefOutboundsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.InventoryTxWhereInput
+export type InventoryTxCountOutputTypeCountBarcodeScansArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.BarcodeScanWhereInput
 }
 
 
 export type InventoryTxSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  date?: boolean
-  type?: boolean
+  txNo?: boolean
+  txDate?: boolean
+  txType?: boolean
   itemId?: boolean
-  quantity?: boolean
+  targetUnitId?: boolean
+  qty?: boolean
   unitPrice?: boolean
-  currency?: boolean
   amount?: boolean
   partnerId?: boolean
-  handlerName?: boolean
-  handlerContact?: boolean
+  txReasonId?: boolean
+  locationId?: boolean
+  userId?: boolean
   memo?: boolean
-  targetUnitId?: boolean
-  refInboundId?: boolean
+  refTxNo?: boolean
   barcodeId?: boolean
-  location?: boolean
-  waferResistance?: boolean
-  waferThickness?: boolean
-  waferDirection?: boolean
-  waferSurface?: boolean
-  createdBy?: boolean
-  createdAt?: boolean
-  updatedAt?: boolean
   item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
-  partner?: boolean | Prisma.InventoryTx$partnerArgs<ExtArgs>
   targetUnit?: boolean | Prisma.InventoryTx$targetUnitArgs<ExtArgs>
-  refInbound?: boolean | Prisma.InventoryTx$refInboundArgs<ExtArgs>
-  refOutbounds?: boolean | Prisma.InventoryTx$refOutboundsArgs<ExtArgs>
+  partner?: boolean | Prisma.InventoryTx$partnerArgs<ExtArgs>
+  txReason?: boolean | Prisma.InventoryTx$txReasonArgs<ExtArgs>
+  location?: boolean | Prisma.LocationDefaultArgs<ExtArgs>
+  user?: boolean | Prisma.InventoryTx$userArgs<ExtArgs>
   barcode?: boolean | Prisma.InventoryTx$barcodeArgs<ExtArgs>
-  creator?: boolean | Prisma.InventoryTx$creatorArgs<ExtArgs>
+  barcodeScans?: boolean | Prisma.InventoryTx$barcodeScansArgs<ExtArgs>
   _count?: boolean | Prisma.InventoryTxCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["inventoryTx"]>
 
 export type InventoryTxSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  date?: boolean
-  type?: boolean
+  txNo?: boolean
+  txDate?: boolean
+  txType?: boolean
   itemId?: boolean
-  quantity?: boolean
+  targetUnitId?: boolean
+  qty?: boolean
   unitPrice?: boolean
-  currency?: boolean
   amount?: boolean
   partnerId?: boolean
-  handlerName?: boolean
-  handlerContact?: boolean
+  txReasonId?: boolean
+  locationId?: boolean
+  userId?: boolean
   memo?: boolean
-  targetUnitId?: boolean
-  refInboundId?: boolean
+  refTxNo?: boolean
   barcodeId?: boolean
-  location?: boolean
-  waferResistance?: boolean
-  waferThickness?: boolean
-  waferDirection?: boolean
-  waferSurface?: boolean
-  createdBy?: boolean
-  createdAt?: boolean
-  updatedAt?: boolean
   item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
-  partner?: boolean | Prisma.InventoryTx$partnerArgs<ExtArgs>
   targetUnit?: boolean | Prisma.InventoryTx$targetUnitArgs<ExtArgs>
-  refInbound?: boolean | Prisma.InventoryTx$refInboundArgs<ExtArgs>
+  partner?: boolean | Prisma.InventoryTx$partnerArgs<ExtArgs>
+  txReason?: boolean | Prisma.InventoryTx$txReasonArgs<ExtArgs>
+  location?: boolean | Prisma.LocationDefaultArgs<ExtArgs>
+  user?: boolean | Prisma.InventoryTx$userArgs<ExtArgs>
   barcode?: boolean | Prisma.InventoryTx$barcodeArgs<ExtArgs>
-  creator?: boolean | Prisma.InventoryTx$creatorArgs<ExtArgs>
 }, ExtArgs["result"]["inventoryTx"]>
 
 export type InventoryTxSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  date?: boolean
-  type?: boolean
+  txNo?: boolean
+  txDate?: boolean
+  txType?: boolean
   itemId?: boolean
-  quantity?: boolean
+  targetUnitId?: boolean
+  qty?: boolean
   unitPrice?: boolean
-  currency?: boolean
   amount?: boolean
   partnerId?: boolean
-  handlerName?: boolean
-  handlerContact?: boolean
+  txReasonId?: boolean
+  locationId?: boolean
+  userId?: boolean
   memo?: boolean
-  targetUnitId?: boolean
-  refInboundId?: boolean
+  refTxNo?: boolean
   barcodeId?: boolean
-  location?: boolean
-  waferResistance?: boolean
-  waferThickness?: boolean
-  waferDirection?: boolean
-  waferSurface?: boolean
-  createdBy?: boolean
-  createdAt?: boolean
-  updatedAt?: boolean
   item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
-  partner?: boolean | Prisma.InventoryTx$partnerArgs<ExtArgs>
   targetUnit?: boolean | Prisma.InventoryTx$targetUnitArgs<ExtArgs>
-  refInbound?: boolean | Prisma.InventoryTx$refInboundArgs<ExtArgs>
+  partner?: boolean | Prisma.InventoryTx$partnerArgs<ExtArgs>
+  txReason?: boolean | Prisma.InventoryTx$txReasonArgs<ExtArgs>
+  location?: boolean | Prisma.LocationDefaultArgs<ExtArgs>
+  user?: boolean | Prisma.InventoryTx$userArgs<ExtArgs>
   barcode?: boolean | Prisma.InventoryTx$barcodeArgs<ExtArgs>
-  creator?: boolean | Prisma.InventoryTx$creatorArgs<ExtArgs>
 }, ExtArgs["result"]["inventoryTx"]>
 
 export type InventoryTxSelectScalar = {
   id?: boolean
-  date?: boolean
-  type?: boolean
+  txNo?: boolean
+  txDate?: boolean
+  txType?: boolean
   itemId?: boolean
-  quantity?: boolean
+  targetUnitId?: boolean
+  qty?: boolean
   unitPrice?: boolean
-  currency?: boolean
   amount?: boolean
   partnerId?: boolean
-  handlerName?: boolean
-  handlerContact?: boolean
+  txReasonId?: boolean
+  locationId?: boolean
+  userId?: boolean
   memo?: boolean
-  targetUnitId?: boolean
-  refInboundId?: boolean
+  refTxNo?: boolean
   barcodeId?: boolean
-  location?: boolean
-  waferResistance?: boolean
-  waferThickness?: boolean
-  waferDirection?: boolean
-  waferSurface?: boolean
-  createdBy?: boolean
-  createdAt?: boolean
-  updatedAt?: boolean
 }
 
-export type InventoryTxOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "date" | "type" | "itemId" | "quantity" | "unitPrice" | "currency" | "amount" | "partnerId" | "handlerName" | "handlerContact" | "memo" | "targetUnitId" | "refInboundId" | "barcodeId" | "location" | "waferResistance" | "waferThickness" | "waferDirection" | "waferSurface" | "createdBy" | "createdAt" | "updatedAt", ExtArgs["result"]["inventoryTx"]>
+export type InventoryTxOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "txNo" | "txDate" | "txType" | "itemId" | "targetUnitId" | "qty" | "unitPrice" | "amount" | "partnerId" | "txReasonId" | "locationId" | "userId" | "memo" | "refTxNo" | "barcodeId", ExtArgs["result"]["inventoryTx"]>
 export type InventoryTxInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
-  partner?: boolean | Prisma.InventoryTx$partnerArgs<ExtArgs>
   targetUnit?: boolean | Prisma.InventoryTx$targetUnitArgs<ExtArgs>
-  refInbound?: boolean | Prisma.InventoryTx$refInboundArgs<ExtArgs>
-  refOutbounds?: boolean | Prisma.InventoryTx$refOutboundsArgs<ExtArgs>
+  partner?: boolean | Prisma.InventoryTx$partnerArgs<ExtArgs>
+  txReason?: boolean | Prisma.InventoryTx$txReasonArgs<ExtArgs>
+  location?: boolean | Prisma.LocationDefaultArgs<ExtArgs>
+  user?: boolean | Prisma.InventoryTx$userArgs<ExtArgs>
   barcode?: boolean | Prisma.InventoryTx$barcodeArgs<ExtArgs>
-  creator?: boolean | Prisma.InventoryTx$creatorArgs<ExtArgs>
+  barcodeScans?: boolean | Prisma.InventoryTx$barcodeScansArgs<ExtArgs>
   _count?: boolean | Prisma.InventoryTxCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type InventoryTxIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
-  partner?: boolean | Prisma.InventoryTx$partnerArgs<ExtArgs>
   targetUnit?: boolean | Prisma.InventoryTx$targetUnitArgs<ExtArgs>
-  refInbound?: boolean | Prisma.InventoryTx$refInboundArgs<ExtArgs>
+  partner?: boolean | Prisma.InventoryTx$partnerArgs<ExtArgs>
+  txReason?: boolean | Prisma.InventoryTx$txReasonArgs<ExtArgs>
+  location?: boolean | Prisma.LocationDefaultArgs<ExtArgs>
+  user?: boolean | Prisma.InventoryTx$userArgs<ExtArgs>
   barcode?: boolean | Prisma.InventoryTx$barcodeArgs<ExtArgs>
-  creator?: boolean | Prisma.InventoryTx$creatorArgs<ExtArgs>
 }
 export type InventoryTxIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
-  partner?: boolean | Prisma.InventoryTx$partnerArgs<ExtArgs>
   targetUnit?: boolean | Prisma.InventoryTx$targetUnitArgs<ExtArgs>
-  refInbound?: boolean | Prisma.InventoryTx$refInboundArgs<ExtArgs>
+  partner?: boolean | Prisma.InventoryTx$partnerArgs<ExtArgs>
+  txReason?: boolean | Prisma.InventoryTx$txReasonArgs<ExtArgs>
+  location?: boolean | Prisma.LocationDefaultArgs<ExtArgs>
+  user?: boolean | Prisma.InventoryTx$userArgs<ExtArgs>
   barcode?: boolean | Prisma.InventoryTx$barcodeArgs<ExtArgs>
-  creator?: boolean | Prisma.InventoryTx$creatorArgs<ExtArgs>
 }
 
 export type $InventoryTxPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "InventoryTx"
   objects: {
     item: Prisma.$ItemPayload<ExtArgs>
-    partner: Prisma.$PartnerPayload<ExtArgs> | null
     targetUnit: Prisma.$TargetUnitPayload<ExtArgs> | null
-    refInbound: Prisma.$InventoryTxPayload<ExtArgs> | null
-    refOutbounds: Prisma.$InventoryTxPayload<ExtArgs>[]
+    partner: Prisma.$PartnerPayload<ExtArgs> | null
+    txReason: Prisma.$TxReasonPayload<ExtArgs> | null
+    location: Prisma.$LocationPayload<ExtArgs>
+    user: Prisma.$UserPayload<ExtArgs> | null
     barcode: Prisma.$BarcodePayload<ExtArgs> | null
-    creator: Prisma.$UserPayload<ExtArgs> | null
+    barcodeScans: Prisma.$BarcodeScanPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
-    date: Date
-    type: string
+    txNo: string | null
+    txDate: Date
+    txType: string
     itemId: number
-    quantity: number
-    unitPrice: runtime.Decimal
-    currency: string
-    amount: runtime.Decimal
-    partnerId: number | null
-    handlerName: string | null
-    handlerContact: string | null
-    memo: string | null
     targetUnitId: number | null
-    refInboundId: number | null
+    qty: number
+    unitPrice: runtime.Decimal | null
+    amount: runtime.Decimal | null
+    partnerId: number | null
+    txReasonId: number | null
+    locationId: number
+    userId: number | null
+    memo: string | null
+    refTxNo: string | null
     barcodeId: number | null
-    location: string | null
-    waferResistance: string | null
-    waferThickness: string | null
-    waferDirection: string | null
-    waferSurface: string | null
-    createdBy: number | null
-    createdAt: Date
-    updatedAt: Date
   }, ExtArgs["result"]["inventoryTx"]>
   composites: {}
 }
@@ -2934,12 +2643,13 @@ readonly fields: InventoryTxFieldRefs;
 export interface Prisma__InventoryTxClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   item<T extends Prisma.ItemDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ItemDefaultArgs<ExtArgs>>): Prisma.Prisma__ItemClient<runtime.Types.Result.GetResult<Prisma.$ItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  partner<T extends Prisma.InventoryTx$partnerArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.InventoryTx$partnerArgs<ExtArgs>>): Prisma.Prisma__PartnerClient<runtime.Types.Result.GetResult<Prisma.$PartnerPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   targetUnit<T extends Prisma.InventoryTx$targetUnitArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.InventoryTx$targetUnitArgs<ExtArgs>>): Prisma.Prisma__TargetUnitClient<runtime.Types.Result.GetResult<Prisma.$TargetUnitPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  refInbound<T extends Prisma.InventoryTx$refInboundArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.InventoryTx$refInboundArgs<ExtArgs>>): Prisma.Prisma__InventoryTxClient<runtime.Types.Result.GetResult<Prisma.$InventoryTxPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  refOutbounds<T extends Prisma.InventoryTx$refOutboundsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.InventoryTx$refOutboundsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InventoryTxPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  partner<T extends Prisma.InventoryTx$partnerArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.InventoryTx$partnerArgs<ExtArgs>>): Prisma.Prisma__PartnerClient<runtime.Types.Result.GetResult<Prisma.$PartnerPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  txReason<T extends Prisma.InventoryTx$txReasonArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.InventoryTx$txReasonArgs<ExtArgs>>): Prisma.Prisma__TxReasonClient<runtime.Types.Result.GetResult<Prisma.$TxReasonPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  location<T extends Prisma.LocationDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.LocationDefaultArgs<ExtArgs>>): Prisma.Prisma__LocationClient<runtime.Types.Result.GetResult<Prisma.$LocationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  user<T extends Prisma.InventoryTx$userArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.InventoryTx$userArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   barcode<T extends Prisma.InventoryTx$barcodeArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.InventoryTx$barcodeArgs<ExtArgs>>): Prisma.Prisma__BarcodeClient<runtime.Types.Result.GetResult<Prisma.$BarcodePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  creator<T extends Prisma.InventoryTx$creatorArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.InventoryTx$creatorArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  barcodeScans<T extends Prisma.InventoryTx$barcodeScansArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.InventoryTx$barcodeScansArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BarcodeScanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2970,28 +2680,21 @@ export interface Prisma__InventoryTxClient<T, Null = never, ExtArgs extends runt
  */
 export interface InventoryTxFieldRefs {
   readonly id: Prisma.FieldRef<"InventoryTx", 'Int'>
-  readonly date: Prisma.FieldRef<"InventoryTx", 'DateTime'>
-  readonly type: Prisma.FieldRef<"InventoryTx", 'String'>
+  readonly txNo: Prisma.FieldRef<"InventoryTx", 'String'>
+  readonly txDate: Prisma.FieldRef<"InventoryTx", 'DateTime'>
+  readonly txType: Prisma.FieldRef<"InventoryTx", 'String'>
   readonly itemId: Prisma.FieldRef<"InventoryTx", 'Int'>
-  readonly quantity: Prisma.FieldRef<"InventoryTx", 'Int'>
+  readonly targetUnitId: Prisma.FieldRef<"InventoryTx", 'Int'>
+  readonly qty: Prisma.FieldRef<"InventoryTx", 'Int'>
   readonly unitPrice: Prisma.FieldRef<"InventoryTx", 'Decimal'>
-  readonly currency: Prisma.FieldRef<"InventoryTx", 'String'>
   readonly amount: Prisma.FieldRef<"InventoryTx", 'Decimal'>
   readonly partnerId: Prisma.FieldRef<"InventoryTx", 'Int'>
-  readonly handlerName: Prisma.FieldRef<"InventoryTx", 'String'>
-  readonly handlerContact: Prisma.FieldRef<"InventoryTx", 'String'>
+  readonly txReasonId: Prisma.FieldRef<"InventoryTx", 'Int'>
+  readonly locationId: Prisma.FieldRef<"InventoryTx", 'Int'>
+  readonly userId: Prisma.FieldRef<"InventoryTx", 'Int'>
   readonly memo: Prisma.FieldRef<"InventoryTx", 'String'>
-  readonly targetUnitId: Prisma.FieldRef<"InventoryTx", 'Int'>
-  readonly refInboundId: Prisma.FieldRef<"InventoryTx", 'Int'>
+  readonly refTxNo: Prisma.FieldRef<"InventoryTx", 'String'>
   readonly barcodeId: Prisma.FieldRef<"InventoryTx", 'Int'>
-  readonly location: Prisma.FieldRef<"InventoryTx", 'String'>
-  readonly waferResistance: Prisma.FieldRef<"InventoryTx", 'String'>
-  readonly waferThickness: Prisma.FieldRef<"InventoryTx", 'String'>
-  readonly waferDirection: Prisma.FieldRef<"InventoryTx", 'String'>
-  readonly waferSurface: Prisma.FieldRef<"InventoryTx", 'String'>
-  readonly createdBy: Prisma.FieldRef<"InventoryTx", 'Int'>
-  readonly createdAt: Prisma.FieldRef<"InventoryTx", 'DateTime'>
-  readonly updatedAt: Prisma.FieldRef<"InventoryTx", 'DateTime'>
 }
     
 
@@ -3388,25 +3091,6 @@ export type InventoryTxDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.I
 }
 
 /**
- * InventoryTx.partner
- */
-export type InventoryTx$partnerArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Partner
-   */
-  select?: Prisma.PartnerSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Partner
-   */
-  omit?: Prisma.PartnerOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.PartnerInclude<ExtArgs> | null
-  where?: Prisma.PartnerWhereInput
-}
-
-/**
  * InventoryTx.targetUnit
  */
 export type InventoryTx$targetUnitArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -3426,46 +3110,60 @@ export type InventoryTx$targetUnitArgs<ExtArgs extends runtime.Types.Extensions.
 }
 
 /**
- * InventoryTx.refInbound
+ * InventoryTx.partner
  */
-export type InventoryTx$refInboundArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type InventoryTx$partnerArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the InventoryTx
+   * Select specific fields to fetch from the Partner
    */
-  select?: Prisma.InventoryTxSelect<ExtArgs> | null
+  select?: Prisma.PartnerSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the InventoryTx
+   * Omit specific fields from the Partner
    */
-  omit?: Prisma.InventoryTxOmit<ExtArgs> | null
+  omit?: Prisma.PartnerOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.InventoryTxInclude<ExtArgs> | null
-  where?: Prisma.InventoryTxWhereInput
+  include?: Prisma.PartnerInclude<ExtArgs> | null
+  where?: Prisma.PartnerWhereInput
 }
 
 /**
- * InventoryTx.refOutbounds
+ * InventoryTx.txReason
  */
-export type InventoryTx$refOutboundsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type InventoryTx$txReasonArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the InventoryTx
+   * Select specific fields to fetch from the TxReason
    */
-  select?: Prisma.InventoryTxSelect<ExtArgs> | null
+  select?: Prisma.TxReasonSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the InventoryTx
+   * Omit specific fields from the TxReason
    */
-  omit?: Prisma.InventoryTxOmit<ExtArgs> | null
+  omit?: Prisma.TxReasonOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.InventoryTxInclude<ExtArgs> | null
-  where?: Prisma.InventoryTxWhereInput
-  orderBy?: Prisma.InventoryTxOrderByWithRelationInput | Prisma.InventoryTxOrderByWithRelationInput[]
-  cursor?: Prisma.InventoryTxWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.InventoryTxScalarFieldEnum | Prisma.InventoryTxScalarFieldEnum[]
+  include?: Prisma.TxReasonInclude<ExtArgs> | null
+  where?: Prisma.TxReasonWhereInput
+}
+
+/**
+ * InventoryTx.user
+ */
+export type InventoryTx$userArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the User
+   */
+  select?: Prisma.UserSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the User
+   */
+  omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  where?: Prisma.UserWhereInput
 }
 
 /**
@@ -3488,22 +3186,27 @@ export type InventoryTx$barcodeArgs<ExtArgs extends runtime.Types.Extensions.Int
 }
 
 /**
- * InventoryTx.creator
+ * InventoryTx.barcodeScans
  */
-export type InventoryTx$creatorArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type InventoryTx$barcodeScansArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the User
+   * Select specific fields to fetch from the BarcodeScan
    */
-  select?: Prisma.UserSelect<ExtArgs> | null
+  select?: Prisma.BarcodeScanSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the User
+   * Omit specific fields from the BarcodeScan
    */
-  omit?: Prisma.UserOmit<ExtArgs> | null
+  omit?: Prisma.BarcodeScanOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.UserInclude<ExtArgs> | null
-  where?: Prisma.UserWhereInput
+  include?: Prisma.BarcodeScanInclude<ExtArgs> | null
+  where?: Prisma.BarcodeScanWhereInput
+  orderBy?: Prisma.BarcodeScanOrderByWithRelationInput | Prisma.BarcodeScanOrderByWithRelationInput[]
+  cursor?: Prisma.BarcodeScanWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.BarcodeScanScalarFieldEnum | Prisma.BarcodeScanScalarFieldEnum[]
 }
 
 /**

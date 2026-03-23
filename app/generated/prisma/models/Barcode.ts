@@ -43,9 +43,7 @@ export type BarcodeMinAggregateOutputType = {
   code: string | null
   itemId: number | null
   targetUnitId: number | null
-  isActive: boolean | null
-  labelPath: string | null
-  createdAt: Date | null
+  isActive: string | null
 }
 
 export type BarcodeMaxAggregateOutputType = {
@@ -53,9 +51,7 @@ export type BarcodeMaxAggregateOutputType = {
   code: string | null
   itemId: number | null
   targetUnitId: number | null
-  isActive: boolean | null
-  labelPath: string | null
-  createdAt: Date | null
+  isActive: string | null
 }
 
 export type BarcodeCountAggregateOutputType = {
@@ -64,8 +60,6 @@ export type BarcodeCountAggregateOutputType = {
   itemId: number
   targetUnitId: number
   isActive: number
-  labelPath: number
-  createdAt: number
   _all: number
 }
 
@@ -88,8 +82,6 @@ export type BarcodeMinAggregateInputType = {
   itemId?: true
   targetUnitId?: true
   isActive?: true
-  labelPath?: true
-  createdAt?: true
 }
 
 export type BarcodeMaxAggregateInputType = {
@@ -98,8 +90,6 @@ export type BarcodeMaxAggregateInputType = {
   itemId?: true
   targetUnitId?: true
   isActive?: true
-  labelPath?: true
-  createdAt?: true
 }
 
 export type BarcodeCountAggregateInputType = {
@@ -108,8 +98,6 @@ export type BarcodeCountAggregateInputType = {
   itemId?: true
   targetUnitId?: true
   isActive?: true
-  labelPath?: true
-  createdAt?: true
   _all?: true
 }
 
@@ -204,9 +192,7 @@ export type BarcodeGroupByOutputType = {
   code: string
   itemId: number | null
   targetUnitId: number | null
-  isActive: boolean
-  labelPath: string | null
-  createdAt: Date
+  isActive: string
   _count: BarcodeCountAggregateOutputType | null
   _avg: BarcodeAvgAggregateOutputType | null
   _sum: BarcodeSumAggregateOutputType | null
@@ -237,12 +223,11 @@ export type BarcodeWhereInput = {
   code?: Prisma.StringFilter<"Barcode"> | string
   itemId?: Prisma.IntNullableFilter<"Barcode"> | number | null
   targetUnitId?: Prisma.IntNullableFilter<"Barcode"> | number | null
-  isActive?: Prisma.BoolFilter<"Barcode"> | boolean
-  labelPath?: Prisma.StringNullableFilter<"Barcode"> | string | null
-  createdAt?: Prisma.DateTimeFilter<"Barcode"> | Date | string
+  isActive?: Prisma.StringFilter<"Barcode"> | string
   item?: Prisma.XOR<Prisma.ItemNullableScalarRelationFilter, Prisma.ItemWhereInput> | null
   targetUnit?: Prisma.XOR<Prisma.TargetUnitNullableScalarRelationFilter, Prisma.TargetUnitWhereInput> | null
   inventoryTxs?: Prisma.InventoryTxListRelationFilter
+  barcodeScans?: Prisma.BarcodeScanListRelationFilter
 }
 
 export type BarcodeOrderByWithRelationInput = {
@@ -251,28 +236,26 @@ export type BarcodeOrderByWithRelationInput = {
   itemId?: Prisma.SortOrderInput | Prisma.SortOrder
   targetUnitId?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
-  labelPath?: Prisma.SortOrderInput | Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
   item?: Prisma.ItemOrderByWithRelationInput
   targetUnit?: Prisma.TargetUnitOrderByWithRelationInput
   inventoryTxs?: Prisma.InventoryTxOrderByRelationAggregateInput
+  barcodeScans?: Prisma.BarcodeScanOrderByRelationAggregateInput
 }
 
 export type BarcodeWhereUniqueInput = Prisma.AtLeast<{
   id?: number
   code?: string
+  targetUnitId?: number
   AND?: Prisma.BarcodeWhereInput | Prisma.BarcodeWhereInput[]
   OR?: Prisma.BarcodeWhereInput[]
   NOT?: Prisma.BarcodeWhereInput | Prisma.BarcodeWhereInput[]
   itemId?: Prisma.IntNullableFilter<"Barcode"> | number | null
-  targetUnitId?: Prisma.IntNullableFilter<"Barcode"> | number | null
-  isActive?: Prisma.BoolFilter<"Barcode"> | boolean
-  labelPath?: Prisma.StringNullableFilter<"Barcode"> | string | null
-  createdAt?: Prisma.DateTimeFilter<"Barcode"> | Date | string
+  isActive?: Prisma.StringFilter<"Barcode"> | string
   item?: Prisma.XOR<Prisma.ItemNullableScalarRelationFilter, Prisma.ItemWhereInput> | null
   targetUnit?: Prisma.XOR<Prisma.TargetUnitNullableScalarRelationFilter, Prisma.TargetUnitWhereInput> | null
   inventoryTxs?: Prisma.InventoryTxListRelationFilter
-}, "id" | "code">
+  barcodeScans?: Prisma.BarcodeScanListRelationFilter
+}, "id" | "code" | "targetUnitId">
 
 export type BarcodeOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -280,8 +263,6 @@ export type BarcodeOrderByWithAggregationInput = {
   itemId?: Prisma.SortOrderInput | Prisma.SortOrder
   targetUnitId?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
-  labelPath?: Prisma.SortOrderInput | Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
   _count?: Prisma.BarcodeCountOrderByAggregateInput
   _avg?: Prisma.BarcodeAvgOrderByAggregateInput
   _max?: Prisma.BarcodeMaxOrderByAggregateInput
@@ -297,19 +278,16 @@ export type BarcodeScalarWhereWithAggregatesInput = {
   code?: Prisma.StringWithAggregatesFilter<"Barcode"> | string
   itemId?: Prisma.IntNullableWithAggregatesFilter<"Barcode"> | number | null
   targetUnitId?: Prisma.IntNullableWithAggregatesFilter<"Barcode"> | number | null
-  isActive?: Prisma.BoolWithAggregatesFilter<"Barcode"> | boolean
-  labelPath?: Prisma.StringNullableWithAggregatesFilter<"Barcode"> | string | null
-  createdAt?: Prisma.DateTimeWithAggregatesFilter<"Barcode"> | Date | string
+  isActive?: Prisma.StringWithAggregatesFilter<"Barcode"> | string
 }
 
 export type BarcodeCreateInput = {
   code: string
-  isActive?: boolean
-  labelPath?: string | null
-  createdAt?: Date | string
+  isActive?: string
   item?: Prisma.ItemCreateNestedOneWithoutBarcodesInput
   targetUnit?: Prisma.TargetUnitCreateNestedOneWithoutBarcodesInput
   inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutBarcodeInput
+  barcodeScans?: Prisma.BarcodeScanCreateNestedManyWithoutBarcodeInput
 }
 
 export type BarcodeUncheckedCreateInput = {
@@ -317,20 +295,18 @@ export type BarcodeUncheckedCreateInput = {
   code: string
   itemId?: number | null
   targetUnitId?: number | null
-  isActive?: boolean
-  labelPath?: string | null
-  createdAt?: Date | string
+  isActive?: string
   inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutBarcodeInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutBarcodeInput
 }
 
 export type BarcodeUpdateInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  labelPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
   item?: Prisma.ItemUpdateOneWithoutBarcodesNestedInput
   targetUnit?: Prisma.TargetUnitUpdateOneWithoutBarcodesNestedInput
   inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutBarcodeNestedInput
+  barcodeScans?: Prisma.BarcodeScanUpdateManyWithoutBarcodeNestedInput
 }
 
 export type BarcodeUncheckedUpdateInput = {
@@ -338,10 +314,9 @@ export type BarcodeUncheckedUpdateInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   itemId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   targetUnitId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  labelPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
   inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutBarcodeNestedInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutBarcodeNestedInput
 }
 
 export type BarcodeCreateManyInput = {
@@ -349,16 +324,12 @@ export type BarcodeCreateManyInput = {
   code: string
   itemId?: number | null
   targetUnitId?: number | null
-  isActive?: boolean
-  labelPath?: string | null
-  createdAt?: Date | string
+  isActive?: string
 }
 
 export type BarcodeUpdateManyMutationInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  labelPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type BarcodeUncheckedUpdateManyInput = {
@@ -366,9 +337,7 @@ export type BarcodeUncheckedUpdateManyInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   itemId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   targetUnitId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  labelPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type BarcodeListRelationFilter = {
@@ -387,8 +356,6 @@ export type BarcodeCountOrderByAggregateInput = {
   itemId?: Prisma.SortOrder
   targetUnitId?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
-  labelPath?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
 }
 
 export type BarcodeAvgOrderByAggregateInput = {
@@ -403,8 +370,6 @@ export type BarcodeMaxOrderByAggregateInput = {
   itemId?: Prisma.SortOrder
   targetUnitId?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
-  labelPath?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
 }
 
 export type BarcodeMinOrderByAggregateInput = {
@@ -413,8 +378,6 @@ export type BarcodeMinOrderByAggregateInput = {
   itemId?: Prisma.SortOrder
   targetUnitId?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
-  labelPath?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
 }
 
 export type BarcodeSumOrderByAggregateInput = {
@@ -426,6 +389,11 @@ export type BarcodeSumOrderByAggregateInput = {
 export type BarcodeNullableScalarRelationFilter = {
   is?: Prisma.BarcodeWhereInput | null
   isNot?: Prisma.BarcodeWhereInput | null
+}
+
+export type BarcodeScalarRelationFilter = {
+  is?: Prisma.BarcodeWhereInput
+  isNot?: Prisma.BarcodeWhereInput
 }
 
 export type BarcodeCreateNestedManyWithoutItemInput = {
@@ -528,23 +496,35 @@ export type BarcodeUpdateOneWithoutInventoryTxsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.BarcodeUpdateToOneWithWhereWithoutInventoryTxsInput, Prisma.BarcodeUpdateWithoutInventoryTxsInput>, Prisma.BarcodeUncheckedUpdateWithoutInventoryTxsInput>
 }
 
+export type BarcodeCreateNestedOneWithoutBarcodeScansInput = {
+  create?: Prisma.XOR<Prisma.BarcodeCreateWithoutBarcodeScansInput, Prisma.BarcodeUncheckedCreateWithoutBarcodeScansInput>
+  connectOrCreate?: Prisma.BarcodeCreateOrConnectWithoutBarcodeScansInput
+  connect?: Prisma.BarcodeWhereUniqueInput
+}
+
+export type BarcodeUpdateOneRequiredWithoutBarcodeScansNestedInput = {
+  create?: Prisma.XOR<Prisma.BarcodeCreateWithoutBarcodeScansInput, Prisma.BarcodeUncheckedCreateWithoutBarcodeScansInput>
+  connectOrCreate?: Prisma.BarcodeCreateOrConnectWithoutBarcodeScansInput
+  upsert?: Prisma.BarcodeUpsertWithoutBarcodeScansInput
+  connect?: Prisma.BarcodeWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.BarcodeUpdateToOneWithWhereWithoutBarcodeScansInput, Prisma.BarcodeUpdateWithoutBarcodeScansInput>, Prisma.BarcodeUncheckedUpdateWithoutBarcodeScansInput>
+}
+
 export type BarcodeCreateWithoutItemInput = {
   code: string
-  isActive?: boolean
-  labelPath?: string | null
-  createdAt?: Date | string
+  isActive?: string
   targetUnit?: Prisma.TargetUnitCreateNestedOneWithoutBarcodesInput
   inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutBarcodeInput
+  barcodeScans?: Prisma.BarcodeScanCreateNestedManyWithoutBarcodeInput
 }
 
 export type BarcodeUncheckedCreateWithoutItemInput = {
   id?: number
   code: string
   targetUnitId?: number | null
-  isActive?: boolean
-  labelPath?: string | null
-  createdAt?: Date | string
+  isActive?: string
   inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutBarcodeInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutBarcodeInput
 }
 
 export type BarcodeCreateOrConnectWithoutItemInput = {
@@ -581,28 +561,24 @@ export type BarcodeScalarWhereInput = {
   code?: Prisma.StringFilter<"Barcode"> | string
   itemId?: Prisma.IntNullableFilter<"Barcode"> | number | null
   targetUnitId?: Prisma.IntNullableFilter<"Barcode"> | number | null
-  isActive?: Prisma.BoolFilter<"Barcode"> | boolean
-  labelPath?: Prisma.StringNullableFilter<"Barcode"> | string | null
-  createdAt?: Prisma.DateTimeFilter<"Barcode"> | Date | string
+  isActive?: Prisma.StringFilter<"Barcode"> | string
 }
 
 export type BarcodeCreateWithoutTargetUnitInput = {
   code: string
-  isActive?: boolean
-  labelPath?: string | null
-  createdAt?: Date | string
+  isActive?: string
   item?: Prisma.ItemCreateNestedOneWithoutBarcodesInput
   inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutBarcodeInput
+  barcodeScans?: Prisma.BarcodeScanCreateNestedManyWithoutBarcodeInput
 }
 
 export type BarcodeUncheckedCreateWithoutTargetUnitInput = {
   id?: number
   code: string
   itemId?: number | null
-  isActive?: boolean
-  labelPath?: string | null
-  createdAt?: Date | string
+  isActive?: string
   inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutBarcodeInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutBarcodeInput
 }
 
 export type BarcodeCreateOrConnectWithoutTargetUnitInput = {
@@ -633,11 +609,10 @@ export type BarcodeUpdateManyWithWhereWithoutTargetUnitInput = {
 
 export type BarcodeCreateWithoutInventoryTxsInput = {
   code: string
-  isActive?: boolean
-  labelPath?: string | null
-  createdAt?: Date | string
+  isActive?: string
   item?: Prisma.ItemCreateNestedOneWithoutBarcodesInput
   targetUnit?: Prisma.TargetUnitCreateNestedOneWithoutBarcodesInput
+  barcodeScans?: Prisma.BarcodeScanCreateNestedManyWithoutBarcodeInput
 }
 
 export type BarcodeUncheckedCreateWithoutInventoryTxsInput = {
@@ -645,9 +620,8 @@ export type BarcodeUncheckedCreateWithoutInventoryTxsInput = {
   code: string
   itemId?: number | null
   targetUnitId?: number | null
-  isActive?: boolean
-  labelPath?: string | null
-  createdAt?: Date | string
+  isActive?: string
+  barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutBarcodeInput
 }
 
 export type BarcodeCreateOrConnectWithoutInventoryTxsInput = {
@@ -668,11 +642,10 @@ export type BarcodeUpdateToOneWithWhereWithoutInventoryTxsInput = {
 
 export type BarcodeUpdateWithoutInventoryTxsInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  labelPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
   item?: Prisma.ItemUpdateOneWithoutBarcodesNestedInput
   targetUnit?: Prisma.TargetUnitUpdateOneWithoutBarcodesNestedInput
+  barcodeScans?: Prisma.BarcodeScanUpdateManyWithoutBarcodeNestedInput
 }
 
 export type BarcodeUncheckedUpdateWithoutInventoryTxsInput = {
@@ -680,83 +653,120 @@ export type BarcodeUncheckedUpdateWithoutInventoryTxsInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   itemId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   targetUnitId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  labelPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
+  barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutBarcodeNestedInput
+}
+
+export type BarcodeCreateWithoutBarcodeScansInput = {
+  code: string
+  isActive?: string
+  item?: Prisma.ItemCreateNestedOneWithoutBarcodesInput
+  targetUnit?: Prisma.TargetUnitCreateNestedOneWithoutBarcodesInput
+  inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutBarcodeInput
+}
+
+export type BarcodeUncheckedCreateWithoutBarcodeScansInput = {
+  id?: number
+  code: string
+  itemId?: number | null
+  targetUnitId?: number | null
+  isActive?: string
+  inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutBarcodeInput
+}
+
+export type BarcodeCreateOrConnectWithoutBarcodeScansInput = {
+  where: Prisma.BarcodeWhereUniqueInput
+  create: Prisma.XOR<Prisma.BarcodeCreateWithoutBarcodeScansInput, Prisma.BarcodeUncheckedCreateWithoutBarcodeScansInput>
+}
+
+export type BarcodeUpsertWithoutBarcodeScansInput = {
+  update: Prisma.XOR<Prisma.BarcodeUpdateWithoutBarcodeScansInput, Prisma.BarcodeUncheckedUpdateWithoutBarcodeScansInput>
+  create: Prisma.XOR<Prisma.BarcodeCreateWithoutBarcodeScansInput, Prisma.BarcodeUncheckedCreateWithoutBarcodeScansInput>
+  where?: Prisma.BarcodeWhereInput
+}
+
+export type BarcodeUpdateToOneWithWhereWithoutBarcodeScansInput = {
+  where?: Prisma.BarcodeWhereInput
+  data: Prisma.XOR<Prisma.BarcodeUpdateWithoutBarcodeScansInput, Prisma.BarcodeUncheckedUpdateWithoutBarcodeScansInput>
+}
+
+export type BarcodeUpdateWithoutBarcodeScansInput = {
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
+  item?: Prisma.ItemUpdateOneWithoutBarcodesNestedInput
+  targetUnit?: Prisma.TargetUnitUpdateOneWithoutBarcodesNestedInput
+  inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutBarcodeNestedInput
+}
+
+export type BarcodeUncheckedUpdateWithoutBarcodeScansInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  itemId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  targetUnitId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
+  inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutBarcodeNestedInput
 }
 
 export type BarcodeCreateManyItemInput = {
   id?: number
   code: string
   targetUnitId?: number | null
-  isActive?: boolean
-  labelPath?: string | null
-  createdAt?: Date | string
+  isActive?: string
 }
 
 export type BarcodeUpdateWithoutItemInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  labelPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
   targetUnit?: Prisma.TargetUnitUpdateOneWithoutBarcodesNestedInput
   inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutBarcodeNestedInput
+  barcodeScans?: Prisma.BarcodeScanUpdateManyWithoutBarcodeNestedInput
 }
 
 export type BarcodeUncheckedUpdateWithoutItemInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   code?: Prisma.StringFieldUpdateOperationsInput | string
   targetUnitId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  labelPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
   inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutBarcodeNestedInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutBarcodeNestedInput
 }
 
 export type BarcodeUncheckedUpdateManyWithoutItemInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   code?: Prisma.StringFieldUpdateOperationsInput | string
   targetUnitId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  labelPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type BarcodeCreateManyTargetUnitInput = {
   id?: number
   code: string
   itemId?: number | null
-  isActive?: boolean
-  labelPath?: string | null
-  createdAt?: Date | string
+  isActive?: string
 }
 
 export type BarcodeUpdateWithoutTargetUnitInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  labelPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
   item?: Prisma.ItemUpdateOneWithoutBarcodesNestedInput
   inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutBarcodeNestedInput
+  barcodeScans?: Prisma.BarcodeScanUpdateManyWithoutBarcodeNestedInput
 }
 
 export type BarcodeUncheckedUpdateWithoutTargetUnitInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   code?: Prisma.StringFieldUpdateOperationsInput | string
   itemId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  labelPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
   inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutBarcodeNestedInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutBarcodeNestedInput
 }
 
 export type BarcodeUncheckedUpdateManyWithoutTargetUnitInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   code?: Prisma.StringFieldUpdateOperationsInput | string
   itemId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  labelPath?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 
@@ -766,10 +776,12 @@ export type BarcodeUncheckedUpdateManyWithoutTargetUnitInput = {
 
 export type BarcodeCountOutputType = {
   inventoryTxs: number
+  barcodeScans: number
 }
 
 export type BarcodeCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   inventoryTxs?: boolean | BarcodeCountOutputTypeCountInventoryTxsArgs
+  barcodeScans?: boolean | BarcodeCountOutputTypeCountBarcodeScansArgs
 }
 
 /**
@@ -789,6 +801,13 @@ export type BarcodeCountOutputTypeCountInventoryTxsArgs<ExtArgs extends runtime.
   where?: Prisma.InventoryTxWhereInput
 }
 
+/**
+ * BarcodeCountOutputType without action
+ */
+export type BarcodeCountOutputTypeCountBarcodeScansArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.BarcodeScanWhereInput
+}
+
 
 export type BarcodeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -796,11 +815,10 @@ export type BarcodeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   itemId?: boolean
   targetUnitId?: boolean
   isActive?: boolean
-  labelPath?: boolean
-  createdAt?: boolean
   item?: boolean | Prisma.Barcode$itemArgs<ExtArgs>
   targetUnit?: boolean | Prisma.Barcode$targetUnitArgs<ExtArgs>
   inventoryTxs?: boolean | Prisma.Barcode$inventoryTxsArgs<ExtArgs>
+  barcodeScans?: boolean | Prisma.Barcode$barcodeScansArgs<ExtArgs>
   _count?: boolean | Prisma.BarcodeCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["barcode"]>
 
@@ -810,8 +828,6 @@ export type BarcodeSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   itemId?: boolean
   targetUnitId?: boolean
   isActive?: boolean
-  labelPath?: boolean
-  createdAt?: boolean
   item?: boolean | Prisma.Barcode$itemArgs<ExtArgs>
   targetUnit?: boolean | Prisma.Barcode$targetUnitArgs<ExtArgs>
 }, ExtArgs["result"]["barcode"]>
@@ -822,8 +838,6 @@ export type BarcodeSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   itemId?: boolean
   targetUnitId?: boolean
   isActive?: boolean
-  labelPath?: boolean
-  createdAt?: boolean
   item?: boolean | Prisma.Barcode$itemArgs<ExtArgs>
   targetUnit?: boolean | Prisma.Barcode$targetUnitArgs<ExtArgs>
 }, ExtArgs["result"]["barcode"]>
@@ -834,15 +848,14 @@ export type BarcodeSelectScalar = {
   itemId?: boolean
   targetUnitId?: boolean
   isActive?: boolean
-  labelPath?: boolean
-  createdAt?: boolean
 }
 
-export type BarcodeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "code" | "itemId" | "targetUnitId" | "isActive" | "labelPath" | "createdAt", ExtArgs["result"]["barcode"]>
+export type BarcodeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "code" | "itemId" | "targetUnitId" | "isActive", ExtArgs["result"]["barcode"]>
 export type BarcodeInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   item?: boolean | Prisma.Barcode$itemArgs<ExtArgs>
   targetUnit?: boolean | Prisma.Barcode$targetUnitArgs<ExtArgs>
   inventoryTxs?: boolean | Prisma.Barcode$inventoryTxsArgs<ExtArgs>
+  barcodeScans?: boolean | Prisma.Barcode$barcodeScansArgs<ExtArgs>
   _count?: boolean | Prisma.BarcodeCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type BarcodeIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -860,15 +873,14 @@ export type $BarcodePayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     item: Prisma.$ItemPayload<ExtArgs> | null
     targetUnit: Prisma.$TargetUnitPayload<ExtArgs> | null
     inventoryTxs: Prisma.$InventoryTxPayload<ExtArgs>[]
+    barcodeScans: Prisma.$BarcodeScanPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
     code: string
     itemId: number | null
     targetUnitId: number | null
-    isActive: boolean
-    labelPath: string | null
-    createdAt: Date
+    isActive: string
   }, ExtArgs["result"]["barcode"]>
   composites: {}
 }
@@ -1266,6 +1278,7 @@ export interface Prisma__BarcodeClient<T, Null = never, ExtArgs extends runtime.
   item<T extends Prisma.Barcode$itemArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Barcode$itemArgs<ExtArgs>>): Prisma.Prisma__ItemClient<runtime.Types.Result.GetResult<Prisma.$ItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   targetUnit<T extends Prisma.Barcode$targetUnitArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Barcode$targetUnitArgs<ExtArgs>>): Prisma.Prisma__TargetUnitClient<runtime.Types.Result.GetResult<Prisma.$TargetUnitPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   inventoryTxs<T extends Prisma.Barcode$inventoryTxsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Barcode$inventoryTxsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InventoryTxPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  barcodeScans<T extends Prisma.Barcode$barcodeScansArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Barcode$barcodeScansArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BarcodeScanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1299,9 +1312,7 @@ export interface BarcodeFieldRefs {
   readonly code: Prisma.FieldRef<"Barcode", 'String'>
   readonly itemId: Prisma.FieldRef<"Barcode", 'Int'>
   readonly targetUnitId: Prisma.FieldRef<"Barcode", 'Int'>
-  readonly isActive: Prisma.FieldRef<"Barcode", 'Boolean'>
-  readonly labelPath: Prisma.FieldRef<"Barcode", 'String'>
-  readonly createdAt: Prisma.FieldRef<"Barcode", 'DateTime'>
+  readonly isActive: Prisma.FieldRef<"Barcode", 'String'>
 }
     
 
@@ -1757,6 +1768,30 @@ export type Barcode$inventoryTxsArgs<ExtArgs extends runtime.Types.Extensions.In
   take?: number
   skip?: number
   distinct?: Prisma.InventoryTxScalarFieldEnum | Prisma.InventoryTxScalarFieldEnum[]
+}
+
+/**
+ * Barcode.barcodeScans
+ */
+export type Barcode$barcodeScansArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the BarcodeScan
+   */
+  select?: Prisma.BarcodeScanSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the BarcodeScan
+   */
+  omit?: Prisma.BarcodeScanOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.BarcodeScanInclude<ExtArgs> | null
+  where?: Prisma.BarcodeScanWhereInput
+  orderBy?: Prisma.BarcodeScanOrderByWithRelationInput | Prisma.BarcodeScanOrderByWithRelationInput[]
+  cursor?: Prisma.BarcodeScanWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.BarcodeScanScalarFieldEnum | Prisma.BarcodeScanScalarFieldEnum[]
 }
 
 /**

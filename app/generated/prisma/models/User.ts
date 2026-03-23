@@ -36,35 +36,29 @@ export type UserSumAggregateOutputType = {
 
 export type UserMinAggregateOutputType = {
   id: number | null
-  email: string | null
   name: string | null
+  email: string | null
   role: string | null
-  isActive: boolean | null
-  googleId: string | null
-  createdAt: Date | null
-  updatedAt: Date | null
+  isActive: string | null
+  passwordHash: string | null
 }
 
 export type UserMaxAggregateOutputType = {
   id: number | null
-  email: string | null
   name: string | null
+  email: string | null
   role: string | null
-  isActive: boolean | null
-  googleId: string | null
-  createdAt: Date | null
-  updatedAt: Date | null
+  isActive: string | null
+  passwordHash: string | null
 }
 
 export type UserCountAggregateOutputType = {
   id: number
-  email: number
   name: number
+  email: number
   role: number
   isActive: number
-  googleId: number
-  createdAt: number
-  updatedAt: number
+  passwordHash: number
   _all: number
 }
 
@@ -79,35 +73,29 @@ export type UserSumAggregateInputType = {
 
 export type UserMinAggregateInputType = {
   id?: true
-  email?: true
   name?: true
+  email?: true
   role?: true
   isActive?: true
-  googleId?: true
-  createdAt?: true
-  updatedAt?: true
+  passwordHash?: true
 }
 
 export type UserMaxAggregateInputType = {
   id?: true
-  email?: true
   name?: true
+  email?: true
   role?: true
   isActive?: true
-  googleId?: true
-  createdAt?: true
-  updatedAt?: true
+  passwordHash?: true
 }
 
 export type UserCountAggregateInputType = {
   id?: true
-  email?: true
   name?: true
+  email?: true
   role?: true
   isActive?: true
-  googleId?: true
-  createdAt?: true
-  updatedAt?: true
+  passwordHash?: true
   _all?: true
 }
 
@@ -199,13 +187,11 @@ export type UserGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
 
 export type UserGroupByOutputType = {
   id: number
-  email: string
   name: string
-  role: string
-  isActive: boolean
-  googleId: string | null
-  createdAt: Date
-  updatedAt: Date
+  email: string | null
+  role: string | null
+  isActive: string
+  passwordHash: string | null
   _count: UserCountAggregateOutputType | null
   _avg: UserAvgAggregateOutputType | null
   _sum: UserSumAggregateOutputType | null
@@ -233,34 +219,30 @@ export type UserWhereInput = {
   OR?: Prisma.UserWhereInput[]
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   id?: Prisma.IntFilter<"User"> | number
-  email?: Prisma.StringFilter<"User"> | string
   name?: Prisma.StringFilter<"User"> | string
-  role?: Prisma.StringFilter<"User"> | string
-  isActive?: Prisma.BoolFilter<"User"> | boolean
-  googleId?: Prisma.StringNullableFilter<"User"> | string | null
-  createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
-  updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
-  permissions?: Prisma.UserPermissionListRelationFilter
+  email?: Prisma.StringNullableFilter<"User"> | string | null
+  role?: Prisma.StringNullableFilter<"User"> | string | null
+  isActive?: Prisma.StringFilter<"User"> | string
+  passwordHash?: Prisma.StringNullableFilter<"User"> | string | null
+  permission?: Prisma.XOR<Prisma.UserTabPermissionNullableScalarRelationFilter, Prisma.UserTabPermissionWhereInput> | null
+  authTokens?: Prisma.AuthRefreshTokenListRelationFilter
   inventoryTxs?: Prisma.InventoryTxListRelationFilter
-  auditLogs?: Prisma.AuditLogListRelationFilter
-  attendances?: Prisma.AttendanceListRelationFilter
-  notices?: Prisma.NoticeListRelationFilter
+  targetLogs?: Prisma.TargetLogListRelationFilter
+  barcodeScans?: Prisma.BarcodeScanListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  email?: Prisma.SortOrder
   name?: Prisma.SortOrder
-  role?: Prisma.SortOrder
+  email?: Prisma.SortOrderInput | Prisma.SortOrder
+  role?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
-  googleId?: Prisma.SortOrderInput | Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
-  permissions?: Prisma.UserPermissionOrderByRelationAggregateInput
+  passwordHash?: Prisma.SortOrderInput | Prisma.SortOrder
+  permission?: Prisma.UserTabPermissionOrderByWithRelationInput
+  authTokens?: Prisma.AuthRefreshTokenOrderByRelationAggregateInput
   inventoryTxs?: Prisma.InventoryTxOrderByRelationAggregateInput
-  auditLogs?: Prisma.AuditLogOrderByRelationAggregateInput
-  attendances?: Prisma.AttendanceOrderByRelationAggregateInput
-  notices?: Prisma.NoticeOrderByRelationAggregateInput
+  targetLogs?: Prisma.TargetLogOrderByRelationAggregateInput
+  barcodeScans?: Prisma.BarcodeScanOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -270,27 +252,23 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.UserWhereInput[]
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   name?: Prisma.StringFilter<"User"> | string
-  role?: Prisma.StringFilter<"User"> | string
-  isActive?: Prisma.BoolFilter<"User"> | boolean
-  googleId?: Prisma.StringNullableFilter<"User"> | string | null
-  createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
-  updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
-  permissions?: Prisma.UserPermissionListRelationFilter
+  role?: Prisma.StringNullableFilter<"User"> | string | null
+  isActive?: Prisma.StringFilter<"User"> | string
+  passwordHash?: Prisma.StringNullableFilter<"User"> | string | null
+  permission?: Prisma.XOR<Prisma.UserTabPermissionNullableScalarRelationFilter, Prisma.UserTabPermissionWhereInput> | null
+  authTokens?: Prisma.AuthRefreshTokenListRelationFilter
   inventoryTxs?: Prisma.InventoryTxListRelationFilter
-  auditLogs?: Prisma.AuditLogListRelationFilter
-  attendances?: Prisma.AttendanceListRelationFilter
-  notices?: Prisma.NoticeListRelationFilter
+  targetLogs?: Prisma.TargetLogListRelationFilter
+  barcodeScans?: Prisma.BarcodeScanListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  email?: Prisma.SortOrder
   name?: Prisma.SortOrder
-  role?: Prisma.SortOrder
+  email?: Prisma.SortOrderInput | Prisma.SortOrder
+  role?: Prisma.SortOrderInput | Prisma.SortOrder
   isActive?: Prisma.SortOrder
-  googleId?: Prisma.SortOrderInput | Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
+  passwordHash?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
   _avg?: Prisma.UserAvgOrderByAggregateInput
   _max?: Prisma.UserMaxOrderByAggregateInput
@@ -303,118 +281,100 @@ export type UserScalarWhereWithAggregatesInput = {
   OR?: Prisma.UserScalarWhereWithAggregatesInput[]
   NOT?: Prisma.UserScalarWhereWithAggregatesInput | Prisma.UserScalarWhereWithAggregatesInput[]
   id?: Prisma.IntWithAggregatesFilter<"User"> | number
-  email?: Prisma.StringWithAggregatesFilter<"User"> | string
   name?: Prisma.StringWithAggregatesFilter<"User"> | string
-  role?: Prisma.StringWithAggregatesFilter<"User"> | string
-  isActive?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
-  googleId?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
-  createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
-  updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
+  email?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  role?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  isActive?: Prisma.StringWithAggregatesFilter<"User"> | string
+  passwordHash?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
 }
 
 export type UserCreateInput = {
-  email: string
   name: string
-  role?: string
-  isActive?: boolean
-  googleId?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  permissions?: Prisma.UserPermissionCreateNestedManyWithoutUserInput
-  inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutCreatorInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
-  attendances?: Prisma.AttendanceCreateNestedManyWithoutUserInput
-  notices?: Prisma.NoticeCreateNestedManyWithoutAuthorInput
+  email?: string | null
+  role?: string | null
+  isActive?: string
+  passwordHash?: string | null
+  permission?: Prisma.UserTabPermissionCreateNestedOneWithoutUserInput
+  authTokens?: Prisma.AuthRefreshTokenCreateNestedManyWithoutUserInput
+  inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutUserInput
+  targetLogs?: Prisma.TargetLogCreateNestedManyWithoutUserInput
+  barcodeScans?: Prisma.BarcodeScanCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
   id?: number
-  email: string
   name: string
-  role?: string
-  isActive?: boolean
-  googleId?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  permissions?: Prisma.UserPermissionUncheckedCreateNestedManyWithoutUserInput
-  inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutCreatorInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
-  attendances?: Prisma.AttendanceUncheckedCreateNestedManyWithoutUserInput
-  notices?: Prisma.NoticeUncheckedCreateNestedManyWithoutAuthorInput
+  email?: string | null
+  role?: string | null
+  isActive?: string
+  passwordHash?: string | null
+  permission?: Prisma.UserTabPermissionUncheckedCreateNestedOneWithoutUserInput
+  authTokens?: Prisma.AuthRefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutUserInput
+  targetLogs?: Prisma.TargetLogUncheckedCreateNestedManyWithoutUserInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
-  email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  role?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  permissions?: Prisma.UserPermissionUpdateManyWithoutUserNestedInput
-  inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutCreatorNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
-  attendances?: Prisma.AttendanceUpdateManyWithoutUserNestedInput
-  notices?: Prisma.NoticeUpdateManyWithoutAuthorNestedInput
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  permission?: Prisma.UserTabPermissionUpdateOneWithoutUserNestedInput
+  authTokens?: Prisma.AuthRefreshTokenUpdateManyWithoutUserNestedInput
+  inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutUserNestedInput
+  targetLogs?: Prisma.TargetLogUpdateManyWithoutUserNestedInput
+  barcodeScans?: Prisma.BarcodeScanUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  role?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  permissions?: Prisma.UserPermissionUncheckedUpdateManyWithoutUserNestedInput
-  inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutCreatorNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
-  attendances?: Prisma.AttendanceUncheckedUpdateManyWithoutUserNestedInput
-  notices?: Prisma.NoticeUncheckedUpdateManyWithoutAuthorNestedInput
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  permission?: Prisma.UserTabPermissionUncheckedUpdateOneWithoutUserNestedInput
+  authTokens?: Prisma.AuthRefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutUserNestedInput
+  targetLogs?: Prisma.TargetLogUncheckedUpdateManyWithoutUserNestedInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
   id?: number
-  email: string
   name: string
-  role?: string
-  isActive?: boolean
-  googleId?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
+  email?: string | null
+  role?: string | null
+  isActive?: string
+  passwordHash?: string | null
 }
 
 export type UserUpdateManyMutationInput = {
-  email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  role?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type UserUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  role?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type UserCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  email?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  email?: Prisma.SortOrder
   role?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
-  googleId?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
+  passwordHash?: Prisma.SortOrder
 }
 
 export type UserAvgOrderByAggregateInput = {
@@ -423,24 +383,20 @@ export type UserAvgOrderByAggregateInput = {
 
 export type UserMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  email?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  email?: Prisma.SortOrder
   role?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
-  googleId?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
+  passwordHash?: Prisma.SortOrder
 }
 
 export type UserMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  email?: Prisma.SortOrder
   name?: Prisma.SortOrder
+  email?: Prisma.SortOrder
   role?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
-  googleId?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-  updatedAt?: Prisma.SortOrder
+  passwordHash?: Prisma.SortOrder
 }
 
 export type UserSumOrderByAggregateInput = {
@@ -457,42 +413,48 @@ export type UserNullableScalarRelationFilter = {
   isNot?: Prisma.UserWhereInput | null
 }
 
-export type StringFieldUpdateOperationsInput = {
-  set?: string
-}
-
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
-}
-
-export type DateTimeFieldUpdateOperationsInput = {
-  set?: Date | string
-}
-
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
-export type UserCreateNestedOneWithoutPermissionsInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutPermissionsInput, Prisma.UserUncheckedCreateWithoutPermissionsInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPermissionsInput
+export type UserCreateNestedOneWithoutPermissionInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPermissionInput, Prisma.UserUncheckedCreateWithoutPermissionInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPermissionInput
   connect?: Prisma.UserWhereUniqueInput
 }
 
-export type UserUpdateOneRequiredWithoutPermissionsNestedInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutPermissionsInput, Prisma.UserUncheckedCreateWithoutPermissionsInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPermissionsInput
-  upsert?: Prisma.UserUpsertWithoutPermissionsInput
+export type UserUpdateOneRequiredWithoutPermissionNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPermissionInput, Prisma.UserUncheckedCreateWithoutPermissionInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPermissionInput
+  upsert?: Prisma.UserUpsertWithoutPermissionInput
   connect?: Prisma.UserWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPermissionsInput, Prisma.UserUpdateWithoutPermissionsInput>, Prisma.UserUncheckedUpdateWithoutPermissionsInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPermissionInput, Prisma.UserUpdateWithoutPermissionInput>, Prisma.UserUncheckedUpdateWithoutPermissionInput>
+}
+
+export type UserCreateNestedOneWithoutAuthTokensInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutAuthTokensInput, Prisma.UserUncheckedCreateWithoutAuthTokensInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAuthTokensInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutAuthTokensNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutAuthTokensInput, Prisma.UserUncheckedCreateWithoutAuthTokensInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAuthTokensInput
+  upsert?: Prisma.UserUpsertWithoutAuthTokensInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAuthTokensInput, Prisma.UserUpdateWithoutAuthTokensInput>, Prisma.UserUncheckedUpdateWithoutAuthTokensInput>
+}
+
+export type UserCreateNestedOneWithoutTargetLogsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutTargetLogsInput, Prisma.UserUncheckedCreateWithoutTargetLogsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutTargetLogsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutTargetLogsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutTargetLogsInput, Prisma.UserUncheckedCreateWithoutTargetLogsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutTargetLogsInput
+  upsert?: Prisma.UserUpsertWithoutTargetLogsInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutTargetLogsInput, Prisma.UserUpdateWithoutTargetLogsInput>, Prisma.UserUncheckedUpdateWithoutTargetLogsInput>
 }
 
 export type UserCreateNestedOneWithoutInventoryTxsInput = {
@@ -511,151 +473,243 @@ export type UserUpdateOneWithoutInventoryTxsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutInventoryTxsInput, Prisma.UserUpdateWithoutInventoryTxsInput>, Prisma.UserUncheckedUpdateWithoutInventoryTxsInput>
 }
 
-export type UserCreateNestedOneWithoutAuditLogsInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutAuditLogsInput, Prisma.UserUncheckedCreateWithoutAuditLogsInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAuditLogsInput
+export type UserCreateNestedOneWithoutBarcodeScansInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutBarcodeScansInput, Prisma.UserUncheckedCreateWithoutBarcodeScansInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutBarcodeScansInput
   connect?: Prisma.UserWhereUniqueInput
 }
 
-export type UserUpdateOneWithoutAuditLogsNestedInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutAuditLogsInput, Prisma.UserUncheckedCreateWithoutAuditLogsInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAuditLogsInput
-  upsert?: Prisma.UserUpsertWithoutAuditLogsInput
+export type UserUpdateOneWithoutBarcodeScansNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutBarcodeScansInput, Prisma.UserUncheckedCreateWithoutBarcodeScansInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutBarcodeScansInput
+  upsert?: Prisma.UserUpsertWithoutBarcodeScansInput
   disconnect?: Prisma.UserWhereInput | boolean
   delete?: Prisma.UserWhereInput | boolean
   connect?: Prisma.UserWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAuditLogsInput, Prisma.UserUpdateWithoutAuditLogsInput>, Prisma.UserUncheckedUpdateWithoutAuditLogsInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutBarcodeScansInput, Prisma.UserUpdateWithoutBarcodeScansInput>, Prisma.UserUncheckedUpdateWithoutBarcodeScansInput>
 }
 
-export type UserCreateNestedOneWithoutAttendancesInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutAttendancesInput, Prisma.UserUncheckedCreateWithoutAttendancesInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAttendancesInput
-  connect?: Prisma.UserWhereUniqueInput
-}
-
-export type UserUpdateOneRequiredWithoutAttendancesNestedInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutAttendancesInput, Prisma.UserUncheckedCreateWithoutAttendancesInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAttendancesInput
-  upsert?: Prisma.UserUpsertWithoutAttendancesInput
-  connect?: Prisma.UserWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAttendancesInput, Prisma.UserUpdateWithoutAttendancesInput>, Prisma.UserUncheckedUpdateWithoutAttendancesInput>
-}
-
-export type UserCreateNestedOneWithoutNoticesInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutNoticesInput, Prisma.UserUncheckedCreateWithoutNoticesInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutNoticesInput
-  connect?: Prisma.UserWhereUniqueInput
-}
-
-export type UserUpdateOneRequiredWithoutNoticesNestedInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutNoticesInput, Prisma.UserUncheckedCreateWithoutNoticesInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutNoticesInput
-  upsert?: Prisma.UserUpsertWithoutNoticesInput
-  connect?: Prisma.UserWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutNoticesInput, Prisma.UserUpdateWithoutNoticesInput>, Prisma.UserUncheckedUpdateWithoutNoticesInput>
-}
-
-export type UserCreateWithoutPermissionsInput = {
-  email: string
+export type UserCreateWithoutPermissionInput = {
   name: string
-  role?: string
-  isActive?: boolean
-  googleId?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutCreatorInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
-  attendances?: Prisma.AttendanceCreateNestedManyWithoutUserInput
-  notices?: Prisma.NoticeCreateNestedManyWithoutAuthorInput
+  email?: string | null
+  role?: string | null
+  isActive?: string
+  passwordHash?: string | null
+  authTokens?: Prisma.AuthRefreshTokenCreateNestedManyWithoutUserInput
+  inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutUserInput
+  targetLogs?: Prisma.TargetLogCreateNestedManyWithoutUserInput
+  barcodeScans?: Prisma.BarcodeScanCreateNestedManyWithoutUserInput
 }
 
-export type UserUncheckedCreateWithoutPermissionsInput = {
+export type UserUncheckedCreateWithoutPermissionInput = {
   id?: number
-  email: string
   name: string
-  role?: string
-  isActive?: boolean
-  googleId?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutCreatorInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
-  attendances?: Prisma.AttendanceUncheckedCreateNestedManyWithoutUserInput
-  notices?: Prisma.NoticeUncheckedCreateNestedManyWithoutAuthorInput
+  email?: string | null
+  role?: string | null
+  isActive?: string
+  passwordHash?: string | null
+  authTokens?: Prisma.AuthRefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutUserInput
+  targetLogs?: Prisma.TargetLogUncheckedCreateNestedManyWithoutUserInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutUserInput
 }
 
-export type UserCreateOrConnectWithoutPermissionsInput = {
+export type UserCreateOrConnectWithoutPermissionInput = {
   where: Prisma.UserWhereUniqueInput
-  create: Prisma.XOR<Prisma.UserCreateWithoutPermissionsInput, Prisma.UserUncheckedCreateWithoutPermissionsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutPermissionInput, Prisma.UserUncheckedCreateWithoutPermissionInput>
 }
 
-export type UserUpsertWithoutPermissionsInput = {
-  update: Prisma.XOR<Prisma.UserUpdateWithoutPermissionsInput, Prisma.UserUncheckedUpdateWithoutPermissionsInput>
-  create: Prisma.XOR<Prisma.UserCreateWithoutPermissionsInput, Prisma.UserUncheckedCreateWithoutPermissionsInput>
+export type UserUpsertWithoutPermissionInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutPermissionInput, Prisma.UserUncheckedUpdateWithoutPermissionInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutPermissionInput, Prisma.UserUncheckedCreateWithoutPermissionInput>
   where?: Prisma.UserWhereInput
 }
 
-export type UserUpdateToOneWithWhereWithoutPermissionsInput = {
+export type UserUpdateToOneWithWhereWithoutPermissionInput = {
   where?: Prisma.UserWhereInput
-  data: Prisma.XOR<Prisma.UserUpdateWithoutPermissionsInput, Prisma.UserUncheckedUpdateWithoutPermissionsInput>
+  data: Prisma.XOR<Prisma.UserUpdateWithoutPermissionInput, Prisma.UserUncheckedUpdateWithoutPermissionInput>
 }
 
-export type UserUpdateWithoutPermissionsInput = {
-  email?: Prisma.StringFieldUpdateOperationsInput | string
+export type UserUpdateWithoutPermissionInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  role?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutCreatorNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
-  attendances?: Prisma.AttendanceUpdateManyWithoutUserNestedInput
-  notices?: Prisma.NoticeUpdateManyWithoutAuthorNestedInput
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  authTokens?: Prisma.AuthRefreshTokenUpdateManyWithoutUserNestedInput
+  inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutUserNestedInput
+  targetLogs?: Prisma.TargetLogUpdateManyWithoutUserNestedInput
+  barcodeScans?: Prisma.BarcodeScanUpdateManyWithoutUserNestedInput
 }
 
-export type UserUncheckedUpdateWithoutPermissionsInput = {
+export type UserUncheckedUpdateWithoutPermissionInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  role?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutCreatorNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
-  attendances?: Prisma.AttendanceUncheckedUpdateManyWithoutUserNestedInput
-  notices?: Prisma.NoticeUncheckedUpdateManyWithoutAuthorNestedInput
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  authTokens?: Prisma.AuthRefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutUserNestedInput
+  targetLogs?: Prisma.TargetLogUncheckedUpdateManyWithoutUserNestedInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutAuthTokensInput = {
+  name: string
+  email?: string | null
+  role?: string | null
+  isActive?: string
+  passwordHash?: string | null
+  permission?: Prisma.UserTabPermissionCreateNestedOneWithoutUserInput
+  inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutUserInput
+  targetLogs?: Prisma.TargetLogCreateNestedManyWithoutUserInput
+  barcodeScans?: Prisma.BarcodeScanCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutAuthTokensInput = {
+  id?: number
+  name: string
+  email?: string | null
+  role?: string | null
+  isActive?: string
+  passwordHash?: string | null
+  permission?: Prisma.UserTabPermissionUncheckedCreateNestedOneWithoutUserInput
+  inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutUserInput
+  targetLogs?: Prisma.TargetLogUncheckedCreateNestedManyWithoutUserInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutAuthTokensInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutAuthTokensInput, Prisma.UserUncheckedCreateWithoutAuthTokensInput>
+}
+
+export type UserUpsertWithoutAuthTokensInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutAuthTokensInput, Prisma.UserUncheckedUpdateWithoutAuthTokensInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutAuthTokensInput, Prisma.UserUncheckedCreateWithoutAuthTokensInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutAuthTokensInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutAuthTokensInput, Prisma.UserUncheckedUpdateWithoutAuthTokensInput>
+}
+
+export type UserUpdateWithoutAuthTokensInput = {
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  permission?: Prisma.UserTabPermissionUpdateOneWithoutUserNestedInput
+  inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutUserNestedInput
+  targetLogs?: Prisma.TargetLogUpdateManyWithoutUserNestedInput
+  barcodeScans?: Prisma.BarcodeScanUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutAuthTokensInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  permission?: Prisma.UserTabPermissionUncheckedUpdateOneWithoutUserNestedInput
+  inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutUserNestedInput
+  targetLogs?: Prisma.TargetLogUncheckedUpdateManyWithoutUserNestedInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutTargetLogsInput = {
+  name: string
+  email?: string | null
+  role?: string | null
+  isActive?: string
+  passwordHash?: string | null
+  permission?: Prisma.UserTabPermissionCreateNestedOneWithoutUserInput
+  authTokens?: Prisma.AuthRefreshTokenCreateNestedManyWithoutUserInput
+  inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutUserInput
+  barcodeScans?: Prisma.BarcodeScanCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutTargetLogsInput = {
+  id?: number
+  name: string
+  email?: string | null
+  role?: string | null
+  isActive?: string
+  passwordHash?: string | null
+  permission?: Prisma.UserTabPermissionUncheckedCreateNestedOneWithoutUserInput
+  authTokens?: Prisma.AuthRefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutUserInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutTargetLogsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutTargetLogsInput, Prisma.UserUncheckedCreateWithoutTargetLogsInput>
+}
+
+export type UserUpsertWithoutTargetLogsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutTargetLogsInput, Prisma.UserUncheckedUpdateWithoutTargetLogsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutTargetLogsInput, Prisma.UserUncheckedCreateWithoutTargetLogsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutTargetLogsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutTargetLogsInput, Prisma.UserUncheckedUpdateWithoutTargetLogsInput>
+}
+
+export type UserUpdateWithoutTargetLogsInput = {
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  permission?: Prisma.UserTabPermissionUpdateOneWithoutUserNestedInput
+  authTokens?: Prisma.AuthRefreshTokenUpdateManyWithoutUserNestedInput
+  inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutUserNestedInput
+  barcodeScans?: Prisma.BarcodeScanUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutTargetLogsInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  permission?: Prisma.UserTabPermissionUncheckedUpdateOneWithoutUserNestedInput
+  authTokens?: Prisma.AuthRefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutUserNestedInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutInventoryTxsInput = {
-  email: string
   name: string
-  role?: string
-  isActive?: boolean
-  googleId?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  permissions?: Prisma.UserPermissionCreateNestedManyWithoutUserInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
-  attendances?: Prisma.AttendanceCreateNestedManyWithoutUserInput
-  notices?: Prisma.NoticeCreateNestedManyWithoutAuthorInput
+  email?: string | null
+  role?: string | null
+  isActive?: string
+  passwordHash?: string | null
+  permission?: Prisma.UserTabPermissionCreateNestedOneWithoutUserInput
+  authTokens?: Prisma.AuthRefreshTokenCreateNestedManyWithoutUserInput
+  targetLogs?: Prisma.TargetLogCreateNestedManyWithoutUserInput
+  barcodeScans?: Prisma.BarcodeScanCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutInventoryTxsInput = {
   id?: number
-  email: string
   name: string
-  role?: string
-  isActive?: boolean
-  googleId?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  permissions?: Prisma.UserPermissionUncheckedCreateNestedManyWithoutUserInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
-  attendances?: Prisma.AttendanceUncheckedCreateNestedManyWithoutUserInput
-  notices?: Prisma.NoticeUncheckedCreateNestedManyWithoutAuthorInput
+  email?: string | null
+  role?: string | null
+  isActive?: string
+  passwordHash?: string | null
+  permission?: Prisma.UserTabPermissionUncheckedCreateNestedOneWithoutUserInput
+  authTokens?: Prisma.AuthRefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  targetLogs?: Prisma.TargetLogUncheckedCreateNestedManyWithoutUserInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutInventoryTxsInput = {
@@ -675,254 +729,94 @@ export type UserUpdateToOneWithWhereWithoutInventoryTxsInput = {
 }
 
 export type UserUpdateWithoutInventoryTxsInput = {
-  email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  role?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  permissions?: Prisma.UserPermissionUpdateManyWithoutUserNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
-  attendances?: Prisma.AttendanceUpdateManyWithoutUserNestedInput
-  notices?: Prisma.NoticeUpdateManyWithoutAuthorNestedInput
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  permission?: Prisma.UserTabPermissionUpdateOneWithoutUserNestedInput
+  authTokens?: Prisma.AuthRefreshTokenUpdateManyWithoutUserNestedInput
+  targetLogs?: Prisma.TargetLogUpdateManyWithoutUserNestedInput
+  barcodeScans?: Prisma.BarcodeScanUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutInventoryTxsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  role?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  permissions?: Prisma.UserPermissionUncheckedUpdateManyWithoutUserNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
-  attendances?: Prisma.AttendanceUncheckedUpdateManyWithoutUserNestedInput
-  notices?: Prisma.NoticeUncheckedUpdateManyWithoutAuthorNestedInput
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  permission?: Prisma.UserTabPermissionUncheckedUpdateOneWithoutUserNestedInput
+  authTokens?: Prisma.AuthRefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  targetLogs?: Prisma.TargetLogUncheckedUpdateManyWithoutUserNestedInput
+  barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutUserNestedInput
 }
 
-export type UserCreateWithoutAuditLogsInput = {
-  email: string
+export type UserCreateWithoutBarcodeScansInput = {
   name: string
-  role?: string
-  isActive?: boolean
-  googleId?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  permissions?: Prisma.UserPermissionCreateNestedManyWithoutUserInput
-  inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutCreatorInput
-  attendances?: Prisma.AttendanceCreateNestedManyWithoutUserInput
-  notices?: Prisma.NoticeCreateNestedManyWithoutAuthorInput
+  email?: string | null
+  role?: string | null
+  isActive?: string
+  passwordHash?: string | null
+  permission?: Prisma.UserTabPermissionCreateNestedOneWithoutUserInput
+  authTokens?: Prisma.AuthRefreshTokenCreateNestedManyWithoutUserInput
+  inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutUserInput
+  targetLogs?: Prisma.TargetLogCreateNestedManyWithoutUserInput
 }
 
-export type UserUncheckedCreateWithoutAuditLogsInput = {
+export type UserUncheckedCreateWithoutBarcodeScansInput = {
   id?: number
-  email: string
   name: string
-  role?: string
-  isActive?: boolean
-  googleId?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  permissions?: Prisma.UserPermissionUncheckedCreateNestedManyWithoutUserInput
-  inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutCreatorInput
-  attendances?: Prisma.AttendanceUncheckedCreateNestedManyWithoutUserInput
-  notices?: Prisma.NoticeUncheckedCreateNestedManyWithoutAuthorInput
+  email?: string | null
+  role?: string | null
+  isActive?: string
+  passwordHash?: string | null
+  permission?: Prisma.UserTabPermissionUncheckedCreateNestedOneWithoutUserInput
+  authTokens?: Prisma.AuthRefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutUserInput
+  targetLogs?: Prisma.TargetLogUncheckedCreateNestedManyWithoutUserInput
 }
 
-export type UserCreateOrConnectWithoutAuditLogsInput = {
+export type UserCreateOrConnectWithoutBarcodeScansInput = {
   where: Prisma.UserWhereUniqueInput
-  create: Prisma.XOR<Prisma.UserCreateWithoutAuditLogsInput, Prisma.UserUncheckedCreateWithoutAuditLogsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutBarcodeScansInput, Prisma.UserUncheckedCreateWithoutBarcodeScansInput>
 }
 
-export type UserUpsertWithoutAuditLogsInput = {
-  update: Prisma.XOR<Prisma.UserUpdateWithoutAuditLogsInput, Prisma.UserUncheckedUpdateWithoutAuditLogsInput>
-  create: Prisma.XOR<Prisma.UserCreateWithoutAuditLogsInput, Prisma.UserUncheckedCreateWithoutAuditLogsInput>
+export type UserUpsertWithoutBarcodeScansInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutBarcodeScansInput, Prisma.UserUncheckedUpdateWithoutBarcodeScansInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutBarcodeScansInput, Prisma.UserUncheckedCreateWithoutBarcodeScansInput>
   where?: Prisma.UserWhereInput
 }
 
-export type UserUpdateToOneWithWhereWithoutAuditLogsInput = {
+export type UserUpdateToOneWithWhereWithoutBarcodeScansInput = {
   where?: Prisma.UserWhereInput
-  data: Prisma.XOR<Prisma.UserUpdateWithoutAuditLogsInput, Prisma.UserUncheckedUpdateWithoutAuditLogsInput>
+  data: Prisma.XOR<Prisma.UserUpdateWithoutBarcodeScansInput, Prisma.UserUncheckedUpdateWithoutBarcodeScansInput>
 }
 
-export type UserUpdateWithoutAuditLogsInput = {
-  email?: Prisma.StringFieldUpdateOperationsInput | string
+export type UserUpdateWithoutBarcodeScansInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  role?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  permissions?: Prisma.UserPermissionUpdateManyWithoutUserNestedInput
-  inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutCreatorNestedInput
-  attendances?: Prisma.AttendanceUpdateManyWithoutUserNestedInput
-  notices?: Prisma.NoticeUpdateManyWithoutAuthorNestedInput
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  permission?: Prisma.UserTabPermissionUpdateOneWithoutUserNestedInput
+  authTokens?: Prisma.AuthRefreshTokenUpdateManyWithoutUserNestedInput
+  inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutUserNestedInput
+  targetLogs?: Prisma.TargetLogUpdateManyWithoutUserNestedInput
 }
 
-export type UserUncheckedUpdateWithoutAuditLogsInput = {
+export type UserUncheckedUpdateWithoutBarcodeScansInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  email?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  role?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  permissions?: Prisma.UserPermissionUncheckedUpdateManyWithoutUserNestedInput
-  inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutCreatorNestedInput
-  attendances?: Prisma.AttendanceUncheckedUpdateManyWithoutUserNestedInput
-  notices?: Prisma.NoticeUncheckedUpdateManyWithoutAuthorNestedInput
-}
-
-export type UserCreateWithoutAttendancesInput = {
-  email: string
-  name: string
-  role?: string
-  isActive?: boolean
-  googleId?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  permissions?: Prisma.UserPermissionCreateNestedManyWithoutUserInput
-  inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutCreatorInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
-  notices?: Prisma.NoticeCreateNestedManyWithoutAuthorInput
-}
-
-export type UserUncheckedCreateWithoutAttendancesInput = {
-  id?: number
-  email: string
-  name: string
-  role?: string
-  isActive?: boolean
-  googleId?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  permissions?: Prisma.UserPermissionUncheckedCreateNestedManyWithoutUserInput
-  inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutCreatorInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
-  notices?: Prisma.NoticeUncheckedCreateNestedManyWithoutAuthorInput
-}
-
-export type UserCreateOrConnectWithoutAttendancesInput = {
-  where: Prisma.UserWhereUniqueInput
-  create: Prisma.XOR<Prisma.UserCreateWithoutAttendancesInput, Prisma.UserUncheckedCreateWithoutAttendancesInput>
-}
-
-export type UserUpsertWithoutAttendancesInput = {
-  update: Prisma.XOR<Prisma.UserUpdateWithoutAttendancesInput, Prisma.UserUncheckedUpdateWithoutAttendancesInput>
-  create: Prisma.XOR<Prisma.UserCreateWithoutAttendancesInput, Prisma.UserUncheckedCreateWithoutAttendancesInput>
-  where?: Prisma.UserWhereInput
-}
-
-export type UserUpdateToOneWithWhereWithoutAttendancesInput = {
-  where?: Prisma.UserWhereInput
-  data: Prisma.XOR<Prisma.UserUpdateWithoutAttendancesInput, Prisma.UserUncheckedUpdateWithoutAttendancesInput>
-}
-
-export type UserUpdateWithoutAttendancesInput = {
-  email?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  role?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  permissions?: Prisma.UserPermissionUpdateManyWithoutUserNestedInput
-  inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutCreatorNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
-  notices?: Prisma.NoticeUpdateManyWithoutAuthorNestedInput
-}
-
-export type UserUncheckedUpdateWithoutAttendancesInput = {
-  id?: Prisma.IntFieldUpdateOperationsInput | number
-  email?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  role?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  permissions?: Prisma.UserPermissionUncheckedUpdateManyWithoutUserNestedInput
-  inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutCreatorNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
-  notices?: Prisma.NoticeUncheckedUpdateManyWithoutAuthorNestedInput
-}
-
-export type UserCreateWithoutNoticesInput = {
-  email: string
-  name: string
-  role?: string
-  isActive?: boolean
-  googleId?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  permissions?: Prisma.UserPermissionCreateNestedManyWithoutUserInput
-  inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutCreatorInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
-  attendances?: Prisma.AttendanceCreateNestedManyWithoutUserInput
-}
-
-export type UserUncheckedCreateWithoutNoticesInput = {
-  id?: number
-  email: string
-  name: string
-  role?: string
-  isActive?: boolean
-  googleId?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  permissions?: Prisma.UserPermissionUncheckedCreateNestedManyWithoutUserInput
-  inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutCreatorInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
-  attendances?: Prisma.AttendanceUncheckedCreateNestedManyWithoutUserInput
-}
-
-export type UserCreateOrConnectWithoutNoticesInput = {
-  where: Prisma.UserWhereUniqueInput
-  create: Prisma.XOR<Prisma.UserCreateWithoutNoticesInput, Prisma.UserUncheckedCreateWithoutNoticesInput>
-}
-
-export type UserUpsertWithoutNoticesInput = {
-  update: Prisma.XOR<Prisma.UserUpdateWithoutNoticesInput, Prisma.UserUncheckedUpdateWithoutNoticesInput>
-  create: Prisma.XOR<Prisma.UserCreateWithoutNoticesInput, Prisma.UserUncheckedCreateWithoutNoticesInput>
-  where?: Prisma.UserWhereInput
-}
-
-export type UserUpdateToOneWithWhereWithoutNoticesInput = {
-  where?: Prisma.UserWhereInput
-  data: Prisma.XOR<Prisma.UserUpdateWithoutNoticesInput, Prisma.UserUncheckedUpdateWithoutNoticesInput>
-}
-
-export type UserUpdateWithoutNoticesInput = {
-  email?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  role?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  permissions?: Prisma.UserPermissionUpdateManyWithoutUserNestedInput
-  inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutCreatorNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
-  attendances?: Prisma.AttendanceUpdateManyWithoutUserNestedInput
-}
-
-export type UserUncheckedUpdateWithoutNoticesInput = {
-  id?: Prisma.IntFieldUpdateOperationsInput | number
-  email?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  role?: Prisma.StringFieldUpdateOperationsInput | string
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  googleId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  permissions?: Prisma.UserPermissionUncheckedUpdateManyWithoutUserNestedInput
-  inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutCreatorNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
-  attendances?: Prisma.AttendanceUncheckedUpdateManyWithoutUserNestedInput
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  permission?: Prisma.UserTabPermissionUncheckedUpdateOneWithoutUserNestedInput
+  authTokens?: Prisma.AuthRefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutUserNestedInput
+  targetLogs?: Prisma.TargetLogUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -931,19 +825,17 @@ export type UserUncheckedUpdateWithoutNoticesInput = {
  */
 
 export type UserCountOutputType = {
-  permissions: number
+  authTokens: number
   inventoryTxs: number
-  auditLogs: number
-  attendances: number
-  notices: number
+  targetLogs: number
+  barcodeScans: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  permissions?: boolean | UserCountOutputTypeCountPermissionsArgs
+  authTokens?: boolean | UserCountOutputTypeCountAuthTokensArgs
   inventoryTxs?: boolean | UserCountOutputTypeCountInventoryTxsArgs
-  auditLogs?: boolean | UserCountOutputTypeCountAuditLogsArgs
-  attendances?: boolean | UserCountOutputTypeCountAttendancesArgs
-  notices?: boolean | UserCountOutputTypeCountNoticesArgs
+  targetLogs?: boolean | UserCountOutputTypeCountTargetLogsArgs
+  barcodeScans?: boolean | UserCountOutputTypeCountBarcodeScansArgs
 }
 
 /**
@@ -959,8 +851,8 @@ export type UserCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensi
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountPermissionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.UserPermissionWhereInput
+export type UserCountOutputTypeCountAuthTokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AuthRefreshTokenWhereInput
 }
 
 /**
@@ -973,82 +865,67 @@ export type UserCountOutputTypeCountInventoryTxsArgs<ExtArgs extends runtime.Typ
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountAuditLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.AuditLogWhereInput
+export type UserCountOutputTypeCountTargetLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TargetLogWhereInput
 }
 
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountAttendancesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.AttendanceWhereInput
-}
-
-/**
- * UserCountOutputType without action
- */
-export type UserCountOutputTypeCountNoticesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.NoticeWhereInput
+export type UserCountOutputTypeCountBarcodeScansArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.BarcodeScanWhereInput
 }
 
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  email?: boolean
   name?: boolean
+  email?: boolean
   role?: boolean
   isActive?: boolean
-  googleId?: boolean
-  createdAt?: boolean
-  updatedAt?: boolean
-  permissions?: boolean | Prisma.User$permissionsArgs<ExtArgs>
+  passwordHash?: boolean
+  permission?: boolean | Prisma.User$permissionArgs<ExtArgs>
+  authTokens?: boolean | Prisma.User$authTokensArgs<ExtArgs>
   inventoryTxs?: boolean | Prisma.User$inventoryTxsArgs<ExtArgs>
-  auditLogs?: boolean | Prisma.User$auditLogsArgs<ExtArgs>
-  attendances?: boolean | Prisma.User$attendancesArgs<ExtArgs>
-  notices?: boolean | Prisma.User$noticesArgs<ExtArgs>
+  targetLogs?: boolean | Prisma.User$targetLogsArgs<ExtArgs>
+  barcodeScans?: boolean | Prisma.User$barcodeScansArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  email?: boolean
   name?: boolean
+  email?: boolean
   role?: boolean
   isActive?: boolean
-  googleId?: boolean
-  createdAt?: boolean
-  updatedAt?: boolean
+  passwordHash?: boolean
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  email?: boolean
   name?: boolean
+  email?: boolean
   role?: boolean
   isActive?: boolean
-  googleId?: boolean
-  createdAt?: boolean
-  updatedAt?: boolean
+  passwordHash?: boolean
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectScalar = {
   id?: boolean
-  email?: boolean
   name?: boolean
+  email?: boolean
   role?: boolean
   isActive?: boolean
-  googleId?: boolean
-  createdAt?: boolean
-  updatedAt?: boolean
+  passwordHash?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "name" | "role" | "isActive" | "googleId" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "role" | "isActive" | "passwordHash", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  permissions?: boolean | Prisma.User$permissionsArgs<ExtArgs>
+  permission?: boolean | Prisma.User$permissionArgs<ExtArgs>
+  authTokens?: boolean | Prisma.User$authTokensArgs<ExtArgs>
   inventoryTxs?: boolean | Prisma.User$inventoryTxsArgs<ExtArgs>
-  auditLogs?: boolean | Prisma.User$auditLogsArgs<ExtArgs>
-  attendances?: boolean | Prisma.User$attendancesArgs<ExtArgs>
-  notices?: boolean | Prisma.User$noticesArgs<ExtArgs>
+  targetLogs?: boolean | Prisma.User$targetLogsArgs<ExtArgs>
+  barcodeScans?: boolean | Prisma.User$barcodeScansArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1057,21 +934,19 @@ export type UserIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
 export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "User"
   objects: {
-    permissions: Prisma.$UserPermissionPayload<ExtArgs>[]
+    permission: Prisma.$UserTabPermissionPayload<ExtArgs> | null
+    authTokens: Prisma.$AuthRefreshTokenPayload<ExtArgs>[]
     inventoryTxs: Prisma.$InventoryTxPayload<ExtArgs>[]
-    auditLogs: Prisma.$AuditLogPayload<ExtArgs>[]
-    attendances: Prisma.$AttendancePayload<ExtArgs>[]
-    notices: Prisma.$NoticePayload<ExtArgs>[]
+    targetLogs: Prisma.$TargetLogPayload<ExtArgs>[]
+    barcodeScans: Prisma.$BarcodeScanPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
-    email: string
     name: string
-    role: string
-    isActive: boolean
-    googleId: string | null
-    createdAt: Date
-    updatedAt: Date
+    email: string | null
+    role: string | null
+    isActive: string
+    passwordHash: string | null
   }, ExtArgs["result"]["user"]>
   composites: {}
 }
@@ -1466,11 +1341,11 @@ readonly fields: UserFieldRefs;
  */
 export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  permissions<T extends Prisma.User$permissionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$permissionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserPermissionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  permission<T extends Prisma.User$permissionArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$permissionArgs<ExtArgs>>): Prisma.Prisma__UserTabPermissionClient<runtime.Types.Result.GetResult<Prisma.$UserTabPermissionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  authTokens<T extends Prisma.User$authTokensArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$authTokensArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuthRefreshTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   inventoryTxs<T extends Prisma.User$inventoryTxsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$inventoryTxsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InventoryTxPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  auditLogs<T extends Prisma.User$auditLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  attendances<T extends Prisma.User$attendancesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$attendancesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AttendancePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  notices<T extends Prisma.User$noticesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$noticesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NoticePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  targetLogs<T extends Prisma.User$targetLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$targetLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TargetLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  barcodeScans<T extends Prisma.User$barcodeScansArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$barcodeScansArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BarcodeScanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1501,13 +1376,11 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
  */
 export interface UserFieldRefs {
   readonly id: Prisma.FieldRef<"User", 'Int'>
-  readonly email: Prisma.FieldRef<"User", 'String'>
   readonly name: Prisma.FieldRef<"User", 'String'>
+  readonly email: Prisma.FieldRef<"User", 'String'>
   readonly role: Prisma.FieldRef<"User", 'String'>
-  readonly isActive: Prisma.FieldRef<"User", 'Boolean'>
-  readonly googleId: Prisma.FieldRef<"User", 'String'>
-  readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
-  readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>
+  readonly isActive: Prisma.FieldRef<"User", 'String'>
+  readonly passwordHash: Prisma.FieldRef<"User", 'String'>
 }
     
 
@@ -1896,27 +1769,46 @@ export type UserDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
 }
 
 /**
- * User.permissions
+ * User.permission
  */
-export type User$permissionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type User$permissionArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the UserPermission
+   * Select specific fields to fetch from the UserTabPermission
    */
-  select?: Prisma.UserPermissionSelect<ExtArgs> | null
+  select?: Prisma.UserTabPermissionSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the UserPermission
+   * Omit specific fields from the UserTabPermission
    */
-  omit?: Prisma.UserPermissionOmit<ExtArgs> | null
+  omit?: Prisma.UserTabPermissionOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.UserPermissionInclude<ExtArgs> | null
-  where?: Prisma.UserPermissionWhereInput
-  orderBy?: Prisma.UserPermissionOrderByWithRelationInput | Prisma.UserPermissionOrderByWithRelationInput[]
-  cursor?: Prisma.UserPermissionWhereUniqueInput
+  include?: Prisma.UserTabPermissionInclude<ExtArgs> | null
+  where?: Prisma.UserTabPermissionWhereInput
+}
+
+/**
+ * User.authTokens
+ */
+export type User$authTokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AuthRefreshToken
+   */
+  select?: Prisma.AuthRefreshTokenSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AuthRefreshToken
+   */
+  omit?: Prisma.AuthRefreshTokenOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AuthRefreshTokenInclude<ExtArgs> | null
+  where?: Prisma.AuthRefreshTokenWhereInput
+  orderBy?: Prisma.AuthRefreshTokenOrderByWithRelationInput | Prisma.AuthRefreshTokenOrderByWithRelationInput[]
+  cursor?: Prisma.AuthRefreshTokenWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.UserPermissionScalarFieldEnum | Prisma.UserPermissionScalarFieldEnum[]
+  distinct?: Prisma.AuthRefreshTokenScalarFieldEnum | Prisma.AuthRefreshTokenScalarFieldEnum[]
 }
 
 /**
@@ -1944,75 +1836,51 @@ export type User$inventoryTxsArgs<ExtArgs extends runtime.Types.Extensions.Inter
 }
 
 /**
- * User.auditLogs
+ * User.targetLogs
  */
-export type User$auditLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type User$targetLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the AuditLog
+   * Select specific fields to fetch from the TargetLog
    */
-  select?: Prisma.AuditLogSelect<ExtArgs> | null
+  select?: Prisma.TargetLogSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the AuditLog
+   * Omit specific fields from the TargetLog
    */
-  omit?: Prisma.AuditLogOmit<ExtArgs> | null
+  omit?: Prisma.TargetLogOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.AuditLogInclude<ExtArgs> | null
-  where?: Prisma.AuditLogWhereInput
-  orderBy?: Prisma.AuditLogOrderByWithRelationInput | Prisma.AuditLogOrderByWithRelationInput[]
-  cursor?: Prisma.AuditLogWhereUniqueInput
+  include?: Prisma.TargetLogInclude<ExtArgs> | null
+  where?: Prisma.TargetLogWhereInput
+  orderBy?: Prisma.TargetLogOrderByWithRelationInput | Prisma.TargetLogOrderByWithRelationInput[]
+  cursor?: Prisma.TargetLogWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.AuditLogScalarFieldEnum | Prisma.AuditLogScalarFieldEnum[]
+  distinct?: Prisma.TargetLogScalarFieldEnum | Prisma.TargetLogScalarFieldEnum[]
 }
 
 /**
- * User.attendances
+ * User.barcodeScans
  */
-export type User$attendancesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type User$barcodeScansArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Attendance
+   * Select specific fields to fetch from the BarcodeScan
    */
-  select?: Prisma.AttendanceSelect<ExtArgs> | null
+  select?: Prisma.BarcodeScanSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Attendance
+   * Omit specific fields from the BarcodeScan
    */
-  omit?: Prisma.AttendanceOmit<ExtArgs> | null
+  omit?: Prisma.BarcodeScanOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.AttendanceInclude<ExtArgs> | null
-  where?: Prisma.AttendanceWhereInput
-  orderBy?: Prisma.AttendanceOrderByWithRelationInput | Prisma.AttendanceOrderByWithRelationInput[]
-  cursor?: Prisma.AttendanceWhereUniqueInput
+  include?: Prisma.BarcodeScanInclude<ExtArgs> | null
+  where?: Prisma.BarcodeScanWhereInput
+  orderBy?: Prisma.BarcodeScanOrderByWithRelationInput | Prisma.BarcodeScanOrderByWithRelationInput[]
+  cursor?: Prisma.BarcodeScanWhereUniqueInput
   take?: number
   skip?: number
-  distinct?: Prisma.AttendanceScalarFieldEnum | Prisma.AttendanceScalarFieldEnum[]
-}
-
-/**
- * User.notices
- */
-export type User$noticesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Notice
-   */
-  select?: Prisma.NoticeSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Notice
-   */
-  omit?: Prisma.NoticeOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.NoticeInclude<ExtArgs> | null
-  where?: Prisma.NoticeWhereInput
-  orderBy?: Prisma.NoticeOrderByWithRelationInput | Prisma.NoticeOrderByWithRelationInput[]
-  cursor?: Prisma.NoticeWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.NoticeScalarFieldEnum | Prisma.NoticeScalarFieldEnum[]
+  distinct?: Prisma.BarcodeScanScalarFieldEnum | Prisma.BarcodeScanScalarFieldEnum[]
 }
 
 /**

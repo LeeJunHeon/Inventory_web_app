@@ -30,6 +30,7 @@ export type TargetLogAvgAggregateOutputType = {
   id: number | null
   targetUnitId: number | null
   weight: runtime.Decimal | null
+  locationId: number | null
   userId: number | null
 }
 
@@ -37,40 +38,41 @@ export type TargetLogSumAggregateOutputType = {
   id: number | null
   targetUnitId: number | null
   weight: runtime.Decimal | null
+  locationId: number | null
   userId: number | null
 }
 
 export type TargetLogMinAggregateOutputType = {
   id: number | null
   targetUnitId: number | null
-  type: string | null
+  logType: string | null
   weight: runtime.Decimal | null
-  location: string | null
+  locationId: number | null
   reason: string | null
   userId: number | null
-  createdAt: Date | null
+  loggedAt: Date | null
 }
 
 export type TargetLogMaxAggregateOutputType = {
   id: number | null
   targetUnitId: number | null
-  type: string | null
+  logType: string | null
   weight: runtime.Decimal | null
-  location: string | null
+  locationId: number | null
   reason: string | null
   userId: number | null
-  createdAt: Date | null
+  loggedAt: Date | null
 }
 
 export type TargetLogCountAggregateOutputType = {
   id: number
   targetUnitId: number
-  type: number
+  logType: number
   weight: number
-  location: number
+  locationId: number
   reason: number
   userId: number
-  createdAt: number
+  loggedAt: number
   _all: number
 }
 
@@ -79,6 +81,7 @@ export type TargetLogAvgAggregateInputType = {
   id?: true
   targetUnitId?: true
   weight?: true
+  locationId?: true
   userId?: true
 }
 
@@ -86,40 +89,41 @@ export type TargetLogSumAggregateInputType = {
   id?: true
   targetUnitId?: true
   weight?: true
+  locationId?: true
   userId?: true
 }
 
 export type TargetLogMinAggregateInputType = {
   id?: true
   targetUnitId?: true
-  type?: true
+  logType?: true
   weight?: true
-  location?: true
+  locationId?: true
   reason?: true
   userId?: true
-  createdAt?: true
+  loggedAt?: true
 }
 
 export type TargetLogMaxAggregateInputType = {
   id?: true
   targetUnitId?: true
-  type?: true
+  logType?: true
   weight?: true
-  location?: true
+  locationId?: true
   reason?: true
   userId?: true
-  createdAt?: true
+  loggedAt?: true
 }
 
 export type TargetLogCountAggregateInputType = {
   id?: true
   targetUnitId?: true
-  type?: true
+  logType?: true
   weight?: true
-  location?: true
+  locationId?: true
   reason?: true
   userId?: true
-  createdAt?: true
+  loggedAt?: true
   _all?: true
 }
 
@@ -212,12 +216,12 @@ export type TargetLogGroupByArgs<ExtArgs extends runtime.Types.Extensions.Intern
 export type TargetLogGroupByOutputType = {
   id: number
   targetUnitId: number
-  type: string
+  logType: string
   weight: runtime.Decimal | null
-  location: string | null
+  locationId: number | null
   reason: string | null
   userId: number | null
-  createdAt: Date
+  loggedAt: Date
   _count: TargetLogCountAggregateOutputType | null
   _avg: TargetLogAvgAggregateOutputType | null
   _sum: TargetLogSumAggregateOutputType | null
@@ -246,25 +250,29 @@ export type TargetLogWhereInput = {
   NOT?: Prisma.TargetLogWhereInput | Prisma.TargetLogWhereInput[]
   id?: Prisma.IntFilter<"TargetLog"> | number
   targetUnitId?: Prisma.IntFilter<"TargetLog"> | number
-  type?: Prisma.StringFilter<"TargetLog"> | string
+  logType?: Prisma.StringFilter<"TargetLog"> | string
   weight?: Prisma.DecimalNullableFilter<"TargetLog"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  location?: Prisma.StringNullableFilter<"TargetLog"> | string | null
+  locationId?: Prisma.IntNullableFilter<"TargetLog"> | number | null
   reason?: Prisma.StringNullableFilter<"TargetLog"> | string | null
   userId?: Prisma.IntNullableFilter<"TargetLog"> | number | null
-  createdAt?: Prisma.DateTimeFilter<"TargetLog"> | Date | string
+  loggedAt?: Prisma.DateTimeFilter<"TargetLog"> | Date | string
   targetUnit?: Prisma.XOR<Prisma.TargetUnitScalarRelationFilter, Prisma.TargetUnitWhereInput>
+  location?: Prisma.XOR<Prisma.LocationNullableScalarRelationFilter, Prisma.LocationWhereInput> | null
+  user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
 }
 
 export type TargetLogOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   targetUnitId?: Prisma.SortOrder
-  type?: Prisma.SortOrder
+  logType?: Prisma.SortOrder
   weight?: Prisma.SortOrderInput | Prisma.SortOrder
-  location?: Prisma.SortOrderInput | Prisma.SortOrder
+  locationId?: Prisma.SortOrderInput | Prisma.SortOrder
   reason?: Prisma.SortOrderInput | Prisma.SortOrder
   userId?: Prisma.SortOrderInput | Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
+  loggedAt?: Prisma.SortOrder
   targetUnit?: Prisma.TargetUnitOrderByWithRelationInput
+  location?: Prisma.LocationOrderByWithRelationInput
+  user?: Prisma.UserOrderByWithRelationInput
 }
 
 export type TargetLogWhereUniqueInput = Prisma.AtLeast<{
@@ -273,24 +281,26 @@ export type TargetLogWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.TargetLogWhereInput[]
   NOT?: Prisma.TargetLogWhereInput | Prisma.TargetLogWhereInput[]
   targetUnitId?: Prisma.IntFilter<"TargetLog"> | number
-  type?: Prisma.StringFilter<"TargetLog"> | string
+  logType?: Prisma.StringFilter<"TargetLog"> | string
   weight?: Prisma.DecimalNullableFilter<"TargetLog"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  location?: Prisma.StringNullableFilter<"TargetLog"> | string | null
+  locationId?: Prisma.IntNullableFilter<"TargetLog"> | number | null
   reason?: Prisma.StringNullableFilter<"TargetLog"> | string | null
   userId?: Prisma.IntNullableFilter<"TargetLog"> | number | null
-  createdAt?: Prisma.DateTimeFilter<"TargetLog"> | Date | string
+  loggedAt?: Prisma.DateTimeFilter<"TargetLog"> | Date | string
   targetUnit?: Prisma.XOR<Prisma.TargetUnitScalarRelationFilter, Prisma.TargetUnitWhereInput>
+  location?: Prisma.XOR<Prisma.LocationNullableScalarRelationFilter, Prisma.LocationWhereInput> | null
+  user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
 }, "id">
 
 export type TargetLogOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   targetUnitId?: Prisma.SortOrder
-  type?: Prisma.SortOrder
+  logType?: Prisma.SortOrder
   weight?: Prisma.SortOrderInput | Prisma.SortOrder
-  location?: Prisma.SortOrderInput | Prisma.SortOrder
+  locationId?: Prisma.SortOrderInput | Prisma.SortOrder
   reason?: Prisma.SortOrderInput | Prisma.SortOrder
   userId?: Prisma.SortOrderInput | Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
+  loggedAt?: Prisma.SortOrder
   _count?: Prisma.TargetLogCountOrderByAggregateInput
   _avg?: Prisma.TargetLogAvgOrderByAggregateInput
   _max?: Prisma.TargetLogMaxOrderByAggregateInput
@@ -304,85 +314,83 @@ export type TargetLogScalarWhereWithAggregatesInput = {
   NOT?: Prisma.TargetLogScalarWhereWithAggregatesInput | Prisma.TargetLogScalarWhereWithAggregatesInput[]
   id?: Prisma.IntWithAggregatesFilter<"TargetLog"> | number
   targetUnitId?: Prisma.IntWithAggregatesFilter<"TargetLog"> | number
-  type?: Prisma.StringWithAggregatesFilter<"TargetLog"> | string
+  logType?: Prisma.StringWithAggregatesFilter<"TargetLog"> | string
   weight?: Prisma.DecimalNullableWithAggregatesFilter<"TargetLog"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  location?: Prisma.StringNullableWithAggregatesFilter<"TargetLog"> | string | null
+  locationId?: Prisma.IntNullableWithAggregatesFilter<"TargetLog"> | number | null
   reason?: Prisma.StringNullableWithAggregatesFilter<"TargetLog"> | string | null
   userId?: Prisma.IntNullableWithAggregatesFilter<"TargetLog"> | number | null
-  createdAt?: Prisma.DateTimeWithAggregatesFilter<"TargetLog"> | Date | string
+  loggedAt?: Prisma.DateTimeWithAggregatesFilter<"TargetLog"> | Date | string
 }
 
 export type TargetLogCreateInput = {
-  type: string
+  logType: string
   weight?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  location?: string | null
   reason?: string | null
-  userId?: number | null
-  createdAt?: Date | string
+  loggedAt?: Date | string
   targetUnit: Prisma.TargetUnitCreateNestedOneWithoutTargetLogsInput
+  location?: Prisma.LocationCreateNestedOneWithoutTargetLogsInput
+  user?: Prisma.UserCreateNestedOneWithoutTargetLogsInput
 }
 
 export type TargetLogUncheckedCreateInput = {
   id?: number
   targetUnitId: number
-  type: string
+  logType: string
   weight?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  location?: string | null
+  locationId?: number | null
   reason?: string | null
   userId?: number | null
-  createdAt?: Date | string
+  loggedAt?: Date | string
 }
 
 export type TargetLogUpdateInput = {
-  type?: Prisma.StringFieldUpdateOperationsInput | string
+  logType?: Prisma.StringFieldUpdateOperationsInput | string
   weight?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  loggedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   targetUnit?: Prisma.TargetUnitUpdateOneRequiredWithoutTargetLogsNestedInput
+  location?: Prisma.LocationUpdateOneWithoutTargetLogsNestedInput
+  user?: Prisma.UserUpdateOneWithoutTargetLogsNestedInput
 }
 
 export type TargetLogUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   targetUnitId?: Prisma.IntFieldUpdateOperationsInput | number
-  type?: Prisma.StringFieldUpdateOperationsInput | string
+  logType?: Prisma.StringFieldUpdateOperationsInput | string
   weight?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  locationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  loggedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type TargetLogCreateManyInput = {
   id?: number
   targetUnitId: number
-  type: string
+  logType: string
   weight?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  location?: string | null
+  locationId?: number | null
   reason?: string | null
   userId?: number | null
-  createdAt?: Date | string
+  loggedAt?: Date | string
 }
 
 export type TargetLogUpdateManyMutationInput = {
-  type?: Prisma.StringFieldUpdateOperationsInput | string
+  logType?: Prisma.StringFieldUpdateOperationsInput | string
   weight?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  loggedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type TargetLogUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   targetUnitId?: Prisma.IntFieldUpdateOperationsInput | number
-  type?: Prisma.StringFieldUpdateOperationsInput | string
+  logType?: Prisma.StringFieldUpdateOperationsInput | string
   weight?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  locationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  loggedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type TargetLogListRelationFilter = {
@@ -398,48 +406,134 @@ export type TargetLogOrderByRelationAggregateInput = {
 export type TargetLogCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   targetUnitId?: Prisma.SortOrder
-  type?: Prisma.SortOrder
+  logType?: Prisma.SortOrder
   weight?: Prisma.SortOrder
-  location?: Prisma.SortOrder
+  locationId?: Prisma.SortOrder
   reason?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
+  loggedAt?: Prisma.SortOrder
 }
 
 export type TargetLogAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
   targetUnitId?: Prisma.SortOrder
   weight?: Prisma.SortOrder
+  locationId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
 }
 
 export type TargetLogMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   targetUnitId?: Prisma.SortOrder
-  type?: Prisma.SortOrder
+  logType?: Prisma.SortOrder
   weight?: Prisma.SortOrder
-  location?: Prisma.SortOrder
+  locationId?: Prisma.SortOrder
   reason?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
+  loggedAt?: Prisma.SortOrder
 }
 
 export type TargetLogMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   targetUnitId?: Prisma.SortOrder
-  type?: Prisma.SortOrder
+  logType?: Prisma.SortOrder
   weight?: Prisma.SortOrder
-  location?: Prisma.SortOrder
+  locationId?: Prisma.SortOrder
   reason?: Prisma.SortOrder
   userId?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
+  loggedAt?: Prisma.SortOrder
 }
 
 export type TargetLogSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
   targetUnitId?: Prisma.SortOrder
   weight?: Prisma.SortOrder
+  locationId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+}
+
+export type TargetLogCreateNestedManyWithoutLocationInput = {
+  create?: Prisma.XOR<Prisma.TargetLogCreateWithoutLocationInput, Prisma.TargetLogUncheckedCreateWithoutLocationInput> | Prisma.TargetLogCreateWithoutLocationInput[] | Prisma.TargetLogUncheckedCreateWithoutLocationInput[]
+  connectOrCreate?: Prisma.TargetLogCreateOrConnectWithoutLocationInput | Prisma.TargetLogCreateOrConnectWithoutLocationInput[]
+  createMany?: Prisma.TargetLogCreateManyLocationInputEnvelope
+  connect?: Prisma.TargetLogWhereUniqueInput | Prisma.TargetLogWhereUniqueInput[]
+}
+
+export type TargetLogUncheckedCreateNestedManyWithoutLocationInput = {
+  create?: Prisma.XOR<Prisma.TargetLogCreateWithoutLocationInput, Prisma.TargetLogUncheckedCreateWithoutLocationInput> | Prisma.TargetLogCreateWithoutLocationInput[] | Prisma.TargetLogUncheckedCreateWithoutLocationInput[]
+  connectOrCreate?: Prisma.TargetLogCreateOrConnectWithoutLocationInput | Prisma.TargetLogCreateOrConnectWithoutLocationInput[]
+  createMany?: Prisma.TargetLogCreateManyLocationInputEnvelope
+  connect?: Prisma.TargetLogWhereUniqueInput | Prisma.TargetLogWhereUniqueInput[]
+}
+
+export type TargetLogUpdateManyWithoutLocationNestedInput = {
+  create?: Prisma.XOR<Prisma.TargetLogCreateWithoutLocationInput, Prisma.TargetLogUncheckedCreateWithoutLocationInput> | Prisma.TargetLogCreateWithoutLocationInput[] | Prisma.TargetLogUncheckedCreateWithoutLocationInput[]
+  connectOrCreate?: Prisma.TargetLogCreateOrConnectWithoutLocationInput | Prisma.TargetLogCreateOrConnectWithoutLocationInput[]
+  upsert?: Prisma.TargetLogUpsertWithWhereUniqueWithoutLocationInput | Prisma.TargetLogUpsertWithWhereUniqueWithoutLocationInput[]
+  createMany?: Prisma.TargetLogCreateManyLocationInputEnvelope
+  set?: Prisma.TargetLogWhereUniqueInput | Prisma.TargetLogWhereUniqueInput[]
+  disconnect?: Prisma.TargetLogWhereUniqueInput | Prisma.TargetLogWhereUniqueInput[]
+  delete?: Prisma.TargetLogWhereUniqueInput | Prisma.TargetLogWhereUniqueInput[]
+  connect?: Prisma.TargetLogWhereUniqueInput | Prisma.TargetLogWhereUniqueInput[]
+  update?: Prisma.TargetLogUpdateWithWhereUniqueWithoutLocationInput | Prisma.TargetLogUpdateWithWhereUniqueWithoutLocationInput[]
+  updateMany?: Prisma.TargetLogUpdateManyWithWhereWithoutLocationInput | Prisma.TargetLogUpdateManyWithWhereWithoutLocationInput[]
+  deleteMany?: Prisma.TargetLogScalarWhereInput | Prisma.TargetLogScalarWhereInput[]
+}
+
+export type TargetLogUncheckedUpdateManyWithoutLocationNestedInput = {
+  create?: Prisma.XOR<Prisma.TargetLogCreateWithoutLocationInput, Prisma.TargetLogUncheckedCreateWithoutLocationInput> | Prisma.TargetLogCreateWithoutLocationInput[] | Prisma.TargetLogUncheckedCreateWithoutLocationInput[]
+  connectOrCreate?: Prisma.TargetLogCreateOrConnectWithoutLocationInput | Prisma.TargetLogCreateOrConnectWithoutLocationInput[]
+  upsert?: Prisma.TargetLogUpsertWithWhereUniqueWithoutLocationInput | Prisma.TargetLogUpsertWithWhereUniqueWithoutLocationInput[]
+  createMany?: Prisma.TargetLogCreateManyLocationInputEnvelope
+  set?: Prisma.TargetLogWhereUniqueInput | Prisma.TargetLogWhereUniqueInput[]
+  disconnect?: Prisma.TargetLogWhereUniqueInput | Prisma.TargetLogWhereUniqueInput[]
+  delete?: Prisma.TargetLogWhereUniqueInput | Prisma.TargetLogWhereUniqueInput[]
+  connect?: Prisma.TargetLogWhereUniqueInput | Prisma.TargetLogWhereUniqueInput[]
+  update?: Prisma.TargetLogUpdateWithWhereUniqueWithoutLocationInput | Prisma.TargetLogUpdateWithWhereUniqueWithoutLocationInput[]
+  updateMany?: Prisma.TargetLogUpdateManyWithWhereWithoutLocationInput | Prisma.TargetLogUpdateManyWithWhereWithoutLocationInput[]
+  deleteMany?: Prisma.TargetLogScalarWhereInput | Prisma.TargetLogScalarWhereInput[]
+}
+
+export type TargetLogCreateNestedManyWithoutUserInput = {
+  create?: Prisma.XOR<Prisma.TargetLogCreateWithoutUserInput, Prisma.TargetLogUncheckedCreateWithoutUserInput> | Prisma.TargetLogCreateWithoutUserInput[] | Prisma.TargetLogUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.TargetLogCreateOrConnectWithoutUserInput | Prisma.TargetLogCreateOrConnectWithoutUserInput[]
+  createMany?: Prisma.TargetLogCreateManyUserInputEnvelope
+  connect?: Prisma.TargetLogWhereUniqueInput | Prisma.TargetLogWhereUniqueInput[]
+}
+
+export type TargetLogUncheckedCreateNestedManyWithoutUserInput = {
+  create?: Prisma.XOR<Prisma.TargetLogCreateWithoutUserInput, Prisma.TargetLogUncheckedCreateWithoutUserInput> | Prisma.TargetLogCreateWithoutUserInput[] | Prisma.TargetLogUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.TargetLogCreateOrConnectWithoutUserInput | Prisma.TargetLogCreateOrConnectWithoutUserInput[]
+  createMany?: Prisma.TargetLogCreateManyUserInputEnvelope
+  connect?: Prisma.TargetLogWhereUniqueInput | Prisma.TargetLogWhereUniqueInput[]
+}
+
+export type TargetLogUpdateManyWithoutUserNestedInput = {
+  create?: Prisma.XOR<Prisma.TargetLogCreateWithoutUserInput, Prisma.TargetLogUncheckedCreateWithoutUserInput> | Prisma.TargetLogCreateWithoutUserInput[] | Prisma.TargetLogUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.TargetLogCreateOrConnectWithoutUserInput | Prisma.TargetLogCreateOrConnectWithoutUserInput[]
+  upsert?: Prisma.TargetLogUpsertWithWhereUniqueWithoutUserInput | Prisma.TargetLogUpsertWithWhereUniqueWithoutUserInput[]
+  createMany?: Prisma.TargetLogCreateManyUserInputEnvelope
+  set?: Prisma.TargetLogWhereUniqueInput | Prisma.TargetLogWhereUniqueInput[]
+  disconnect?: Prisma.TargetLogWhereUniqueInput | Prisma.TargetLogWhereUniqueInput[]
+  delete?: Prisma.TargetLogWhereUniqueInput | Prisma.TargetLogWhereUniqueInput[]
+  connect?: Prisma.TargetLogWhereUniqueInput | Prisma.TargetLogWhereUniqueInput[]
+  update?: Prisma.TargetLogUpdateWithWhereUniqueWithoutUserInput | Prisma.TargetLogUpdateWithWhereUniqueWithoutUserInput[]
+  updateMany?: Prisma.TargetLogUpdateManyWithWhereWithoutUserInput | Prisma.TargetLogUpdateManyWithWhereWithoutUserInput[]
+  deleteMany?: Prisma.TargetLogScalarWhereInput | Prisma.TargetLogScalarWhereInput[]
+}
+
+export type TargetLogUncheckedUpdateManyWithoutUserNestedInput = {
+  create?: Prisma.XOR<Prisma.TargetLogCreateWithoutUserInput, Prisma.TargetLogUncheckedCreateWithoutUserInput> | Prisma.TargetLogCreateWithoutUserInput[] | Prisma.TargetLogUncheckedCreateWithoutUserInput[]
+  connectOrCreate?: Prisma.TargetLogCreateOrConnectWithoutUserInput | Prisma.TargetLogCreateOrConnectWithoutUserInput[]
+  upsert?: Prisma.TargetLogUpsertWithWhereUniqueWithoutUserInput | Prisma.TargetLogUpsertWithWhereUniqueWithoutUserInput[]
+  createMany?: Prisma.TargetLogCreateManyUserInputEnvelope
+  set?: Prisma.TargetLogWhereUniqueInput | Prisma.TargetLogWhereUniqueInput[]
+  disconnect?: Prisma.TargetLogWhereUniqueInput | Prisma.TargetLogWhereUniqueInput[]
+  delete?: Prisma.TargetLogWhereUniqueInput | Prisma.TargetLogWhereUniqueInput[]
+  connect?: Prisma.TargetLogWhereUniqueInput | Prisma.TargetLogWhereUniqueInput[]
+  update?: Prisma.TargetLogUpdateWithWhereUniqueWithoutUserInput | Prisma.TargetLogUpdateWithWhereUniqueWithoutUserInput[]
+  updateMany?: Prisma.TargetLogUpdateManyWithWhereWithoutUserInput | Prisma.TargetLogUpdateManyWithWhereWithoutUserInput[]
+  deleteMany?: Prisma.TargetLogScalarWhereInput | Prisma.TargetLogScalarWhereInput[]
 }
 
 export type TargetLogCreateNestedManyWithoutTargetUnitInput = {
@@ -484,31 +578,127 @@ export type TargetLogUncheckedUpdateManyWithoutTargetUnitNestedInput = {
   deleteMany?: Prisma.TargetLogScalarWhereInput | Prisma.TargetLogScalarWhereInput[]
 }
 
-export type NullableDecimalFieldUpdateOperationsInput = {
-  set?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  increment?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  decrement?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string
-  divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
+export type TargetLogCreateWithoutLocationInput = {
+  logType: string
+  weight?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reason?: string | null
+  loggedAt?: Date | string
+  targetUnit: Prisma.TargetUnitCreateNestedOneWithoutTargetLogsInput
+  user?: Prisma.UserCreateNestedOneWithoutTargetLogsInput
+}
+
+export type TargetLogUncheckedCreateWithoutLocationInput = {
+  id?: number
+  targetUnitId: number
+  logType: string
+  weight?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reason?: string | null
+  userId?: number | null
+  loggedAt?: Date | string
+}
+
+export type TargetLogCreateOrConnectWithoutLocationInput = {
+  where: Prisma.TargetLogWhereUniqueInput
+  create: Prisma.XOR<Prisma.TargetLogCreateWithoutLocationInput, Prisma.TargetLogUncheckedCreateWithoutLocationInput>
+}
+
+export type TargetLogCreateManyLocationInputEnvelope = {
+  data: Prisma.TargetLogCreateManyLocationInput | Prisma.TargetLogCreateManyLocationInput[]
+  skipDuplicates?: boolean
+}
+
+export type TargetLogUpsertWithWhereUniqueWithoutLocationInput = {
+  where: Prisma.TargetLogWhereUniqueInput
+  update: Prisma.XOR<Prisma.TargetLogUpdateWithoutLocationInput, Prisma.TargetLogUncheckedUpdateWithoutLocationInput>
+  create: Prisma.XOR<Prisma.TargetLogCreateWithoutLocationInput, Prisma.TargetLogUncheckedCreateWithoutLocationInput>
+}
+
+export type TargetLogUpdateWithWhereUniqueWithoutLocationInput = {
+  where: Prisma.TargetLogWhereUniqueInput
+  data: Prisma.XOR<Prisma.TargetLogUpdateWithoutLocationInput, Prisma.TargetLogUncheckedUpdateWithoutLocationInput>
+}
+
+export type TargetLogUpdateManyWithWhereWithoutLocationInput = {
+  where: Prisma.TargetLogScalarWhereInput
+  data: Prisma.XOR<Prisma.TargetLogUpdateManyMutationInput, Prisma.TargetLogUncheckedUpdateManyWithoutLocationInput>
+}
+
+export type TargetLogScalarWhereInput = {
+  AND?: Prisma.TargetLogScalarWhereInput | Prisma.TargetLogScalarWhereInput[]
+  OR?: Prisma.TargetLogScalarWhereInput[]
+  NOT?: Prisma.TargetLogScalarWhereInput | Prisma.TargetLogScalarWhereInput[]
+  id?: Prisma.IntFilter<"TargetLog"> | number
+  targetUnitId?: Prisma.IntFilter<"TargetLog"> | number
+  logType?: Prisma.StringFilter<"TargetLog"> | string
+  weight?: Prisma.DecimalNullableFilter<"TargetLog"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  locationId?: Prisma.IntNullableFilter<"TargetLog"> | number | null
+  reason?: Prisma.StringNullableFilter<"TargetLog"> | string | null
+  userId?: Prisma.IntNullableFilter<"TargetLog"> | number | null
+  loggedAt?: Prisma.DateTimeFilter<"TargetLog"> | Date | string
+}
+
+export type TargetLogCreateWithoutUserInput = {
+  logType: string
+  weight?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reason?: string | null
+  loggedAt?: Date | string
+  targetUnit: Prisma.TargetUnitCreateNestedOneWithoutTargetLogsInput
+  location?: Prisma.LocationCreateNestedOneWithoutTargetLogsInput
+}
+
+export type TargetLogUncheckedCreateWithoutUserInput = {
+  id?: number
+  targetUnitId: number
+  logType: string
+  weight?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  locationId?: number | null
+  reason?: string | null
+  loggedAt?: Date | string
+}
+
+export type TargetLogCreateOrConnectWithoutUserInput = {
+  where: Prisma.TargetLogWhereUniqueInput
+  create: Prisma.XOR<Prisma.TargetLogCreateWithoutUserInput, Prisma.TargetLogUncheckedCreateWithoutUserInput>
+}
+
+export type TargetLogCreateManyUserInputEnvelope = {
+  data: Prisma.TargetLogCreateManyUserInput | Prisma.TargetLogCreateManyUserInput[]
+  skipDuplicates?: boolean
+}
+
+export type TargetLogUpsertWithWhereUniqueWithoutUserInput = {
+  where: Prisma.TargetLogWhereUniqueInput
+  update: Prisma.XOR<Prisma.TargetLogUpdateWithoutUserInput, Prisma.TargetLogUncheckedUpdateWithoutUserInput>
+  create: Prisma.XOR<Prisma.TargetLogCreateWithoutUserInput, Prisma.TargetLogUncheckedCreateWithoutUserInput>
+}
+
+export type TargetLogUpdateWithWhereUniqueWithoutUserInput = {
+  where: Prisma.TargetLogWhereUniqueInput
+  data: Prisma.XOR<Prisma.TargetLogUpdateWithoutUserInput, Prisma.TargetLogUncheckedUpdateWithoutUserInput>
+}
+
+export type TargetLogUpdateManyWithWhereWithoutUserInput = {
+  where: Prisma.TargetLogScalarWhereInput
+  data: Prisma.XOR<Prisma.TargetLogUpdateManyMutationInput, Prisma.TargetLogUncheckedUpdateManyWithoutUserInput>
 }
 
 export type TargetLogCreateWithoutTargetUnitInput = {
-  type: string
+  logType: string
   weight?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  location?: string | null
   reason?: string | null
-  userId?: number | null
-  createdAt?: Date | string
+  loggedAt?: Date | string
+  location?: Prisma.LocationCreateNestedOneWithoutTargetLogsInput
+  user?: Prisma.UserCreateNestedOneWithoutTargetLogsInput
 }
 
 export type TargetLogUncheckedCreateWithoutTargetUnitInput = {
   id?: number
-  type: string
+  logType: string
   weight?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  location?: string | null
+  locationId?: number | null
   reason?: string | null
   userId?: number | null
-  createdAt?: Date | string
+  loggedAt?: Date | string
 }
 
 export type TargetLogCreateOrConnectWithoutTargetUnitInput = {
@@ -537,57 +727,121 @@ export type TargetLogUpdateManyWithWhereWithoutTargetUnitInput = {
   data: Prisma.XOR<Prisma.TargetLogUpdateManyMutationInput, Prisma.TargetLogUncheckedUpdateManyWithoutTargetUnitInput>
 }
 
-export type TargetLogScalarWhereInput = {
-  AND?: Prisma.TargetLogScalarWhereInput | Prisma.TargetLogScalarWhereInput[]
-  OR?: Prisma.TargetLogScalarWhereInput[]
-  NOT?: Prisma.TargetLogScalarWhereInput | Prisma.TargetLogScalarWhereInput[]
-  id?: Prisma.IntFilter<"TargetLog"> | number
-  targetUnitId?: Prisma.IntFilter<"TargetLog"> | number
-  type?: Prisma.StringFilter<"TargetLog"> | string
-  weight?: Prisma.DecimalNullableFilter<"TargetLog"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  location?: Prisma.StringNullableFilter<"TargetLog"> | string | null
-  reason?: Prisma.StringNullableFilter<"TargetLog"> | string | null
-  userId?: Prisma.IntNullableFilter<"TargetLog"> | number | null
-  createdAt?: Prisma.DateTimeFilter<"TargetLog"> | Date | string
+export type TargetLogCreateManyLocationInput = {
+  id?: number
+  targetUnitId: number
+  logType: string
+  weight?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reason?: string | null
+  userId?: number | null
+  loggedAt?: Date | string
+}
+
+export type TargetLogUpdateWithoutLocationInput = {
+  logType?: Prisma.StringFieldUpdateOperationsInput | string
+  weight?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  loggedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  targetUnit?: Prisma.TargetUnitUpdateOneRequiredWithoutTargetLogsNestedInput
+  user?: Prisma.UserUpdateOneWithoutTargetLogsNestedInput
+}
+
+export type TargetLogUncheckedUpdateWithoutLocationInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  targetUnitId?: Prisma.IntFieldUpdateOperationsInput | number
+  logType?: Prisma.StringFieldUpdateOperationsInput | string
+  weight?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  loggedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type TargetLogUncheckedUpdateManyWithoutLocationInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  targetUnitId?: Prisma.IntFieldUpdateOperationsInput | number
+  logType?: Prisma.StringFieldUpdateOperationsInput | string
+  weight?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  loggedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type TargetLogCreateManyUserInput = {
+  id?: number
+  targetUnitId: number
+  logType: string
+  weight?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  locationId?: number | null
+  reason?: string | null
+  loggedAt?: Date | string
+}
+
+export type TargetLogUpdateWithoutUserInput = {
+  logType?: Prisma.StringFieldUpdateOperationsInput | string
+  weight?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  loggedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  targetUnit?: Prisma.TargetUnitUpdateOneRequiredWithoutTargetLogsNestedInput
+  location?: Prisma.LocationUpdateOneWithoutTargetLogsNestedInput
+}
+
+export type TargetLogUncheckedUpdateWithoutUserInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  targetUnitId?: Prisma.IntFieldUpdateOperationsInput | number
+  logType?: Prisma.StringFieldUpdateOperationsInput | string
+  weight?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  locationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  loggedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type TargetLogUncheckedUpdateManyWithoutUserInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  targetUnitId?: Prisma.IntFieldUpdateOperationsInput | number
+  logType?: Prisma.StringFieldUpdateOperationsInput | string
+  weight?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  locationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  loggedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type TargetLogCreateManyTargetUnitInput = {
   id?: number
-  type: string
+  logType: string
   weight?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  location?: string | null
+  locationId?: number | null
   reason?: string | null
   userId?: number | null
-  createdAt?: Date | string
+  loggedAt?: Date | string
 }
 
 export type TargetLogUpdateWithoutTargetUnitInput = {
-  type?: Prisma.StringFieldUpdateOperationsInput | string
+  logType?: Prisma.StringFieldUpdateOperationsInput | string
   weight?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  loggedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  location?: Prisma.LocationUpdateOneWithoutTargetLogsNestedInput
+  user?: Prisma.UserUpdateOneWithoutTargetLogsNestedInput
 }
 
 export type TargetLogUncheckedUpdateWithoutTargetUnitInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  type?: Prisma.StringFieldUpdateOperationsInput | string
+  logType?: Prisma.StringFieldUpdateOperationsInput | string
   weight?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  locationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  loggedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type TargetLogUncheckedUpdateManyWithoutTargetUnitInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  type?: Prisma.StringFieldUpdateOperationsInput | string
+  logType?: Prisma.StringFieldUpdateOperationsInput | string
   weight?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  locationId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   reason?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  loggedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 
@@ -595,75 +849,89 @@ export type TargetLogUncheckedUpdateManyWithoutTargetUnitInput = {
 export type TargetLogSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   targetUnitId?: boolean
-  type?: boolean
+  logType?: boolean
   weight?: boolean
-  location?: boolean
+  locationId?: boolean
   reason?: boolean
   userId?: boolean
-  createdAt?: boolean
+  loggedAt?: boolean
   targetUnit?: boolean | Prisma.TargetUnitDefaultArgs<ExtArgs>
+  location?: boolean | Prisma.TargetLog$locationArgs<ExtArgs>
+  user?: boolean | Prisma.TargetLog$userArgs<ExtArgs>
 }, ExtArgs["result"]["targetLog"]>
 
 export type TargetLogSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   targetUnitId?: boolean
-  type?: boolean
+  logType?: boolean
   weight?: boolean
-  location?: boolean
+  locationId?: boolean
   reason?: boolean
   userId?: boolean
-  createdAt?: boolean
+  loggedAt?: boolean
   targetUnit?: boolean | Prisma.TargetUnitDefaultArgs<ExtArgs>
+  location?: boolean | Prisma.TargetLog$locationArgs<ExtArgs>
+  user?: boolean | Prisma.TargetLog$userArgs<ExtArgs>
 }, ExtArgs["result"]["targetLog"]>
 
 export type TargetLogSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   targetUnitId?: boolean
-  type?: boolean
+  logType?: boolean
   weight?: boolean
-  location?: boolean
+  locationId?: boolean
   reason?: boolean
   userId?: boolean
-  createdAt?: boolean
+  loggedAt?: boolean
   targetUnit?: boolean | Prisma.TargetUnitDefaultArgs<ExtArgs>
+  location?: boolean | Prisma.TargetLog$locationArgs<ExtArgs>
+  user?: boolean | Prisma.TargetLog$userArgs<ExtArgs>
 }, ExtArgs["result"]["targetLog"]>
 
 export type TargetLogSelectScalar = {
   id?: boolean
   targetUnitId?: boolean
-  type?: boolean
+  logType?: boolean
   weight?: boolean
-  location?: boolean
+  locationId?: boolean
   reason?: boolean
   userId?: boolean
-  createdAt?: boolean
+  loggedAt?: boolean
 }
 
-export type TargetLogOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "targetUnitId" | "type" | "weight" | "location" | "reason" | "userId" | "createdAt", ExtArgs["result"]["targetLog"]>
+export type TargetLogOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "targetUnitId" | "logType" | "weight" | "locationId" | "reason" | "userId" | "loggedAt", ExtArgs["result"]["targetLog"]>
 export type TargetLogInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   targetUnit?: boolean | Prisma.TargetUnitDefaultArgs<ExtArgs>
+  location?: boolean | Prisma.TargetLog$locationArgs<ExtArgs>
+  user?: boolean | Prisma.TargetLog$userArgs<ExtArgs>
 }
 export type TargetLogIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   targetUnit?: boolean | Prisma.TargetUnitDefaultArgs<ExtArgs>
+  location?: boolean | Prisma.TargetLog$locationArgs<ExtArgs>
+  user?: boolean | Prisma.TargetLog$userArgs<ExtArgs>
 }
 export type TargetLogIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   targetUnit?: boolean | Prisma.TargetUnitDefaultArgs<ExtArgs>
+  location?: boolean | Prisma.TargetLog$locationArgs<ExtArgs>
+  user?: boolean | Prisma.TargetLog$userArgs<ExtArgs>
 }
 
 export type $TargetLogPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "TargetLog"
   objects: {
     targetUnit: Prisma.$TargetUnitPayload<ExtArgs>
+    location: Prisma.$LocationPayload<ExtArgs> | null
+    user: Prisma.$UserPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
     targetUnitId: number
-    type: string
+    logType: string
     weight: runtime.Decimal | null
-    location: string | null
+    locationId: number | null
     reason: string | null
     userId: number | null
-    createdAt: Date
+    loggedAt: Date
   }, ExtArgs["result"]["targetLog"]>
   composites: {}
 }
@@ -1059,6 +1327,8 @@ readonly fields: TargetLogFieldRefs;
 export interface Prisma__TargetLogClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   targetUnit<T extends Prisma.TargetUnitDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TargetUnitDefaultArgs<ExtArgs>>): Prisma.Prisma__TargetUnitClient<runtime.Types.Result.GetResult<Prisma.$TargetUnitPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  location<T extends Prisma.TargetLog$locationArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TargetLog$locationArgs<ExtArgs>>): Prisma.Prisma__LocationClient<runtime.Types.Result.GetResult<Prisma.$LocationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  user<T extends Prisma.TargetLog$userArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TargetLog$userArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1090,12 +1360,12 @@ export interface Prisma__TargetLogClient<T, Null = never, ExtArgs extends runtim
 export interface TargetLogFieldRefs {
   readonly id: Prisma.FieldRef<"TargetLog", 'Int'>
   readonly targetUnitId: Prisma.FieldRef<"TargetLog", 'Int'>
-  readonly type: Prisma.FieldRef<"TargetLog", 'String'>
+  readonly logType: Prisma.FieldRef<"TargetLog", 'String'>
   readonly weight: Prisma.FieldRef<"TargetLog", 'Decimal'>
-  readonly location: Prisma.FieldRef<"TargetLog", 'String'>
+  readonly locationId: Prisma.FieldRef<"TargetLog", 'Int'>
   readonly reason: Prisma.FieldRef<"TargetLog", 'String'>
   readonly userId: Prisma.FieldRef<"TargetLog", 'Int'>
-  readonly createdAt: Prisma.FieldRef<"TargetLog", 'DateTime'>
+  readonly loggedAt: Prisma.FieldRef<"TargetLog", 'DateTime'>
 }
     
 
@@ -1489,6 +1759,44 @@ export type TargetLogDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Int
    * Limit how many TargetLogs to delete.
    */
   limit?: number
+}
+
+/**
+ * TargetLog.location
+ */
+export type TargetLog$locationArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Location
+   */
+  select?: Prisma.LocationSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Location
+   */
+  omit?: Prisma.LocationOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.LocationInclude<ExtArgs> | null
+  where?: Prisma.LocationWhereInput
+}
+
+/**
+ * TargetLog.user
+ */
+export type TargetLog$userArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the User
+   */
+  select?: Prisma.UserSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the User
+   */
+  omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  where?: Prisma.UserWhereInput
 }
 
 /**

@@ -31,8 +31,8 @@ export * from "./enums"
  * const prisma = new PrismaClient({
  *   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL })
  * })
- * // Fetch zero or more Users
- * const users = await prisma.user.findMany()
+ * // Fetch zero or more ItemCategories
+ * const itemCategories = await prisma.itemCategory.findMany()
  * ```
  * 
  * Read more in our [docs](https://pris.ly/d/client).
@@ -42,35 +42,70 @@ export type PrismaClient<LogOpts extends Prisma.LogLevel = never, OmitOpts exten
 export { Prisma }
 
 /**
- * Model User
- * 
- */
-export type User = Prisma.UserModel
-/**
- * Model UserPermission
- * 
- */
-export type UserPermission = Prisma.UserPermissionModel
-/**
  * Model ItemCategory
  * 
  */
 export type ItemCategory = Prisma.ItemCategoryModel
 /**
- * Model Item
+ * Model Location
  * 
  */
-export type Item = Prisma.ItemModel
+export type Location = Prisma.LocationModel
+/**
+ * Model TxReason
+ * 
+ */
+export type TxReason = Prisma.TxReasonModel
 /**
  * Model Partner
  * 
  */
 export type Partner = Prisma.PartnerModel
 /**
+ * Model User
+ * 
+ */
+export type User = Prisma.UserModel
+/**
+ * Model UserTabPermission
+ * 
+ */
+export type UserTabPermission = Prisma.UserTabPermissionModel
+/**
+ * Model AuthRefreshToken
+ * 
+ */
+export type AuthRefreshToken = Prisma.AuthRefreshTokenModel
+/**
+ * Model Item
+ * 
+ */
+export type Item = Prisma.ItemModel
+/**
+ * Model WaferSpec
+ * 
+ */
+export type WaferSpec = Prisma.WaferSpecModel
+/**
+ * Model TargetSpec
+ * 
+ */
+export type TargetSpec = Prisma.TargetSpecModel
+/**
  * Model TargetUnit
  * 
  */
 export type TargetUnit = Prisma.TargetUnitModel
+/**
+ * Model TargetLog
+ * 
+ */
+export type TargetLog = Prisma.TargetLogModel
+/**
+ * Model BarcodeSeq
+ * 
+ */
+export type BarcodeSeq = Prisma.BarcodeSeqModel
 /**
  * Model Barcode
  * 
@@ -82,27 +117,7 @@ export type Barcode = Prisma.BarcodeModel
  */
 export type InventoryTx = Prisma.InventoryTxModel
 /**
- * Model TargetLog
+ * Model BarcodeScan
  * 
  */
-export type TargetLog = Prisma.TargetLogModel
-/**
- * Model RequiredQty
- * 
- */
-export type RequiredQty = Prisma.RequiredQtyModel
-/**
- * Model AuditLog
- * 
- */
-export type AuditLog = Prisma.AuditLogModel
-/**
- * Model Attendance
- * 
- */
-export type Attendance = Prisma.AttendanceModel
-/**
- * Model Notice
- * 
- */
-export type Notice = Prisma.NoticeModel
+export type BarcodeScan = Prisma.BarcodeScanModel

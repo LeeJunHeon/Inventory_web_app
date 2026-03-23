@@ -29,11 +29,13 @@ export type AggregateItem = {
 export type ItemAvgAggregateOutputType = {
   id: number | null
   categoryId: number | null
+  minStockQty: number | null
 }
 
 export type ItemSumAggregateOutputType = {
   id: number | null
   categoryId: number | null
+  minStockQty: number | null
 }
 
 export type ItemMinAggregateOutputType = {
@@ -42,10 +44,8 @@ export type ItemMinAggregateOutputType = {
   code: string | null
   name: string | null
   unit: string | null
-  spec: string | null
+  minStockQty: number | null
   note: string | null
-  isActive: boolean | null
-  createdAt: Date | null
 }
 
 export type ItemMaxAggregateOutputType = {
@@ -54,10 +54,8 @@ export type ItemMaxAggregateOutputType = {
   code: string | null
   name: string | null
   unit: string | null
-  spec: string | null
+  minStockQty: number | null
   note: string | null
-  isActive: boolean | null
-  createdAt: Date | null
 }
 
 export type ItemCountAggregateOutputType = {
@@ -66,10 +64,8 @@ export type ItemCountAggregateOutputType = {
   code: number
   name: number
   unit: number
-  spec: number
+  minStockQty: number
   note: number
-  isActive: number
-  createdAt: number
   _all: number
 }
 
@@ -77,11 +73,13 @@ export type ItemCountAggregateOutputType = {
 export type ItemAvgAggregateInputType = {
   id?: true
   categoryId?: true
+  minStockQty?: true
 }
 
 export type ItemSumAggregateInputType = {
   id?: true
   categoryId?: true
+  minStockQty?: true
 }
 
 export type ItemMinAggregateInputType = {
@@ -90,10 +88,8 @@ export type ItemMinAggregateInputType = {
   code?: true
   name?: true
   unit?: true
-  spec?: true
+  minStockQty?: true
   note?: true
-  isActive?: true
-  createdAt?: true
 }
 
 export type ItemMaxAggregateInputType = {
@@ -102,10 +98,8 @@ export type ItemMaxAggregateInputType = {
   code?: true
   name?: true
   unit?: true
-  spec?: true
+  minStockQty?: true
   note?: true
-  isActive?: true
-  createdAt?: true
 }
 
 export type ItemCountAggregateInputType = {
@@ -114,10 +108,8 @@ export type ItemCountAggregateInputType = {
   code?: true
   name?: true
   unit?: true
-  spec?: true
+  minStockQty?: true
   note?: true
-  isActive?: true
-  createdAt?: true
   _all?: true
 }
 
@@ -213,10 +205,8 @@ export type ItemGroupByOutputType = {
   code: string
   name: string
   unit: string | null
-  spec: string | null
+  minStockQty: number
   note: string | null
-  isActive: boolean
-  createdAt: Date
   _count: ItemCountAggregateOutputType | null
   _avg: ItemAvgAggregateOutputType | null
   _sum: ItemSumAggregateOutputType | null
@@ -248,11 +238,11 @@ export type ItemWhereInput = {
   code?: Prisma.StringFilter<"Item"> | string
   name?: Prisma.StringFilter<"Item"> | string
   unit?: Prisma.StringNullableFilter<"Item"> | string | null
-  spec?: Prisma.StringNullableFilter<"Item"> | string | null
+  minStockQty?: Prisma.IntFilter<"Item"> | number
   note?: Prisma.StringNullableFilter<"Item"> | string | null
-  isActive?: Prisma.BoolFilter<"Item"> | boolean
-  createdAt?: Prisma.DateTimeFilter<"Item"> | Date | string
   category?: Prisma.XOR<Prisma.ItemCategoryScalarRelationFilter, Prisma.ItemCategoryWhereInput>
+  waferSpec?: Prisma.XOR<Prisma.WaferSpecNullableScalarRelationFilter, Prisma.WaferSpecWhereInput> | null
+  targetSpec?: Prisma.XOR<Prisma.TargetSpecNullableScalarRelationFilter, Prisma.TargetSpecWhereInput> | null
   barcodes?: Prisma.BarcodeListRelationFilter
   targetUnits?: Prisma.TargetUnitListRelationFilter
   inventoryTxs?: Prisma.InventoryTxListRelationFilter
@@ -264,11 +254,11 @@ export type ItemOrderByWithRelationInput = {
   code?: Prisma.SortOrder
   name?: Prisma.SortOrder
   unit?: Prisma.SortOrderInput | Prisma.SortOrder
-  spec?: Prisma.SortOrderInput | Prisma.SortOrder
+  minStockQty?: Prisma.SortOrder
   note?: Prisma.SortOrderInput | Prisma.SortOrder
-  isActive?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
   category?: Prisma.ItemCategoryOrderByWithRelationInput
+  waferSpec?: Prisma.WaferSpecOrderByWithRelationInput
+  targetSpec?: Prisma.TargetSpecOrderByWithRelationInput
   barcodes?: Prisma.BarcodeOrderByRelationAggregateInput
   targetUnits?: Prisma.TargetUnitOrderByRelationAggregateInput
   inventoryTxs?: Prisma.InventoryTxOrderByRelationAggregateInput
@@ -283,11 +273,11 @@ export type ItemWhereUniqueInput = Prisma.AtLeast<{
   categoryId?: Prisma.IntFilter<"Item"> | number
   name?: Prisma.StringFilter<"Item"> | string
   unit?: Prisma.StringNullableFilter<"Item"> | string | null
-  spec?: Prisma.StringNullableFilter<"Item"> | string | null
+  minStockQty?: Prisma.IntFilter<"Item"> | number
   note?: Prisma.StringNullableFilter<"Item"> | string | null
-  isActive?: Prisma.BoolFilter<"Item"> | boolean
-  createdAt?: Prisma.DateTimeFilter<"Item"> | Date | string
   category?: Prisma.XOR<Prisma.ItemCategoryScalarRelationFilter, Prisma.ItemCategoryWhereInput>
+  waferSpec?: Prisma.XOR<Prisma.WaferSpecNullableScalarRelationFilter, Prisma.WaferSpecWhereInput> | null
+  targetSpec?: Prisma.XOR<Prisma.TargetSpecNullableScalarRelationFilter, Prisma.TargetSpecWhereInput> | null
   barcodes?: Prisma.BarcodeListRelationFilter
   targetUnits?: Prisma.TargetUnitListRelationFilter
   inventoryTxs?: Prisma.InventoryTxListRelationFilter
@@ -299,10 +289,8 @@ export type ItemOrderByWithAggregationInput = {
   code?: Prisma.SortOrder
   name?: Prisma.SortOrder
   unit?: Prisma.SortOrderInput | Prisma.SortOrder
-  spec?: Prisma.SortOrderInput | Prisma.SortOrder
+  minStockQty?: Prisma.SortOrder
   note?: Prisma.SortOrderInput | Prisma.SortOrder
-  isActive?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
   _count?: Prisma.ItemCountOrderByAggregateInput
   _avg?: Prisma.ItemAvgOrderByAggregateInput
   _max?: Prisma.ItemMaxOrderByAggregateInput
@@ -319,21 +307,19 @@ export type ItemScalarWhereWithAggregatesInput = {
   code?: Prisma.StringWithAggregatesFilter<"Item"> | string
   name?: Prisma.StringWithAggregatesFilter<"Item"> | string
   unit?: Prisma.StringNullableWithAggregatesFilter<"Item"> | string | null
-  spec?: Prisma.StringNullableWithAggregatesFilter<"Item"> | string | null
+  minStockQty?: Prisma.IntWithAggregatesFilter<"Item"> | number
   note?: Prisma.StringNullableWithAggregatesFilter<"Item"> | string | null
-  isActive?: Prisma.BoolWithAggregatesFilter<"Item"> | boolean
-  createdAt?: Prisma.DateTimeWithAggregatesFilter<"Item"> | Date | string
 }
 
 export type ItemCreateInput = {
   code: string
   name: string
   unit?: string | null
-  spec?: string | null
+  minStockQty?: number
   note?: string | null
-  isActive?: boolean
-  createdAt?: Date | string
   category: Prisma.ItemCategoryCreateNestedOneWithoutItemsInput
+  waferSpec?: Prisma.WaferSpecCreateNestedOneWithoutItemInput
+  targetSpec?: Prisma.TargetSpecCreateNestedOneWithoutItemInput
   barcodes?: Prisma.BarcodeCreateNestedManyWithoutItemInput
   targetUnits?: Prisma.TargetUnitCreateNestedManyWithoutItemInput
   inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutItemInput
@@ -345,10 +331,10 @@ export type ItemUncheckedCreateInput = {
   code: string
   name: string
   unit?: string | null
-  spec?: string | null
+  minStockQty?: number
   note?: string | null
-  isActive?: boolean
-  createdAt?: Date | string
+  waferSpec?: Prisma.WaferSpecUncheckedCreateNestedOneWithoutItemInput
+  targetSpec?: Prisma.TargetSpecUncheckedCreateNestedOneWithoutItemInput
   barcodes?: Prisma.BarcodeUncheckedCreateNestedManyWithoutItemInput
   targetUnits?: Prisma.TargetUnitUncheckedCreateNestedManyWithoutItemInput
   inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutItemInput
@@ -358,11 +344,11 @@ export type ItemUpdateInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  spec?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minStockQty?: Prisma.IntFieldUpdateOperationsInput | number
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   category?: Prisma.ItemCategoryUpdateOneRequiredWithoutItemsNestedInput
+  waferSpec?: Prisma.WaferSpecUpdateOneWithoutItemNestedInput
+  targetSpec?: Prisma.TargetSpecUpdateOneWithoutItemNestedInput
   barcodes?: Prisma.BarcodeUpdateManyWithoutItemNestedInput
   targetUnits?: Prisma.TargetUnitUpdateManyWithoutItemNestedInput
   inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutItemNestedInput
@@ -374,10 +360,10 @@ export type ItemUncheckedUpdateInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  spec?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minStockQty?: Prisma.IntFieldUpdateOperationsInput | number
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  waferSpec?: Prisma.WaferSpecUncheckedUpdateOneWithoutItemNestedInput
+  targetSpec?: Prisma.TargetSpecUncheckedUpdateOneWithoutItemNestedInput
   barcodes?: Prisma.BarcodeUncheckedUpdateManyWithoutItemNestedInput
   targetUnits?: Prisma.TargetUnitUncheckedUpdateManyWithoutItemNestedInput
   inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutItemNestedInput
@@ -389,20 +375,16 @@ export type ItemCreateManyInput = {
   code: string
   name: string
   unit?: string | null
-  spec?: string | null
+  minStockQty?: number
   note?: string | null
-  isActive?: boolean
-  createdAt?: Date | string
 }
 
 export type ItemUpdateManyMutationInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  spec?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minStockQty?: Prisma.IntFieldUpdateOperationsInput | number
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type ItemUncheckedUpdateManyInput = {
@@ -411,10 +393,8 @@ export type ItemUncheckedUpdateManyInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  spec?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minStockQty?: Prisma.IntFieldUpdateOperationsInput | number
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type ItemListRelationFilter = {
@@ -433,15 +413,14 @@ export type ItemCountOrderByAggregateInput = {
   code?: Prisma.SortOrder
   name?: Prisma.SortOrder
   unit?: Prisma.SortOrder
-  spec?: Prisma.SortOrder
+  minStockQty?: Prisma.SortOrder
   note?: Prisma.SortOrder
-  isActive?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
 }
 
 export type ItemAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
   categoryId?: Prisma.SortOrder
+  minStockQty?: Prisma.SortOrder
 }
 
 export type ItemMaxOrderByAggregateInput = {
@@ -450,10 +429,8 @@ export type ItemMaxOrderByAggregateInput = {
   code?: Prisma.SortOrder
   name?: Prisma.SortOrder
   unit?: Prisma.SortOrder
-  spec?: Prisma.SortOrder
+  minStockQty?: Prisma.SortOrder
   note?: Prisma.SortOrder
-  isActive?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
 }
 
 export type ItemMinOrderByAggregateInput = {
@@ -462,25 +439,24 @@ export type ItemMinOrderByAggregateInput = {
   code?: Prisma.SortOrder
   name?: Prisma.SortOrder
   unit?: Prisma.SortOrder
-  spec?: Prisma.SortOrder
+  minStockQty?: Prisma.SortOrder
   note?: Prisma.SortOrder
-  isActive?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
 }
 
 export type ItemSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
   categoryId?: Prisma.SortOrder
-}
-
-export type ItemNullableScalarRelationFilter = {
-  is?: Prisma.ItemWhereInput | null
-  isNot?: Prisma.ItemWhereInput | null
+  minStockQty?: Prisma.SortOrder
 }
 
 export type ItemScalarRelationFilter = {
   is?: Prisma.ItemWhereInput
   isNot?: Prisma.ItemWhereInput
+}
+
+export type ItemNullableScalarRelationFilter = {
+  is?: Prisma.ItemWhereInput | null
+  isNot?: Prisma.ItemWhereInput | null
 }
 
 export type ItemCreateNestedManyWithoutCategoryInput = {
@@ -525,18 +501,44 @@ export type ItemUncheckedUpdateManyWithoutCategoryNestedInput = {
   deleteMany?: Prisma.ItemScalarWhereInput | Prisma.ItemScalarWhereInput[]
 }
 
+export type ItemCreateNestedOneWithoutWaferSpecInput = {
+  create?: Prisma.XOR<Prisma.ItemCreateWithoutWaferSpecInput, Prisma.ItemUncheckedCreateWithoutWaferSpecInput>
+  connectOrCreate?: Prisma.ItemCreateOrConnectWithoutWaferSpecInput
+  connect?: Prisma.ItemWhereUniqueInput
+}
+
+export type ItemUpdateOneRequiredWithoutWaferSpecNestedInput = {
+  create?: Prisma.XOR<Prisma.ItemCreateWithoutWaferSpecInput, Prisma.ItemUncheckedCreateWithoutWaferSpecInput>
+  connectOrCreate?: Prisma.ItemCreateOrConnectWithoutWaferSpecInput
+  upsert?: Prisma.ItemUpsertWithoutWaferSpecInput
+  connect?: Prisma.ItemWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ItemUpdateToOneWithWhereWithoutWaferSpecInput, Prisma.ItemUpdateWithoutWaferSpecInput>, Prisma.ItemUncheckedUpdateWithoutWaferSpecInput>
+}
+
+export type ItemCreateNestedOneWithoutTargetSpecInput = {
+  create?: Prisma.XOR<Prisma.ItemCreateWithoutTargetSpecInput, Prisma.ItemUncheckedCreateWithoutTargetSpecInput>
+  connectOrCreate?: Prisma.ItemCreateOrConnectWithoutTargetSpecInput
+  connect?: Prisma.ItemWhereUniqueInput
+}
+
+export type ItemUpdateOneRequiredWithoutTargetSpecNestedInput = {
+  create?: Prisma.XOR<Prisma.ItemCreateWithoutTargetSpecInput, Prisma.ItemUncheckedCreateWithoutTargetSpecInput>
+  connectOrCreate?: Prisma.ItemCreateOrConnectWithoutTargetSpecInput
+  upsert?: Prisma.ItemUpsertWithoutTargetSpecInput
+  connect?: Prisma.ItemWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ItemUpdateToOneWithWhereWithoutTargetSpecInput, Prisma.ItemUpdateWithoutTargetSpecInput>, Prisma.ItemUncheckedUpdateWithoutTargetSpecInput>
+}
+
 export type ItemCreateNestedOneWithoutTargetUnitsInput = {
   create?: Prisma.XOR<Prisma.ItemCreateWithoutTargetUnitsInput, Prisma.ItemUncheckedCreateWithoutTargetUnitsInput>
   connectOrCreate?: Prisma.ItemCreateOrConnectWithoutTargetUnitsInput
   connect?: Prisma.ItemWhereUniqueInput
 }
 
-export type ItemUpdateOneWithoutTargetUnitsNestedInput = {
+export type ItemUpdateOneRequiredWithoutTargetUnitsNestedInput = {
   create?: Prisma.XOR<Prisma.ItemCreateWithoutTargetUnitsInput, Prisma.ItemUncheckedCreateWithoutTargetUnitsInput>
   connectOrCreate?: Prisma.ItemCreateOrConnectWithoutTargetUnitsInput
   upsert?: Prisma.ItemUpsertWithoutTargetUnitsInput
-  disconnect?: Prisma.ItemWhereInput | boolean
-  delete?: Prisma.ItemWhereInput | boolean
   connect?: Prisma.ItemWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.ItemUpdateToOneWithWhereWithoutTargetUnitsInput, Prisma.ItemUpdateWithoutTargetUnitsInput>, Prisma.ItemUncheckedUpdateWithoutTargetUnitsInput>
 }
@@ -575,10 +577,10 @@ export type ItemCreateWithoutCategoryInput = {
   code: string
   name: string
   unit?: string | null
-  spec?: string | null
+  minStockQty?: number
   note?: string | null
-  isActive?: boolean
-  createdAt?: Date | string
+  waferSpec?: Prisma.WaferSpecCreateNestedOneWithoutItemInput
+  targetSpec?: Prisma.TargetSpecCreateNestedOneWithoutItemInput
   barcodes?: Prisma.BarcodeCreateNestedManyWithoutItemInput
   targetUnits?: Prisma.TargetUnitCreateNestedManyWithoutItemInput
   inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutItemInput
@@ -589,10 +591,10 @@ export type ItemUncheckedCreateWithoutCategoryInput = {
   code: string
   name: string
   unit?: string | null
-  spec?: string | null
+  minStockQty?: number
   note?: string | null
-  isActive?: boolean
-  createdAt?: Date | string
+  waferSpec?: Prisma.WaferSpecUncheckedCreateNestedOneWithoutItemInput
+  targetSpec?: Prisma.TargetSpecUncheckedCreateNestedOneWithoutItemInput
   barcodes?: Prisma.BarcodeUncheckedCreateNestedManyWithoutItemInput
   targetUnits?: Prisma.TargetUnitUncheckedCreateNestedManyWithoutItemInput
   inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutItemInput
@@ -633,21 +635,159 @@ export type ItemScalarWhereInput = {
   code?: Prisma.StringFilter<"Item"> | string
   name?: Prisma.StringFilter<"Item"> | string
   unit?: Prisma.StringNullableFilter<"Item"> | string | null
-  spec?: Prisma.StringNullableFilter<"Item"> | string | null
+  minStockQty?: Prisma.IntFilter<"Item"> | number
   note?: Prisma.StringNullableFilter<"Item"> | string | null
-  isActive?: Prisma.BoolFilter<"Item"> | boolean
-  createdAt?: Prisma.DateTimeFilter<"Item"> | Date | string
+}
+
+export type ItemCreateWithoutWaferSpecInput = {
+  code: string
+  name: string
+  unit?: string | null
+  minStockQty?: number
+  note?: string | null
+  category: Prisma.ItemCategoryCreateNestedOneWithoutItemsInput
+  targetSpec?: Prisma.TargetSpecCreateNestedOneWithoutItemInput
+  barcodes?: Prisma.BarcodeCreateNestedManyWithoutItemInput
+  targetUnits?: Prisma.TargetUnitCreateNestedManyWithoutItemInput
+  inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutItemInput
+}
+
+export type ItemUncheckedCreateWithoutWaferSpecInput = {
+  id?: number
+  categoryId: number
+  code: string
+  name: string
+  unit?: string | null
+  minStockQty?: number
+  note?: string | null
+  targetSpec?: Prisma.TargetSpecUncheckedCreateNestedOneWithoutItemInput
+  barcodes?: Prisma.BarcodeUncheckedCreateNestedManyWithoutItemInput
+  targetUnits?: Prisma.TargetUnitUncheckedCreateNestedManyWithoutItemInput
+  inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutItemInput
+}
+
+export type ItemCreateOrConnectWithoutWaferSpecInput = {
+  where: Prisma.ItemWhereUniqueInput
+  create: Prisma.XOR<Prisma.ItemCreateWithoutWaferSpecInput, Prisma.ItemUncheckedCreateWithoutWaferSpecInput>
+}
+
+export type ItemUpsertWithoutWaferSpecInput = {
+  update: Prisma.XOR<Prisma.ItemUpdateWithoutWaferSpecInput, Prisma.ItemUncheckedUpdateWithoutWaferSpecInput>
+  create: Prisma.XOR<Prisma.ItemCreateWithoutWaferSpecInput, Prisma.ItemUncheckedCreateWithoutWaferSpecInput>
+  where?: Prisma.ItemWhereInput
+}
+
+export type ItemUpdateToOneWithWhereWithoutWaferSpecInput = {
+  where?: Prisma.ItemWhereInput
+  data: Prisma.XOR<Prisma.ItemUpdateWithoutWaferSpecInput, Prisma.ItemUncheckedUpdateWithoutWaferSpecInput>
+}
+
+export type ItemUpdateWithoutWaferSpecInput = {
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minStockQty?: Prisma.IntFieldUpdateOperationsInput | number
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.ItemCategoryUpdateOneRequiredWithoutItemsNestedInput
+  targetSpec?: Prisma.TargetSpecUpdateOneWithoutItemNestedInput
+  barcodes?: Prisma.BarcodeUpdateManyWithoutItemNestedInput
+  targetUnits?: Prisma.TargetUnitUpdateManyWithoutItemNestedInput
+  inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutItemNestedInput
+}
+
+export type ItemUncheckedUpdateWithoutWaferSpecInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  categoryId?: Prisma.IntFieldUpdateOperationsInput | number
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minStockQty?: Prisma.IntFieldUpdateOperationsInput | number
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetSpec?: Prisma.TargetSpecUncheckedUpdateOneWithoutItemNestedInput
+  barcodes?: Prisma.BarcodeUncheckedUpdateManyWithoutItemNestedInput
+  targetUnits?: Prisma.TargetUnitUncheckedUpdateManyWithoutItemNestedInput
+  inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutItemNestedInput
+}
+
+export type ItemCreateWithoutTargetSpecInput = {
+  code: string
+  name: string
+  unit?: string | null
+  minStockQty?: number
+  note?: string | null
+  category: Prisma.ItemCategoryCreateNestedOneWithoutItemsInput
+  waferSpec?: Prisma.WaferSpecCreateNestedOneWithoutItemInput
+  barcodes?: Prisma.BarcodeCreateNestedManyWithoutItemInput
+  targetUnits?: Prisma.TargetUnitCreateNestedManyWithoutItemInput
+  inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutItemInput
+}
+
+export type ItemUncheckedCreateWithoutTargetSpecInput = {
+  id?: number
+  categoryId: number
+  code: string
+  name: string
+  unit?: string | null
+  minStockQty?: number
+  note?: string | null
+  waferSpec?: Prisma.WaferSpecUncheckedCreateNestedOneWithoutItemInput
+  barcodes?: Prisma.BarcodeUncheckedCreateNestedManyWithoutItemInput
+  targetUnits?: Prisma.TargetUnitUncheckedCreateNestedManyWithoutItemInput
+  inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutItemInput
+}
+
+export type ItemCreateOrConnectWithoutTargetSpecInput = {
+  where: Prisma.ItemWhereUniqueInput
+  create: Prisma.XOR<Prisma.ItemCreateWithoutTargetSpecInput, Prisma.ItemUncheckedCreateWithoutTargetSpecInput>
+}
+
+export type ItemUpsertWithoutTargetSpecInput = {
+  update: Prisma.XOR<Prisma.ItemUpdateWithoutTargetSpecInput, Prisma.ItemUncheckedUpdateWithoutTargetSpecInput>
+  create: Prisma.XOR<Prisma.ItemCreateWithoutTargetSpecInput, Prisma.ItemUncheckedCreateWithoutTargetSpecInput>
+  where?: Prisma.ItemWhereInput
+}
+
+export type ItemUpdateToOneWithWhereWithoutTargetSpecInput = {
+  where?: Prisma.ItemWhereInput
+  data: Prisma.XOR<Prisma.ItemUpdateWithoutTargetSpecInput, Prisma.ItemUncheckedUpdateWithoutTargetSpecInput>
+}
+
+export type ItemUpdateWithoutTargetSpecInput = {
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minStockQty?: Prisma.IntFieldUpdateOperationsInput | number
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.ItemCategoryUpdateOneRequiredWithoutItemsNestedInput
+  waferSpec?: Prisma.WaferSpecUpdateOneWithoutItemNestedInput
+  barcodes?: Prisma.BarcodeUpdateManyWithoutItemNestedInput
+  targetUnits?: Prisma.TargetUnitUpdateManyWithoutItemNestedInput
+  inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutItemNestedInput
+}
+
+export type ItemUncheckedUpdateWithoutTargetSpecInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  categoryId?: Prisma.IntFieldUpdateOperationsInput | number
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minStockQty?: Prisma.IntFieldUpdateOperationsInput | number
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  waferSpec?: Prisma.WaferSpecUncheckedUpdateOneWithoutItemNestedInput
+  barcodes?: Prisma.BarcodeUncheckedUpdateManyWithoutItemNestedInput
+  targetUnits?: Prisma.TargetUnitUncheckedUpdateManyWithoutItemNestedInput
+  inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutItemNestedInput
 }
 
 export type ItemCreateWithoutTargetUnitsInput = {
   code: string
   name: string
   unit?: string | null
-  spec?: string | null
+  minStockQty?: number
   note?: string | null
-  isActive?: boolean
-  createdAt?: Date | string
   category: Prisma.ItemCategoryCreateNestedOneWithoutItemsInput
+  waferSpec?: Prisma.WaferSpecCreateNestedOneWithoutItemInput
+  targetSpec?: Prisma.TargetSpecCreateNestedOneWithoutItemInput
   barcodes?: Prisma.BarcodeCreateNestedManyWithoutItemInput
   inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutItemInput
 }
@@ -658,10 +798,10 @@ export type ItemUncheckedCreateWithoutTargetUnitsInput = {
   code: string
   name: string
   unit?: string | null
-  spec?: string | null
+  minStockQty?: number
   note?: string | null
-  isActive?: boolean
-  createdAt?: Date | string
+  waferSpec?: Prisma.WaferSpecUncheckedCreateNestedOneWithoutItemInput
+  targetSpec?: Prisma.TargetSpecUncheckedCreateNestedOneWithoutItemInput
   barcodes?: Prisma.BarcodeUncheckedCreateNestedManyWithoutItemInput
   inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutItemInput
 }
@@ -686,11 +826,11 @@ export type ItemUpdateWithoutTargetUnitsInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  spec?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minStockQty?: Prisma.IntFieldUpdateOperationsInput | number
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   category?: Prisma.ItemCategoryUpdateOneRequiredWithoutItemsNestedInput
+  waferSpec?: Prisma.WaferSpecUpdateOneWithoutItemNestedInput
+  targetSpec?: Prisma.TargetSpecUpdateOneWithoutItemNestedInput
   barcodes?: Prisma.BarcodeUpdateManyWithoutItemNestedInput
   inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutItemNestedInput
 }
@@ -701,10 +841,10 @@ export type ItemUncheckedUpdateWithoutTargetUnitsInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  spec?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minStockQty?: Prisma.IntFieldUpdateOperationsInput | number
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  waferSpec?: Prisma.WaferSpecUncheckedUpdateOneWithoutItemNestedInput
+  targetSpec?: Prisma.TargetSpecUncheckedUpdateOneWithoutItemNestedInput
   barcodes?: Prisma.BarcodeUncheckedUpdateManyWithoutItemNestedInput
   inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutItemNestedInput
 }
@@ -713,11 +853,11 @@ export type ItemCreateWithoutBarcodesInput = {
   code: string
   name: string
   unit?: string | null
-  spec?: string | null
+  minStockQty?: number
   note?: string | null
-  isActive?: boolean
-  createdAt?: Date | string
   category: Prisma.ItemCategoryCreateNestedOneWithoutItemsInput
+  waferSpec?: Prisma.WaferSpecCreateNestedOneWithoutItemInput
+  targetSpec?: Prisma.TargetSpecCreateNestedOneWithoutItemInput
   targetUnits?: Prisma.TargetUnitCreateNestedManyWithoutItemInput
   inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutItemInput
 }
@@ -728,10 +868,10 @@ export type ItemUncheckedCreateWithoutBarcodesInput = {
   code: string
   name: string
   unit?: string | null
-  spec?: string | null
+  minStockQty?: number
   note?: string | null
-  isActive?: boolean
-  createdAt?: Date | string
+  waferSpec?: Prisma.WaferSpecUncheckedCreateNestedOneWithoutItemInput
+  targetSpec?: Prisma.TargetSpecUncheckedCreateNestedOneWithoutItemInput
   targetUnits?: Prisma.TargetUnitUncheckedCreateNestedManyWithoutItemInput
   inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutItemInput
 }
@@ -756,11 +896,11 @@ export type ItemUpdateWithoutBarcodesInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  spec?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minStockQty?: Prisma.IntFieldUpdateOperationsInput | number
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   category?: Prisma.ItemCategoryUpdateOneRequiredWithoutItemsNestedInput
+  waferSpec?: Prisma.WaferSpecUpdateOneWithoutItemNestedInput
+  targetSpec?: Prisma.TargetSpecUpdateOneWithoutItemNestedInput
   targetUnits?: Prisma.TargetUnitUpdateManyWithoutItemNestedInput
   inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutItemNestedInput
 }
@@ -771,10 +911,10 @@ export type ItemUncheckedUpdateWithoutBarcodesInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  spec?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minStockQty?: Prisma.IntFieldUpdateOperationsInput | number
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  waferSpec?: Prisma.WaferSpecUncheckedUpdateOneWithoutItemNestedInput
+  targetSpec?: Prisma.TargetSpecUncheckedUpdateOneWithoutItemNestedInput
   targetUnits?: Prisma.TargetUnitUncheckedUpdateManyWithoutItemNestedInput
   inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutItemNestedInput
 }
@@ -783,11 +923,11 @@ export type ItemCreateWithoutInventoryTxsInput = {
   code: string
   name: string
   unit?: string | null
-  spec?: string | null
+  minStockQty?: number
   note?: string | null
-  isActive?: boolean
-  createdAt?: Date | string
   category: Prisma.ItemCategoryCreateNestedOneWithoutItemsInput
+  waferSpec?: Prisma.WaferSpecCreateNestedOneWithoutItemInput
+  targetSpec?: Prisma.TargetSpecCreateNestedOneWithoutItemInput
   barcodes?: Prisma.BarcodeCreateNestedManyWithoutItemInput
   targetUnits?: Prisma.TargetUnitCreateNestedManyWithoutItemInput
 }
@@ -798,10 +938,10 @@ export type ItemUncheckedCreateWithoutInventoryTxsInput = {
   code: string
   name: string
   unit?: string | null
-  spec?: string | null
+  minStockQty?: number
   note?: string | null
-  isActive?: boolean
-  createdAt?: Date | string
+  waferSpec?: Prisma.WaferSpecUncheckedCreateNestedOneWithoutItemInput
+  targetSpec?: Prisma.TargetSpecUncheckedCreateNestedOneWithoutItemInput
   barcodes?: Prisma.BarcodeUncheckedCreateNestedManyWithoutItemInput
   targetUnits?: Prisma.TargetUnitUncheckedCreateNestedManyWithoutItemInput
 }
@@ -826,11 +966,11 @@ export type ItemUpdateWithoutInventoryTxsInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  spec?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minStockQty?: Prisma.IntFieldUpdateOperationsInput | number
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   category?: Prisma.ItemCategoryUpdateOneRequiredWithoutItemsNestedInput
+  waferSpec?: Prisma.WaferSpecUpdateOneWithoutItemNestedInput
+  targetSpec?: Prisma.TargetSpecUpdateOneWithoutItemNestedInput
   barcodes?: Prisma.BarcodeUpdateManyWithoutItemNestedInput
   targetUnits?: Prisma.TargetUnitUpdateManyWithoutItemNestedInput
 }
@@ -841,10 +981,10 @@ export type ItemUncheckedUpdateWithoutInventoryTxsInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  spec?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minStockQty?: Prisma.IntFieldUpdateOperationsInput | number
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  waferSpec?: Prisma.WaferSpecUncheckedUpdateOneWithoutItemNestedInput
+  targetSpec?: Prisma.TargetSpecUncheckedUpdateOneWithoutItemNestedInput
   barcodes?: Prisma.BarcodeUncheckedUpdateManyWithoutItemNestedInput
   targetUnits?: Prisma.TargetUnitUncheckedUpdateManyWithoutItemNestedInput
 }
@@ -854,20 +994,18 @@ export type ItemCreateManyCategoryInput = {
   code: string
   name: string
   unit?: string | null
-  spec?: string | null
+  minStockQty?: number
   note?: string | null
-  isActive?: boolean
-  createdAt?: Date | string
 }
 
 export type ItemUpdateWithoutCategoryInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  spec?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minStockQty?: Prisma.IntFieldUpdateOperationsInput | number
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  waferSpec?: Prisma.WaferSpecUpdateOneWithoutItemNestedInput
+  targetSpec?: Prisma.TargetSpecUpdateOneWithoutItemNestedInput
   barcodes?: Prisma.BarcodeUpdateManyWithoutItemNestedInput
   targetUnits?: Prisma.TargetUnitUpdateManyWithoutItemNestedInput
   inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutItemNestedInput
@@ -878,10 +1016,10 @@ export type ItemUncheckedUpdateWithoutCategoryInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  spec?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minStockQty?: Prisma.IntFieldUpdateOperationsInput | number
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  waferSpec?: Prisma.WaferSpecUncheckedUpdateOneWithoutItemNestedInput
+  targetSpec?: Prisma.TargetSpecUncheckedUpdateOneWithoutItemNestedInput
   barcodes?: Prisma.BarcodeUncheckedUpdateManyWithoutItemNestedInput
   targetUnits?: Prisma.TargetUnitUncheckedUpdateManyWithoutItemNestedInput
   inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutItemNestedInput
@@ -892,10 +1030,8 @@ export type ItemUncheckedUpdateManyWithoutCategoryInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   name?: Prisma.StringFieldUpdateOperationsInput | string
   unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  spec?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  minStockQty?: Prisma.IntFieldUpdateOperationsInput | number
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 
@@ -953,11 +1089,11 @@ export type ItemSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   code?: boolean
   name?: boolean
   unit?: boolean
-  spec?: boolean
+  minStockQty?: boolean
   note?: boolean
-  isActive?: boolean
-  createdAt?: boolean
   category?: boolean | Prisma.ItemCategoryDefaultArgs<ExtArgs>
+  waferSpec?: boolean | Prisma.Item$waferSpecArgs<ExtArgs>
+  targetSpec?: boolean | Prisma.Item$targetSpecArgs<ExtArgs>
   barcodes?: boolean | Prisma.Item$barcodesArgs<ExtArgs>
   targetUnits?: boolean | Prisma.Item$targetUnitsArgs<ExtArgs>
   inventoryTxs?: boolean | Prisma.Item$inventoryTxsArgs<ExtArgs>
@@ -970,10 +1106,8 @@ export type ItemSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   code?: boolean
   name?: boolean
   unit?: boolean
-  spec?: boolean
+  minStockQty?: boolean
   note?: boolean
-  isActive?: boolean
-  createdAt?: boolean
   category?: boolean | Prisma.ItemCategoryDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["item"]>
 
@@ -983,10 +1117,8 @@ export type ItemSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   code?: boolean
   name?: boolean
   unit?: boolean
-  spec?: boolean
+  minStockQty?: boolean
   note?: boolean
-  isActive?: boolean
-  createdAt?: boolean
   category?: boolean | Prisma.ItemCategoryDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["item"]>
 
@@ -996,15 +1128,15 @@ export type ItemSelectScalar = {
   code?: boolean
   name?: boolean
   unit?: boolean
-  spec?: boolean
+  minStockQty?: boolean
   note?: boolean
-  isActive?: boolean
-  createdAt?: boolean
 }
 
-export type ItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "categoryId" | "code" | "name" | "unit" | "spec" | "note" | "isActive" | "createdAt", ExtArgs["result"]["item"]>
+export type ItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "categoryId" | "code" | "name" | "unit" | "minStockQty" | "note", ExtArgs["result"]["item"]>
 export type ItemInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   category?: boolean | Prisma.ItemCategoryDefaultArgs<ExtArgs>
+  waferSpec?: boolean | Prisma.Item$waferSpecArgs<ExtArgs>
+  targetSpec?: boolean | Prisma.Item$targetSpecArgs<ExtArgs>
   barcodes?: boolean | Prisma.Item$barcodesArgs<ExtArgs>
   targetUnits?: boolean | Prisma.Item$targetUnitsArgs<ExtArgs>
   inventoryTxs?: boolean | Prisma.Item$inventoryTxsArgs<ExtArgs>
@@ -1021,6 +1153,8 @@ export type $ItemPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   name: "Item"
   objects: {
     category: Prisma.$ItemCategoryPayload<ExtArgs>
+    waferSpec: Prisma.$WaferSpecPayload<ExtArgs> | null
+    targetSpec: Prisma.$TargetSpecPayload<ExtArgs> | null
     barcodes: Prisma.$BarcodePayload<ExtArgs>[]
     targetUnits: Prisma.$TargetUnitPayload<ExtArgs>[]
     inventoryTxs: Prisma.$InventoryTxPayload<ExtArgs>[]
@@ -1031,10 +1165,8 @@ export type $ItemPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     code: string
     name: string
     unit: string | null
-    spec: string | null
+    minStockQty: number
     note: string | null
-    isActive: boolean
-    createdAt: Date
   }, ExtArgs["result"]["item"]>
   composites: {}
 }
@@ -1430,6 +1562,8 @@ readonly fields: ItemFieldRefs;
 export interface Prisma__ItemClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   category<T extends Prisma.ItemCategoryDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ItemCategoryDefaultArgs<ExtArgs>>): Prisma.Prisma__ItemCategoryClient<runtime.Types.Result.GetResult<Prisma.$ItemCategoryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  waferSpec<T extends Prisma.Item$waferSpecArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Item$waferSpecArgs<ExtArgs>>): Prisma.Prisma__WaferSpecClient<runtime.Types.Result.GetResult<Prisma.$WaferSpecPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  targetSpec<T extends Prisma.Item$targetSpecArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Item$targetSpecArgs<ExtArgs>>): Prisma.Prisma__TargetSpecClient<runtime.Types.Result.GetResult<Prisma.$TargetSpecPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   barcodes<T extends Prisma.Item$barcodesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Item$barcodesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BarcodePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   targetUnits<T extends Prisma.Item$targetUnitsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Item$targetUnitsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TargetUnitPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   inventoryTxs<T extends Prisma.Item$inventoryTxsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Item$inventoryTxsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InventoryTxPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -1467,10 +1601,8 @@ export interface ItemFieldRefs {
   readonly code: Prisma.FieldRef<"Item", 'String'>
   readonly name: Prisma.FieldRef<"Item", 'String'>
   readonly unit: Prisma.FieldRef<"Item", 'String'>
-  readonly spec: Prisma.FieldRef<"Item", 'String'>
+  readonly minStockQty: Prisma.FieldRef<"Item", 'Int'>
   readonly note: Prisma.FieldRef<"Item", 'String'>
-  readonly isActive: Prisma.FieldRef<"Item", 'Boolean'>
-  readonly createdAt: Prisma.FieldRef<"Item", 'DateTime'>
 }
     
 
@@ -1864,6 +1996,44 @@ export type ItemDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
    * Limit how many Items to delete.
    */
   limit?: number
+}
+
+/**
+ * Item.waferSpec
+ */
+export type Item$waferSpecArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the WaferSpec
+   */
+  select?: Prisma.WaferSpecSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the WaferSpec
+   */
+  omit?: Prisma.WaferSpecOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.WaferSpecInclude<ExtArgs> | null
+  where?: Prisma.WaferSpecWhereInput
+}
+
+/**
+ * Item.targetSpec
+ */
+export type Item$targetSpecArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the TargetSpec
+   */
+  select?: Prisma.TargetSpecSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the TargetSpec
+   */
+  omit?: Prisma.TargetSpecOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.TargetSpecInclude<ExtArgs> | null
+  where?: Prisma.TargetSpecWhereInput
 }
 
 /**

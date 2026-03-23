@@ -51,19 +51,22 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
-  User: 'User',
-  UserPermission: 'UserPermission',
   ItemCategory: 'ItemCategory',
-  Item: 'Item',
+  Location: 'Location',
+  TxReason: 'TxReason',
   Partner: 'Partner',
+  User: 'User',
+  UserTabPermission: 'UserTabPermission',
+  AuthRefreshToken: 'AuthRefreshToken',
+  Item: 'Item',
+  WaferSpec: 'WaferSpec',
+  TargetSpec: 'TargetSpec',
   TargetUnit: 'TargetUnit',
+  TargetLog: 'TargetLog',
+  BarcodeSeq: 'BarcodeSeq',
   Barcode: 'Barcode',
   InventoryTx: 'InventoryTx',
-  TargetLog: 'TargetLog',
-  RequiredQty: 'RequiredQty',
-  AuditLog: 'AuditLog',
-  Attendance: 'Attendance',
-  Notice: 'Notice'
+  BarcodeScan: 'BarcodeScan'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -82,39 +85,83 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
+export const ItemCategoryScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  parentId: 'parentId'
+} as const
+
+export type ItemCategoryScalarFieldEnum = (typeof ItemCategoryScalarFieldEnum)[keyof typeof ItemCategoryScalarFieldEnum]
+
+
+export const LocationScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  address: 'address'
+} as const
+
+export type LocationScalarFieldEnum = (typeof LocationScalarFieldEnum)[keyof typeof LocationScalarFieldEnum]
+
+
+export const TxReasonScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  description: 'description'
+} as const
+
+export type TxReasonScalarFieldEnum = (typeof TxReasonScalarFieldEnum)[keyof typeof TxReasonScalarFieldEnum]
+
+
+export const PartnerScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  partnerType: 'partnerType',
+  managerName: 'managerName',
+  contact: 'contact',
+  email: 'email'
+} as const
+
+export type PartnerScalarFieldEnum = (typeof PartnerScalarFieldEnum)[keyof typeof PartnerScalarFieldEnum]
+
+
 export const UserScalarFieldEnum = {
   id: 'id',
-  email: 'email',
   name: 'name',
+  email: 'email',
   role: 'role',
   isActive: 'isActive',
-  googleId: 'googleId',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  passwordHash: 'passwordHash'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
-export const UserPermissionScalarFieldEnum = {
+export const UserTabPermissionScalarFieldEnum = {
+  userId: 'userId',
+  canViewMain: 'canViewMain',
+  canViewStatus: 'canViewStatus',
+  canViewPeriod: 'canViewPeriod',
+  canViewUserPerm: 'canViewUserPerm',
+  canViewTargetUsage: 'canViewTargetUsage',
+  canViewBarcode: 'canViewBarcode',
+  canViewBarcodeCreatePrint: 'canViewBarcodeCreatePrint'
+} as const
+
+export type UserTabPermissionScalarFieldEnum = (typeof UserTabPermissionScalarFieldEnum)[keyof typeof UserTabPermissionScalarFieldEnum]
+
+
+export const AuthRefreshTokenScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
-  resource: 'resource',
-  canView: 'canView',
-  canEdit: 'canEdit'
+  tokenHash: 'tokenHash',
+  deviceId: 'deviceId',
+  issuedAt: 'issuedAt',
+  expiresAt: 'expiresAt',
+  revokedAt: 'revokedAt',
+  rotatedFromHash: 'rotatedFromHash'
 } as const
 
-export type UserPermissionScalarFieldEnum = (typeof UserPermissionScalarFieldEnum)[keyof typeof UserPermissionScalarFieldEnum]
-
-
-export const ItemCategoryScalarFieldEnum = {
-  id: 'id',
-  name: 'name',
-  codePrefix: 'codePrefix',
-  sortOrder: 'sortOrder'
-} as const
-
-export type ItemCategoryScalarFieldEnum = (typeof ItemCategoryScalarFieldEnum)[keyof typeof ItemCategoryScalarFieldEnum]
+export type AuthRefreshTokenScalarFieldEnum = (typeof AuthRefreshTokenScalarFieldEnum)[keyof typeof AuthRefreshTokenScalarFieldEnum]
 
 
 export const ItemScalarFieldEnum = {
@@ -123,39 +170,73 @@ export const ItemScalarFieldEnum = {
   code: 'code',
   name: 'name',
   unit: 'unit',
-  spec: 'spec',
-  note: 'note',
-  isActive: 'isActive',
-  createdAt: 'createdAt'
+  minStockQty: 'minStockQty',
+  note: 'note'
 } as const
 
 export type ItemScalarFieldEnum = (typeof ItemScalarFieldEnum)[keyof typeof ItemScalarFieldEnum]
 
 
-export const PartnerScalarFieldEnum = {
-  id: 'id',
-  name: 'name',
-  type: 'type',
-  managerName: 'managerName',
-  contact: 'contact',
-  isActive: 'isActive',
-  createdAt: 'createdAt'
+export const WaferSpecScalarFieldEnum = {
+  itemId: 'itemId',
+  diameterInch: 'diameterInch',
+  waferType: 'waferType',
+  dopant: 'dopant',
+  grade: 'grade',
+  thicknessNote: 'thicknessNote',
+  resistivity: 'resistivity',
+  orientation: 'orientation',
+  surface: 'surface',
+  oxidation: 'oxidation'
 } as const
 
-export type PartnerScalarFieldEnum = (typeof PartnerScalarFieldEnum)[keyof typeof PartnerScalarFieldEnum]
+export type WaferSpecScalarFieldEnum = (typeof WaferSpecScalarFieldEnum)[keyof typeof WaferSpecScalarFieldEnum]
+
+
+export const TargetSpecScalarFieldEnum = {
+  itemId: 'itemId',
+  diameterInch: 'diameterInch',
+  thicknessInch: 'thicknessInch',
+  materialCode: 'materialCode',
+  purity: 'purity',
+  hasCopper: 'hasCopper'
+} as const
+
+export type TargetSpecScalarFieldEnum = (typeof TargetSpecScalarFieldEnum)[keyof typeof TargetSpecScalarFieldEnum]
 
 
 export const TargetUnitScalarFieldEnum = {
   id: 'id',
   itemId: 'itemId',
-  materialName: 'materialName',
-  purity: 'purity',
-  hasCopper: 'hasCopper',
   status: 'status',
-  createdAt: 'createdAt'
+  createdAt: 'createdAt',
+  disposedAt: 'disposedAt',
+  note: 'note'
 } as const
 
 export type TargetUnitScalarFieldEnum = (typeof TargetUnitScalarFieldEnum)[keyof typeof TargetUnitScalarFieldEnum]
+
+
+export const TargetLogScalarFieldEnum = {
+  id: 'id',
+  targetUnitId: 'targetUnitId',
+  logType: 'logType',
+  weight: 'weight',
+  locationId: 'locationId',
+  reason: 'reason',
+  userId: 'userId',
+  loggedAt: 'loggedAt'
+} as const
+
+export type TargetLogScalarFieldEnum = (typeof TargetLogScalarFieldEnum)[keyof typeof TargetLogScalarFieldEnum]
+
+
+export const BarcodeSeqScalarFieldEnum = {
+  prefix: 'prefix',
+  lastNo: 'lastNo'
+} as const
+
+export type BarcodeSeqScalarFieldEnum = (typeof BarcodeSeqScalarFieldEnum)[keyof typeof BarcodeSeqScalarFieldEnum]
 
 
 export const BarcodeScalarFieldEnum = {
@@ -163,9 +244,7 @@ export const BarcodeScalarFieldEnum = {
   code: 'code',
   itemId: 'itemId',
   targetUnitId: 'targetUnitId',
-  isActive: 'isActive',
-  labelPath: 'labelPath',
-  createdAt: 'createdAt'
+  isActive: 'isActive'
 } as const
 
 export type BarcodeScalarFieldEnum = (typeof BarcodeScalarFieldEnum)[keyof typeof BarcodeScalarFieldEnum]
@@ -173,95 +252,38 @@ export type BarcodeScalarFieldEnum = (typeof BarcodeScalarFieldEnum)[keyof typeo
 
 export const InventoryTxScalarFieldEnum = {
   id: 'id',
-  date: 'date',
-  type: 'type',
+  txNo: 'txNo',
+  txDate: 'txDate',
+  txType: 'txType',
   itemId: 'itemId',
-  quantity: 'quantity',
+  targetUnitId: 'targetUnitId',
+  qty: 'qty',
   unitPrice: 'unitPrice',
-  currency: 'currency',
   amount: 'amount',
   partnerId: 'partnerId',
-  handlerName: 'handlerName',
-  handlerContact: 'handlerContact',
+  txReasonId: 'txReasonId',
+  locationId: 'locationId',
+  userId: 'userId',
   memo: 'memo',
-  targetUnitId: 'targetUnitId',
-  refInboundId: 'refInboundId',
-  barcodeId: 'barcodeId',
-  location: 'location',
-  waferResistance: 'waferResistance',
-  waferThickness: 'waferThickness',
-  waferDirection: 'waferDirection',
-  waferSurface: 'waferSurface',
-  createdBy: 'createdBy',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  refTxNo: 'refTxNo',
+  barcodeId: 'barcodeId'
 } as const
 
 export type InventoryTxScalarFieldEnum = (typeof InventoryTxScalarFieldEnum)[keyof typeof InventoryTxScalarFieldEnum]
 
 
-export const TargetLogScalarFieldEnum = {
+export const BarcodeScanScalarFieldEnum = {
   id: 'id',
-  targetUnitId: 'targetUnitId',
-  type: 'type',
-  weight: 'weight',
-  location: 'location',
-  reason: 'reason',
+  barcodeId: 'barcodeId',
+  scanTime: 'scanTime',
+  opType: 'opType',
+  txReasonId: 'txReasonId',
   userId: 'userId',
-  createdAt: 'createdAt'
+  qty: 'qty',
+  inventoryTxId: 'inventoryTxId'
 } as const
 
-export type TargetLogScalarFieldEnum = (typeof TargetLogScalarFieldEnum)[keyof typeof TargetLogScalarFieldEnum]
-
-
-export const RequiredQtyScalarFieldEnum = {
-  id: 'id',
-  itemId: 'itemId',
-  quantity: 'quantity'
-} as const
-
-export type RequiredQtyScalarFieldEnum = (typeof RequiredQtyScalarFieldEnum)[keyof typeof RequiredQtyScalarFieldEnum]
-
-
-export const AuditLogScalarFieldEnum = {
-  id: 'id',
-  tableName: 'tableName',
-  recordId: 'recordId',
-  action: 'action',
-  columnName: 'columnName',
-  oldValue: 'oldValue',
-  newValue: 'newValue',
-  userId: 'userId',
-  createdAt: 'createdAt'
-} as const
-
-export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typeof AuditLogScalarFieldEnum]
-
-
-export const AttendanceScalarFieldEnum = {
-  id: 'id',
-  userId: 'userId',
-  date: 'date',
-  checkIn: 'checkIn',
-  checkOut: 'checkOut',
-  memo: 'memo',
-  createdAt: 'createdAt'
-} as const
-
-export type AttendanceScalarFieldEnum = (typeof AttendanceScalarFieldEnum)[keyof typeof AttendanceScalarFieldEnum]
-
-
-export const NoticeScalarFieldEnum = {
-  id: 'id',
-  title: 'title',
-  content: 'content',
-  authorId: 'authorId',
-  isPinned: 'isPinned',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type NoticeScalarFieldEnum = (typeof NoticeScalarFieldEnum)[keyof typeof NoticeScalarFieldEnum]
+export type BarcodeScanScalarFieldEnum = (typeof BarcodeScanScalarFieldEnum)[keyof typeof BarcodeScanScalarFieldEnum]
 
 
 export const SortOrder = {

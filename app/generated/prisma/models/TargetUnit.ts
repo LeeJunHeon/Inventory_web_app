@@ -39,31 +39,28 @@ export type TargetUnitSumAggregateOutputType = {
 export type TargetUnitMinAggregateOutputType = {
   id: number | null
   itemId: number | null
-  materialName: string | null
-  purity: string | null
-  hasCopper: string | null
   status: string | null
   createdAt: Date | null
+  disposedAt: Date | null
+  note: string | null
 }
 
 export type TargetUnitMaxAggregateOutputType = {
   id: number | null
   itemId: number | null
-  materialName: string | null
-  purity: string | null
-  hasCopper: string | null
   status: string | null
   createdAt: Date | null
+  disposedAt: Date | null
+  note: string | null
 }
 
 export type TargetUnitCountAggregateOutputType = {
   id: number
   itemId: number
-  materialName: number
-  purity: number
-  hasCopper: number
   status: number
   createdAt: number
+  disposedAt: number
+  note: number
   _all: number
 }
 
@@ -81,31 +78,28 @@ export type TargetUnitSumAggregateInputType = {
 export type TargetUnitMinAggregateInputType = {
   id?: true
   itemId?: true
-  materialName?: true
-  purity?: true
-  hasCopper?: true
   status?: true
   createdAt?: true
+  disposedAt?: true
+  note?: true
 }
 
 export type TargetUnitMaxAggregateInputType = {
   id?: true
   itemId?: true
-  materialName?: true
-  purity?: true
-  hasCopper?: true
   status?: true
   createdAt?: true
+  disposedAt?: true
+  note?: true
 }
 
 export type TargetUnitCountAggregateInputType = {
   id?: true
   itemId?: true
-  materialName?: true
-  purity?: true
-  hasCopper?: true
   status?: true
   createdAt?: true
+  disposedAt?: true
+  note?: true
   _all?: true
 }
 
@@ -197,12 +191,11 @@ export type TargetUnitGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inter
 
 export type TargetUnitGroupByOutputType = {
   id: number
-  itemId: number | null
-  materialName: string | null
-  purity: string | null
-  hasCopper: string | null
+  itemId: number
   status: string
   createdAt: Date
+  disposedAt: Date | null
+  note: string | null
   _count: TargetUnitCountAggregateOutputType | null
   _avg: TargetUnitAvgAggregateOutputType | null
   _sum: TargetUnitSumAggregateOutputType | null
@@ -230,13 +223,12 @@ export type TargetUnitWhereInput = {
   OR?: Prisma.TargetUnitWhereInput[]
   NOT?: Prisma.TargetUnitWhereInput | Prisma.TargetUnitWhereInput[]
   id?: Prisma.IntFilter<"TargetUnit"> | number
-  itemId?: Prisma.IntNullableFilter<"TargetUnit"> | number | null
-  materialName?: Prisma.StringNullableFilter<"TargetUnit"> | string | null
-  purity?: Prisma.StringNullableFilter<"TargetUnit"> | string | null
-  hasCopper?: Prisma.StringNullableFilter<"TargetUnit"> | string | null
+  itemId?: Prisma.IntFilter<"TargetUnit"> | number
   status?: Prisma.StringFilter<"TargetUnit"> | string
   createdAt?: Prisma.DateTimeFilter<"TargetUnit"> | Date | string
-  item?: Prisma.XOR<Prisma.ItemNullableScalarRelationFilter, Prisma.ItemWhereInput> | null
+  disposedAt?: Prisma.DateTimeNullableFilter<"TargetUnit"> | Date | string | null
+  note?: Prisma.StringNullableFilter<"TargetUnit"> | string | null
+  item?: Prisma.XOR<Prisma.ItemScalarRelationFilter, Prisma.ItemWhereInput>
   barcodes?: Prisma.BarcodeListRelationFilter
   inventoryTxs?: Prisma.InventoryTxListRelationFilter
   targetLogs?: Prisma.TargetLogListRelationFilter
@@ -244,12 +236,11 @@ export type TargetUnitWhereInput = {
 
 export type TargetUnitOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  itemId?: Prisma.SortOrderInput | Prisma.SortOrder
-  materialName?: Prisma.SortOrderInput | Prisma.SortOrder
-  purity?: Prisma.SortOrderInput | Prisma.SortOrder
-  hasCopper?: Prisma.SortOrderInput | Prisma.SortOrder
+  itemId?: Prisma.SortOrder
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  disposedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  note?: Prisma.SortOrderInput | Prisma.SortOrder
   item?: Prisma.ItemOrderByWithRelationInput
   barcodes?: Prisma.BarcodeOrderByRelationAggregateInput
   inventoryTxs?: Prisma.InventoryTxOrderByRelationAggregateInput
@@ -261,13 +252,12 @@ export type TargetUnitWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.TargetUnitWhereInput | Prisma.TargetUnitWhereInput[]
   OR?: Prisma.TargetUnitWhereInput[]
   NOT?: Prisma.TargetUnitWhereInput | Prisma.TargetUnitWhereInput[]
-  itemId?: Prisma.IntNullableFilter<"TargetUnit"> | number | null
-  materialName?: Prisma.StringNullableFilter<"TargetUnit"> | string | null
-  purity?: Prisma.StringNullableFilter<"TargetUnit"> | string | null
-  hasCopper?: Prisma.StringNullableFilter<"TargetUnit"> | string | null
+  itemId?: Prisma.IntFilter<"TargetUnit"> | number
   status?: Prisma.StringFilter<"TargetUnit"> | string
   createdAt?: Prisma.DateTimeFilter<"TargetUnit"> | Date | string
-  item?: Prisma.XOR<Prisma.ItemNullableScalarRelationFilter, Prisma.ItemWhereInput> | null
+  disposedAt?: Prisma.DateTimeNullableFilter<"TargetUnit"> | Date | string | null
+  note?: Prisma.StringNullableFilter<"TargetUnit"> | string | null
+  item?: Prisma.XOR<Prisma.ItemScalarRelationFilter, Prisma.ItemWhereInput>
   barcodes?: Prisma.BarcodeListRelationFilter
   inventoryTxs?: Prisma.InventoryTxListRelationFilter
   targetLogs?: Prisma.TargetLogListRelationFilter
@@ -275,12 +265,11 @@ export type TargetUnitWhereUniqueInput = Prisma.AtLeast<{
 
 export type TargetUnitOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  itemId?: Prisma.SortOrderInput | Prisma.SortOrder
-  materialName?: Prisma.SortOrderInput | Prisma.SortOrder
-  purity?: Prisma.SortOrderInput | Prisma.SortOrder
-  hasCopper?: Prisma.SortOrderInput | Prisma.SortOrder
+  itemId?: Prisma.SortOrder
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  disposedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  note?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.TargetUnitCountOrderByAggregateInput
   _avg?: Prisma.TargetUnitAvgOrderByAggregateInput
   _max?: Prisma.TargetUnitMaxOrderByAggregateInput
@@ -293,21 +282,19 @@ export type TargetUnitScalarWhereWithAggregatesInput = {
   OR?: Prisma.TargetUnitScalarWhereWithAggregatesInput[]
   NOT?: Prisma.TargetUnitScalarWhereWithAggregatesInput | Prisma.TargetUnitScalarWhereWithAggregatesInput[]
   id?: Prisma.IntWithAggregatesFilter<"TargetUnit"> | number
-  itemId?: Prisma.IntNullableWithAggregatesFilter<"TargetUnit"> | number | null
-  materialName?: Prisma.StringNullableWithAggregatesFilter<"TargetUnit"> | string | null
-  purity?: Prisma.StringNullableWithAggregatesFilter<"TargetUnit"> | string | null
-  hasCopper?: Prisma.StringNullableWithAggregatesFilter<"TargetUnit"> | string | null
+  itemId?: Prisma.IntWithAggregatesFilter<"TargetUnit"> | number
   status?: Prisma.StringWithAggregatesFilter<"TargetUnit"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"TargetUnit"> | Date | string
+  disposedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"TargetUnit"> | Date | string | null
+  note?: Prisma.StringNullableWithAggregatesFilter<"TargetUnit"> | string | null
 }
 
 export type TargetUnitCreateInput = {
-  materialName?: string | null
-  purity?: string | null
-  hasCopper?: string | null
   status?: string
   createdAt?: Date | string
-  item?: Prisma.ItemCreateNestedOneWithoutTargetUnitsInput
+  disposedAt?: Date | string | null
+  note?: string | null
+  item: Prisma.ItemCreateNestedOneWithoutTargetUnitsInput
   barcodes?: Prisma.BarcodeCreateNestedManyWithoutTargetUnitInput
   inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutTargetUnitInput
   targetLogs?: Prisma.TargetLogCreateNestedManyWithoutTargetUnitInput
@@ -315,24 +302,22 @@ export type TargetUnitCreateInput = {
 
 export type TargetUnitUncheckedCreateInput = {
   id?: number
-  itemId?: number | null
-  materialName?: string | null
-  purity?: string | null
-  hasCopper?: string | null
+  itemId: number
   status?: string
   createdAt?: Date | string
+  disposedAt?: Date | string | null
+  note?: string | null
   barcodes?: Prisma.BarcodeUncheckedCreateNestedManyWithoutTargetUnitInput
   inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutTargetUnitInput
   targetLogs?: Prisma.TargetLogUncheckedCreateNestedManyWithoutTargetUnitInput
 }
 
 export type TargetUnitUpdateInput = {
-  materialName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  purity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  hasCopper?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  item?: Prisma.ItemUpdateOneWithoutTargetUnitsNestedInput
+  disposedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item?: Prisma.ItemUpdateOneRequiredWithoutTargetUnitsNestedInput
   barcodes?: Prisma.BarcodeUpdateManyWithoutTargetUnitNestedInput
   inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutTargetUnitNestedInput
   targetLogs?: Prisma.TargetLogUpdateManyWithoutTargetUnitNestedInput
@@ -340,12 +325,11 @@ export type TargetUnitUpdateInput = {
 
 export type TargetUnitUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  itemId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  materialName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  purity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  hasCopper?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  itemId?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  disposedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodes?: Prisma.BarcodeUncheckedUpdateManyWithoutTargetUnitNestedInput
   inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutTargetUnitNestedInput
   targetLogs?: Prisma.TargetLogUncheckedUpdateManyWithoutTargetUnitNestedInput
@@ -353,30 +337,27 @@ export type TargetUnitUncheckedUpdateInput = {
 
 export type TargetUnitCreateManyInput = {
   id?: number
-  itemId?: number | null
-  materialName?: string | null
-  purity?: string | null
-  hasCopper?: string | null
+  itemId: number
   status?: string
   createdAt?: Date | string
+  disposedAt?: Date | string | null
+  note?: string | null
 }
 
 export type TargetUnitUpdateManyMutationInput = {
-  materialName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  purity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  hasCopper?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  disposedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type TargetUnitUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  itemId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  materialName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  purity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  hasCopper?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  itemId?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  disposedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type TargetUnitListRelationFilter = {
@@ -392,11 +373,10 @@ export type TargetUnitOrderByRelationAggregateInput = {
 export type TargetUnitCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   itemId?: Prisma.SortOrder
-  materialName?: Prisma.SortOrder
-  purity?: Prisma.SortOrder
-  hasCopper?: Prisma.SortOrder
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  disposedAt?: Prisma.SortOrder
+  note?: Prisma.SortOrder
 }
 
 export type TargetUnitAvgOrderByAggregateInput = {
@@ -407,21 +387,19 @@ export type TargetUnitAvgOrderByAggregateInput = {
 export type TargetUnitMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   itemId?: Prisma.SortOrder
-  materialName?: Prisma.SortOrder
-  purity?: Prisma.SortOrder
-  hasCopper?: Prisma.SortOrder
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  disposedAt?: Prisma.SortOrder
+  note?: Prisma.SortOrder
 }
 
 export type TargetUnitMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   itemId?: Prisma.SortOrder
-  materialName?: Prisma.SortOrder
-  purity?: Prisma.SortOrder
-  hasCopper?: Prisma.SortOrder
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  disposedAt?: Prisma.SortOrder
+  note?: Prisma.SortOrder
 }
 
 export type TargetUnitSumOrderByAggregateInput = {
@@ -429,14 +407,14 @@ export type TargetUnitSumOrderByAggregateInput = {
   itemId?: Prisma.SortOrder
 }
 
-export type TargetUnitNullableScalarRelationFilter = {
-  is?: Prisma.TargetUnitWhereInput | null
-  isNot?: Prisma.TargetUnitWhereInput | null
-}
-
 export type TargetUnitScalarRelationFilter = {
   is?: Prisma.TargetUnitWhereInput
   isNot?: Prisma.TargetUnitWhereInput
+}
+
+export type TargetUnitNullableScalarRelationFilter = {
+  is?: Prisma.TargetUnitWhereInput | null
+  isNot?: Prisma.TargetUnitWhereInput | null
 }
 
 export type TargetUnitCreateNestedManyWithoutItemInput = {
@@ -481,12 +459,18 @@ export type TargetUnitUncheckedUpdateManyWithoutItemNestedInput = {
   deleteMany?: Prisma.TargetUnitScalarWhereInput | Prisma.TargetUnitScalarWhereInput[]
 }
 
-export type NullableIntFieldUpdateOperationsInput = {
-  set?: number | null
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
+export type TargetUnitCreateNestedOneWithoutTargetLogsInput = {
+  create?: Prisma.XOR<Prisma.TargetUnitCreateWithoutTargetLogsInput, Prisma.TargetUnitUncheckedCreateWithoutTargetLogsInput>
+  connectOrCreate?: Prisma.TargetUnitCreateOrConnectWithoutTargetLogsInput
+  connect?: Prisma.TargetUnitWhereUniqueInput
+}
+
+export type TargetUnitUpdateOneRequiredWithoutTargetLogsNestedInput = {
+  create?: Prisma.XOR<Prisma.TargetUnitCreateWithoutTargetLogsInput, Prisma.TargetUnitUncheckedCreateWithoutTargetLogsInput>
+  connectOrCreate?: Prisma.TargetUnitCreateOrConnectWithoutTargetLogsInput
+  upsert?: Prisma.TargetUnitUpsertWithoutTargetLogsInput
+  connect?: Prisma.TargetUnitWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TargetUnitUpdateToOneWithWhereWithoutTargetLogsInput, Prisma.TargetUnitUpdateWithoutTargetLogsInput>, Prisma.TargetUnitUncheckedUpdateWithoutTargetLogsInput>
 }
 
 export type TargetUnitCreateNestedOneWithoutBarcodesInput = {
@@ -521,26 +505,11 @@ export type TargetUnitUpdateOneWithoutInventoryTxsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.TargetUnitUpdateToOneWithWhereWithoutInventoryTxsInput, Prisma.TargetUnitUpdateWithoutInventoryTxsInput>, Prisma.TargetUnitUncheckedUpdateWithoutInventoryTxsInput>
 }
 
-export type TargetUnitCreateNestedOneWithoutTargetLogsInput = {
-  create?: Prisma.XOR<Prisma.TargetUnitCreateWithoutTargetLogsInput, Prisma.TargetUnitUncheckedCreateWithoutTargetLogsInput>
-  connectOrCreate?: Prisma.TargetUnitCreateOrConnectWithoutTargetLogsInput
-  connect?: Prisma.TargetUnitWhereUniqueInput
-}
-
-export type TargetUnitUpdateOneRequiredWithoutTargetLogsNestedInput = {
-  create?: Prisma.XOR<Prisma.TargetUnitCreateWithoutTargetLogsInput, Prisma.TargetUnitUncheckedCreateWithoutTargetLogsInput>
-  connectOrCreate?: Prisma.TargetUnitCreateOrConnectWithoutTargetLogsInput
-  upsert?: Prisma.TargetUnitUpsertWithoutTargetLogsInput
-  connect?: Prisma.TargetUnitWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.TargetUnitUpdateToOneWithWhereWithoutTargetLogsInput, Prisma.TargetUnitUpdateWithoutTargetLogsInput>, Prisma.TargetUnitUncheckedUpdateWithoutTargetLogsInput>
-}
-
 export type TargetUnitCreateWithoutItemInput = {
-  materialName?: string | null
-  purity?: string | null
-  hasCopper?: string | null
   status?: string
   createdAt?: Date | string
+  disposedAt?: Date | string | null
+  note?: string | null
   barcodes?: Prisma.BarcodeCreateNestedManyWithoutTargetUnitInput
   inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutTargetUnitInput
   targetLogs?: Prisma.TargetLogCreateNestedManyWithoutTargetUnitInput
@@ -548,11 +517,10 @@ export type TargetUnitCreateWithoutItemInput = {
 
 export type TargetUnitUncheckedCreateWithoutItemInput = {
   id?: number
-  materialName?: string | null
-  purity?: string | null
-  hasCopper?: string | null
   status?: string
   createdAt?: Date | string
+  disposedAt?: Date | string | null
+  note?: string | null
   barcodes?: Prisma.BarcodeUncheckedCreateNestedManyWithoutTargetUnitInput
   inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutTargetUnitInput
   targetLogs?: Prisma.TargetLogUncheckedCreateNestedManyWithoutTargetUnitInput
@@ -589,157 +557,30 @@ export type TargetUnitScalarWhereInput = {
   OR?: Prisma.TargetUnitScalarWhereInput[]
   NOT?: Prisma.TargetUnitScalarWhereInput | Prisma.TargetUnitScalarWhereInput[]
   id?: Prisma.IntFilter<"TargetUnit"> | number
-  itemId?: Prisma.IntNullableFilter<"TargetUnit"> | number | null
-  materialName?: Prisma.StringNullableFilter<"TargetUnit"> | string | null
-  purity?: Prisma.StringNullableFilter<"TargetUnit"> | string | null
-  hasCopper?: Prisma.StringNullableFilter<"TargetUnit"> | string | null
+  itemId?: Prisma.IntFilter<"TargetUnit"> | number
   status?: Prisma.StringFilter<"TargetUnit"> | string
   createdAt?: Prisma.DateTimeFilter<"TargetUnit"> | Date | string
-}
-
-export type TargetUnitCreateWithoutBarcodesInput = {
-  materialName?: string | null
-  purity?: string | null
-  hasCopper?: string | null
-  status?: string
-  createdAt?: Date | string
-  item?: Prisma.ItemCreateNestedOneWithoutTargetUnitsInput
-  inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutTargetUnitInput
-  targetLogs?: Prisma.TargetLogCreateNestedManyWithoutTargetUnitInput
-}
-
-export type TargetUnitUncheckedCreateWithoutBarcodesInput = {
-  id?: number
-  itemId?: number | null
-  materialName?: string | null
-  purity?: string | null
-  hasCopper?: string | null
-  status?: string
-  createdAt?: Date | string
-  inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutTargetUnitInput
-  targetLogs?: Prisma.TargetLogUncheckedCreateNestedManyWithoutTargetUnitInput
-}
-
-export type TargetUnitCreateOrConnectWithoutBarcodesInput = {
-  where: Prisma.TargetUnitWhereUniqueInput
-  create: Prisma.XOR<Prisma.TargetUnitCreateWithoutBarcodesInput, Prisma.TargetUnitUncheckedCreateWithoutBarcodesInput>
-}
-
-export type TargetUnitUpsertWithoutBarcodesInput = {
-  update: Prisma.XOR<Prisma.TargetUnitUpdateWithoutBarcodesInput, Prisma.TargetUnitUncheckedUpdateWithoutBarcodesInput>
-  create: Prisma.XOR<Prisma.TargetUnitCreateWithoutBarcodesInput, Prisma.TargetUnitUncheckedCreateWithoutBarcodesInput>
-  where?: Prisma.TargetUnitWhereInput
-}
-
-export type TargetUnitUpdateToOneWithWhereWithoutBarcodesInput = {
-  where?: Prisma.TargetUnitWhereInput
-  data: Prisma.XOR<Prisma.TargetUnitUpdateWithoutBarcodesInput, Prisma.TargetUnitUncheckedUpdateWithoutBarcodesInput>
-}
-
-export type TargetUnitUpdateWithoutBarcodesInput = {
-  materialName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  purity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  hasCopper?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  item?: Prisma.ItemUpdateOneWithoutTargetUnitsNestedInput
-  inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutTargetUnitNestedInput
-  targetLogs?: Prisma.TargetLogUpdateManyWithoutTargetUnitNestedInput
-}
-
-export type TargetUnitUncheckedUpdateWithoutBarcodesInput = {
-  id?: Prisma.IntFieldUpdateOperationsInput | number
-  itemId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  materialName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  purity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  hasCopper?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutTargetUnitNestedInput
-  targetLogs?: Prisma.TargetLogUncheckedUpdateManyWithoutTargetUnitNestedInput
-}
-
-export type TargetUnitCreateWithoutInventoryTxsInput = {
-  materialName?: string | null
-  purity?: string | null
-  hasCopper?: string | null
-  status?: string
-  createdAt?: Date | string
-  item?: Prisma.ItemCreateNestedOneWithoutTargetUnitsInput
-  barcodes?: Prisma.BarcodeCreateNestedManyWithoutTargetUnitInput
-  targetLogs?: Prisma.TargetLogCreateNestedManyWithoutTargetUnitInput
-}
-
-export type TargetUnitUncheckedCreateWithoutInventoryTxsInput = {
-  id?: number
-  itemId?: number | null
-  materialName?: string | null
-  purity?: string | null
-  hasCopper?: string | null
-  status?: string
-  createdAt?: Date | string
-  barcodes?: Prisma.BarcodeUncheckedCreateNestedManyWithoutTargetUnitInput
-  targetLogs?: Prisma.TargetLogUncheckedCreateNestedManyWithoutTargetUnitInput
-}
-
-export type TargetUnitCreateOrConnectWithoutInventoryTxsInput = {
-  where: Prisma.TargetUnitWhereUniqueInput
-  create: Prisma.XOR<Prisma.TargetUnitCreateWithoutInventoryTxsInput, Prisma.TargetUnitUncheckedCreateWithoutInventoryTxsInput>
-}
-
-export type TargetUnitUpsertWithoutInventoryTxsInput = {
-  update: Prisma.XOR<Prisma.TargetUnitUpdateWithoutInventoryTxsInput, Prisma.TargetUnitUncheckedUpdateWithoutInventoryTxsInput>
-  create: Prisma.XOR<Prisma.TargetUnitCreateWithoutInventoryTxsInput, Prisma.TargetUnitUncheckedCreateWithoutInventoryTxsInput>
-  where?: Prisma.TargetUnitWhereInput
-}
-
-export type TargetUnitUpdateToOneWithWhereWithoutInventoryTxsInput = {
-  where?: Prisma.TargetUnitWhereInput
-  data: Prisma.XOR<Prisma.TargetUnitUpdateWithoutInventoryTxsInput, Prisma.TargetUnitUncheckedUpdateWithoutInventoryTxsInput>
-}
-
-export type TargetUnitUpdateWithoutInventoryTxsInput = {
-  materialName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  purity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  hasCopper?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  item?: Prisma.ItemUpdateOneWithoutTargetUnitsNestedInput
-  barcodes?: Prisma.BarcodeUpdateManyWithoutTargetUnitNestedInput
-  targetLogs?: Prisma.TargetLogUpdateManyWithoutTargetUnitNestedInput
-}
-
-export type TargetUnitUncheckedUpdateWithoutInventoryTxsInput = {
-  id?: Prisma.IntFieldUpdateOperationsInput | number
-  itemId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  materialName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  purity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  hasCopper?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  status?: Prisma.StringFieldUpdateOperationsInput | string
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  barcodes?: Prisma.BarcodeUncheckedUpdateManyWithoutTargetUnitNestedInput
-  targetLogs?: Prisma.TargetLogUncheckedUpdateManyWithoutTargetUnitNestedInput
+  disposedAt?: Prisma.DateTimeNullableFilter<"TargetUnit"> | Date | string | null
+  note?: Prisma.StringNullableFilter<"TargetUnit"> | string | null
 }
 
 export type TargetUnitCreateWithoutTargetLogsInput = {
-  materialName?: string | null
-  purity?: string | null
-  hasCopper?: string | null
   status?: string
   createdAt?: Date | string
-  item?: Prisma.ItemCreateNestedOneWithoutTargetUnitsInput
+  disposedAt?: Date | string | null
+  note?: string | null
+  item: Prisma.ItemCreateNestedOneWithoutTargetUnitsInput
   barcodes?: Prisma.BarcodeCreateNestedManyWithoutTargetUnitInput
   inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutTargetUnitInput
 }
 
 export type TargetUnitUncheckedCreateWithoutTargetLogsInput = {
   id?: number
-  itemId?: number | null
-  materialName?: string | null
-  purity?: string | null
-  hasCopper?: string | null
+  itemId: number
   status?: string
   createdAt?: Date | string
+  disposedAt?: Date | string | null
+  note?: string | null
   barcodes?: Prisma.BarcodeUncheckedCreateNestedManyWithoutTargetUnitInput
   inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutTargetUnitInput
 }
@@ -761,43 +602,155 @@ export type TargetUnitUpdateToOneWithWhereWithoutTargetLogsInput = {
 }
 
 export type TargetUnitUpdateWithoutTargetLogsInput = {
-  materialName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  purity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  hasCopper?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  item?: Prisma.ItemUpdateOneWithoutTargetUnitsNestedInput
+  disposedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item?: Prisma.ItemUpdateOneRequiredWithoutTargetUnitsNestedInput
   barcodes?: Prisma.BarcodeUpdateManyWithoutTargetUnitNestedInput
   inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutTargetUnitNestedInput
 }
 
 export type TargetUnitUncheckedUpdateWithoutTargetLogsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  itemId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  materialName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  purity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  hasCopper?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  itemId?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  disposedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodes?: Prisma.BarcodeUncheckedUpdateManyWithoutTargetUnitNestedInput
   inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutTargetUnitNestedInput
 }
 
-export type TargetUnitCreateManyItemInput = {
-  id?: number
-  materialName?: string | null
-  purity?: string | null
-  hasCopper?: string | null
+export type TargetUnitCreateWithoutBarcodesInput = {
   status?: string
   createdAt?: Date | string
+  disposedAt?: Date | string | null
+  note?: string | null
+  item: Prisma.ItemCreateNestedOneWithoutTargetUnitsInput
+  inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutTargetUnitInput
+  targetLogs?: Prisma.TargetLogCreateNestedManyWithoutTargetUnitInput
+}
+
+export type TargetUnitUncheckedCreateWithoutBarcodesInput = {
+  id?: number
+  itemId: number
+  status?: string
+  createdAt?: Date | string
+  disposedAt?: Date | string | null
+  note?: string | null
+  inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutTargetUnitInput
+  targetLogs?: Prisma.TargetLogUncheckedCreateNestedManyWithoutTargetUnitInput
+}
+
+export type TargetUnitCreateOrConnectWithoutBarcodesInput = {
+  where: Prisma.TargetUnitWhereUniqueInput
+  create: Prisma.XOR<Prisma.TargetUnitCreateWithoutBarcodesInput, Prisma.TargetUnitUncheckedCreateWithoutBarcodesInput>
+}
+
+export type TargetUnitUpsertWithoutBarcodesInput = {
+  update: Prisma.XOR<Prisma.TargetUnitUpdateWithoutBarcodesInput, Prisma.TargetUnitUncheckedUpdateWithoutBarcodesInput>
+  create: Prisma.XOR<Prisma.TargetUnitCreateWithoutBarcodesInput, Prisma.TargetUnitUncheckedCreateWithoutBarcodesInput>
+  where?: Prisma.TargetUnitWhereInput
+}
+
+export type TargetUnitUpdateToOneWithWhereWithoutBarcodesInput = {
+  where?: Prisma.TargetUnitWhereInput
+  data: Prisma.XOR<Prisma.TargetUnitUpdateWithoutBarcodesInput, Prisma.TargetUnitUncheckedUpdateWithoutBarcodesInput>
+}
+
+export type TargetUnitUpdateWithoutBarcodesInput = {
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  disposedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item?: Prisma.ItemUpdateOneRequiredWithoutTargetUnitsNestedInput
+  inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutTargetUnitNestedInput
+  targetLogs?: Prisma.TargetLogUpdateManyWithoutTargetUnitNestedInput
+}
+
+export type TargetUnitUncheckedUpdateWithoutBarcodesInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  itemId?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  disposedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutTargetUnitNestedInput
+  targetLogs?: Prisma.TargetLogUncheckedUpdateManyWithoutTargetUnitNestedInput
+}
+
+export type TargetUnitCreateWithoutInventoryTxsInput = {
+  status?: string
+  createdAt?: Date | string
+  disposedAt?: Date | string | null
+  note?: string | null
+  item: Prisma.ItemCreateNestedOneWithoutTargetUnitsInput
+  barcodes?: Prisma.BarcodeCreateNestedManyWithoutTargetUnitInput
+  targetLogs?: Prisma.TargetLogCreateNestedManyWithoutTargetUnitInput
+}
+
+export type TargetUnitUncheckedCreateWithoutInventoryTxsInput = {
+  id?: number
+  itemId: number
+  status?: string
+  createdAt?: Date | string
+  disposedAt?: Date | string | null
+  note?: string | null
+  barcodes?: Prisma.BarcodeUncheckedCreateNestedManyWithoutTargetUnitInput
+  targetLogs?: Prisma.TargetLogUncheckedCreateNestedManyWithoutTargetUnitInput
+}
+
+export type TargetUnitCreateOrConnectWithoutInventoryTxsInput = {
+  where: Prisma.TargetUnitWhereUniqueInput
+  create: Prisma.XOR<Prisma.TargetUnitCreateWithoutInventoryTxsInput, Prisma.TargetUnitUncheckedCreateWithoutInventoryTxsInput>
+}
+
+export type TargetUnitUpsertWithoutInventoryTxsInput = {
+  update: Prisma.XOR<Prisma.TargetUnitUpdateWithoutInventoryTxsInput, Prisma.TargetUnitUncheckedUpdateWithoutInventoryTxsInput>
+  create: Prisma.XOR<Prisma.TargetUnitCreateWithoutInventoryTxsInput, Prisma.TargetUnitUncheckedCreateWithoutInventoryTxsInput>
+  where?: Prisma.TargetUnitWhereInput
+}
+
+export type TargetUnitUpdateToOneWithWhereWithoutInventoryTxsInput = {
+  where?: Prisma.TargetUnitWhereInput
+  data: Prisma.XOR<Prisma.TargetUnitUpdateWithoutInventoryTxsInput, Prisma.TargetUnitUncheckedUpdateWithoutInventoryTxsInput>
+}
+
+export type TargetUnitUpdateWithoutInventoryTxsInput = {
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  disposedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  item?: Prisma.ItemUpdateOneRequiredWithoutTargetUnitsNestedInput
+  barcodes?: Prisma.BarcodeUpdateManyWithoutTargetUnitNestedInput
+  targetLogs?: Prisma.TargetLogUpdateManyWithoutTargetUnitNestedInput
+}
+
+export type TargetUnitUncheckedUpdateWithoutInventoryTxsInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number
+  itemId?: Prisma.IntFieldUpdateOperationsInput | number
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  disposedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  barcodes?: Prisma.BarcodeUncheckedUpdateManyWithoutTargetUnitNestedInput
+  targetLogs?: Prisma.TargetLogUncheckedUpdateManyWithoutTargetUnitNestedInput
+}
+
+export type TargetUnitCreateManyItemInput = {
+  id?: number
+  status?: string
+  createdAt?: Date | string
+  disposedAt?: Date | string | null
+  note?: string | null
 }
 
 export type TargetUnitUpdateWithoutItemInput = {
-  materialName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  purity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  hasCopper?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  disposedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodes?: Prisma.BarcodeUpdateManyWithoutTargetUnitNestedInput
   inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutTargetUnitNestedInput
   targetLogs?: Prisma.TargetLogUpdateManyWithoutTargetUnitNestedInput
@@ -805,11 +758,10 @@ export type TargetUnitUpdateWithoutItemInput = {
 
 export type TargetUnitUncheckedUpdateWithoutItemInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  materialName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  purity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  hasCopper?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  disposedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodes?: Prisma.BarcodeUncheckedUpdateManyWithoutTargetUnitNestedInput
   inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutTargetUnitNestedInput
   targetLogs?: Prisma.TargetLogUncheckedUpdateManyWithoutTargetUnitNestedInput
@@ -817,11 +769,10 @@ export type TargetUnitUncheckedUpdateWithoutItemInput = {
 
 export type TargetUnitUncheckedUpdateManyWithoutItemInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
-  materialName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  purity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  hasCopper?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   status?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  disposedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 
@@ -876,12 +827,11 @@ export type TargetUnitCountOutputTypeCountTargetLogsArgs<ExtArgs extends runtime
 export type TargetUnitSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   itemId?: boolean
-  materialName?: boolean
-  purity?: boolean
-  hasCopper?: boolean
   status?: boolean
   createdAt?: boolean
-  item?: boolean | Prisma.TargetUnit$itemArgs<ExtArgs>
+  disposedAt?: boolean
+  note?: boolean
+  item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
   barcodes?: boolean | Prisma.TargetUnit$barcodesArgs<ExtArgs>
   inventoryTxs?: boolean | Prisma.TargetUnit$inventoryTxsArgs<ExtArgs>
   targetLogs?: boolean | Prisma.TargetUnit$targetLogsArgs<ExtArgs>
@@ -891,66 +841,62 @@ export type TargetUnitSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
 export type TargetUnitSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   itemId?: boolean
-  materialName?: boolean
-  purity?: boolean
-  hasCopper?: boolean
   status?: boolean
   createdAt?: boolean
-  item?: boolean | Prisma.TargetUnit$itemArgs<ExtArgs>
+  disposedAt?: boolean
+  note?: boolean
+  item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["targetUnit"]>
 
 export type TargetUnitSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   itemId?: boolean
-  materialName?: boolean
-  purity?: boolean
-  hasCopper?: boolean
   status?: boolean
   createdAt?: boolean
-  item?: boolean | Prisma.TargetUnit$itemArgs<ExtArgs>
+  disposedAt?: boolean
+  note?: boolean
+  item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["targetUnit"]>
 
 export type TargetUnitSelectScalar = {
   id?: boolean
   itemId?: boolean
-  materialName?: boolean
-  purity?: boolean
-  hasCopper?: boolean
   status?: boolean
   createdAt?: boolean
+  disposedAt?: boolean
+  note?: boolean
 }
 
-export type TargetUnitOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "itemId" | "materialName" | "purity" | "hasCopper" | "status" | "createdAt", ExtArgs["result"]["targetUnit"]>
+export type TargetUnitOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "itemId" | "status" | "createdAt" | "disposedAt" | "note", ExtArgs["result"]["targetUnit"]>
 export type TargetUnitInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  item?: boolean | Prisma.TargetUnit$itemArgs<ExtArgs>
+  item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
   barcodes?: boolean | Prisma.TargetUnit$barcodesArgs<ExtArgs>
   inventoryTxs?: boolean | Prisma.TargetUnit$inventoryTxsArgs<ExtArgs>
   targetLogs?: boolean | Prisma.TargetUnit$targetLogsArgs<ExtArgs>
   _count?: boolean | Prisma.TargetUnitCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type TargetUnitIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  item?: boolean | Prisma.TargetUnit$itemArgs<ExtArgs>
+  item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
 }
 export type TargetUnitIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  item?: boolean | Prisma.TargetUnit$itemArgs<ExtArgs>
+  item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
 }
 
 export type $TargetUnitPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "TargetUnit"
   objects: {
-    item: Prisma.$ItemPayload<ExtArgs> | null
+    item: Prisma.$ItemPayload<ExtArgs>
     barcodes: Prisma.$BarcodePayload<ExtArgs>[]
     inventoryTxs: Prisma.$InventoryTxPayload<ExtArgs>[]
     targetLogs: Prisma.$TargetLogPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
-    itemId: number | null
-    materialName: string | null
-    purity: string | null
-    hasCopper: string | null
+    itemId: number
     status: string
     createdAt: Date
+    disposedAt: Date | null
+    note: string | null
   }, ExtArgs["result"]["targetUnit"]>
   composites: {}
 }
@@ -1345,7 +1291,7 @@ readonly fields: TargetUnitFieldRefs;
  */
 export interface Prisma__TargetUnitClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  item<T extends Prisma.TargetUnit$itemArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TargetUnit$itemArgs<ExtArgs>>): Prisma.Prisma__ItemClient<runtime.Types.Result.GetResult<Prisma.$ItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  item<T extends Prisma.ItemDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ItemDefaultArgs<ExtArgs>>): Prisma.Prisma__ItemClient<runtime.Types.Result.GetResult<Prisma.$ItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   barcodes<T extends Prisma.TargetUnit$barcodesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TargetUnit$barcodesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BarcodePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   inventoryTxs<T extends Prisma.TargetUnit$inventoryTxsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TargetUnit$inventoryTxsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InventoryTxPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   targetLogs<T extends Prisma.TargetUnit$targetLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TargetUnit$targetLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TargetLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -1380,11 +1326,10 @@ export interface Prisma__TargetUnitClient<T, Null = never, ExtArgs extends runti
 export interface TargetUnitFieldRefs {
   readonly id: Prisma.FieldRef<"TargetUnit", 'Int'>
   readonly itemId: Prisma.FieldRef<"TargetUnit", 'Int'>
-  readonly materialName: Prisma.FieldRef<"TargetUnit", 'String'>
-  readonly purity: Prisma.FieldRef<"TargetUnit", 'String'>
-  readonly hasCopper: Prisma.FieldRef<"TargetUnit", 'String'>
   readonly status: Prisma.FieldRef<"TargetUnit", 'String'>
   readonly createdAt: Prisma.FieldRef<"TargetUnit", 'DateTime'>
+  readonly disposedAt: Prisma.FieldRef<"TargetUnit", 'DateTime'>
+  readonly note: Prisma.FieldRef<"TargetUnit", 'String'>
 }
     
 
@@ -1603,7 +1548,7 @@ export type TargetUnitCreateArgs<ExtArgs extends runtime.Types.Extensions.Intern
   /**
    * The data needed to create a TargetUnit.
    */
-  data?: Prisma.XOR<Prisma.TargetUnitCreateInput, Prisma.TargetUnitUncheckedCreateInput>
+  data: Prisma.XOR<Prisma.TargetUnitCreateInput, Prisma.TargetUnitUncheckedCreateInput>
 }
 
 /**
@@ -1778,25 +1723,6 @@ export type TargetUnitDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.In
    * Limit how many TargetUnits to delete.
    */
   limit?: number
-}
-
-/**
- * TargetUnit.item
- */
-export type TargetUnit$itemArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Item
-   */
-  select?: Prisma.ItemSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Item
-   */
-  omit?: Prisma.ItemOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.ItemInclude<ExtArgs> | null
-  where?: Prisma.ItemWhereInput
 }
 
 /**
