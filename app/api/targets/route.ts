@@ -23,11 +23,9 @@ export async function GET(request: NextRequest) {
 
       const logs = await prisma.targetLog.findMany({
         where: { targetUnitId: bc.targetUnit.id },
-        orderBy: { createdAt: "desc" },
+        include: { location: true, user: true },
+        orderBy: { loggedAt: "desc" },
       });
-
-      const users = await prisma.user.findMany({ select: { id: true, name: true } });
-      const userMap = Object.fromEntries(users.map((u) => [u.id, u.name]));
 
       return NextResponse.json({
         target: {
@@ -35,19 +33,19 @@ export async function GET(request: NextRequest) {
           barcodeCode: bc.code,
           itemCode: bc.item?.code || "",
           itemName: bc.item?.name || "",
-          materialName: bc.targetUnit.materialName || "",
           status: bc.targetUnit.status,
-          memo: "", // 별도 메모 필드 필요시 추가
+          note: bc.targetUnit.note || "",
         },
         logs: logs.map((l) => ({
           id: l.id,
           targetId: l.targetUnitId,
-          timestamp: l.createdAt.toISOString().replace("T", " ").slice(0, 16),
-          type: l.type,
+          timestamp: l.loggedAt.toISOString().replace("T", " ").slice(0, 16),
+          type: l.logType,
           weight: l.weight ? Number(l.weight) : null,
-          location: l.location || "",
+          location: l.location?.name || "",
+          locationId: l.locationId ?? null,
           reason: l.reason || "",
-          userName: l.userId ? userMap[l.userId] || "" : "",
+          userName: l.user?.name || "",
           barcodeCode: bc.code,
           itemName: bc.item?.name || "",
         })),
@@ -56,9 +54,11 @@ export async function GET(request: NextRequest) {
 
     // 바코드 미지정: 전체 타겟 로그
     const logs = await prisma.targetLog.findMany({
-      orderBy: { createdAt: "desc" },
+      orderBy: { loggedAt: "desc" },
       take: 50,
       include: {
+        location: true,
+        user: true,
         targetUnit: {
           include: {
             barcodes: { take: 1 },
@@ -68,20 +68,18 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const users = await prisma.user.findMany({ select: { id: true, name: true } });
-    const userMap = Object.fromEntries(users.map((u) => [u.id, u.name]));
-
     return NextResponse.json({
       target: null,
       logs: logs.map((l) => ({
         id: l.id,
         targetId: l.targetUnitId,
-        timestamp: l.createdAt.toISOString().replace("T", " ").slice(0, 16),
-        type: l.type,
+        timestamp: l.loggedAt.toISOString().replace("T", " ").slice(0, 16),
+        type: l.logType,
         weight: l.weight ? Number(l.weight) : null,
-        location: l.location || "",
+        location: l.location?.name || "",
+        locationId: l.locationId ?? null,
         reason: l.reason || "",
-        userName: l.userId ? userMap[l.userId] || "" : "",
+        userName: l.user?.name || "",
         barcodeCode: l.targetUnit.barcodes[0]?.code || "",
         itemName: l.targetUnit.item?.name || "",
       })),
@@ -100,23 +98,25 @@ export async function POST(request: NextRequest) {
     const log = await prisma.targetLog.create({
       data: {
         targetUnitId: body.targetUnitId,
-        type: body.type || "측정",
-        weight: body.weight || null,
-        location: body.location || null,
-        reason: body.reason || null,
-        userId: body.userId || null,
+        logType:      body.logType || body.type || "측정",
+        weight:       body.weight     || null,
+        locationId:   body.locationId || null,
+        reason:       body.reason     || null,
+        userId:       body.userId     || null,
       },
     });
 
     // 폐기 처리인 경우 타겟 상태 변경 + 바코드 비활성화
-    if (body.type === "폐기") {
+    const isDispose = body.logType === "폐기" || body.type === "폐기"
+      || body.logType === "dispose";
+    if (isDispose) {
       await prisma.targetUnit.update({
         where: { id: body.targetUnitId },
-        data: { status: "disposed" },
+        data: { status: "disposed", disposedAt: new Date() },
       });
       await prisma.barcode.updateMany({
         where: { targetUnitId: body.targetUnitId },
-        data: { isActive: false },
+        data: { isActive: "N" },
       });
     }
 

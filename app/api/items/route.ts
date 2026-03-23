@@ -7,10 +7,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category") || "";
     const search   = searchParams.get("search")   || "";
-    // ✅ 버그 수정: ItemsPage에서 showAll=true로 호출 시 비활성 품목도 표시
-    const showAll  = searchParams.get("showAll")  === "true";
 
-    const where: any = showAll ? {} : { isActive: true };
+    const where: any = {};
 
     if (category && category !== "전체") {
       where.category = { name: category };
@@ -29,15 +27,14 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json(items.map((item) => ({
-      id:         item.id,
-      code:       item.code,
-      name:       item.name,
-      category:   item.category.name,
-      categoryId: item.categoryId,
-      unit:       item.unit,
-      spec:       item.spec,
-      note:       item.note,
-      isActive:   item.isActive,
+      id:          item.id,
+      code:        item.code,
+      name:        item.name,
+      category:    item.category.name,
+      categoryId:  item.categoryId,
+      unit:        item.unit,
+      minStockQty: item.minStockQty,
+      note:        item.note,
     })));
   } catch (error) {
     console.error("GET /api/items error:", error);
@@ -49,7 +46,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { code, name, categoryId, unit, spec, note } = body;
+    const { code, name, categoryId, unit, minStockQty, note } = body;
 
     if (!code?.trim() || !name?.trim() || !categoryId) {
       return NextResponse.json({ error: "품목코드, 품목명, 품목군은 필수입니다." }, { status: 400 });
@@ -62,13 +59,12 @@ export async function POST(request: NextRequest) {
 
     const item = await prisma.item.create({
       data: {
-        code:       code.trim(),
-        name:       name.trim(),
-        categoryId: Number(categoryId),
-        unit:       unit?.trim() || null,
-        spec:       spec?.trim() || null,
-        note:       note?.trim() || null,
-        isActive:   true,
+        code:        code.trim(),
+        name:        name.trim(),
+        categoryId:  Number(categoryId),
+        unit:        unit?.trim() || null,
+        minStockQty: Number(minStockQty) || 0,
+        note:        note?.trim() || null,
       },
       include: { category: true },
     });
@@ -76,7 +72,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       id: item.id, code: item.code, name: item.name,
       category: item.category.name, categoryId: item.categoryId,
-      unit: item.unit, spec: item.spec, note: item.note, isActive: item.isActive,
+      unit: item.unit, minStockQty: item.minStockQty, note: item.note,
     }, { status: 201 });
   } catch (error) {
     console.error("POST /api/items error:", error);
@@ -92,17 +88,16 @@ export async function PUT(request: NextRequest) {
     if (!id) return NextResponse.json({ error: "id 파라미터 필요" }, { status: 400 });
 
     const body = await request.json();
-    const { name, categoryId, unit, spec, note, isActive } = body;
+    const { name, categoryId, unit, minStockQty, note } = body;
 
     const item = await prisma.item.update({
       where: { id: Number(id) },
       data: {
-        ...(name       !== undefined && { name:       name.trim() }),
-        ...(categoryId !== undefined && { categoryId: Number(categoryId) }),
-        ...(unit       !== undefined && { unit: unit?.trim() || null }),
-        ...(spec       !== undefined && { spec: spec?.trim() || null }),
-        ...(note       !== undefined && { note: note?.trim() || null }),
-        ...(isActive   !== undefined && { isActive }),
+        ...(name        !== undefined && { name:        name.trim() }),
+        ...(categoryId  !== undefined && { categoryId:  Number(categoryId) }),
+        ...(unit        !== undefined && { unit:        unit?.trim() || null }),
+        ...(minStockQty !== undefined && { minStockQty: Number(minStockQty) }),
+        ...(note        !== undefined && { note:        note?.trim() || null }),
       },
       include: { category: true },
     });
@@ -110,7 +105,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({
       id: item.id, code: item.code, name: item.name,
       category: item.category.name, categoryId: item.categoryId,
-      unit: item.unit, spec: item.spec, note: item.note, isActive: item.isActive,
+      unit: item.unit, minStockQty: item.minStockQty, note: item.note,
     });
   } catch (error) {
     console.error("PUT /api/items error:", error);
@@ -118,7 +113,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE /api/items?id=1 — 품목 비활성화 또는 삭제
+// DELETE /api/items?id=1 — 품목 삭제
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -127,8 +122,7 @@ export async function DELETE(request: NextRequest) {
 
     const txCount = await prisma.inventoryTx.count({ where: { itemId: Number(id) } });
     if (txCount > 0) {
-      await prisma.item.update({ where: { id: Number(id) }, data: { isActive: false } });
-      return NextResponse.json({ message: "거래 내역이 있어 비활성화 처리되었습니다." });
+      return NextResponse.json({ error: "거래 내역이 있어 삭제할 수 없습니다." }, { status: 409 });
     }
 
     await prisma.item.delete({ where: { id: Number(id) } });

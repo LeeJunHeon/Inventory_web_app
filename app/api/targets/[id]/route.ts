@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// PUT /api/targets/[id] — 타겟 상태 변경 및 물질명 업데이트
+// PUT /api/targets/[id] — 타겟 상태 변경
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -10,7 +10,7 @@ export async function PUT(
     const { id: idParam } = await params;
     const id = Number(idParam);
     const body = await request.json();
-    const { status, materialName, purity, hasCopper } = body;
+    const { status, note } = body;
 
     const target = await prisma.targetUnit.findUnique({ where: { id } });
     if (!target) {
@@ -20,10 +20,9 @@ export async function PUT(
     const updated = await prisma.targetUnit.update({
       where: { id },
       data: {
-        ...(status       !== undefined && { status }),
-        ...(materialName !== undefined && { materialName }),
-        ...(purity       !== undefined && { purity }),
-        ...(hasCopper    !== undefined && { hasCopper }),
+        ...(status !== undefined && { status }),
+        ...(note   !== undefined && { note }),
+        ...(status === "disposed" && { disposedAt: new Date() }),
       },
     });
 
@@ -31,7 +30,7 @@ export async function PUT(
     if (status === "disposed") {
       await prisma.barcode.updateMany({
         where: { targetUnitId: id },
-        data:  { isActive: false },
+        data:  { isActive: "N" },
       });
     }
 

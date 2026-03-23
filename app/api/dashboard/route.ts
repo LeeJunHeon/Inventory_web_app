@@ -10,47 +10,46 @@ export async function GET() {
 
     // 오늘 입고/출고/불출 집계
     const todayTxs = await prisma.inventoryTx.findMany({
-      where: { date: { gte: today, lt: tomorrow } },
+      where: { txDate: { gte: today, lt: tomorrow } },
     });
 
-    const todayIn = todayTxs.filter((t) => t.type === "입고");
-    const todayOut = todayTxs.filter((t) => t.type === "출고");
+    const todayIn = todayTxs.filter((t) => t.txType === "입고");
+    const todayOut = todayTxs.filter((t) => t.txType === "출고");
 
-    // 재고 부족 품목 수 — 배치 쿼리로 최적화 (N+1 → 2 쿼리)
-    const requiredQtys = await prisma.requiredQty.findMany({
-      where: { quantity: { gt: 0 } },
+    // 재고 부족 품목 수 — item.minStockQty 기준
+    const itemsWithMin = await prisma.item.findMany({
+      where: { minStockQty: { gt: 0 } },
+      select: { id: true, minStockQty: true },
     });
 
     let shortageCount = 0;
 
-    if (requiredQtys.length > 0) {
-      const itemIds = requiredQtys.map((rq) => rq.itemId);
+    if (itemsWithMin.length > 0) {
+      const itemIds = itemsWithMin.map((i) => i.id);
 
-      // 품목별 입고 합계를 한 번에 조회
       const inSums = await prisma.inventoryTx.groupBy({
         by: ["itemId"],
-        where: { itemId: { in: itemIds }, type: "입고" },
-        _sum: { quantity: true },
+        where: { itemId: { in: itemIds }, txType: "입고" },
+        _sum: { qty: true },
       });
 
-      // 품목별 출고+불출 합계를 한 번에 조회
       const outSums = await prisma.inventoryTx.groupBy({
         by: ["itemId"],
-        where: { itemId: { in: itemIds }, type: { in: ["출고", "불출"] } },
-        _sum: { quantity: true },
+        where: { itemId: { in: itemIds }, txType: { in: ["출고", "불출"] } },
+        _sum: { qty: true },
       });
 
-      const inMap = new Map(inSums.map((s) => [s.itemId, s._sum.quantity || 0]));
-      const outMap = new Map(outSums.map((s) => [s.itemId, s._sum.quantity || 0]));
+      const inMap = new Map(inSums.map((s) => [s.itemId, s._sum.qty || 0]));
+      const outMap = new Map(outSums.map((s) => [s.itemId, s._sum.qty || 0]));
 
-      for (const rq of requiredQtys) {
-        const current = (inMap.get(rq.itemId) || 0) - (outMap.get(rq.itemId) || 0);
-        if (current < rq.quantity) shortageCount++;
+      for (const item of itemsWithMin) {
+        const current = (inMap.get(item.id) || 0) - (outMap.get(item.id) || 0);
+        if (current < item.minStockQty) shortageCount++;
       }
     }
 
     // 총 품목 수
-    const totalItems = await prisma.item.count({ where: { isActive: true } });
+    const totalItems = await prisma.item.count();
 
     // 최근 5건
     const recent = await prisma.inventoryTx.findMany({
@@ -66,22 +65,22 @@ export async function GET() {
     return NextResponse.json({
       todayIn: {
         count: todayIn.length,
-        amount: todayIn.reduce((s, t) => s + Number(t.amount), 0),
+        amount: todayIn.reduce((s, t) => s + Number(t.amount || 0), 0),
       },
       todayOut: {
         count: todayOut.length,
-        amount: todayOut.reduce((s, t) => s + Number(t.amount), 0),
+        amount: todayOut.reduce((s, t) => s + Number(t.amount || 0), 0),
       },
       shortageCount,
       totalItems,
       recent: recent.map((tx) => ({
         id: tx.id,
-        date: tx.date.toISOString().split("T")[0].replace(/-/g, "."),
-        type: tx.type,
+        date: tx.txDate.toISOString().split("T")[0].replace(/-/g, "."),
+        type: tx.txType,
         category: tx.item.category.name,
         name: tx.item.name,
-        qty: tx.quantity,
-        amount: Number(tx.amount),
+        qty: tx.qty,
+        amount: Number(tx.amount || 0),
         partner: tx.partner?.name || "",
         barcode: tx.barcode?.code || "",
       })),

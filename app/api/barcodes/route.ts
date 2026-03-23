@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { itemId, materialName, purity, hasCopper } = body;
+    const { itemId } = body;
 
     if (!itemId) {
       return NextResponse.json({ error: "itemId가 필요합니다." }, { status: 400 });
@@ -59,19 +59,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "품목을 찾을 수 없습니다." }, { status: 404 });
     }
 
-    // 바코드 코드 자동 생성: 카테고리 접두어 + 4자리 순번
-    const prefix = item.category.codePrefix || item.category.name.charAt(0).toUpperCase();
-    const lastBarcode = await prisma.barcode.findFirst({
-      where: { code: { startsWith: prefix + "-" } },
-      orderBy: { id: "desc" },
+    // BarcodeSeq를 이용한 순번 자동 생성
+    const prefix = item.category.name.charAt(0).toUpperCase();
+    const seq = await prisma.barcodeSeq.upsert({
+      where:  { prefix },
+      update: { lastNo: { increment: 1 } },
+      create: { prefix, lastNo: 1 },
     });
-    let nextNum = 1;
-    if (lastBarcode) {
-      const parts = lastBarcode.code.split("-");
-      const lastNum = parseInt(parts[parts.length - 1], 10);
-      if (!isNaN(lastNum)) nextNum = lastNum + 1;
-    }
-    const newCode = `${prefix}-${String(nextNum).padStart(4, "0")}`;
+    const newCode = `${prefix}-${String(seq.lastNo).padStart(4, "0")}`;
 
     // 타겟 품목인 경우 TargetUnit + Barcode를 트랜잭션으로 원자적 생성
     if (item.category.name === "타겟") {
@@ -79,19 +74,16 @@ export async function POST(request: NextRequest) {
         const targetUnit = await tx.targetUnit.create({
           data: {
             itemId: item.id,
-            materialName: materialName || null,
-            purity: purity || null,
-            hasCopper: hasCopper || null,
             status: "available",
           },
         });
 
         const barcode = await tx.barcode.create({
           data: {
-            code: newCode,
-            itemId: item.id,
+            code:         newCode,
+            itemId:       item.id,
             targetUnitId: targetUnit.id,
-            isActive: true,
+            isActive:     "Y",
           },
           include: { item: { include: { category: true } }, targetUnit: true },
         });
@@ -113,10 +105,10 @@ export async function POST(request: NextRequest) {
     // 타겟이 아닌 경우 바코드만 생성
     const barcode = await prisma.barcode.create({
       data: {
-        code: newCode,
-        itemId: item.id,
+        code:         newCode,
+        itemId:       item.id,
         targetUnitId: null,
-        isActive: true,
+        isActive:     "Y",
       },
       include: { item: { include: { category: true } }, targetUnit: true },
     });

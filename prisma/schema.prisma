@@ -5,68 +5,122 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
-// ── 사용자 ──
-model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String
-  role      String   @default("employee") // admin | employee
-  isActive  Boolean  @default(true) @map("is_active")
-  googleId  String?  @map("google_id")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  permissions   UserPermission[]
-  inventoryTxs  InventoryTx[]
-  auditLogs     AuditLog[]
-  attendances   Attendance[]
-  notices       Notice[]
-
-  @@map("user")
-}
-
-// ── 사용자 권한 ──
-model UserPermission {
-  id       Int     @id @default(autoincrement())
-  userId   Int     @map("user_id")
-  resource String  // inventory, status, period, target, barcode, barcode_create, admin
-  canView  Boolean @default(true) @map("can_view")
-  canEdit  Boolean @default(false) @map("can_edit")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, resource])
-  @@map("user_permission")
 }
 
 // ── 품목 카테고리 ──
 model ItemCategory {
-  id         Int    @id @default(autoincrement())
-  name       String @unique
-  codePrefix String? @map("code_prefix")
-  sortOrder  Int    @default(0) @map("sort_order")
+  id       Int    @id @default(autoincrement())
+  name     String @unique
+  parentId Int?   @map("parent_id")
 
-  items Item[]
+  parent   ItemCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children ItemCategory[] @relation("CategoryHierarchy")
+  items    Item[]
 
   @@map("item_category")
 }
 
-// ── 품목 ──
+// ── 위치/창고 ──
+model Location {
+  id      Int     @id @default(autoincrement())
+  name    String  @unique
+  address String?
+
+  inventoryTxs InventoryTx[]
+  targetLogs   TargetLog[]
+
+  @@map("location")
+}
+
+// ── 거래 목적 ──
+model TxReason {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String?
+
+  inventoryTxs InventoryTx[]
+  barcodeScan  BarcodeScan[]
+
+  @@map("tx_reason")
+}
+
+// ── 거래처 ──
+model Partner {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  partnerType String  @default("VENDOR") @map("partner_type") // VENDOR | CUSTOMER | RESEARCH | INTERNAL
+  managerName String? @map("manager_name")
+  contact     String?
+  email       String?
+
+  inventoryTxs InventoryTx[]
+
+  @@map("partner")
+}
+
+// ── 사용자 ──
+model User {
+  id           Int     @id @default(autoincrement())
+  name         String
+  email        String? @unique
+  role         String? // admin / viewer / operator
+  isActive     String  @default("Y") @map("is_active") // Y | N
+  passwordHash String? @map("password_hash")
+
+  permission      UserTabPermission?
+  authTokens      AuthRefreshToken[]
+  inventoryTxs    InventoryTx[]
+  targetLogs      TargetLog[]
+  barcodeScans    BarcodeScan[]
+
+  @@map("user")
+}
+
+// ── 탭 권한 ──
+model UserTabPermission {
+  userId                  Int    @id @map("user_id")
+  canViewMain             String @default("Y") @map("can_view_main")
+  canViewStatus           String @default("Y") @map("can_view_status")
+  canViewPeriod           String @default("Y") @map("can_view_period")
+  canViewUserPerm         String @default("N") @map("can_view_user_perm")
+  canViewTargetUsage      String @default("Y") @map("can_view_target_usage")
+  canViewBarcode          String @default("Y") @map("can_view_barcode")
+  canViewBarcodeCreatePrint String @default("Y") @map("can_view_barcode_create_print")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_tab_permission")
+}
+
+// ── 인증 토큰 ──
+model AuthRefreshToken {
+  id               Int      @id @default(autoincrement())
+  userId           Int      @map("user_id")
+  tokenHash        String   @unique @map("token_hash")
+  deviceId         String   @default("") @map("device_id")
+  issuedAt         DateTime @default(now()) @map("issued_at")
+  expiresAt        DateTime @map("expires_at")
+  revokedAt        DateTime? @map("revoked_at")
+  rotatedFromHash  String?  @map("rotated_from_hash")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("auth_refresh_token")
+}
+
+// ── 품목 마스터 ──
 model Item {
-  id         Int      @id @default(autoincrement())
-  categoryId Int      @map("category_id")
-  code       String   @unique
-  name       String
-  unit       String?
-  spec       String?
-  note       String?
-  isActive   Boolean  @default(true) @map("is_active")
-  createdAt  DateTime @default(now()) @map("created_at")
+  id           Int    @id @default(autoincrement())
+  categoryId   Int    @map("category_id")
+  code         String @unique
+  name         String
+  unit         String?
+  minStockQty  Int    @default(0) @map("min_stock_qty")
+  note         String?
 
   category     ItemCategory  @relation(fields: [categoryId], references: [id])
+  waferSpec    WaferSpec?
+  targetSpec   TargetSpec?
   barcodes     Barcode[]
   targetUnits  TargetUnit[]
   inventoryTxs InventoryTx[]
@@ -74,32 +128,48 @@ model Item {
   @@map("item")
 }
 
-// ── 거래처 / 불출처 ──
-model Partner {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  type        String   @default("vendor") // vendor | disburse
-  managerName String?  @map("manager_name")
-  contact     String?
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
+// ── 웨이퍼 스펙 (item 1:1) ──
+model WaferSpec {
+  itemId        Int     @id @map("item_id")
+  diameterInch  Int     @map("diameter_inch")
+  waferType     String? @map("wafer_type")    // P, P+, N, Metal 등
+  dopant        String?
+  grade         String?                        // Test, Prime, Monitor
+  thicknessNote String? @map("thickness_note")
+  resistivity   String?
+  orientation   String?                        // 1-0-0, 1-1-1
+  surface       String?                        // SSP, DSP
+  oxidation     String?
 
-  inventoryTxs InventoryTx[]
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
-  @@map("partner")
+  @@map("wafer_spec")
 }
 
-// ── 타겟 유닛 (타겟 개별 관리) ──
-model TargetUnit {
-  id           Int      @id @default(autoincrement())
-  itemId       Int?     @map("item_id")
-  materialName String?  @map("material_name")
-  purity       String?
-  hasCopper    String?  @map("has_copper") // 유 | 무 | 선택
-  status       String   @default("available") // available | using | disposed
-  createdAt    DateTime @default(now()) @map("created_at")
+// ── 타겟 스펙 (item 1:1) ──
+model TargetSpec {
+  itemId        Int      @id @map("item_id")
+  diameterInch  Int      @map("diameter_inch")
+  thicknessInch Decimal? @map("thickness_inch") @db.Decimal(5, 3)
+  materialCode  String   @map("material_code")  // AU, SI, SIO2, ATC 등
+  purity        Decimal? @db.Decimal(6, 3)
+  hasCopper     String?  @map("has_copper")      // Y | N
 
-  item         Item?         @relation(fields: [itemId], references: [id])
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@map("target_spec")
+}
+
+// ── 타겟 개별 단위 ──
+model TargetUnit {
+  id         Int      @id @default(autoincrement())
+  itemId     Int      @map("item_id")
+  status     String   @default("available") // available | using | disposed
+  createdAt  DateTime @default(now()) @map("created_at") @db.Date
+  disposedAt DateTime? @map("disposed_at") @db.Date
+  note       String?
+
+  item         Item          @relation(fields: [itemId], references: [id])
   barcodes     Barcode[]
   inventoryTxs InventoryTx[]
   targetLogs   TargetLog[]
@@ -107,133 +177,94 @@ model TargetUnit {
   @@map("target_unit")
 }
 
-// ── 바코드 ──
-model Barcode {
-  id           Int      @id @default(autoincrement())
-  code         String   @unique
-  itemId       Int?     @map("item_id")
-  targetUnitId Int?     @map("target_unit_id")
-  isActive     Boolean  @default(true) @map("is_active")
-  labelPath    String?  @map("label_path")
-  createdAt    DateTime @default(now()) @map("created_at")
-
-  item         Item?       @relation(fields: [itemId], references: [id])
-  targetUnit   TargetUnit? @relation(fields: [targetUnitId], references: [id])
-  inventoryTxs InventoryTx[]
-
-  @@map("barcode")
-}
-
-// ── 재고 트랜잭션 (핵심) ──
-model InventoryTx {
-  id             Int      @id @default(autoincrement())
-  date           DateTime @default(now()) @db.Date
-  type           String   // 입고 | 출고 | 불출
-  itemId         Int      @map("item_id")
-  quantity       Int
-  unitPrice      Decimal  @default(0) @map("unit_price") @db.Decimal(15, 2)
-  currency       String   @default("KRW") // KRW | USD
-  amount         Decimal  @default(0) @db.Decimal(15, 2)
-  partnerId      Int?     @map("partner_id")
-  handlerName    String?  @map("handler_name")
-  handlerContact String?  @map("handler_contact")
-  memo           String?
-  targetUnitId   Int?     @map("target_unit_id")
-  refInboundId   Int?     @map("ref_inbound_id")
-  barcodeId      Int?     @map("barcode_id")
-  location       String?
-
-  // 웨이퍼 속성
-  waferResistance String? @map("wafer_resistance")
-  waferThickness  String? @map("wafer_thickness")
-  waferDirection  String? @map("wafer_direction")
-  waferSurface    String? @map("wafer_surface")
-
-  // 감사
-  createdBy Int?     @map("created_by")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  item       Item        @relation(fields: [itemId], references: [id])
-  partner    Partner?    @relation(fields: [partnerId], references: [id])
-  targetUnit TargetUnit? @relation(fields: [targetUnitId], references: [id])
-  refInbound InventoryTx? @relation("RefInbound", fields: [refInboundId], references: [id])
-  refOutbounds InventoryTx[] @relation("RefInbound")
-  barcode    Barcode?    @relation(fields: [barcodeId], references: [id])
-  creator    User?       @relation(fields: [createdBy], references: [id])
-
-  @@map("inventory_tx")
-}
-
-// ── 타겟 측정 로그 ──
+// ── 타겟 사용 이력 ──
 model TargetLog {
   id           Int      @id @default(autoincrement())
   targetUnitId Int      @map("target_unit_id")
-  type         String   // 측정 | 폐기 | 상태변경
+  logType      String   @map("log_type")  // measure | dispose | move
   weight       Decimal? @db.Decimal(10, 3)
-  location     String?
+  locationId   Int?     @map("location_id")
   reason       String?
   userId       Int?     @map("user_id")
-  createdAt    DateTime @default(now()) @map("created_at")
+  loggedAt     DateTime @default(now()) @map("logged_at")
 
   targetUnit TargetUnit @relation(fields: [targetUnitId], references: [id])
+  location   Location?  @relation(fields: [locationId], references: [id])
+  user       User?      @relation(fields: [userId], references: [id])
 
   @@map("target_log")
 }
 
-// ── 필요수량 ──
-model RequiredQty {
-  id         Int @id @default(autoincrement())
-  itemId     Int @unique @map("item_id")
-  quantity   Int @default(0)
+// ── 바코드 시퀀스 ──
+model BarcodeSeq {
+  prefix String @id
+  lastNo Int    @default(0) @map("last_no")
 
-  @@map("required_qty")
+  @@map("barcode_seq")
 }
 
-// ── 변경 이력 ──
-model AuditLog {
-  id         Int      @id @default(autoincrement())
-  tableName  String   @map("table_name")
-  recordId   Int      @map("record_id")
-  action     String   // INSERT | UPDATE | DELETE
-  columnName String?  @map("column_name")
-  oldValue   String?  @map("old_value")
-  newValue   String?  @map("new_value")
-  userId     Int?     @map("user_id")
-  createdAt  DateTime @default(now()) @map("created_at")
+// ── 바코드 ──
+model Barcode {
+  id           Int     @id @default(autoincrement())
+  code         String  @unique
+  itemId       Int?    @map("item_id")
+  targetUnitId Int?    @unique @map("target_unit_id")
+  isActive     String  @default("Y") @map("is_active")
 
-  user User? @relation(fields: [userId], references: [id])
+  item         Item?         @relation(fields: [itemId], references: [id])
+  targetUnit   TargetUnit?   @relation(fields: [targetUnitId], references: [id])
+  inventoryTxs InventoryTx[]
+  barcodeScans BarcodeScan[]
 
-  @@map("audit_log")
+  @@map("barcode")
 }
 
-// ── 출퇴근 ──
-model Attendance {
-  id       Int       @id @default(autoincrement())
-  userId   Int       @map("user_id")
-  date     DateTime  @default(now()) @db.Date
-  checkIn  DateTime? @map("check_in")
-  checkOut DateTime? @map("check_out")
-  memo     String?
-  createdAt DateTime @default(now()) @map("created_at")
+// ── 재고 거래 이력 ──
+model InventoryTx {
+  id           Int      @id @default(autoincrement())
+  txNo         String?  @unique @map("tx_no")
+  txDate       DateTime @default(now()) @map("tx_date") @db.Date
+  txType       String   @map("tx_type")    // 입고 | 불출 | 출고
+  itemId       Int      @map("item_id")
+  targetUnitId Int?     @map("target_unit_id")
+  qty          Int
+  unitPrice    Decimal? @map("unit_price") @db.Decimal(15, 2)
+  amount       Decimal? @db.Decimal(15, 2)
+  partnerId    Int?     @map("partner_id")
+  txReasonId   Int?     @map("tx_reason_id")
+  locationId   Int      @map("location_id")
+  userId       Int?     @map("user_id")
+  memo         String?
+  refTxNo      String?  @map("ref_tx_no")
+  barcodeId    Int?     @map("barcode_id")
 
-  user User @relation(fields: [userId], references: [id])
+  item       Item       @relation(fields: [itemId], references: [id])
+  targetUnit TargetUnit? @relation(fields: [targetUnitId], references: [id])
+  partner    Partner?   @relation(fields: [partnerId], references: [id])
+  txReason   TxReason?  @relation(fields: [txReasonId], references: [id])
+  location   Location   @relation(fields: [locationId], references: [id])
+  user       User?      @relation(fields: [userId], references: [id])
+  barcode    Barcode?   @relation(fields: [barcodeId], references: [id])
+  barcodeScans BarcodeScan[]
 
-  @@unique([userId, date])
-  @@map("attendance")
+  @@map("inventory_tx")
 }
 
-// ── 공지사항 ──
-model Notice {
-  id        Int      @id @default(autoincrement())
-  title     String
-  content   String
-  authorId  Int      @map("author_id")
-  isPinned  Boolean  @default(false) @map("is_pinned")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+// ── 바코드 스캔 이력 ──
+model BarcodeScan {
+  id            Int      @id @default(autoincrement())
+  barcodeId     Int      @map("barcode_id")
+  scanTime      DateTime @default(now()) @map("scan_time")
+  opType        String?  @map("op_type")   // 출고 | 불출
+  txReasonId    Int?     @map("tx_reason_id")
+  userId        Int?     @map("user_id")
+  qty           Int
+  inventoryTxId Int?     @map("inventory_tx_id")
 
-  author User @relation(fields: [authorId], references: [id])
+  barcode     Barcode      @relation(fields: [barcodeId], references: [id])
+  txReason    TxReason?    @relation(fields: [txReasonId], references: [id])
+  user        User?        @relation(fields: [userId], references: [id])
+  inventoryTx InventoryTx? @relation(fields: [inventoryTxId], references: [id])
 
-  @@map("notice")
+  @@map("barcode_scan")
 }

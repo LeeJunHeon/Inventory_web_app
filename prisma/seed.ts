@@ -11,31 +11,54 @@ async function main() {
   // ── 1. 품목 카테고리 ──────────────────────────
   await prisma.itemCategory.createMany({
     data: [
-      { name: "웨이퍼",      codePrefix: "W", sortOrder: 1 },
-      { name: "타겟",        codePrefix: "T", sortOrder: 2 },
-      { name: "가스",        codePrefix: "G", sortOrder: 3 },
-      { name: "기자재/소모품", codePrefix: "E", sortOrder: 4 },
+      { name: "웨이퍼" },
+      { name: "타겟" },
+      { name: "가스" },
+      { name: "기자재/소모품" },
     ],
     skipDuplicates: true,
   });
   console.log("  ✓ 품목 카테고리");
 
-  // ── 2. 거래처 ─────────────────────────────────
+  // ── 2. 위치 ───────────────────────────────────
+  await prisma.location.createMany({
+    data: [
+      { name: "본사" },
+      { name: "공덕" },
+      { name: "실험실" },
+    ],
+    skipDuplicates: true,
+  });
+  console.log("  ✓ 위치");
+
+  // ── 3. 거래 목적 ──────────────────────────────
+  await prisma.txReason.createMany({
+    data: [
+      { name: "연구개발" },
+      { name: "교육홍보" },
+      { name: "제품판매" },
+      { name: "최종생산" },
+    ],
+    skipDuplicates: true,
+  });
+  console.log("  ✓ 거래 목적");
+
+  // ── 4. 거래처 ─────────────────────────────────
   await prisma.partner.createMany({
     data: [
-      { name: "(주)실리콘밸리", type: "vendor" },
-      { name: "(주)메탈소스",   type: "vendor" },
-      { name: "에어코리아",     type: "vendor" },
-      { name: "삼성전자",       type: "disburse" },
-      { name: "LG이노텍",       type: "disburse" },
-      { name: "생산 1팀",       type: "disburse" },
-      { name: "생산 2팀",       type: "disburse" },
+      { name: "(주)실리콘밸리", partnerType: "VENDOR" },
+      { name: "(주)메탈소스",   partnerType: "VENDOR" },
+      { name: "에어코리아",     partnerType: "VENDOR" },
+      { name: "삼성전자",       partnerType: "CUSTOMER" },
+      { name: "LG이노텍",       partnerType: "CUSTOMER" },
+      { name: "생산 1팀",       partnerType: "INTERNAL" },
+      { name: "생산 2팀",       partnerType: "INTERNAL" },
     ],
     skipDuplicates: true,
   });
   console.log("  ✓ 거래처");
 
-  // ── 3. 샘플 품목 (선택 사항 — 필요 없으면 아래 주석 처리) ──
+  // ── 5. 샘플 품목 ──────────────────────────────
   const wafer  = await prisma.itemCategory.findUnique({ where: { name: "웨이퍼" } });
   const target = await prisma.itemCategory.findUnique({ where: { name: "타겟" } });
   const gas    = await prisma.itemCategory.findUnique({ where: { name: "가스" } });

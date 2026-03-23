@@ -1,22 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-const RESOURCE_KEYS = ["inventory", "status", "period", "target", "barcode", "barcode_create", "admin"] as const;
-
 // GET /api/admin/users — 사용자 + 권한 목록
 export async function GET() {
   try {
     const users = await prisma.user.findMany({
-      include: { permissions: true },
+      include: { permission: true },
       orderBy: { id: "asc" },
     });
 
     return NextResponse.json(users.map((u) => {
-      const permMap: Record<string, boolean> = {};
-      for (const key of RESOURCE_KEYS) {
-        const perm = u.permissions.find((p) => p.resource === key);
-        permMap[key] = perm?.canEdit ?? false;
-      }
+      const p = u.permission;
       return {
         id:       u.id,
         name:     u.name,
@@ -24,13 +18,13 @@ export async function GET() {
         role:     u.role,
         isActive: u.isActive,
         perms: {
-          inventory:     permMap["inventory"]      ?? true,
-          status:        permMap["status"]         ?? true,
-          period:        permMap["period"]         ?? false,
-          target:        permMap["target"]         ?? false,
-          barcode:       permMap["barcode"]        ?? false,
-          barcodeCreate: permMap["barcode_create"] ?? false,
-          admin:         permMap["admin"]          ?? false,
+          main:              p?.canViewMain              ?? "Y",
+          status:            p?.canViewStatus            ?? "Y",
+          period:            p?.canViewPeriod            ?? "Y",
+          userPerm:          p?.canViewUserPerm          ?? "N",
+          targetUsage:       p?.canViewTargetUsage       ?? "Y",
+          barcode:           p?.canViewBarcode           ?? "Y",
+          barcodeCreatePrint:p?.canViewBarcodeCreatePrint ?? "Y",
         },
       };
     }));
@@ -44,7 +38,6 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    // body: { users: Array<{ id, role, isActive, perms }> }
     const { users } = body;
 
     if (!Array.isArray(users)) {
@@ -52,30 +45,33 @@ export async function PUT(request: NextRequest) {
     }
 
     for (const u of users) {
-      // 역할/활성 업데이트
       await prisma.user.update({
         where: { id: u.id },
         data:  { role: u.role, isActive: u.isActive },
       });
 
-      // 권한 upsert
-      const permEntries: { resource: string; canEdit: boolean }[] = [
-        { resource: "inventory",     canEdit: u.perms.inventory     ?? false },
-        { resource: "status",        canEdit: u.perms.status        ?? false },
-        { resource: "period",        canEdit: u.perms.period        ?? false },
-        { resource: "target",        canEdit: u.perms.target        ?? false },
-        { resource: "barcode",       canEdit: u.perms.barcode       ?? false },
-        { resource: "barcode_create",canEdit: u.perms.barcodeCreate ?? false },
-        { resource: "admin",         canEdit: u.perms.admin         ?? false },
-      ];
-
-      for (const pe of permEntries) {
-        await prisma.userPermission.upsert({
-          where:  { userId_resource: { userId: u.id, resource: pe.resource } },
-          update: { canEdit: pe.canEdit, canView: true },
-          create: { userId: u.id, resource: pe.resource, canView: true, canEdit: pe.canEdit },
-        });
-      }
+      await prisma.userTabPermission.upsert({
+        where:  { userId: u.id },
+        update: {
+          canViewMain:              u.perms.main              ?? "Y",
+          canViewStatus:            u.perms.status            ?? "Y",
+          canViewPeriod:            u.perms.period            ?? "Y",
+          canViewUserPerm:          u.perms.userPerm          ?? "N",
+          canViewTargetUsage:       u.perms.targetUsage       ?? "Y",
+          canViewBarcode:           u.perms.barcode           ?? "Y",
+          canViewBarcodeCreatePrint:u.perms.barcodeCreatePrint ?? "Y",
+        },
+        create: {
+          userId:                   u.id,
+          canViewMain:              u.perms.main              ?? "Y",
+          canViewStatus:            u.perms.status            ?? "Y",
+          canViewPeriod:            u.perms.period            ?? "Y",
+          canViewUserPerm:          u.perms.userPerm          ?? "N",
+          canViewTargetUsage:       u.perms.targetUsage       ?? "Y",
+          canViewBarcode:           u.perms.barcode           ?? "Y",
+          canViewBarcodeCreatePrint:u.perms.barcodeCreatePrint ?? "Y",
+        },
+      });
     }
 
     return NextResponse.json({ message: "저장 완료" });
@@ -91,28 +87,28 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, email, role } = body;
 
-    if (!name || !email) {
-      return NextResponse.json({ error: "이름과 이메일은 필수입니다." }, { status: 400 });
+    if (!name) {
+      return NextResponse.json({ error: "이름은 필수입니다." }, { status: 400 });
     }
 
-    const exists = await prisma.user.findUnique({ where: { email } });
-    if (exists) {
-      return NextResponse.json({ error: "이미 등록된 이메일입니다." }, { status: 409 });
+    if (email) {
+      const exists = await prisma.user.findUnique({ where: { email } });
+      if (exists) {
+        return NextResponse.json({ error: "이미 등록된 이메일입니다." }, { status: 409 });
+      }
     }
 
     const user = await prisma.user.create({
-      data: { name, email, role: role || "employee", isActive: true },
+      data: { name, email: email || null, role: role || "viewer", isActive: "Y" },
     });
 
-    // 기본 권한 생성 (inventory, status 보기 권한)
-    await prisma.userPermission.createMany({
-      data: [
-        { userId: user.id, resource: "inventory",  canView: true, canEdit: false },
-        { userId: user.id, resource: "status",     canView: true, canEdit: false },
-      ],
+    await prisma.userTabPermission.create({
+      data: { userId: user.id },
     });
 
-    return NextResponse.json({ id: user.id, name: user.name, email: user.email, role: user.role, isActive: user.isActive }, { status: 201 });
+    return NextResponse.json({
+      id: user.id, name: user.name, email: user.email, role: user.role, isActive: user.isActive,
+    }, { status: 201 });
   } catch (error) {
     console.error("POST /api/admin/users error:", error);
     return NextResponse.json({ error: "사용자 추가 실패" }, { status: 500 });

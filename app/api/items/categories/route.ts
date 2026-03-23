@@ -5,13 +5,12 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   try {
     const categories = await prisma.itemCategory.findMany({
-      orderBy: { sortOrder: "asc" },
+      orderBy: { name: "asc" },
     });
     return NextResponse.json(categories.map(c => ({
-      id:         c.id,
-      name:       c.name,
-      codePrefix: c.codePrefix,
-      sortOrder:  c.sortOrder,
+      id:       c.id,
+      name:     c.name,
+      parentId: c.parentId,
     })));
   } catch (error) {
     console.error("GET /api/items/categories error:", error);

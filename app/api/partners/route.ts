@@ -5,11 +5,11 @@ import { prisma } from "@/lib/prisma";
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const type   = searchParams.get("type")   || "";  // "vendor" | "disburse"
+    const type   = searchParams.get("type")   || "";
     const search = searchParams.get("search") || "";
 
-    const where: any = { isActive: true };
-    if (type)   where.type = type;
+    const where: any = {};
+    if (type)   where.partnerType = type;
     if (search) where.name = { contains: search, mode: "insensitive" };
 
     const partners = await prisma.partner.findMany({
@@ -20,10 +20,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(partners.map(p => ({
       id:          p.id,
       name:        p.name,
-      type:        p.type,
+      type:        p.partnerType,
       managerName: p.managerName,
       contact:     p.contact,
-      isActive:    p.isActive,
+      email:       p.email,
     })));
   } catch (error) {
     console.error("GET /api/partners error:", error);
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, type, managerName, contact } = body;
+    const { name, type, managerName, contact, email } = body;
 
     if (!name?.trim()) {
       return NextResponse.json({ error: "거래처명은 필수입니다." }, { status: 400 });
@@ -49,14 +49,17 @@ export async function POST(request: NextRequest) {
     const partner = await prisma.partner.create({
       data: {
         name:        name.trim(),
-        type:        type || "vendor",
+        partnerType: type || "VENDOR",
         managerName: managerName?.trim() || null,
         contact:     contact?.trim()     || null,
-        isActive:    true,
+        email:       email?.trim()       || null,
       },
     });
 
-    return NextResponse.json(partner, { status: 201 });
+    return NextResponse.json({
+      id: partner.id, name: partner.name, type: partner.partnerType,
+      managerName: partner.managerName, contact: partner.contact, email: partner.email,
+    }, { status: 201 });
   } catch (error) {
     console.error("POST /api/partners error:", error);
     return NextResponse.json({ error: "거래처 등록 실패" }, { status: 500 });
@@ -71,31 +74,30 @@ export async function PUT(request: NextRequest) {
     if (!id) return NextResponse.json({ error: "id 파라미터 필요" }, { status: 400 });
 
     const body = await request.json();
-    const { name, type, managerName, contact, isActive } = body;
-
-    if (type !== undefined && !["vendor", "disburse"].includes(type)) {
-      return NextResponse.json({ error: "type은 vendor 또는 disburse여야 합니다." }, { status: 400 });
-    }
+    const { name, type, managerName, contact, email } = body;
 
     const partner = await prisma.partner.update({
       where: { id: Number(id) },
       data: {
         ...(name        !== undefined && { name:        name.trim() }),
-        ...(type        !== undefined && { type }),
+        ...(type        !== undefined && { partnerType: type }),
         ...(managerName !== undefined && { managerName: managerName?.trim() || null }),
         ...(contact     !== undefined && { contact:     contact?.trim() || null }),
-        ...(isActive    !== undefined && { isActive }),
+        ...(email       !== undefined && { email:       email?.trim() || null }),
       },
     });
 
-    return NextResponse.json(partner);
+    return NextResponse.json({
+      id: partner.id, name: partner.name, type: partner.partnerType,
+      managerName: partner.managerName, contact: partner.contact, email: partner.email,
+    });
   } catch (error) {
     console.error("PUT /api/partners error:", error);
     return NextResponse.json({ error: "거래처 수정 실패" }, { status: 500 });
   }
 }
 
-// DELETE /api/partners?id=1 — 거래처 비활성화
+// DELETE /api/partners?id=1 — 거래처 삭제
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -104,8 +106,7 @@ export async function DELETE(request: NextRequest) {
 
     const txCount = await prisma.inventoryTx.count({ where: { partnerId: Number(id) } });
     if (txCount > 0) {
-      await prisma.partner.update({ where: { id: Number(id) }, data: { isActive: false } });
-      return NextResponse.json({ message: "거래 내역이 있어 비활성화 처리되었습니다." });
+      return NextResponse.json({ error: "거래 내역이 있어 삭제할 수 없습니다." }, { status: 409 });
     }
 
     await prisma.partner.delete({ where: { id: Number(id) } });
