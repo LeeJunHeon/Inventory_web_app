@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
       managerName: p.managerName,
       contact:     p.contact,
       email:       p.email,
+      isActive:    p.isActive,
     })));
   } catch (error) {
     console.error("GET /api/partners error:", error);
@@ -59,6 +60,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       id: partner.id, name: partner.name, type: partner.partnerType,
       managerName: partner.managerName, contact: partner.contact, email: partner.email,
+      isActive: partner.isActive,
     }, { status: 201 });
   } catch (error) {
     console.error("POST /api/partners error:", error);
@@ -90,6 +92,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({
       id: partner.id, name: partner.name, type: partner.partnerType,
       managerName: partner.managerName, contact: partner.contact, email: partner.email,
+      isActive: partner.isActive,
     });
   } catch (error) {
     console.error("PUT /api/partners error:", error);

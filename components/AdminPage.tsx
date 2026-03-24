@@ -4,22 +4,22 @@ import { useState, useEffect } from "react";
 import { Save, Shield, UserPlus, Loader2, X } from "lucide-react";
 
 interface UserPerm {
-  id: number; name: string; email: string;
-  role: "admin" | "employee"; isActive: boolean;
+  id: number; name: string; email: string | null;
+  role: string; isActive: boolean;
   perms: {
-    inventory: boolean; status: boolean; period: boolean;
-    target: boolean; barcode: boolean; barcodeCreate: boolean; admin: boolean;
+    main: boolean; status: boolean; period: boolean;
+    userPerm: boolean; targetUsage: boolean; barcode: boolean; barcodeCreatePrint: boolean;
   };
 }
 
 const PERM_LABELS: { key: keyof UserPerm["perms"]; label: string }[] = [
-  { key: "inventory",     label: "재고관리" },
-  { key: "status",        label: "보유현황" },
-  { key: "period",        label: "기간별조회" },
-  { key: "target",        label: "타겟현황" },
-  { key: "barcode",       label: "바코드" },
-  { key: "barcodeCreate", label: "바코드생성" },
-  { key: "admin",         label: "관리자" },
+  { key: "main",               label: "대시보드" },
+  { key: "status",             label: "보유현황" },
+  { key: "period",             label: "기간별조회" },
+  { key: "targetUsage",        label: "타겟현황" },
+  { key: "barcode",            label: "바코드" },
+  { key: "barcodeCreatePrint", label: "바코드생성" },
+  { key: "userPerm",           label: "관리자" },
 ];
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
@@ -174,12 +174,6 @@ export default function AdminPage() {
           </button>
         </div>
       )}
-
-      <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-        <p className="text-sm text-amber-800">
-          <span className="font-semibold">참고:</span> 각 페이지별 접근 권한을 토글로 설정할 수 있습니다. 로그인 기능 구현 후 적용됩니다.
-        </p>
-      </div>
 
       {/* 데스크탑 테이블 */}
       <div className="hidden lg:block bg-white rounded-2xl border border-gray-100 overflow-hidden">

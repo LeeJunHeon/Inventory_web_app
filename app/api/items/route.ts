@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
       unit:        item.unit,
       minStockQty: item.minStockQty,
       note:        item.note,
+      isActive:    item.isActive,
     })));
   } catch (error) {
     console.error("GET /api/items error:", error);
@@ -73,6 +74,7 @@ export async function POST(request: NextRequest) {
       id: item.id, code: item.code, name: item.name,
       category: item.category.name, categoryId: item.categoryId,
       unit: item.unit, minStockQty: item.minStockQty, note: item.note,
+      isActive: item.isActive,
     }, { status: 201 });
   } catch (error) {
     console.error("POST /api/items error:", error);
@@ -106,6 +108,7 @@ export async function PUT(request: NextRequest) {
       id: item.id, code: item.code, name: item.name,
       category: item.category.name, categoryId: item.categoryId,
       unit: item.unit, minStockQty: item.minStockQty, note: item.note,
+      isActive: item.isActive,
     });
   } catch (error) {
     console.error("PUT /api/items error:", error);

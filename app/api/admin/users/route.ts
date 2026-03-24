@@ -9,6 +9,8 @@ export async function GET() {
       orderBy: { id: "asc" },
     });
 
+    const yn = (v: string | null | undefined, def: string) => (v ?? def) === "Y";
+
     return NextResponse.json(users.map((u) => {
       const p = u.permission;
       return {
@@ -16,15 +18,15 @@ export async function GET() {
         name:     u.name,
         email:    u.email,
         role:     u.role,
-        isActive: u.isActive,
+        isActive: u.isActive === "Y",
         perms: {
-          main:              p?.canViewMain              ?? "Y",
-          status:            p?.canViewStatus            ?? "Y",
-          period:            p?.canViewPeriod            ?? "Y",
-          userPerm:          p?.canViewUserPerm          ?? "N",
-          targetUsage:       p?.canViewTargetUsage       ?? "Y",
-          barcode:           p?.canViewBarcode           ?? "Y",
-          barcodeCreatePrint:p?.canViewBarcodeCreatePrint ?? "Y",
+          main:              yn(p?.canViewMain,              "Y"),
+          status:            yn(p?.canViewStatus,            "Y"),
+          period:            yn(p?.canViewPeriod,            "Y"),
+          userPerm:          yn(p?.canViewUserPerm,          "N"),
+          targetUsage:       yn(p?.canViewTargetUsage,       "Y"),
+          barcode:           yn(p?.canViewBarcode,           "Y"),
+          barcodeCreatePrint:yn(p?.canViewBarcodeCreatePrint,"Y"),
         },
       };
     }));
@@ -44,33 +46,28 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "users 배열 필요" }, { status: 400 });
     }
 
+    const toYN = (v: boolean | undefined, def: boolean) => ((v ?? def) ? "Y" : "N");
+
     for (const u of users) {
       await prisma.user.update({
         where: { id: u.id },
-        data:  { role: u.role, isActive: u.isActive },
+        data:  { role: u.role, isActive: toYN(u.isActive, true) },
       });
+
+      const perms = {
+        canViewMain:              toYN(u.perms.main,              true),
+        canViewStatus:            toYN(u.perms.status,            true),
+        canViewPeriod:            toYN(u.perms.period,            true),
+        canViewUserPerm:          toYN(u.perms.userPerm,          false),
+        canViewTargetUsage:       toYN(u.perms.targetUsage,       true),
+        canViewBarcode:           toYN(u.perms.barcode,           true),
+        canViewBarcodeCreatePrint:toYN(u.perms.barcodeCreatePrint,true),
+      };
 
       await prisma.userTabPermission.upsert({
         where:  { userId: u.id },
-        update: {
-          canViewMain:              u.perms.main              ?? "Y",
-          canViewStatus:            u.perms.status            ?? "Y",
-          canViewPeriod:            u.perms.period            ?? "Y",
-          canViewUserPerm:          u.perms.userPerm          ?? "N",
-          canViewTargetUsage:       u.perms.targetUsage       ?? "Y",
-          canViewBarcode:           u.perms.barcode           ?? "Y",
-          canViewBarcodeCreatePrint:u.perms.barcodeCreatePrint ?? "Y",
-        },
-        create: {
-          userId:                   u.id,
-          canViewMain:              u.perms.main              ?? "Y",
-          canViewStatus:            u.perms.status            ?? "Y",
-          canViewPeriod:            u.perms.period            ?? "Y",
-          canViewUserPerm:          u.perms.userPerm          ?? "N",
-          canViewTargetUsage:       u.perms.targetUsage       ?? "Y",
-          canViewBarcode:           u.perms.barcode           ?? "Y",
-          canViewBarcodeCreatePrint:u.perms.barcodeCreatePrint ?? "Y",
-        },
+        update: perms,
+        create: { userId: u.id, ...perms },
       });
     }
 
