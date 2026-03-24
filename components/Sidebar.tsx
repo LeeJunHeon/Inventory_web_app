@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { signOut } from "next-auth/react";
 import { Home, Package, BarChart3, Clock, Target, QrCode, Users, LogOut, Boxes, X, Layers, Building2 } from "lucide-react";
 
 export type PageId =
@@ -136,14 +137,13 @@ export default function Sidebar({
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
             <h3 className="text-lg font-bold text-gray-900">로그아웃</h3>
             <p className="text-sm text-gray-500">로그아웃 하시겠습니까?</p>
-            <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">로그인 기능이 아직 구현되지 않아 로그아웃이 동작하지 않습니다.</p>
             <div className="flex justify-end gap-2">
               <button onClick={() => setShowLogoutConfirm(false)}
                 className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200">
                 취소
               </button>
-              <button onClick={() => setShowLogoutConfirm(false)}
-                className="px-4 py-2 text-sm font-bold text-white bg-gray-400 rounded-xl cursor-not-allowed" disabled>
+              <button onClick={() => signOut({ callbackUrl: "/login" })}
+                className="px-4 py-2 text-sm font-bold text-white bg-rose-500 rounded-xl hover:bg-rose-600 transition-colors">
                 로그아웃
               </button>
             </div>

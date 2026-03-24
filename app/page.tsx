@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { Menu, Bell } from "lucide-react";
 import Sidebar, { PageId } from "@/components/Sidebar";
 import DashboardPage    from "@/components/DashboardPage";
@@ -14,10 +15,14 @@ import PartnersPage     from "@/components/PartnersPage";
 import AdminPage        from "@/components/AdminPage";
 
 export default function Home() {
+  const { data: session } = useSession();
   const [page, setPage]             = useState<PageId>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [shortageCount, setShortageCount] = useState(0);
   const [showNotif, setShowNotif]   = useState(false);
+
+  const userName = session?.user?.name ?? "로딩중...";
+  const userRole = (session?.user as any)?.role ?? "";
 
   // 재고 부족 알림 수 조회
   useEffect(() => {
@@ -61,8 +66,8 @@ export default function Home() {
         onNavigate={setPage}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        userName="관리자"
-        userRole="admin"
+        userName={userName}
+        userRole={userRole}
       />
 
       <main className="flex-1 flex flex-col min-w-0">
