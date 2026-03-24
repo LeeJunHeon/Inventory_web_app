@@ -41,6 +41,7 @@ export type PartnerMinAggregateOutputType = {
   managerName: string | null
   contact: string | null
   email: string | null
+  isActive: boolean | null
 }
 
 export type PartnerMaxAggregateOutputType = {
@@ -50,6 +51,7 @@ export type PartnerMaxAggregateOutputType = {
   managerName: string | null
   contact: string | null
   email: string | null
+  isActive: boolean | null
 }
 
 export type PartnerCountAggregateOutputType = {
@@ -59,6 +61,7 @@ export type PartnerCountAggregateOutputType = {
   managerName: number
   contact: number
   email: number
+  isActive: number
   _all: number
 }
 
@@ -78,6 +81,7 @@ export type PartnerMinAggregateInputType = {
   managerName?: true
   contact?: true
   email?: true
+  isActive?: true
 }
 
 export type PartnerMaxAggregateInputType = {
@@ -87,6 +91,7 @@ export type PartnerMaxAggregateInputType = {
   managerName?: true
   contact?: true
   email?: true
+  isActive?: true
 }
 
 export type PartnerCountAggregateInputType = {
@@ -96,6 +101,7 @@ export type PartnerCountAggregateInputType = {
   managerName?: true
   contact?: true
   email?: true
+  isActive?: true
   _all?: true
 }
 
@@ -192,6 +198,7 @@ export type PartnerGroupByOutputType = {
   managerName: string | null
   contact: string | null
   email: string | null
+  isActive: boolean
   _count: PartnerCountAggregateOutputType | null
   _avg: PartnerAvgAggregateOutputType | null
   _sum: PartnerSumAggregateOutputType | null
@@ -224,6 +231,7 @@ export type PartnerWhereInput = {
   managerName?: Prisma.StringNullableFilter<"Partner"> | string | null
   contact?: Prisma.StringNullableFilter<"Partner"> | string | null
   email?: Prisma.StringNullableFilter<"Partner"> | string | null
+  isActive?: Prisma.BoolFilter<"Partner"> | boolean
   inventoryTxs?: Prisma.InventoryTxListRelationFilter
 }
 
@@ -234,6 +242,7 @@ export type PartnerOrderByWithRelationInput = {
   managerName?: Prisma.SortOrderInput | Prisma.SortOrder
   contact?: Prisma.SortOrderInput | Prisma.SortOrder
   email?: Prisma.SortOrderInput | Prisma.SortOrder
+  isActive?: Prisma.SortOrder
   inventoryTxs?: Prisma.InventoryTxOrderByRelationAggregateInput
 }
 
@@ -247,6 +256,7 @@ export type PartnerWhereUniqueInput = Prisma.AtLeast<{
   managerName?: Prisma.StringNullableFilter<"Partner"> | string | null
   contact?: Prisma.StringNullableFilter<"Partner"> | string | null
   email?: Prisma.StringNullableFilter<"Partner"> | string | null
+  isActive?: Prisma.BoolFilter<"Partner"> | boolean
   inventoryTxs?: Prisma.InventoryTxListRelationFilter
 }, "id" | "name">
 
@@ -257,6 +267,7 @@ export type PartnerOrderByWithAggregationInput = {
   managerName?: Prisma.SortOrderInput | Prisma.SortOrder
   contact?: Prisma.SortOrderInput | Prisma.SortOrder
   email?: Prisma.SortOrderInput | Prisma.SortOrder
+  isActive?: Prisma.SortOrder
   _count?: Prisma.PartnerCountOrderByAggregateInput
   _avg?: Prisma.PartnerAvgOrderByAggregateInput
   _max?: Prisma.PartnerMaxOrderByAggregateInput
@@ -274,6 +285,7 @@ export type PartnerScalarWhereWithAggregatesInput = {
   managerName?: Prisma.StringNullableWithAggregatesFilter<"Partner"> | string | null
   contact?: Prisma.StringNullableWithAggregatesFilter<"Partner"> | string | null
   email?: Prisma.StringNullableWithAggregatesFilter<"Partner"> | string | null
+  isActive?: Prisma.BoolWithAggregatesFilter<"Partner"> | boolean
 }
 
 export type PartnerCreateInput = {
@@ -282,6 +294,7 @@ export type PartnerCreateInput = {
   managerName?: string | null
   contact?: string | null
   email?: string | null
+  isActive?: boolean
   inventoryTxs?: Prisma.InventoryTxCreateNestedManyWithoutPartnerInput
 }
 
@@ -292,6 +305,7 @@ export type PartnerUncheckedCreateInput = {
   managerName?: string | null
   contact?: string | null
   email?: string | null
+  isActive?: boolean
   inventoryTxs?: Prisma.InventoryTxUncheckedCreateNestedManyWithoutPartnerInput
 }
 
@@ -301,6 +315,7 @@ export type PartnerUpdateInput = {
   managerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   inventoryTxs?: Prisma.InventoryTxUpdateManyWithoutPartnerNestedInput
 }
 
@@ -311,6 +326,7 @@ export type PartnerUncheckedUpdateInput = {
   managerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   inventoryTxs?: Prisma.InventoryTxUncheckedUpdateManyWithoutPartnerNestedInput
 }
 
@@ -321,6 +337,7 @@ export type PartnerCreateManyInput = {
   managerName?: string | null
   contact?: string | null
   email?: string | null
+  isActive?: boolean
 }
 
 export type PartnerUpdateManyMutationInput = {
@@ -329,6 +346,7 @@ export type PartnerUpdateManyMutationInput = {
   managerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type PartnerUncheckedUpdateManyInput = {
@@ -338,6 +356,7 @@ export type PartnerUncheckedUpdateManyInput = {
   managerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type PartnerCountOrderByAggregateInput = {
@@ -347,6 +366,7 @@ export type PartnerCountOrderByAggregateInput = {
   managerName?: Prisma.SortOrder
   contact?: Prisma.SortOrder
   email?: Prisma.SortOrder
+  isActive?: Prisma.SortOrder
 }
 
 export type PartnerAvgOrderByAggregateInput = {
@@ -360,6 +380,7 @@ export type PartnerMaxOrderByAggregateInput = {
   managerName?: Prisma.SortOrder
   contact?: Prisma.SortOrder
   email?: Prisma.SortOrder
+  isActive?: Prisma.SortOrder
 }
 
 export type PartnerMinOrderByAggregateInput = {
@@ -369,6 +390,7 @@ export type PartnerMinOrderByAggregateInput = {
   managerName?: Prisma.SortOrder
   contact?: Prisma.SortOrder
   email?: Prisma.SortOrder
+  isActive?: Prisma.SortOrder
 }
 
 export type PartnerSumOrderByAggregateInput = {
@@ -378,6 +400,10 @@ export type PartnerSumOrderByAggregateInput = {
 export type PartnerNullableScalarRelationFilter = {
   is?: Prisma.PartnerWhereInput | null
   isNot?: Prisma.PartnerWhereInput | null
+}
+
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
 }
 
 export type PartnerCreateNestedOneWithoutInventoryTxsInput = {
@@ -402,6 +428,7 @@ export type PartnerCreateWithoutInventoryTxsInput = {
   managerName?: string | null
   contact?: string | null
   email?: string | null
+  isActive?: boolean
 }
 
 export type PartnerUncheckedCreateWithoutInventoryTxsInput = {
@@ -411,6 +438,7 @@ export type PartnerUncheckedCreateWithoutInventoryTxsInput = {
   managerName?: string | null
   contact?: string | null
   email?: string | null
+  isActive?: boolean
 }
 
 export type PartnerCreateOrConnectWithoutInventoryTxsInput = {
@@ -435,6 +463,7 @@ export type PartnerUpdateWithoutInventoryTxsInput = {
   managerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type PartnerUncheckedUpdateWithoutInventoryTxsInput = {
@@ -444,6 +473,7 @@ export type PartnerUncheckedUpdateWithoutInventoryTxsInput = {
   managerName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   contact?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 
@@ -484,6 +514,7 @@ export type PartnerSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   managerName?: boolean
   contact?: boolean
   email?: boolean
+  isActive?: boolean
   inventoryTxs?: boolean | Prisma.Partner$inventoryTxsArgs<ExtArgs>
   _count?: boolean | Prisma.PartnerCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["partner"]>
@@ -495,6 +526,7 @@ export type PartnerSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   managerName?: boolean
   contact?: boolean
   email?: boolean
+  isActive?: boolean
 }, ExtArgs["result"]["partner"]>
 
 export type PartnerSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -504,6 +536,7 @@ export type PartnerSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   managerName?: boolean
   contact?: boolean
   email?: boolean
+  isActive?: boolean
 }, ExtArgs["result"]["partner"]>
 
 export type PartnerSelectScalar = {
@@ -513,9 +546,10 @@ export type PartnerSelectScalar = {
   managerName?: boolean
   contact?: boolean
   email?: boolean
+  isActive?: boolean
 }
 
-export type PartnerOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "partnerType" | "managerName" | "contact" | "email", ExtArgs["result"]["partner"]>
+export type PartnerOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "partnerType" | "managerName" | "contact" | "email" | "isActive", ExtArgs["result"]["partner"]>
 export type PartnerInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   inventoryTxs?: boolean | Prisma.Partner$inventoryTxsArgs<ExtArgs>
   _count?: boolean | Prisma.PartnerCountOutputTypeDefaultArgs<ExtArgs>
@@ -535,6 +569,7 @@ export type $PartnerPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     managerName: string | null
     contact: string | null
     email: string | null
+    isActive: boolean
   }, ExtArgs["result"]["partner"]>
   composites: {}
 }
@@ -965,6 +1000,7 @@ export interface PartnerFieldRefs {
   readonly managerName: Prisma.FieldRef<"Partner", 'String'>
   readonly contact: Prisma.FieldRef<"Partner", 'String'>
   readonly email: Prisma.FieldRef<"Partner", 'String'>
+  readonly isActive: Prisma.FieldRef<"Partner", 'Boolean'>
 }
     
 

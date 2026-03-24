@@ -52,6 +52,7 @@ model Partner {
   managerName String? @map("manager_name")
   contact     String?
   email       String?
+  isActive   Boolean  @default(true) @map("is_active")
 
   inventoryTxs InventoryTx[]
 
@@ -124,6 +125,7 @@ model Item {
   barcodes     Barcode[]
   targetUnits  TargetUnit[]
   inventoryTxs InventoryTx[]
+  isActive   Boolean  @default(true) @map("is_active")
 
   @@map("item")
 }

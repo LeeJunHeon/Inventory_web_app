@@ -118,7 +118,8 @@ export const PartnerScalarFieldEnum = {
   partnerType: 'partnerType',
   managerName: 'managerName',
   contact: 'contact',
-  email: 'email'
+  email: 'email',
+  isActive: 'isActive'
 } as const
 
 export type PartnerScalarFieldEnum = (typeof PartnerScalarFieldEnum)[keyof typeof PartnerScalarFieldEnum]
@@ -171,7 +172,8 @@ export const ItemScalarFieldEnum = {
   name: 'name',
   unit: 'unit',
   minStockQty: 'minStockQty',
-  note: 'note'
+  note: 'note',
+  isActive: 'isActive'
 } as const
 
 export type ItemScalarFieldEnum = (typeof ItemScalarFieldEnum)[keyof typeof ItemScalarFieldEnum]
