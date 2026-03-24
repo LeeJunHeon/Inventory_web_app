@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 
 // GET /api/admin/users — 사용자 + 권한 목록
 export async function GET() {
@@ -109,5 +110,55 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("POST /api/admin/users error:", error);
     return NextResponse.json({ error: "사용자 추가 실패" }, { status: 500 });
+  }
+}
+
+// DELETE /api/admin/users?userId=1 — 사용자 삭제 또는 비활성화
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await auth();
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get("userId");
+
+    if (!userId) {
+      return NextResponse.json({ error: "userId 파라미터 필요" }, { status: 400 });
+    }
+
+    const targetId = Number(userId);
+
+    // 본인 삭제 불가
+    if (session?.user?.email) {
+      const me = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { id: true },
+      });
+      if (me?.id === targetId) {
+        return NextResponse.json({ error: "본인 계정은 삭제할 수 없습니다." }, { status: 400 });
+      }
+    }
+
+    // 연결된 데이터 확인
+    const [txCount, logCount] = await Promise.all([
+      prisma.inventoryTx.count({ where: { userId: targetId } }),
+      prisma.targetLog.count({ where: { userId: targetId } }),
+    ]);
+
+    if (txCount > 0 || logCount > 0) {
+      // 연결된 데이터가 있으면 비활성 처리
+      await prisma.user.update({
+        where: { id: targetId },
+        data:  { isActive: "N" },
+      });
+      return NextResponse.json({ deactivated: true, message: "연결된 거래/로그 데이터가 있어 비활성 처리되었습니다." });
+    }
+
+    // 연결 데이터 없음: permission 먼저 삭제 후 user 삭제
+    await prisma.userTabPermission.deleteMany({ where: { userId: targetId } });
+    await prisma.user.delete({ where: { id: targetId } });
+
+    return NextResponse.json({ message: "사용자가 삭제되었습니다." });
+  } catch (error) {
+    console.error("DELETE /api/admin/users error:", error);
+    return NextResponse.json({ error: "삭제 실패" }, { status: 500 });
   }
 }

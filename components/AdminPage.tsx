@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, Shield, UserPlus, Loader2, X } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { Save, Shield, UserPlus, Loader2, X, Trash2 } from "lucide-react";
 
 interface UserPerm {
   id: number; name: string; email: string | null;
@@ -32,6 +33,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 }
 
 export default function AdminPage() {
+  const { data: session } = useSession();
   const [users, setUsers]     = useState<UserPerm[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
@@ -81,6 +83,30 @@ export default function AdminPage() {
       else        showToast("❌ 저장 실패");
     } catch { showToast("❌ 네트워크 오류"); }
     finally { setSaving(false); }
+  };
+
+  // 사용자 삭제
+  const handleDelete = async (user: UserPerm) => {
+    if (user.email && user.email === session?.user?.email) {
+      showToast("❌ 본인 계정은 삭제할 수 없습니다."); return;
+    }
+    if (!confirm(`"${user.name}" 사용자를 삭제하시겠습니까?\n(연결된 데이터가 있으면 비활성 처리됩니다)`)) return;
+
+    try {
+      const res  = await fetch(`/api/admin/users?userId=${user.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) { showToast(`❌ ${data.error || "삭제 실패"}`); return; }
+
+      if (data.deactivated) {
+        // 비활성 처리된 경우 목록 내 상태 업데이트
+        setUsers(prev => prev.map(u => u.id === user.id ? { ...u, isActive: false } : u));
+        showToast(`⚠️ ${data.message}`);
+      } else {
+        // 실제 삭제된 경우 목록에서 제거
+        setUsers(prev => prev.filter(u => u.id !== user.id));
+        showToast("✅ 사용자가 삭제되었습니다.");
+      }
+    } catch { showToast("❌ 네트워크 오류"); }
   };
 
   // 사용자 추가
@@ -188,11 +214,12 @@ export default function AdminPage() {
                 {PERM_LABELS.map((p) => (
                   <th key={p.key} className="text-center text-xs font-semibold text-gray-500 px-3 py-3">{p.label}</th>
                 ))}
+                <th className="text-center text-xs font-semibold text-gray-500 px-3 py-3">삭제</th>
               </tr>
             </thead>
             <tbody>
               {users.length === 0 ? (
-                <tr><td colSpan={4 + PERM_LABELS.length} className="px-5 py-12 text-center text-sm text-gray-400">등록된 사용자가 없습니다</td></tr>
+                <tr><td colSpan={5 + PERM_LABELS.length} className="px-5 py-12 text-center text-sm text-gray-400">등록된 사용자가 없습니다</td></tr>
               ) : users.map((user) => (
                 <tr key={user.id} className={`border-b border-gray-50 ${!user.isActive ? "opacity-50" : ""}`}>
                   <td className="px-5 py-3">
@@ -219,6 +246,16 @@ export default function AdminPage() {
                       <Toggle checked={user.perms[p.key]} onChange={(v) => updatePerm(user.id, p.key, v)} />
                     </td>
                   ))}
+                  <td className="px-3 py-3 text-center">
+                    <button
+                      onClick={() => handleDelete(user)}
+                      disabled={user.email === session?.user?.email}
+                      className="p-1.5 rounded-lg hover:bg-rose-100 text-gray-300 hover:text-rose-500 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                      title={user.email === session?.user?.email ? "본인 계정은 삭제 불가" : "삭제"}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -245,6 +282,14 @@ export default function AdminPage() {
                   {user.role === "admin" ? "관리자" : "직원"}
                 </span>
                 <Toggle checked={user.isActive} onChange={() => toggleActive(user.id)} />
+                <button
+                  onClick={() => handleDelete(user)}
+                  disabled={user.email === session?.user?.email}
+                  className="p-1.5 rounded-lg hover:bg-rose-100 text-gray-300 hover:text-rose-500 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  title={user.email === session?.user?.email ? "본인 계정은 삭제 불가" : "삭제"}
+                >
+                  <Trash2 size={15} />
+                </button>
               </div>
             </div>
             <div className="grid grid-cols-4 gap-2">
