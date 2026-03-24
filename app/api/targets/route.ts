@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// GET /api/targets?barcode=T-0187 — 바코드로 타겟 조회 또는 전체 로그
+// GET /api/targets?barcode=T-0187&page=1&limit=50
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const barcode = searchParams.get("barcode") || "";
+    const page    = Math.max(1, parseInt(searchParams.get("page")  || "1", 10));
+    const limit   = Math.max(1, parseInt(searchParams.get("limit") || "50", 10));
+    const skip    = (page - 1) * limit;
 
-    // 바코드 지정 시: 해당 타겟 정보 + 로그
+    // 바코드 지정 시: 해당 타겟 정보 + 로그 (페이지네이션 적용)
     if (barcode) {
       const bc = await prisma.barcode.findFirst({
         where: { code: { equals: barcode, mode: "insensitive" } },
@@ -21,13 +24,20 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "타겟을 찾을 수 없습니다" }, { status: 404 });
       }
 
-      const logs = await prisma.targetLog.findMany({
-        where: { targetUnitId: bc.targetUnit.id },
-        include: { location: true, user: true },
-        orderBy: { loggedAt: "desc" },
-      });
+      const where = { targetUnitId: bc.targetUnit.id };
+      const [total, logs] = await Promise.all([
+        prisma.targetLog.count({ where }),
+        prisma.targetLog.findMany({
+          where,
+          include: { location: true, user: true },
+          orderBy: { loggedAt: "desc" },
+          skip,
+          take: limit,
+        }),
+      ]);
 
       return NextResponse.json({
+        total, page, limit,
         target: {
           id: bc.targetUnit.id,
           barcodeCode: bc.code,
@@ -52,23 +62,28 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // 바코드 미지정: 전체 타겟 로그
-    const logs = await prisma.targetLog.findMany({
-      orderBy: { loggedAt: "desc" },
-      take: 50,
-      include: {
-        location: true,
-        user: true,
-        targetUnit: {
-          include: {
-            barcodes: { take: 1 },
-            item: true,
+    // 바코드 미지정: 전체 타겟 로그 (페이지네이션 적용)
+    const [total, logs] = await Promise.all([
+      prisma.targetLog.count(),
+      prisma.targetLog.findMany({
+        orderBy: { loggedAt: "desc" },
+        skip,
+        take: limit,
+        include: {
+          location: true,
+          user: true,
+          targetUnit: {
+            include: {
+              barcodes: { take: 1 },
+              item: true,
+            },
           },
         },
-      },
-    });
+      }),
+    ]);
 
     return NextResponse.json({
+      total, page, limit,
       target: null,
       logs: logs.map((l) => ({
         id: l.id,

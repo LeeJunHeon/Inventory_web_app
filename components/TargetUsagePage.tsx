@@ -7,10 +7,14 @@ import { TARGET_STATUS_LABELS, formatWeight } from "@/lib/data";
 interface TargetInfo { id: number; barcodeCode: string; itemCode: string; itemName: string; materialName: string; status: string; memo: string; }
 interface LogItem { id: number; targetId: number; timestamp: string; type: string; weight: number | null; location: string; reason: string; userName: string; barcodeCode: string; itemName: string; }
 
+const PAGE_LIMIT = 50;
+
 export default function TargetUsagePage() {
   const [barcodeInput, setBarcodeInput]     = useState("");
   const [selectedTarget, setSelectedTarget] = useState<TargetInfo | null>(null);
   const [logs, setLogs]                     = useState<LogItem[]>([]);
+  const [total, setTotal]                   = useState(0);
+  const [page, setPage]                     = useState(1);
   const [loading, setLoading]               = useState(true);
   const [weight, setWeight]                 = useState("");
   const [location, setLocation]             = useState("");
@@ -24,37 +28,39 @@ export default function TargetUsagePage() {
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3000); };
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const res = await fetch("/api/targets");
-        if (res.ok) {
-          const data = await res.json();
-          setLogs(data.logs || []);
-        }
-      } catch (e) { console.error(e); }
-      finally { setLoading(false); }
-    })();
-  }, []);
-
-  const handleSearch = async () => {
-    const code = barcodeInput.trim();
-    if (!code) { setSelectedTarget(null); setSearchError(""); return; }
-    setLoading(true); setSearchError("");
+  const fetchLogs = async (targetPage: number, barcode?: string) => {
+    setLoading(true);
     try {
-      const res = await fetch(`/api/targets?barcode=${encodeURIComponent(code)}`);
+      const params = new URLSearchParams({ page: String(targetPage), limit: String(PAGE_LIMIT) });
+      if (barcode) params.set("barcode", barcode);
+      const res = await fetch(`/api/targets?${params}`);
       if (!res.ok) {
         const err = await res.json();
         setSearchError(err.error || "조회 실패");
-        setSelectedTarget(null); return;
+        setSelectedTarget(null);
+        return;
       }
       const data = await res.json();
-      setSelectedTarget(data.target);
       setLogs(data.logs || []);
+      setTotal(data.total ?? 0);
+      setPage(data.page ?? 1);
+      if (barcode) setSelectedTarget(data.target);
       setSearchError("");
     } catch { setSearchError("조회 중 오류가 발생했습니다."); }
     finally { setLoading(false); }
+  };
+
+  useEffect(() => { fetchLogs(1); }, []);
+
+  const handleSearch = async () => {
+    const code = barcodeInput.trim();
+    if (!code) {
+      setSelectedTarget(null);
+      setSearchError("");
+      fetchLogs(1);
+      return;
+    }
+    fetchLogs(1, code);
   };
 
   // 무게 측정값 저장
@@ -70,7 +76,7 @@ export default function TargetUsagePage() {
       if (!res.ok) { const e = await res.json(); showToast(e.error || "저장 실패"); return; }
       showToast("측정값이 저장되었습니다.");
       setWeight(""); setLocation(""); setReason("");
-      handleSearch();
+      fetchLogs(1, selectedTarget.barcodeCode);
     } catch { showToast("저장에 실패했습니다."); }
     finally { setSaving(false); }
   };
@@ -110,7 +116,7 @@ export default function TargetUsagePage() {
         body: JSON.stringify({ targetUnitId: selectedTarget.id, type: "폐기", weight: weight ? parseFloat(weight) : null, location, reason: reason || "수명 종료 폐기" }),
       });
       setDisposeConfirm(false);
-      handleSearch();
+      fetchLogs(1, selectedTarget.barcodeCode);
     } catch { showToast("처리에 실패했습니다."); }
     finally { setSaving(false); }
   };
@@ -241,40 +247,70 @@ export default function TargetUsagePage() {
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
           <h2 className="font-bold text-gray-900">{selectedTarget ? `${selectedTarget.barcodeCode} 측정 기록` : "전체 타겟 측정 기록"}</h2>
-          <span className="text-xs text-gray-400">{sorted.length}건</span>
+          <span className="text-xs text-gray-400">전체 {total.toLocaleString()}건</span>
         </div>
         {loading ? (
           <div className="flex items-center justify-center py-12"><Loader2 size={24} className="animate-spin text-blue-500" /></div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead><tr className="bg-gray-50 border-b border-gray-100">
-                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("timestamp")}><div className="flex items-center gap-1">시간 <SortIcon field="timestamp" /></div></th>
-                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">구분</th>
-                <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("weight")}><div className="flex items-center justify-end gap-1">무게(g) <SortIcon field="weight" /></div></th>
-                {!selectedTarget && <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">품목명</th>}
-                {!selectedTarget && <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">바코드</th>}
-                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">보관처</th>
-                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">사유</th>
-                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">작성자</th>
-              </tr></thead>
-              <tbody>
-                {sorted.map((log) => (
-                  <tr key={log.id} className="border-b border-gray-50 hover:bg-blue-50/30">
-                    <td className="px-5 py-3 text-sm text-gray-600">{log.timestamp}</td>
-                    <td className="px-5 py-3"><span className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${log.type === "폐기" ? "bg-rose-50 text-rose-700" : "bg-blue-50 text-blue-700"}`}>{log.type}</span></td>
-                    <td className="px-5 py-3 text-sm text-right font-mono font-semibold text-gray-900">{formatWeight(log.weight)}</td>
-                    {!selectedTarget && <td className="px-5 py-3 text-sm text-gray-600">{log.itemName}</td>}
-                    {!selectedTarget && <td className="px-5 py-3 text-sm font-mono text-gray-500">{log.barcodeCode}</td>}
-                    <td className="px-5 py-3 text-sm text-gray-600">{log.location}</td>
-                    <td className="px-5 py-3 text-sm text-gray-600">{log.reason}</td>
-                    <td className="px-5 py-3 text-sm text-gray-500">{log.userName}</td>
-                  </tr>
-                ))}
-                {sorted.length === 0 && <tr><td colSpan={8} className="px-5 py-12 text-center text-sm text-gray-400">측정 기록이 없습니다</td></tr>}
-              </tbody>
-            </table>
-          </div>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead><tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("timestamp")}><div className="flex items-center gap-1">시간 <SortIcon field="timestamp" /></div></th>
+                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">구분</th>
+                  <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("weight")}><div className="flex items-center justify-end gap-1">무게(g) <SortIcon field="weight" /></div></th>
+                  {!selectedTarget && <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">품목명</th>}
+                  {!selectedTarget && <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">바코드</th>}
+                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">보관처</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">사유</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">작성자</th>
+                </tr></thead>
+                <tbody>
+                  {sorted.map((log) => (
+                    <tr key={log.id} className="border-b border-gray-50 hover:bg-blue-50/30">
+                      <td className="px-5 py-3 text-sm text-gray-600">{log.timestamp}</td>
+                      <td className="px-5 py-3"><span className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${log.type === "폐기" ? "bg-rose-50 text-rose-700" : "bg-blue-50 text-blue-700"}`}>{log.type}</span></td>
+                      <td className="px-5 py-3 text-sm text-right font-mono font-semibold text-gray-900">{formatWeight(log.weight)}</td>
+                      {!selectedTarget && <td className="px-5 py-3 text-sm text-gray-600">{log.itemName}</td>}
+                      {!selectedTarget && <td className="px-5 py-3 text-sm font-mono text-gray-500">{log.barcodeCode}</td>}
+                      <td className="px-5 py-3 text-sm text-gray-600">{log.location}</td>
+                      <td className="px-5 py-3 text-sm text-gray-600">{log.reason}</td>
+                      <td className="px-5 py-3 text-sm text-gray-500">{log.userName}</td>
+                    </tr>
+                  ))}
+                  {sorted.length === 0 && <tr><td colSpan={8} className="px-5 py-12 text-center text-sm text-gray-400">측정 기록이 없습니다</td></tr>}
+                </tbody>
+              </table>
+            </div>
+
+            {/* 페이지네이션 */}
+            {total > PAGE_LIMIT && (
+              <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
+                <span className="text-xs text-gray-400">
+                  {((page - 1) * PAGE_LIMIT + 1).toLocaleString()}–{Math.min(page * PAGE_LIMIT, total).toLocaleString()} / {total.toLocaleString()}건
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => fetchLogs(page - 1, selectedTarget?.barcodeCode)}
+                    disabled={page <= 1}
+                    className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    이전
+                  </button>
+                  <span className="text-xs text-gray-500 min-w-[60px] text-center">
+                    {page} / {Math.ceil(total / PAGE_LIMIT)}
+                  </span>
+                  <button
+                    onClick={() => fetchLogs(page + 1, selectedTarget?.barcodeCode)}
+                    disabled={page >= Math.ceil(total / PAGE_LIMIT)}
+                    className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    다음
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
