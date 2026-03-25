@@ -51,6 +51,52 @@ export async function GET() {
     // 총 품목 수
     const totalItems = await prisma.item.count();
 
+    // 위치별 현황 집계
+    const locations = await prisma.location.findMany({
+      orderBy: { id: "asc" },
+      select: { id: true, name: true },
+    });
+
+    const locationSummary = await Promise.all(locations.map(async (loc) => {
+      const [locIn, locOut] = await Promise.all([
+        prisma.inventoryTx.groupBy({
+          by: ["itemId"],
+          where: { locationId: loc.id, txType: "입고" },
+          _sum: { qty: true },
+        }),
+        prisma.inventoryTx.groupBy({
+          by: ["itemId"],
+          where: { locationId: loc.id, txType: { in: ["출고", "불출"] } },
+          _sum: { qty: true },
+        }),
+      ]);
+
+      const inMap  = new Map(locIn.map(s  => [s.itemId, s._sum.qty || 0]));
+      const outMap = new Map(locOut.map(s => [s.itemId, s._sum.qty || 0]));
+      const allIds = [...new Set([...inMap.keys(), ...outMap.keys()])];
+
+      if (allIds.length === 0) {
+        return { locationId: loc.id, locationName: loc.name, totalItems: 0, shortageCount: 0 };
+      }
+
+      const itemsWithMin = await prisma.item.findMany({
+        where: { id: { in: allIds }, minStockQty: { gt: 0 } },
+        select: { id: true, minStockQty: true },
+      });
+      const minMap = new Map(itemsWithMin.map(i => [i.id, i.minStockQty]));
+
+      let locTotal = 0;
+      let locShortage = 0;
+      for (const itemId of allIds) {
+        const current = (inMap.get(itemId) || 0) - (outMap.get(itemId) || 0);
+        if (current > 0) locTotal++;
+        const min = minMap.get(itemId);
+        if (min && min > 0 && current < min) locShortage++;
+      }
+
+      return { locationId: loc.id, locationName: loc.name, totalItems: locTotal, shortageCount: locShortage };
+    }));
+
     // 최근 5건
     const recent = await prisma.inventoryTx.findMany({
       take: 5,
@@ -73,6 +119,7 @@ export async function GET() {
       },
       shortageCount,
       totalItems,
+      locationSummary,
       recent: recent.map((tx) => ({
         id: tx.id,
         date: tx.txDate.toISOString().split("T")[0].replace(/-/g, "."),

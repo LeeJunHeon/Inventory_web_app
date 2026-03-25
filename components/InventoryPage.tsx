@@ -8,10 +8,10 @@ import EditTransactionModal from "./EditTransactionModal";
 
 // ── CSV 다운로드 헬퍼 ──────────────────────────────────
 function downloadCSV(data: InventoryItem[], filename: string) {
-  const headers = ["ID", "날짜", "구분", "품목군", "품목코드", "품목명", "수량", "단가", "금액", "거래처", "담당자", "바코드", "메모"];
+  const headers = ["전표번호", "ID", "날짜", "구분", "품목군", "품목코드", "품목명", "수량", "단가", "금액", "거래처", "등록자", "바코드", "메모"];
   const rows = data.map(i => [
-    i.id, i.date, i.type, i.category, i.code, i.name,
-    i.qty, i.price, i.amount, i.partner, i.handler, i.barcode, i.memo,
+    i.txNo || "", i.id, i.date, i.type, i.category, i.code, i.name,
+    i.qty, i.price, i.amount, i.partner, i.userName ?? "", i.barcode, i.memo,
   ]);
   const csv = [headers, ...rows]
     .map(row => row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
@@ -166,6 +166,7 @@ export default function InventoryPage() {
               <table className="w-full">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100">
+                    <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">전표번호</th>
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("id")}><div className="flex items-center gap-1">ID <SortIcon field="id" /></div></th>
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("date")}><div className="flex items-center gap-1">날짜 <SortIcon field="date" /></div></th>
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">구분</th>
@@ -175,14 +176,16 @@ export default function InventoryPage() {
                     <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("qty")}><div className="flex items-center justify-end gap-1">수량 <SortIcon field="qty" /></div></th>
                     <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("amount")}><div className="flex items-center justify-end gap-1">금액 <SortIcon field="amount" /></div></th>
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">거래처</th>
+                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">등록자</th>
                     <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">작업</th>
                   </tr>
                 </thead>
                 <tbody>
                   {sorted.length === 0 ? (
-                    <tr><td colSpan={10} className="px-5 py-12 text-center text-sm text-gray-400">데이터가 없습니다</td></tr>
+                    <tr><td colSpan={12} className="px-5 py-12 text-center text-sm text-gray-400">데이터가 없습니다</td></tr>
                   ) : sorted.map((item) => (
                     <tr key={item.id} className="border-b border-gray-50 hover:bg-blue-50/30 transition-colors group">
+                      <td className="px-4 py-3.5 text-sm font-mono font-semibold text-gray-700">{item.txNo || "-"}</td>
                       <td className="px-5 py-3.5 text-sm text-gray-500 font-mono">{item.id}</td>
                       <td className="px-5 py-3.5 text-sm text-gray-600">{item.date}</td>
                       <td className="px-5 py-3.5">
@@ -196,6 +199,7 @@ export default function InventoryPage() {
                       <td className="px-5 py-3.5 text-sm text-right font-semibold text-gray-900">{formatQty(item.qty)}</td>
                       <td className="px-5 py-3.5 text-sm text-right text-gray-600">{formatPrice(item.amount)}</td>
                       <td className="px-5 py-3.5 text-sm text-gray-600">{item.partner}</td>
+                      <td className="px-5 py-3.5 text-sm text-gray-500">{item.userName ?? "-"}</td>
                       <td className="px-5 py-3.5">
                         <div className="flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button onClick={() => setEditItem(item)} className="p-1.5 rounded-lg hover:bg-blue-100 text-gray-400 hover:text-blue-600" title="수정"><Edit size={15} /></button>
@@ -228,7 +232,10 @@ export default function InventoryPage() {
                     </span>
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[item.category] || ""}`}>{item.category}</span>
                   </div>
-                  <span className="text-xs text-gray-400">{item.date}</span>
+                  <div className="text-right">
+                    {item.txNo && <p className="text-xs font-mono font-semibold text-gray-600">#{item.txNo}</p>}
+                    <p className="text-xs text-gray-400">{item.date}</p>
+                  </div>
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{item.name}</p>
@@ -241,7 +248,8 @@ export default function InventoryPage() {
                   <div className="flex items-center gap-4">
                     <div><p className="text-[10px] text-gray-400">수량</p><p className="text-sm font-bold text-gray-900">{formatQty(item.qty)}</p></div>
                     <div><p className="text-[10px] text-gray-400">금액</p><p className="text-sm text-gray-600">{formatPrice(item.amount)}</p></div>
-                    <div><p className="text-[10px] text-gray-400">거래처</p><p className="text-sm text-gray-600 max-w-[120px] truncate">{item.partner}</p></div>
+                    <div><p className="text-[10px] text-gray-400">거래처</p><p className="text-sm text-gray-600 max-w-[120px] truncate">{item.partner || "-"}</p></div>
+                    {item.userName && <div><p className="text-[10px] text-gray-400">등록자</p><p className="text-sm text-gray-500 max-w-[80px] truncate">{item.userName}</p></div>}
                   </div>
                   <div className="flex gap-1">
                     <button onClick={() => setEditItem(item)} className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600"><Edit size={16} /></button>

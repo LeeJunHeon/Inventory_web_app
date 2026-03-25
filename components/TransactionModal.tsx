@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import { X, ScanLine, PenLine } from "lucide-react";
 import { TYPE_COLORS, CATEGORY_COLORS } from "@/lib/data";
 
 interface TransactionModalProps {
@@ -10,52 +10,66 @@ interface TransactionModalProps {
   onSuccess?: () => void;
 }
 
-interface ItemOption    { id: number; code: string; name: string; }
-interface PartnerOption { id: number; name: string; type: string; }
+interface ItemOption     { id: number; code: string; name: string; }
+interface PartnerOption  { id: number; name: string; type: string; }
+interface LocationOption { id: number; name: string; }
 
 export default function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModalProps) {
-  const [type, setType]     = useState<"입고" | "출고" | "불출">("입고");
+  const [type, setType]         = useState<"입고" | "출고" | "불출">("입고");
   const [category, setCategory] = useState("웨이퍼");
 
-  const [date, setDate]           = useState(new Date().toISOString().split("T")[0]);
-  const [itemId, setItemId]       = useState<number | null>(null);
-  const [itemCode, setItemCode]   = useState("");
-  const [itemName, setItemName]   = useState("");
+  const [date, setDate]             = useState(new Date().toISOString().split("T")[0]);
+  const [itemId, setItemId]         = useState<number | null>(null);
+  const [itemCode, setItemCode]     = useState("");
+  const [itemName, setItemName]     = useState("");
   const [barcodeInput, setBarcodeInput] = useState("");
-  const [barcodeId, setBarcodeId] = useState<number | null>(null);
-  const [quantity, setQuantity]   = useState("");
-  const [unitPrice, setUnitPrice] = useState("");
-  // ✅ Bug2 수정: partnerId 대신 name으로 관리 (DB 조회 후 ID 매핑)
-  const [partnerId, setPartnerId] = useState<number | null>(null);
+  const [barcodeId, setBarcodeId]     = useState<number | null>(null);
+  const [targetUnitId, setTargetUnitId] = useState<number | null>(null);
+  const [refTxNo, setRefTxNo]         = useState<string | null>(null);
+  const [directInput, setDirectInput] = useState(false); // false=스캔모드, true=직접입력모드
+  const [quantity, setQuantity]     = useState("");
+  const [unitPrice, setUnitPrice]   = useState("");
+  const [partnerId, setPartnerId]   = useState<number | null>(null);
   const [partnerName, setPartnerName] = useState("");
-  const [memo, setMemo]           = useState("");
-  const [saving, setSaving]       = useState(false);
-  const [error, setError]         = useState("");
+  const [memo, setMemo]             = useState("");
+  const [saving, setSaving]         = useState(false);
+  const [error, setError]           = useState("");
 
-  const [itemOptions, setItemOptions]       = useState<ItemOption[]>([]);
-  const [partnerOptions, setPartnerOptions] = useState<PartnerOption[]>([]);
-  // ✅ Bug3 수정: showItemSelector 실제로 사용
+  const [itemOptions, setItemOptions]         = useState<ItemOption[]>([]);
+  const [partnerOptions, setPartnerOptions]   = useState<PartnerOption[]>([]);
+  const [locationOptions, setLocationOptions] = useState<LocationOption[]>([]);
+  const [locationId, setLocationId]           = useState<number>(1);
   const [showItemSelector, setShowItemSelector] = useState(false);
   const selectorRef = useRef<HTMLDivElement>(null);
 
-  // 모달 열릴 때 품목 + 거래처 로드
+  // 모달 열릴 때 거래처 + 위치 로드 (한 번만)
   useEffect(() => {
     if (!isOpen) return;
-    fetch(`/api/items?category=${encodeURIComponent(category)}`)
-      .then(r => r.json()).then(setItemOptions).catch(console.error);
-    // ✅ Bug2 수정: 거래처 API에서 동적 로드
     fetch("/api/partners")
       .then(r => r.json()).then(setPartnerOptions).catch(console.error);
-  }, [isOpen, category]);
+    fetch("/api/locations")
+      .then(r => r.json()).then((locs: LocationOption[]) => {
+        // 거래 입력용: 본사(id=1), 공덕(id=2)만 표시
+        const txLocs = locs.filter(l => l.id === 1 || l.id === 2);
+        const filtered = txLocs.length > 0 ? txLocs : locs;
+        setLocationOptions(filtered);
+        // id=1이 없으면 첫 번째 항목을 기본값으로
+        if (!filtered.find(l => l.id === 1) && filtered.length > 0) {
+          setLocationId(filtered[0].id);
+        }
+      }).catch(console.error);
+  }, [isOpen]);
 
   // 모달 닫힐 때 전체 폼 초기화
   useEffect(() => {
     if (!isOpen) {
       setType("입고"); setCategory("웨이퍼"); setDate(new Date().toISOString().split("T")[0]);
       setItemId(null); setItemCode(""); setItemName("");
-      setBarcodeInput(""); setBarcodeId(null);
+      setBarcodeInput(""); setBarcodeId(null); setTargetUnitId(null); setRefTxNo(null);
+      setDirectInput(false);
       setQuantity(""); setUnitPrice("");
       setPartnerId(null); setPartnerName("");
+      setLocationId(1);
       setMemo(""); setError(""); setShowItemSelector(false);
     }
   }, [isOpen]);
@@ -72,31 +86,60 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   // 드롭다운 외부 클릭 시 닫기
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (selectorRef.current && !selectorRef.current.contains(e.target as Node)) {
+      if (selectorRef.current && !selectorRef.current.contains(e.target as Node))
         setShowItemSelector(false);
-      }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // 바코드 스캔 → 품목 자동 입력 (카테고리 자동 전환 + barcodeId 저장)
+  // 직접입력 토글 시 바코드/품목 초기화
+  const handleToggleDirectInput = () => {
+    setDirectInput(v => !v);
+    setBarcodeInput(""); setBarcodeId(null); setTargetUnitId(null); setRefTxNo(null);
+    setItemId(null); setItemCode(""); setItemName("");
+    setError("");
+  };
+
+  // 바코드 조회 — 출고/불출: /lookup (refTxNo 포함), 입고: /barcodes?search
   const handleBarcodeLookup = async () => {
-    if (!barcodeInput) return;
+    if (!barcodeInput.trim()) return;
+    setError("");
     try {
-      const res = await fetch(`/api/barcodes?search=${encodeURIComponent(barcodeInput)}`);
-      const data = await res.json();
-      if (data.length > 0) {
-        const bc = data[0];
-        setBarcodeId(bc.id);
+      if (type === "출고" || type === "불출") {
+        const res = await fetch(`/api/barcodes/lookup?code=${encodeURIComponent(barcodeInput.trim())}`);
+        const bc = await res.json();
+        if (!res.ok) { setError(bc.error || "바코드 조회 실패"); return; }
+        setBarcodeId(bc.barcodeId);
+        setTargetUnitId(bc.targetUnitId ?? null);
+        setRefTxNo(bc.refTxNo ?? null);
+        if (bc.category && bc.category !== category) {
+          // setCategory → category useEffect가 setItemCode/setItemName을 "" 로 초기화함
+          // await 이후에 덮어써야 하므로 setItemCode/setItemName은 아래로 이동
+          setCategory(bc.category);
+          const items = await fetch(`/api/items?category=${encodeURIComponent(bc.category)}`).then(r => r.json());
+          setItemOptions(items);
+          const found = items.find((i: ItemOption) => i.id === bc.itemId);
+          if (found) setItemId(found.id);
+        } else {
+          if (bc.itemId) setItemId(bc.itemId);
+        }
+        // useEffect([category])가 초기화한 뒤에 덮어씀
         setItemCode(bc.itemCode);
         setItemName(bc.itemName);
-        // 바코드의 카테고리가 현재 선택과 다르면 자동 전환
+      } else {
+        // 입고: 단순 바코드 조회
+        const res = await fetch(`/api/barcodes?search=${encodeURIComponent(barcodeInput.trim())}`);
+        const data = await res.json();
+        if (!Array.isArray(data) || data.length === 0) { setError("해당 바코드를 찾을 수 없습니다. (비활성 바코드이거나 미등록 바코드)"); return; }
+        const bc = data[0];
+        setBarcodeId(bc.id);
+        setTargetUnitId(bc.targetUnitId ?? null);
         if (bc.category && bc.category !== category) {
+          // setCategory → category useEffect가 setItemCode/setItemName을 "" 로 초기화함
+          // await 이후에 덮어써야 하므로 setItemCode/setItemName은 아래로 이동
           setCategory(bc.category);
-          // 카테고리 변경 후 아이템 목록이 새로 로드되므로, 직접 아이템 조회
-          const itemRes = await fetch(`/api/items?category=${encodeURIComponent(bc.category)}`);
-          const items = await itemRes.json();
+          const items = await fetch(`/api/items?category=${encodeURIComponent(bc.category)}`).then(r => r.json());
           setItemOptions(items);
           const found = items.find((i: ItemOption) => i.code === bc.itemCode);
           if (found) setItemId(found.id);
@@ -104,8 +147,9 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           const found = itemOptions.find(i => i.code === bc.itemCode);
           if (found) setItemId(found.id);
         }
-      } else {
-        setError("해당 바코드를 찾을 수 없습니다.");
+        // useEffect([category])가 초기화한 뒤에 덮어씀
+        setItemCode(bc.itemCode);
+        setItemName(bc.itemName);
       }
     } catch { setError("바코드 조회 실패"); }
   };
@@ -115,24 +159,26 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
 
   // 저장
   const handleSave = async () => {
-    if (!itemId)                              { setError("품목을 선택해주세요.");  return; }
-    if (!quantity || Number(quantity) <= 0)   { setError("수량을 입력해주세요.");  return; }
+    if (!itemId)                            { setError("품목을 선택해주세요.");  return; }
+    if (!quantity || Number(quantity) <= 0) { setError("수량을 입력해주세요.");  return; }
     setError(""); setSaving(true);
     try {
       const res = await fetch("/api/inventory", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          date, type, itemId,
-          quantity:  Number(quantity),
-          unitPrice: Number(unitPrice) || 0,
-          currency:  "KRW",
-          amount,
+          txDate:    date,
+          txType:    type,
+          itemId,
+          qty:       Number(quantity),
+          unitPrice: Number(unitPrice) || null,
+          amount:    amount || null,
           partnerId: partnerId || null,
-          handlerName: partnerId ? null : (partnerName || null),
-          memo,
-          barcodeId: barcodeId || null,
-          location: null,
+          memo:      memo || null,
+          barcodeId:    barcodeId    || null,
+          targetUnitId: targetUnitId || null,
+          refTxNo:      refTxNo      || null,
+          locationId:   locationId,
         }),
       });
       if (!res.ok) {
@@ -169,7 +215,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
             <label className="block text-sm font-semibold text-gray-700 mb-2">구분</label>
             <div className="flex gap-2">
               {(["입고", "출고", "불출"] as const).map((t) => (
-                <button key={t} onClick={() => setType(t)}
+                <button key={t} onClick={() => { setType(t); setBarcodeInput(""); setBarcodeId(null); setRefTxNo(null); }}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                     type === t
                       ? `${TYPE_COLORS[t].bg} ${TYPE_COLORS[t].text} ${TYPE_COLORS[t].border} border-2 shadow-sm`
@@ -184,6 +230,55 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
             <label className="block text-sm font-semibold text-gray-700 mb-2">날짜</label>
             <input type="date" value={date} onChange={e => setDate(e.target.value)}
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+          </div>
+
+          {/* 바코드 — 입고/출고/불출 모두 표시 */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-semibold text-gray-700">바코드</label>
+              <button onClick={handleToggleDirectInput}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  directInput
+                    ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                }`}>
+                {directInput ? <><PenLine size={12} />직접 입력 중</> : <><ScanLine size={12} />스캔 모드</>}
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={barcodeInput}
+                onChange={e => setBarcodeInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && !directInput && handleBarcodeLookup()}
+                placeholder={directInput ? "직접 입력 모드 (바코드 비활성)" : "바코드를 스캔하거나 입력하세요"}
+                disabled={directInput}
+                className={`flex-1 px-4 py-2.5 border rounded-xl text-sm outline-none transition-colors ${
+                  directInput
+                    ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"
+                    : "border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                }`}
+              />
+              <button onClick={handleBarcodeLookup} disabled={directInput}
+                className="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed">
+                조회
+              </button>
+            </div>
+            <p className="mt-1.5 text-xs text-gray-400">
+              {directInput
+                ? "품목을 직접 선택합니다 (바코드 미연결)"
+                : "바코드를 스캔하면 품목이 자동으로 선택됩니다"}
+            </p>
+            {/* 출고/불출에서 refTxNo 자동 연결 안내 */}
+            {(type === "출고" || type === "불출") && refTxNo && (
+              <p className="mt-1 text-xs text-blue-600 font-medium">입고 참조: {refTxNo}</p>
+            )}
+            {/* 타겟 ID 연결 안내 */}
+            {targetUnitId && (
+              <span className="inline-flex items-center mt-1.5 gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700">
+                타겟 ID: TU-{String(targetUnitId).padStart(3, "0")} 연결됨
+              </span>
+            )}
           </div>
 
           {/* 품목군 */}
@@ -201,27 +296,8 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
             </div>
           </div>
 
-          {/* 바코드 (출고/불출 시) */}
-          {(type === "출고" || type === "불출") && (
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">바코드 스캔</label>
-              <div className="flex gap-2">
-                <input type="text" value={barcodeInput}
-                  onChange={e => setBarcodeInput(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && handleBarcodeLookup()}
-                  placeholder="바코드를 스캔하거나 입력하세요"
-                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
-                <button onClick={handleBarcodeLookup}
-                  className="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap">
-                  조회
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* ✅ Bug3 수정: 품목코드 / 품목명 — 선택 버튼에 드롭다운 연결 */}
+          {/* 품목코드 / 품목명 */}
           <div className="grid grid-cols-2 gap-4">
-            {/* 품목코드 + 선택 버튼 */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">품목코드</label>
               <div className="relative" ref={selectorRef}>
@@ -234,8 +310,6 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                     선택
                   </button>
                 </div>
-
-                {/* 드롭다운 목록 */}
                 {showItemSelector && (
                   <div className="absolute left-0 right-0 z-20 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-52 overflow-y-auto">
                     {itemOptions.length === 0 ? (
@@ -244,9 +318,9 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                       itemOptions.map(opt => (
                         <button key={opt.id}
                           onClick={() => {
-                            setItemId(opt.id);
-                            setItemCode(opt.code);
-                            setItemName(opt.name);
+                            setItemId(opt.id); setItemCode(opt.code); setItemName(opt.name);
+                            // 직접 선택 시 바코드/타겟 연결 항상 해제
+                            setBarcodeId(null); setTargetUnitId(null); setRefTxNo(null);
                             setShowItemSelector(false);
                           }}
                           className="w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-0">
@@ -259,8 +333,6 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 )}
               </div>
             </div>
-
-            {/* 품목명 */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">품목명</label>
               <input value={itemName} readOnly placeholder="자동 입력"
@@ -287,7 +359,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
             </div>
           </div>
 
-          {/* ✅ Bug2 수정: 거래처 — DB에서 동적 로드 + value/onChange 연결 */}
+          {/* 거래처 / 불출처 */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               {type === "불출" ? "불출처" : "거래처"}
@@ -304,6 +376,21 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
               <option value="">선택하세요</option>
               {partnerOptions.map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 위치 */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              위치 <span className="text-rose-500">*</span>
+            </label>
+            <select
+              value={locationId}
+              onChange={e => setLocationId(Number(e.target.value))}
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+              {locationOptions.map(loc => (
+                <option key={loc.id} value={loc.id}>{loc.name}</option>
               ))}
             </select>
           </div>

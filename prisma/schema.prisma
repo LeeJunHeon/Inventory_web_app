@@ -48,7 +48,6 @@ model TxReason {
 model Partner {
   id          Int     @id @default(autoincrement())
   name        String  @unique
-  partnerType String  @default("VENDOR") @map("partner_type") // VENDOR | CUSTOMER | RESEARCH | INTERNAL
   managerName String? @map("manager_name")
   contact     String?
   email       String?

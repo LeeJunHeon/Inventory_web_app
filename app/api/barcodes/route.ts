@@ -10,31 +10,53 @@ export async function GET(request: NextRequest) {
 
     const where: any = {};
     if (category && category !== "전체") {
-      where.item = { category: { name: category } };
+      where.OR = [
+        { item: { category: { name: category } } },
+        { targetUnit: { item: { category: { name: category } } } },
+      ];
     }
     if (search) {
-      where.OR = [
+      // 검색어(스캔 조회)가 있을 때만 비활성 바코드 제외
+      // BarcodePage 목록에서는 비활성도 보여야 하므로 search 없는 경우는 필터 미적용
+      where.isActive = { not: "N" };
+      const searchOR = [
         { code: { contains: search, mode: "insensitive" } },
         { item: { code: { contains: search, mode: "insensitive" } } },
         { item: { name: { contains: search, mode: "insensitive" } } },
+        { targetUnit: { item: { code: { contains: search, mode: "insensitive" } } } },
+        { targetUnit: { item: { name: { contains: search, mode: "insensitive" } } } },
       ];
+      // category 필터와 search가 동시에 적용될 때 AND 조건으로 결합
+      if (where.OR) {
+        where.AND = [{ OR: where.OR }, { OR: searchOR }];
+        delete where.OR;
+      } else {
+        where.OR = searchOR;
+      }
     }
 
     const barcodes = await prisma.barcode.findMany({
       where,
-      include: { item: { include: { category: true } }, targetUnit: true },
+      include: {
+        item: { include: { category: true } },
+        targetUnit: { include: { item: { include: { category: true } } } },
+      },
       orderBy: { id: "desc" },
     });
 
-    return NextResponse.json(barcodes.map((b) => ({
-      id:       b.id,
-      code:     b.code,
-      itemCode: b.item?.code || "",
-      itemName: b.item?.name || "",
-      category: b.item?.category.name || "",
-      targetId: b.targetUnit ? `TU-${String(b.targetUnit.id).padStart(3, "0")}` : "",
-      isActive: b.isActive,
-    })));
+    return NextResponse.json(barcodes.map((b) => {
+      // barcode.item 우선, 없으면 targetUnit.item에서 품목 정보 추출
+      const item = b.item ?? b.targetUnit?.item ?? null;
+      return {
+        id:           b.id,
+        code:         b.code,
+        itemCode:     item?.code     || "",
+        itemName:     item?.name     || "",
+        category:     item?.category?.name || "",
+        targetUnitId: b.targetUnit?.id ?? null,
+        isActive:     b.isActive,
+      };
+    }));
   } catch (error) {
     console.error("GET /api/barcodes error:", error);
     return NextResponse.json({ error: "바코드 조회 실패" }, { status: 500 });

@@ -1,6 +1,7 @@
 // ──────── 타입 정의 ────────
 export interface InventoryItem {
   id: number;
+  txNo: string;
   date: string;
   type: "입고" | "출고" | "불출";
   category: string;
@@ -15,6 +16,8 @@ export interface InventoryItem {
   memo: string;
   barcode: string;
   location: string;
+  locationId: number;
+  userName: string | null;
   waferResistance: string;
   waferThickness: string;
   waferDirection: string;

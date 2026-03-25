@@ -7,6 +7,8 @@ import { TARGET_STATUS_LABELS, formatWeight } from "@/lib/data";
 interface TargetInfo { id: number; barcodeCode: string; itemCode: string; itemName: string; materialName: string; status: string; memo: string; }
 interface LogItem { id: number; targetId: number; timestamp: string; type: string; weight: number | null; location: string; reason: string; userName: string; barcodeCode: string; itemName: string; }
 
+interface LocationOption { id: number; name: string; }
+
 const PAGE_LIMIT = 50;
 
 export default function TargetUsagePage() {
@@ -17,7 +19,7 @@ export default function TargetUsagePage() {
   const [page, setPage]                     = useState(1);
   const [loading, setLoading]               = useState(true);
   const [weight, setWeight]                 = useState("");
-  const [location, setLocation]             = useState("");
+  const [locationId, setLocationId]         = useState<number | "">("");
   const [reason, setReason]                 = useState("");
   const [sortField, setSortField]           = useState("timestamp");
   const [sortDir, setSortDir]               = useState<"asc" | "desc">("desc");
@@ -25,8 +27,17 @@ export default function TargetUsagePage() {
   const [disposeConfirm, setDisposeConfirm] = useState(false);
   const [toast, setToast]                   = useState("");
   const [searchError, setSearchError]       = useState("");
+  const [locationOptions, setLocationOptions] = useState<LocationOption[]>([]);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3000); };
+
+  // 장비 위치 목록 로드 (마운트 시 1회)
+  useEffect(() => {
+    fetch("/api/locations?type=target")
+      .then(r => r.json())
+      .then(setLocationOptions)
+      .catch(console.error);
+  }, []);
 
   const fetchLogs = async (targetPage: number, barcode?: string) => {
     setLoading(true);
@@ -71,11 +82,11 @@ export default function TargetUsagePage() {
       const res = await fetch("/api/targets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUnitId: selectedTarget.id, type: "측정", weight: parseFloat(weight), location, reason }),
+        body: JSON.stringify({ targetUnitId: selectedTarget.id, type: "측정", weight: parseFloat(weight), locationId: locationId || null, reason }),
       });
       if (!res.ok) { const e = await res.json(); showToast(e.error || "저장 실패"); return; }
       showToast("측정값이 저장되었습니다.");
-      setWeight(""); setLocation(""); setReason("");
+      setWeight(""); setLocationId(""); setReason("");
       fetchLogs(1, selectedTarget.barcodeCode);
     } catch { showToast("저장에 실패했습니다."); }
     finally { setSaving(false); }
@@ -113,7 +124,7 @@ export default function TargetUsagePage() {
       await fetch("/api/targets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUnitId: selectedTarget.id, type: "폐기", weight: weight ? parseFloat(weight) : null, location, reason: reason || "수명 종료 폐기" }),
+        body: JSON.stringify({ targetUnitId: selectedTarget.id, type: "폐기", weight: weight ? parseFloat(weight) : null, locationId: locationId || null, reason: reason || "수명 종료 폐기" }),
       });
       setDisposeConfirm(false);
       fetchLogs(1, selectedTarget.barcodeCode);
@@ -172,74 +183,91 @@ export default function TargetUsagePage() {
 
       {/* 타겟 정보 + 측정 입력 */}
       {selectedTarget && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {/* 타겟 정보 카드 */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
-            <div className="flex items-center justify-between">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
+
+          {/* 왼쪽: 타겟 정보 카드 */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 flex flex-col">
+            {/* 헤더 */}
+            <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold text-gray-900">타겟 정보</h2>
               {statusInfo && <span className={`text-xs font-semibold px-3 py-1 rounded-full ${statusInfo.color}`}>{statusInfo.label}</span>}
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><p className="text-xs text-gray-400 mb-1">타겟 ID</p><p className="text-sm font-semibold text-gray-900">{selectedTarget.id}</p></div>
-              <div><p className="text-xs text-gray-400 mb-1">바코드</p><p className="text-sm font-mono font-semibold text-gray-900">{selectedTarget.barcodeCode}</p></div>
-              <div><p className="text-xs text-gray-400 mb-1">품목코드</p><p className="text-sm text-gray-700">{selectedTarget.itemCode}</p></div>
-              <div><p className="text-xs text-gray-400 mb-1">품목명</p><p className="text-sm text-gray-700">{selectedTarget.itemName}</p></div>
-              <div className="col-span-2">
+
+            {/* 정보 필드 — flex-1로 남은 공간 채움 */}
+            <div className="flex-1 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div><p className="text-xs text-gray-400 mb-1">타겟 ID</p><p className="text-sm font-semibold text-gray-900">{selectedTarget.id}</p></div>
+                <div><p className="text-xs text-gray-400 mb-1">바코드</p><p className="text-sm font-mono font-semibold text-gray-900 truncate">{selectedTarget.barcodeCode}</p></div>
+                <div><p className="text-xs text-gray-400 mb-1">품목코드</p><p className="text-sm text-gray-700 truncate">{selectedTarget.itemCode || "-"}</p></div>
+                <div><p className="text-xs text-gray-400 mb-1">품목명</p><p className="text-sm text-gray-700 truncate">{selectedTarget.itemName || "-"}</p></div>
+              </div>
+              <div>
                 <p className="text-xs text-gray-400 mb-1">물질명</p>
                 <input type="text" value={selectedTarget.materialName}
                   onChange={e => setSelectedTarget({ ...selectedTarget, materialName: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
             </div>
-            <div className="flex gap-2">
-              {/* ✅ 정보 저장 버튼 연결 */}
-              <button onClick={handleSaveInfo} disabled={saving}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 disabled:opacity-60">
-                <Save size={16} />{saving ? "저장 중..." : "정보 저장"}
-              </button>
-              {/* ✅ 폐기 처리 버튼 연결 (2번 클릭 확인) */}
-              {selectedTarget.status !== "disposed" && (
-                <button onClick={handleDispose} disabled={saving}
-                  className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-60 transition-all ${
-                    disposeConfirm
-                      ? "bg-rose-600 text-white hover:bg-rose-700 animate-pulse"
-                      : "bg-rose-500 text-white hover:bg-rose-600"
-                  }`}>
-                  <AlertTriangle size={16} />{disposeConfirm ? "확인 (재클릭)" : "폐기 처리"}
+
+            {/* 버튼 — mt-auto로 하단 고정 */}
+            <div className="mt-4 space-y-2">
+              <div className="flex gap-2">
+                <button onClick={handleSaveInfo} disabled={saving}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 disabled:opacity-60">
+                  <Save size={16} />{saving ? "저장 중..." : "정보 저장"}
                 </button>
+                {selectedTarget.status !== "disposed" && (
+                  <button onClick={handleDispose} disabled={saving}
+                    className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-60 transition-all ${
+                      disposeConfirm
+                        ? "bg-rose-600 text-white hover:bg-rose-700 animate-pulse"
+                        : "bg-rose-500 text-white hover:bg-rose-600"
+                    }`}>
+                    <AlertTriangle size={16} />{disposeConfirm ? "확인 (재클릭)" : "폐기 처리"}
+                  </button>
+                )}
+              </div>
+              {disposeConfirm && (
+                <p className="text-xs text-rose-500 text-center">한 번 더 클릭하면 폐기 처리됩니다. <button onClick={() => setDisposeConfirm(false)} className="underline">취소</button></p>
               )}
             </div>
-            {disposeConfirm && (
-              <p className="text-xs text-rose-500 text-center">한 번 더 클릭하면 폐기 처리됩니다. <button onClick={() => setDisposeConfirm(false)} className="underline">취소</button></p>
-            )}
           </div>
 
-          {/* 무게 측정 입력 */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
-            <h2 className="font-bold text-gray-900">무게 측정 기록</h2>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1"><span className="inline-flex items-center gap-1"><Weight size={12} />무게 (g)</span></label>
-              <input type="text" placeholder="예: 182.450" value={weight} onChange={(e) => setWeight(e.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+          {/* 오른쪽: 무게 측정 입력 카드 */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 flex flex-col">
+            <h2 className="font-bold text-gray-900 mb-4">무게 측정 기록</h2>
+
+            {/* 입력 필드 — flex-1로 남은 공간 채움 */}
+            <div className="flex-1 space-y-3">
+              <div>
+                <label className="block text-xs text-gray-400 mb-1"><span className="inline-flex items-center gap-1"><Weight size={12} />무게 (g)</span></label>
+                <input type="text" placeholder="예: 182.450" value={weight} onChange={(e) => setWeight(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1"><span className="inline-flex items-center gap-1"><MapPin size={12} />사용/보관처</span></label>
+                <select value={locationId} onChange={(e) => setLocationId(e.target.value ? Number(e.target.value) : "")}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none">
+                  <option value="">선택하세요</option>
+                  {locationOptions.map(loc => (
+                    <option key={loc.id} value={loc.id}>{loc.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1"><span className="inline-flex items-center gap-1"><FileText size={12} />사유</span></label>
+                <input type="text" placeholder="예: 공정 후 측정" value={reason} onChange={(e) => setReason(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
             </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1"><span className="inline-flex items-center gap-1"><MapPin size={12} />사용/보관처</span></label>
-              <select value={location} onChange={(e) => setLocation(e.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none">
-                <option value="">선택하세요</option>
-                <option>Chamber-A</option><option>Chamber-B</option><option>Storage-A</option><option>Storage-B</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1"><span className="inline-flex items-center gap-1"><FileText size={12} />사유</span></label>
-              <input type="text" placeholder="예: 공정 후 측정" value={reason} onChange={(e) => setReason(e.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
+
+            {/* 버튼 — mt-auto로 하단 고정 */}
             <button onClick={handleSaveWeight} disabled={saving}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:opacity-60">
+              className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:opacity-60">
               <Save size={16} />{saving ? "저장 중..." : "측정값 저장"}
             </button>
           </div>
+
         </div>
       )}
 

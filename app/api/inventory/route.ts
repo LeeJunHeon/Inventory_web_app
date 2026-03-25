@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 
 const VALID_TYPES = ["입고", "출고", "불출"];
 
@@ -69,6 +70,7 @@ export async function GET(request: NextRequest) {
       location:   tx.location?.name  || "",
       locationId: tx.locationId,
       txReason:   tx.txReason?.name  || "",
+      userName:   tx.user?.name      ?? null,
     }));
 
     return NextResponse.json(result);
@@ -81,6 +83,17 @@ export async function GET(request: NextRequest) {
 // POST /api/inventory — 새 재고 트랜잭션 생성
 export async function POST(request: NextRequest) {
   try {
+    // 세션에서 로그인 사용자 id 조회
+    const session = await auth();
+    let sessionUserId: number | null = null;
+    if (session?.user?.email) {
+      const user = await prisma.user.findUnique({
+        where:  { email: session.user.email },
+        select: { id: true },
+      });
+      sessionUserId = user?.id ?? null;
+    }
+
     const body = await request.json();
 
     if (!body.txType || !VALID_TYPES.includes(body.txType)) {
@@ -99,8 +112,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "위치를 선택해주세요." }, { status: 400 });
     }
 
+    // 전표번호 자동 채번: 기존 tx_no 중 가장 큰 숫자 + 1
+    const lastTx = await prisma.inventoryTx.findFirst({
+      where:   { txNo: { not: null } },
+      orderBy: { id: "desc" },
+      select:  { txNo: true },
+    });
+    const lastNo  = lastTx?.txNo ? (parseInt(lastTx.txNo, 10) || 0) : 0;
+    const newTxNo = String(lastNo + 1);
+
     const tx = await prisma.inventoryTx.create({
       data: {
+        txNo:         newTxNo,
         txDate:       new Date(body.txDate),
         txType:       body.txType,
         itemId:       Number(body.itemId),
@@ -110,10 +133,11 @@ export async function POST(request: NextRequest) {
         partnerId:    body.partnerId    || null,
         txReasonId:   body.txReasonId   || null,
         locationId:   Number(body.locationId),
-        userId:       body.userId       || null,
+        userId:       sessionUserId      ?? body.userId ?? null,
         memo:         body.memo         || null,
         targetUnitId: body.targetUnitId || null,
         barcodeId:    body.barcodeId    || null,
+        refTxNo:      body.refTxNo      || null,
       },
     });
 

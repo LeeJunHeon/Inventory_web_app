@@ -115,7 +115,6 @@ export type TxReasonScalarFieldEnum = (typeof TxReasonScalarFieldEnum)[keyof typ
 export const PartnerScalarFieldEnum = {
   id: 'id',
   name: 'name',
-  partnerType: 'partnerType',
   managerName: 'managerName',
   contact: 'contact',
   email: 'email',

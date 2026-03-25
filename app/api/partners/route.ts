@@ -5,11 +5,9 @@ import { prisma } from "@/lib/prisma";
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const type   = searchParams.get("type")   || "";
     const search = searchParams.get("search") || "";
 
     const where: any = {};
-    if (type)   where.partnerType = type;
     if (search) where.name = { contains: search, mode: "insensitive" };
 
     const partners = await prisma.partner.findMany({
@@ -20,7 +18,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(partners.map(p => ({
       id:          p.id,
       name:        p.name,
-      type:        p.partnerType,
       managerName: p.managerName,
       contact:     p.contact,
       email:       p.email,
@@ -36,7 +33,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, type, managerName, contact, email } = body;
+    const { name, managerName, contact, email } = body;
 
     if (!name?.trim()) {
       return NextResponse.json({ error: "거래처명은 필수입니다." }, { status: 400 });
@@ -50,7 +47,6 @@ export async function POST(request: NextRequest) {
     const partner = await prisma.partner.create({
       data: {
         name:        name.trim(),
-        partnerType: type || "VENDOR",
         managerName: managerName?.trim() || null,
         contact:     contact?.trim()     || null,
         email:       email?.trim()       || null,
@@ -58,7 +54,7 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({
-      id: partner.id, name: partner.name, type: partner.partnerType,
+      id: partner.id, name: partner.name,
       managerName: partner.managerName, contact: partner.contact, email: partner.email,
       isActive: partner.isActive,
     }, { status: 201 });
@@ -76,13 +72,12 @@ export async function PUT(request: NextRequest) {
     if (!id) return NextResponse.json({ error: "id 파라미터 필요" }, { status: 400 });
 
     const body = await request.json();
-    const { name, type, managerName, contact, email } = body;
+    const { name, managerName, contact, email } = body;
 
     const partner = await prisma.partner.update({
       where: { id: Number(id) },
       data: {
         ...(name        !== undefined && { name:        name.trim() }),
-        ...(type        !== undefined && { partnerType: type }),
         ...(managerName !== undefined && { managerName: managerName?.trim() || null }),
         ...(contact     !== undefined && { contact:     contact?.trim() || null }),
         ...(email       !== undefined && { email:       email?.trim() || null }),
@@ -90,7 +85,7 @@ export async function PUT(request: NextRequest) {
     });
 
     return NextResponse.json({
-      id: partner.id, name: partner.name, type: partner.partnerType,
+      id: partner.id, name: partner.name,
       managerName: partner.managerName, contact: partner.contact, email: partner.email,
       isActive: partner.isActive,
     });

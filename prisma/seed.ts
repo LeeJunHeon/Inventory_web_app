@@ -46,13 +46,13 @@ async function main() {
   // ── 4. 거래처 ─────────────────────────────────
   await prisma.partner.createMany({
     data: [
-      { name: "(주)실리콘밸리", partnerType: "VENDOR" },
-      { name: "(주)메탈소스",   partnerType: "VENDOR" },
-      { name: "에어코리아",     partnerType: "VENDOR" },
-      { name: "삼성전자",       partnerType: "CUSTOMER" },
-      { name: "LG이노텍",       partnerType: "CUSTOMER" },
-      { name: "생산 1팀",       partnerType: "INTERNAL" },
-      { name: "생산 2팀",       partnerType: "INTERNAL" },
+      { name: "(주)실리콘밸리" },
+      { name: "(주)메탈소스"   },
+      { name: "에어코리아"     },
+      { name: "삼성전자"       },
+      { name: "LG이노텍"       },
+      { name: "생산 1팀"       },
+      { name: "생산 2팀"       },
     ],
     skipDuplicates: true,
   });

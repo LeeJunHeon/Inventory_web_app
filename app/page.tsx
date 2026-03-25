@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { Menu, Bell } from "lucide-react";
+import { Menu, Bell, Lock } from "lucide-react";
 import Sidebar, { PageId } from "@/components/Sidebar";
 import DashboardPage    from "@/components/DashboardPage";
 import InventoryPage    from "@/components/InventoryPage";
@@ -14,15 +14,52 @@ import ItemsPage        from "@/components/ItemsPage";
 import PartnersPage     from "@/components/PartnersPage";
 import AdminPage        from "@/components/AdminPage";
 
+interface Perms {
+  role: string;
+  canViewMain: boolean;
+  canViewStatus: boolean;
+  canViewPeriod: boolean;
+  canViewTargetUsage: boolean;
+  canViewBarcode: boolean;
+  canViewBarcodeCreatePrint: boolean;
+  canViewUserPerm: boolean;
+}
+
+function NoAccess({ pageName }: { pageName: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
+      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+        <Lock size={22} className="text-gray-400" />
+      </div>
+      <p className="text-base font-semibold text-gray-700">접근 권한이 없습니다</p>
+      <p className="text-sm text-gray-400">
+        <span className="font-medium text-gray-500">{pageName}</span> 페이지에 대한 접근 권한이 없습니다.<br />
+        관리자에게 권한을 요청하세요.
+      </p>
+    </div>
+  );
+}
+
 export default function Home() {
   const { data: session } = useSession();
-  const [page, setPage]             = useState<PageId>("dashboard");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [page, setPage]               = useState<PageId>("dashboard");
+  const [sidebarOpen, setSidebarOpen] = useState(true);   // 기본 열림
   const [shortageCount, setShortageCount] = useState(0);
-  const [showNotif, setShowNotif]   = useState(false);
+  const [showNotif, setShowNotif]     = useState(false);
+  const [perms, setPerms]             = useState<Perms | null>(null);
+  const [statusLocationId, setStatusLocationId] = useState<number | null>(null);
 
   const userName = session?.user?.name ?? "로딩중...";
   const userRole = (session?.user as any)?.role ?? "";
+
+  // 세션 확정 후 권한 조회
+  useEffect(() => {
+    if (!userName || userName === "-" || userName === "로딩중...") return;
+    fetch("/api/auth/permissions", { cache: "no-store" })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setPerms(data); })
+      .catch(() => {});
+  }, [userName]);
 
   // 재고 부족 알림 수 조회
   useEffect(() => {
@@ -30,7 +67,7 @@ export default function Home() {
       .then(r => r.json())
       .then(data => setShortageCount(data.shortageCount || 0))
       .catch(() => {});
-  }, [page]); // 페이지 전환 시마다 갱신
+  }, [page]);
 
   const PAGE_TITLES: Record<PageId, string> = {
     dashboard: "대시보드",
@@ -44,11 +81,35 @@ export default function Home() {
     admin:     "관리자 설정",
   };
 
+  // 현재 페이지 접근 권한 확인
+  function canAccess(p: PageId): boolean {
+    if (!perms) return true; // 로딩 중엔 허용 (깜빡임 방지)
+    switch (p) {
+      case "dashboard":  return perms.canViewMain;
+      case "inventory":  return true;
+      case "status":     return perms.canViewStatus;
+      case "period":     return perms.canViewPeriod;
+      case "target":     return perms.canViewTargetUsage;
+      case "barcode":    return perms.canViewBarcode;
+      case "items":
+      case "partners":   return perms.role === "admin";
+      case "admin":      return perms.canViewUserPerm;
+    }
+  }
+
   const renderPage = () => {
+    if (!canAccess(page)) return <NoAccess pageName={PAGE_TITLES[page]} />;
     switch (page) {
-      case "dashboard": return <DashboardPage />;
+      case "dashboard": return (
+        <DashboardPage
+          onNavigate={(p, lid) => {
+            setPage(p);
+            if (lid !== undefined) setStatusLocationId(lid ?? null);
+          }}
+        />
+      );
       case "inventory": return <InventoryPage />;
-      case "status":    return <StatusPage />;
+      case "status":    return <StatusPage initialLocationId={statusLocationId} />;
       case "period":    return <PeriodPage />;
       case "target":    return <TargetUsagePage />;
       case "barcode":   return <BarcodePage />;
@@ -63,7 +124,11 @@ export default function Home() {
     <div className="flex h-screen bg-gray-50">
       <Sidebar
         currentPage={page}
-        onNavigate={setPage}
+        onNavigate={(p) => {
+          // 사이드바에서 보유현황으로 직접 이동 시 위치 필터 초기화
+          if (p === "status") setStatusLocationId(null);
+          setPage(p);
+        }}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         userName={userName}

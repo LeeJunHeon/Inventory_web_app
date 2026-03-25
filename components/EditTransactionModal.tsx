@@ -1,7 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { InventoryItem, TYPE_COLORS } from "@/lib/data";
+
+interface LocationOption { id: number; name: string; }
 
 interface Props {
   item: InventoryItem;
@@ -15,8 +17,20 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
   const [quantity, setQuantity]   = useState(String(item.qty));
   const [unitPrice, setUnitPrice] = useState(String(item.price));
   const [memo, setMemo]           = useState(item.memo);
+  const [locationId, setLocationId]           = useState<number>(item.locationId ?? 1);
+  const [locationOptions, setLocationOptions] = useState<LocationOption[]>([]);
   const [saving, setSaving]       = useState(false);
   const [error, setError]         = useState("");
+
+  // 마운트 시 위치 목록 로드
+  useEffect(() => {
+    fetch("/api/locations")
+      .then(r => r.json()).then((locs: LocationOption[]) => {
+        // 거래 입력용: 본사(id=1), 공덕(id=2)만 표시
+        const txLocs = locs.filter(l => l.id === 1 || l.id === 2);
+        setLocationOptions(txLocs.length > 0 ? txLocs : locs);
+      }).catch(console.error);
+  }, []);
 
   const amount = Number(quantity || 0) * Number(unitPrice || 0);
 
@@ -32,10 +46,11 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
         body: JSON.stringify({
           date,
           type,
-          quantity: Number(quantity),
-          unitPrice: Number(unitPrice) || 0,
+          quantity:   Number(quantity),
+          unitPrice:  Number(unitPrice) || 0,
           amount,
           memo,
+          locationId: locationId,
         }),
       });
       if (!res.ok) {
@@ -109,6 +124,19 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
               <input readOnly value={amount ? `₩${amount.toLocaleString()}` : ""}
                 className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
             </div>
+          </div>
+
+          {/* 위치 */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">위치</label>
+            <select
+              value={locationId}
+              onChange={e => setLocationId(Number(e.target.value))}
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+              {locationOptions.map(loc => (
+                <option key={loc.id} value={loc.id}>{loc.name}</option>
+              ))}
+            </select>
           </div>
 
           {/* 메모 */}

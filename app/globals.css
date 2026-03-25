@@ -20,3 +20,24 @@
 .table-row-hover:hover .row-actions {
   opacity: 1;
 }
+
+/* 바코드 라벨 인쇄 */
+@media print {
+  body > *:not(.print-label) { display: none !important; }
+  .print-label {
+    display: flex !important;
+    position: fixed;
+    top: 0; left: 0;
+    width: 50mm; height: 30mm;
+    padding: 3mm;
+    box-sizing: border-box;
+    align-items: center;
+    gap: 4mm;
+    background: white;
+    font-family: monospace;
+  }
+  .print-label .label-text { flex: 1; overflow: hidden; }
+  .print-label .label-code { font-size: 9pt; font-weight: bold; }
+  .print-label .label-name { font-size: 7pt; color: #333; }
+  .print-label .label-item { font-size: 6pt; color: #666; }
+}

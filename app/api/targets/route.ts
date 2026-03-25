@@ -15,8 +15,12 @@ export async function GET(request: NextRequest) {
       const bc = await prisma.barcode.findFirst({
         where: { code: { equals: barcode, mode: "insensitive" } },
         include: {
-          item: { include: { category: true } },
-          targetUnit: true,
+          item: { include: { category: true, targetSpec: true } },
+          targetUnit: {
+            include: {
+              item: { include: { category: true, targetSpec: true } },
+            },
+          },
         },
       });
 
@@ -36,15 +40,19 @@ export async function GET(request: NextRequest) {
         }),
       ]);
 
+      // 바코드에 item이 직접 연결되지 않은 경우 targetUnit.item으로 fallback
+      const bcItem = bc.item ?? bc.targetUnit?.item ?? null;
+
       return NextResponse.json({
         total, page, limit,
         target: {
-          id: bc.targetUnit.id,
-          barcodeCode: bc.code,
-          itemCode: bc.item?.code || "",
-          itemName: bc.item?.name || "",
-          status: bc.targetUnit.status,
-          note: bc.targetUnit.note || "",
+          id:           bc.targetUnit.id,
+          barcodeCode:  bc.code,
+          itemCode:     bcItem?.code                      || "",
+          itemName:     bcItem?.name                      || "",
+          materialName: bcItem?.targetSpec?.materialCode  || "",
+          status:       bc.targetUnit.status,
+          note:         bc.targetUnit.note                || "",
         },
         logs: logs.map((l) => ({
           id: l.id,
@@ -57,7 +65,7 @@ export async function GET(request: NextRequest) {
           reason: l.reason || "",
           userName: l.user?.name || "",
           barcodeCode: bc.code,
-          itemName: bc.item?.name || "",
+          itemName: bcItem?.name || "",
         })),
       });
     }
@@ -110,11 +118,38 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
+    const logType     = body.logType || body.type || "측정";
+    const isDispose   = logType === "폐기" || logType === "dispose";
+    const isMeasure   = logType === "측정" || logType === "measure";
+
+    // 무게 측정 시: 이전 측정값보다 높으면 저장 차단
+    if (isMeasure && body.weight != null) {
+      const newWeight = Number(body.weight);
+      const lastLog = await prisma.targetLog.findFirst({
+        where: {
+          targetUnitId: body.targetUnitId,
+          logType: { in: ["측정", "measure"] },
+          weight: { not: null },
+        },
+        orderBy: { loggedAt: "desc" },
+        select: { weight: true },
+      });
+      if (lastLog?.weight != null) {
+        const prevWeight = Number(lastLog.weight);
+        if (newWeight > prevWeight) {
+          return NextResponse.json(
+            { error: `입력한 무게(${newWeight.toFixed(3)}g)가 이전 측정값(${prevWeight.toFixed(3)}g)보다 높습니다. 다시 확인해주세요.` },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
     const log = await prisma.targetLog.create({
       data: {
         targetUnitId: body.targetUnitId,
-        logType:      body.logType || body.type || "측정",
-        weight:       body.weight     || null,
+        logType,
+        weight:       body.weight     ?? null,
         locationId:   body.locationId || null,
         reason:       body.reason     || null,
         userId:       body.userId     || null,
@@ -122,8 +157,6 @@ export async function POST(request: NextRequest) {
     });
 
     // 폐기 처리인 경우 타겟 상태 변경 + 바코드 비활성화
-    const isDispose = body.logType === "폐기" || body.type === "폐기"
-      || body.logType === "dispose";
     if (isDispose) {
       await prisma.targetUnit.update({
         where: { id: body.targetUnitId },

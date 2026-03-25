@@ -1,16 +1,17 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Search, Plus, Trash2, Copy, QrCode, Check, X, Loader2 } from "lucide-react";
+import { Search, Plus, Trash2, Copy, QrCode, Check, X, Loader2, Printer, ImageDown } from "lucide-react";
+import { QRCodeSVG, QRCodeCanvas } from "qrcode.react";
 import { CATEGORY_COLORS } from "@/lib/data";
 
 interface BarcodeItem {
   id: number; code: string; itemCode: string; itemName: string;
-  category: string; targetId: string; isActive: boolean;
+  category: string; targetUnitId: number | null; isActive: string;
 }
 interface ItemOption { id: number; code: string; name: string; }
 
-const CATS = ["전체", "웨이퍼", "타겟", "가스", "기자재/소모품"];
+const CATS = ["전체", "타겟", "웨이퍼", "가스", "기자재/소모품"];
 
 export default function BarcodePage() {
   const [barcodes, setBarcodes]         = useState<BarcodeItem[]>([]);
@@ -31,6 +32,7 @@ export default function BarcodePage() {
   const [createError, setCreateError]       = useState("");
   const [createSuccess, setCreateSuccess]   = useState("");
   const [toast, setToast]                   = useState("");
+  const [printItem, setPrintItem]           = useState<BarcodeItem | null>(null);
   const itemDropRef = useRef<HTMLDivElement>(null);
 
   const fetchData = useCallback(async () => {
@@ -103,8 +105,130 @@ export default function BarcodePage() {
     } catch { alert("네트워크 오류"); }
   };
 
+  // 이미지 저장: 400px 고해상도 QRCodeCanvas를 1:1로 복사해 텍스트 합성
+  const handleSaveImage = () => {
+    if (!printItem) return;
+    // 화면 밖 고해상도 canvas (400×400)
+    const qrCanvas = document.querySelector(".barcode-label-canvas canvas") as HTMLCanvasElement | null;
+    if (!qrCanvas) return;
+
+    const QR = 400; // QRCodeCanvas size prop과 동일
+    const PAD = 30;
+    const TEXT_H = 80; // 텍스트 영역 높이
+
+    const out = document.createElement("canvas");
+    out.width  = QR + PAD * 2;        // 460
+    out.height = QR + PAD + TEXT_H;   // 510
+
+    const ctx = out.getContext("2d")!;
+
+    // 흰 배경
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, out.width, out.height);
+
+    // QR 코드 1:1 복사 (원본 400px → 그대로)
+    ctx.drawImage(qrCanvas, PAD, PAD, QR, QR);
+
+    // 구분선
+    ctx.strokeStyle = "#e5e7eb";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(PAD, QR + PAD + 8);
+    ctx.lineTo(out.width - PAD, QR + PAD + 8);
+    ctx.stroke();
+
+    // 바코드 코드
+    ctx.fillStyle = "#111827";
+    ctx.font = "bold 24px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(printItem.code, out.width / 2, QR + PAD + 42);
+
+    // 품목명
+    if (printItem.itemName) {
+      ctx.fillStyle = "#374151";
+      ctx.font = "20px sans-serif";
+      ctx.fillText(printItem.itemName, out.width / 2, QR + PAD + 70);
+    }
+
+    const link = document.createElement("a");
+    link.download = `${printItem.code}.png`;
+    link.href = out.toDataURL("image/png");
+    link.click();
+  };
+
+  // 인쇄: body에 직접 라벨 div를 append → window.print() → afterprint 시 제거
+  const handlePrint = () => {
+    if (!printItem) return;
+    const content = document.querySelector(".print-label-content");
+    if (!content) return;
+
+    const printDiv = document.createElement("div");
+    printDiv.className = "print-label";
+    printDiv.innerHTML = content.innerHTML;
+    document.body.appendChild(printDiv);
+
+    const cleanup = () => {
+      document.body.removeChild(printDiv);
+      window.removeEventListener("afterprint", cleanup);
+    };
+    window.addEventListener("afterprint", cleanup);
+    window.print();
+  };
+
   return (
     <div className="space-y-5">
+      {/* 프린트 미리보기 모달 */}
+      {printItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xs p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-gray-900">라벨 미리보기</h3>
+              <button onClick={() => setPrintItem(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
+                <X size={18} />
+              </button>
+            </div>
+            {/* 미리보기 */}
+            <div className="flex items-center gap-4 border border-gray-200 rounded-xl p-4 bg-gray-50">
+              <div className="shrink-0">
+                <QRCodeCanvas value={printItem.code} size={80} />
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-sm font-bold font-mono text-gray-900">{printItem.code}</p>
+                <p className="text-sm text-gray-700">{printItem.itemName}</p>
+                <p className="text-xs text-gray-400 font-mono">{printItem.itemCode}</p>
+              </div>
+            </div>
+            {/* 이미지 저장용 고해상도 QRCodeCanvas (화면 밖) */}
+            <div className="barcode-label-canvas" aria-hidden style={{ position: "absolute", left: "-9999px", top: "-9999px" }}>
+              <QRCodeCanvas value={printItem.code} size={400} />
+            </div>
+            {/* body.appendChild에 복사될 실제 라벨 콘텐츠 (hidden) */}
+            <div className="print-label-content" style={{ display: "none" }}>
+              <QRCodeSVG value={printItem.code} size={64} />
+              <div className="label-text">
+                <div className="label-code">{printItem.code}</div>
+                <div className="label-name">{printItem.itemName}</div>
+                <div className="label-item">{printItem.itemCode}</div>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setPrintItem(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200">
+                취소
+              </button>
+              <button onClick={handleSaveImage}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-emerald-700 bg-emerald-50 rounded-xl hover:bg-emerald-100">
+                <ImageDown size={15} />이미지 저장
+              </button>
+              <button onClick={handlePrint}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-blue-500 rounded-xl hover:bg-blue-600">
+                <Printer size={15} />인쇄
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 토스트 */}
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 bg-gray-900 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-lg">
@@ -140,7 +264,7 @@ export default function BarcodePage() {
               <label className="block text-xs font-semibold text-blue-700 mb-1">품목군</label>
               <select value={createCategory} onChange={e => setCreateCategory(e.target.value)}
                 className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none">
-                {["웨이퍼", "타겟", "가스", "기자재/소모품"].map(c => (
+                {["타겟", "웨이퍼", "가스", "기자재/소모품"].map(c => (
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>
@@ -253,9 +377,11 @@ export default function BarcodePage() {
                     <td className="px-5 py-3">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[b.category] || ""}`}>{b.category}</span>
                     </td>
-                    <td className="px-5 py-3 text-sm text-gray-500 font-mono">{b.targetId || "-"}</td>
+                    <td className="px-5 py-3 text-sm text-gray-500 font-mono">
+                      {b.targetUnitId ? `TU-${String(b.targetUnitId).padStart(3, "0")}` : "-"}
+                    </td>
                     <td className="px-5 py-3 text-center">
-                      {b.isActive
+                      {b.isActive === "Y"
                         ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full"><Check size={12} />활성</span>
                         : <span className="inline-flex items-center gap-1 text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full"><X size={12} />비활성</span>}
                     </td>
@@ -264,6 +390,10 @@ export default function BarcodePage() {
                         <button onClick={() => { navigator.clipboard.writeText(b.code); setToast(`${b.code} 복사됨`); setTimeout(() => setToast(""), 2000); }}
                           className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600" title="바코드 복사">
                           <Copy size={15} />
+                        </button>
+                        <button onClick={() => setPrintItem(b)}
+                          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600" title="라벨 인쇄">
+                          <Printer size={15} />
                         </button>
                         <button onClick={() => handleDelete(b)}
                           className="p-1.5 rounded-lg hover:bg-rose-100 text-gray-400 hover:text-rose-600" title="삭제">
@@ -284,7 +414,7 @@ export default function BarcodePage() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-mono font-bold text-gray-900">{b.code}</span>
                   <div className="flex items-center gap-2">
-                    {b.isActive
+                    {b.isActive === "Y"
                       ? <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">활성</span>
                       : <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">비활성</span>}
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[b.category] || ""}`}>{b.category}</span>
@@ -292,11 +422,19 @@ export default function BarcodePage() {
                 </div>
                 <p className="text-sm text-gray-700">{b.itemName}</p>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-400">{b.itemCode}{b.targetId ? ` · ${b.targetId}` : ""}</span>
-                  <button onClick={() => handleDelete(b)}
-                    className="p-1.5 rounded-lg hover:bg-rose-50 text-gray-400 hover:text-rose-600">
-                    <Trash2 size={15} />
-                  </button>
+                  <span className="text-xs text-gray-400">
+                    {b.itemCode}{b.targetUnitId ? ` · TU-${String(b.targetUnitId).padStart(3, "0")}` : ""}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => setPrintItem(b)}
+                      className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600" title="라벨 인쇄">
+                      <Printer size={15} />
+                    </button>
+                    <button onClick={() => handleDelete(b)}
+                      className="p-1.5 rounded-lg hover:bg-rose-50 text-gray-400 hover:text-rose-600">
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

@@ -83,7 +83,6 @@ async function main() {
       data: rows.map(r => ({
         id:          req(toInt(r.id), "id"),
         name:        r.name,
-        partnerType: r.partner_type || "VENDOR",
         managerName: r.manager_name || null,
         contact:     r.contact      || null,
         email:       r.email        || null,

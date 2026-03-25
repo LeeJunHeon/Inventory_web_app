@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const category = searchParams.get("category") || "";
+    const category   = searchParams.get("category")   || "";
+    const locationId = searchParams.get("locationId")  || "";
 
     const where: any = {};
     if (category && category !== "전체") {
@@ -21,35 +24,41 @@ export async function GET(request: NextRequest) {
 
     const itemIds = items.map((item) => item.id);
 
+    // 위치 필터 (locationId 있으면 해당 위치만, 없으면 전체)
+    const locationFilter = locationId ? { locationId: Number(locationId) } : {};
+
     // 배치 쿼리: 품목별 입고 합계
     const inSums = await prisma.inventoryTx.groupBy({
       by: ["itemId"],
-      where: { itemId: { in: itemIds }, txType: "입고" },
+      where: { itemId: { in: itemIds }, txType: "입고", ...locationFilter },
       _sum: { qty: true },
     });
 
     // 배치 쿼리: 품목별 출고+불출 합계
     const outSums = await prisma.inventoryTx.groupBy({
       by: ["itemId"],
-      where: { itemId: { in: itemIds }, txType: { in: ["출고", "불출"] } },
+      where: { itemId: { in: itemIds }, txType: { in: ["출고", "불출"] }, ...locationFilter },
       _sum: { qty: true },
     });
 
     const inMap = new Map(inSums.map((s) => [s.itemId, s._sum.qty || 0]));
     const outMap = new Map(outSums.map((s) => [s.itemId, s._sum.qty || 0]));
 
-    const result = items.map((item) => {
-      const currentQty = (inMap.get(item.id) || 0) - (outMap.get(item.id) || 0);
-
-      return {
-        id:          item.id,
-        code:        item.code,
-        name:        item.name,
-        category:    item.category.name,
-        currentQty,
-        requiredQty: item.minStockQty,
-      };
-    });
+    const result = items
+      // 위치 필터가 있을 때: 해당 위치에 실제 거래 기록이 있는 품목만 포함
+      // 위치 필터가 없을 때(전체): 모든 품목 포함
+      .filter(item => !locationId || inMap.has(item.id) || outMap.has(item.id))
+      .map((item) => {
+        const currentQty = (inMap.get(item.id) || 0) - (outMap.get(item.id) || 0);
+        return {
+          id:          item.id,
+          code:        item.code,
+          name:        item.name,
+          category:    item.category.name,
+          currentQty,
+          requiredQty: item.minStockQty,
+        };
+      });
 
     return NextResponse.json(result);
   } catch (error) {

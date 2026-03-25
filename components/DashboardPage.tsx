@@ -1,14 +1,21 @@
 "use client";
 
-import { TrendingUp, TrendingDown, AlertTriangle, Boxes, Loader2, RefreshCw } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertTriangle, Boxes, Loader2, MapPin } from "lucide-react";
 import { TYPE_COLORS, CATEGORY_COLORS, formatPrice } from "@/lib/data";
 import { useApi } from "@/lib/useApi";
+import type { PageId } from "@/components/Sidebar";
+
+interface LocationSummary {
+  locationId: number; locationName: string;
+  totalItems: number; shortageCount: number;
+}
 
 interface DashboardData {
   todayIn: { count: number; amount: number };
   todayOut: { count: number; amount: number };
   shortageCount: number;
   totalItems: number;
+  locationSummary: LocationSummary[];
   recent: {
     id: number; date: string; type: string; category: string;
     name: string; qty: number; amount: number; partner: string;
@@ -20,10 +27,15 @@ const DEFAULT: DashboardData = {
   todayOut: { count: 0, amount: 0 },
   shortageCount: 0,
   totalItems: 0,
+  locationSummary: [],
   recent: [],
 };
 
-export default function DashboardPage() {
+interface DashboardPageProps {
+  onNavigate?: (page: PageId, locationId?: number | null) => void;
+}
+
+export default function DashboardPage({ onNavigate }: DashboardPageProps) {
   const { data, loading, error } = useApi<DashboardData>("/api/dashboard", DEFAULT);
 
   const stats = [
@@ -75,6 +87,38 @@ export default function DashboardPage() {
           </div>
         ))}
       </div>
+
+      {/* 위치별 현황 */}
+      {data.locationSummary.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <MapPin size={16} className="text-gray-400" />
+            <h2 className="font-bold text-gray-900">위치별 재고 현황</h2>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            {data.locationSummary.filter(loc => loc.locationId === 1 || loc.locationId === 2).map((loc) => (
+              <button
+                key={loc.locationId}
+                onClick={() => onNavigate?.("status", loc.locationId)}
+                className="bg-white rounded-2xl border border-gray-100 p-4 text-left hover:shadow-md hover:border-blue-200 transition-all group"
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <span className="text-sm font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
+                    {loc.locationName}
+                  </span>
+                  {loc.shortageCount > 0 && (
+                    <AlertTriangle size={14} className="text-amber-500 shrink-0 mt-0.5" />
+                  )}
+                </div>
+                <p className="text-xl font-bold text-gray-900">{loc.totalItems}<span className="text-sm font-normal text-gray-400 ml-1">종</span></p>
+                <p className={`text-xs mt-1 font-medium ${loc.shortageCount > 0 ? "text-amber-600" : "text-emerald-600"}`}>
+                  {loc.shortageCount > 0 ? `⚠ 부족 ${loc.shortageCount}건` : "정상"}
+                </p>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-2xl border border-gray-100">
         <div className="px-5 py-4 border-b border-gray-100">

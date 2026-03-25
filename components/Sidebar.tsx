@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
 import { Home, Package, BarChart3, Clock, Target, QrCode, Users, LogOut, Boxes, X, Layers, Building2 } from "lucide-react";
 
@@ -8,18 +8,46 @@ export type PageId =
   | "dashboard" | "inventory" | "status" | "period"
   | "target" | "barcode" | "items" | "partners" | "admin";
 
-const NAV_ITEMS: { id: PageId; label: string; icon: React.ElementType; group?: string }[] = [
-  { id: "dashboard", label: "대시보드",    icon: Home },
-  { id: "inventory", label: "재고 관리",   icon: Package },
+interface Perms {
+  role: string;
+  canViewMain: boolean;
+  canViewStatus: boolean;
+  canViewPeriod: boolean;
+  canViewTargetUsage: boolean;
+  canViewBarcode: boolean;
+  canViewBarcodeCreatePrint: boolean;
+  canViewUserPerm: boolean;
+}
+
+const ALL_NAV_ITEMS: {
+  id: PageId; label: string; icon: React.ElementType;
+  group?: string; always?: boolean;
+}[] = [
+  { id: "dashboard", label: "대시보드",    icon: Home,      always: true },
+  { id: "inventory", label: "재고 관리",   icon: Package,   always: true },
   { id: "status",    label: "보유 현황",   icon: BarChart3 },
   { id: "period",    label: "기간별 조회", icon: Clock },
   { id: "target",    label: "타겟 사용현황", icon: Target },
   { id: "barcode",   label: "바코드",      icon: QrCode },
-  // ── 마스터 데이터 ──
-  { id: "items",    label: "품목 관리",   icon: Layers,    group: "마스터" },
-  { id: "partners", label: "거래처 관리", icon: Building2, group: "마스터" },
-  { id: "admin",    label: "관리자 설정", icon: Users,     group: "마스터" },
+  { id: "items",     label: "품목 관리",   icon: Layers,    group: "마스터" },
+  { id: "partners",  label: "거래처 관리", icon: Building2, group: "마스터" },
+  { id: "admin",     label: "관리자 설정", icon: Users,     group: "마스터" },
 ];
+
+function isVisible(id: PageId, perms: Perms | null): boolean {
+  if (!perms) return false;
+  switch (id) {
+    case "dashboard":  return perms.canViewMain;
+    case "inventory":  return true;               // 전용 권한 없음 → 항상 표시
+    case "status":     return perms.canViewStatus;
+    case "period":     return perms.canViewPeriod;
+    case "target":     return perms.canViewTargetUsage;
+    case "barcode":    return perms.canViewBarcode;
+    case "items":
+    case "partners":   return perms.role === "admin";
+    case "admin":      return perms.canViewUserPerm;
+  }
+}
 
 interface SidebarProps {
   currentPage: PageId;
@@ -34,20 +62,44 @@ export default function Sidebar({
   currentPage, onNavigate, isOpen, onClose,
   userName = "-", userRole = "-",
 }: SidebarProps) {
+  const [perms, setPerms]               = useState<Perms | null>(null);
+  const [permsLoading, setPermsLoading] = useState(true);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  // userName이 확정될 때마다 최신 권한 재조회 (로그인 직후, 사용자 전환 시 반영)
+  useEffect(() => {
+    if (!userName || userName === "-" || userName === "로딩중...") return;
+    setPermsLoading(true);
+    fetch("/api/auth/permissions", { cache: "no-store" })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setPerms(data); })
+      .catch(() => {})
+      .finally(() => setPermsLoading(false));
+  }, [userName]);
+
   const handleNav = (page: PageId) => {
     onNavigate(page);
     if (window.innerWidth < 1024) onClose();
   };
 
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const handleLogout = () => {
-    setShowLogoutConfirm(true);
-  };
+  // 표시할 메뉴 항목 필터링
+  const visibleItems = perms
+    ? ALL_NAV_ITEMS.filter(item => isVisible(item.id, perms))
+    : [];
 
-  // 구분선 렌더링 (마스터 그룹 직전)
   const renderNavItems = () => {
+    if (permsLoading) {
+      return (
+        <div className="space-y-1 px-1">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-10 bg-gray-100 rounded-xl animate-pulse" />
+          ))}
+        </div>
+      );
+    }
+
     let prevGroup: string | undefined = undefined;
-    return NAV_ITEMS.map((item) => {
+    return visibleItems.map((item) => {
       const showDivider = item.group && item.group !== prevGroup;
       prevGroup = item.group;
       return (
@@ -121,7 +173,7 @@ export default function Sidebar({
               <p className="text-[10px] text-gray-400">{userRole}</p>
             </div>
             <button
-              onClick={handleLogout}
+              onClick={() => setShowLogoutConfirm(true)}
               className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
               title="로그아웃"
             >

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Search, AlertTriangle, CheckCircle, AlertCircle, Loader2, Check, X } from "lucide-react";
 import { CATEGORY_COLORS } from "@/lib/data";
+
+interface LocationOption { id: number; name: string; }
 
 interface StockItem {
   id: number; code: string; name: string;
@@ -20,27 +22,47 @@ function getSupplyLevel(current: number, required: number) {
 
 const CATS = ["웨이퍼", "타겟", "가스", "기자재/소모품"];
 
-export default function StatusPage() {
+interface StatusPageProps {
+  initialLocationId?: number | null;
+}
+
+export default function StatusPage({ initialLocationId }: StatusPageProps) {
   const [items, setItems]                   = useState<StockItem[]>([]);
   const [loading, setLoading]               = useState(true);
   const [search, setSearch]                 = useState("");
   const [selectedCategory, setSelectedCategory] = useState("전체");
+  const [locationOptions, setLocationOptions]   = useState<LocationOption[]>([]);
+  const [selectedLocationId, setSelectedLocationId] = useState<number | null>(initialLocationId ?? null);
   // 인라인 필요수량 편집 상태
   const [editingId, setEditingId]           = useState<number | null>(null);
   const [editValue, setEditValue]           = useState("");
   const [savingId, setSavingId]             = useState<number | null>(null);
   const [toast, setToast]                   = useState("");
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/status");
+      const params = new URLSearchParams();
+      if (selectedLocationId !== null) params.set("locationId", String(selectedLocationId));
+      const res = await fetch(`/api/status?${params}`);
       if (res.ok) setItems(await res.json());
     } catch { setToast("데이터 조회에 실패했습니다."); setTimeout(() => setToast(""), 3000); }
     finally { setLoading(false); }
-  };
+  }, [selectedLocationId]);
 
-  useEffect(() => { fetchData(); }, []);
+  // 위치 목록 로드 (최초 1회) — 본사(1), 공덕(2)만 표시
+  useEffect(() => {
+    fetch("/api/locations")
+      .then(r => r.json())
+      .then((locs: LocationOption[]) => {
+        const filtered = locs.filter(l => l.id === 1 || l.id === 2);
+        setLocationOptions(filtered.length > 0 ? filtered : locs);
+      })
+      .catch(console.error);
+  }, []);
+
+  // 위치 바뀔 때마다 재고 재조회
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   // 필요수량 저장
   const handleSaveRequired = async (item: StockItem) => {
@@ -92,7 +114,11 @@ export default function StatusPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">보유 현황</h1>
-          <p className="text-sm text-gray-500 mt-0.5">품목별 현재 재고와 수급 상태를 확인합니다</p>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {selectedLocationId === null
+              ? "전체 위치 · 품목별 현재 재고와 수급 상태를 확인합니다"
+              : `${locationOptions.find(l => l.id === selectedLocationId)?.name ?? ""} 위치 기준`}
+          </p>
         </div>
         {shortageCount > 0 && (
           <div className="flex items-center gap-2 px-4 py-2 bg-rose-50 border border-rose-200 rounded-xl">
@@ -102,6 +128,36 @@ export default function StatusPage() {
         )}
       </div>
 
+      {/* 위치 탭 */}
+      {locationOptions.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-3">
+          <div className="flex items-center gap-1 flex-wrap">
+            <button
+              onClick={() => setSelectedLocationId(null)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                selectedLocationId === null
+                  ? "bg-blue-500 text-white shadow-sm"
+                  : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+              }`}>
+              전체
+            </button>
+            {locationOptions.map(loc => (
+              <button
+                key={loc.id}
+                onClick={() => setSelectedLocationId(loc.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                  selectedLocationId === loc.id
+                    ? "bg-blue-500 text-white shadow-sm"
+                    : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+                }`}>
+                {loc.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 검색 + 품목군 필터 */}
       <div className="bg-white rounded-2xl border border-gray-100 p-3 sm:p-4">
         <div className="flex flex-wrap gap-3 items-center">
           <div className="relative flex-1 min-w-[200px]">
