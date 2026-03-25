@@ -9,77 +9,107 @@ async function main() {
   console.log("🌱 Seed 시작...");
 
   // ── 1. 품목 카테고리 ──────────────────────────
-  await prisma.itemCategory.createMany({
-    data: [
-      { name: "웨이퍼" },
-      { name: "타겟" },
-      { name: "가스" },
-      { name: "기자재/소모품" },
-    ],
-    skipDuplicates: true,
-  });
+  const categories = [
+    { id: 1, name: "타겟" },
+    { id: 2, name: "웨이퍼" },
+    { id: 3, name: "가스" },
+    { id: 4, name: "기자재/소모품" },
+  ];
+  for (const c of categories) {
+    await prisma.itemCategory.upsert({
+      where:  { id: c.id },
+      update: { name: c.name },
+      create: { id: c.id, name: c.name },
+    });
+  }
   console.log("  ✓ 품목 카테고리");
 
   // ── 2. 위치 ───────────────────────────────────
-  await prisma.location.createMany({
-    data: [
-      { name: "본사" },
-      { name: "공덕" },
-      { name: "실험실" },
-    ],
-    skipDuplicates: true,
-  });
+  const locations = [
+    { id: 1,  name: "본사" },
+    { id: 2,  name: "공덕" },
+    { id: 3,  name: "Vault" },
+    { id: 4,  name: "Desicator 1" },
+    { id: 5,  name: "Sputter 1 - Chamber 1 - Gun 1" },
+    { id: 6,  name: "Sputter 1 - Chamber 2 - Gun 1" },
+    { id: 7,  name: "Sputter 1 - Chamber 2 - Gun 2" },
+    { id: 8,  name: "Sputter 1 - Chamber 2 - Gun 3" },
+    { id: 9,  name: "Sputter 2 - Chamber K - Gun 1" },
+    { id: 10, name: "Sputter 2 - Chamber K - Gun 2" },
+  ];
+  for (const l of locations) {
+    await prisma.location.upsert({
+      where:  { id: l.id },
+      update: { name: l.name },
+      create: { id: l.id, name: l.name },
+    });
+  }
   console.log("  ✓ 위치");
 
   // ── 3. 거래 목적 ──────────────────────────────
-  await prisma.txReason.createMany({
-    data: [
-      { name: "연구개발" },
-      { name: "교육홍보" },
-      { name: "제품판매" },
-      { name: "최종생산" },
-    ],
-    skipDuplicates: true,
-  });
+  const reasons = [
+    { id: 1, name: "제품판매" },
+    { id: 2, name: "연구개발" },
+    { id: 3, name: "교육홍보" },
+    { id: 4, name: "최종생산" },
+  ];
+  for (const r of reasons) {
+    await prisma.txReason.upsert({
+      where:  { id: r.id },
+      update: { name: r.name },
+      create: { id: r.id, name: r.name },
+    });
+  }
   console.log("  ✓ 거래 목적");
 
   // ── 4. 거래처 ─────────────────────────────────
-  await prisma.partner.createMany({
-    data: [
-      { name: "(주)실리콘밸리" },
-      { name: "(주)메탈소스"   },
-      { name: "에어코리아"     },
-      { name: "삼성전자"       },
-      { name: "LG이노텍"       },
-      { name: "생산 1팀"       },
-      { name: "생산 2팀"       },
-    ],
-    skipDuplicates: true,
-  });
-  console.log("  ✓ 거래처");
+  const partners: {
+    id: number;
+    name: string;
+    managerName?: string | null;
+    contact?: string | null;
+  }[] = [
+    { id: 106, name: "태원과학",            managerName: "박찬영",          contact: "sales@itasco.com" },
+    { id: 107, name: "포사이언스",           managerName: "우청일",          contact: "031-8018-7279" },
+    { id: 108, name: "남강하이테크",          managerName: "이완수",          contact: "wslee@namkang.co.kr" },
+    { id: 109, name: "티에스플러스",          managerName: null,             contact: "tsp@tspluscorp.com" },
+    { id: 110, name: "한일특수가스",          managerName: "길진아",          contact: "potar508@naver.com" },
+    { id: 111, name: "AEM",                 managerName: "Alina Liu",       contact: "Alina@aemproduct.com" },
+    { id: 112, name: "American Elements",   managerName: "Chad Lindner",    contact: "chad.lindner@americanelements.com" },
+    { id: 113, name: "Hunan Boyu Tech.",    managerName: null,              contact: null },
+    { id: 114, name: "KRT",                 managerName: null,              contact: null },
+    { id: 115, name: "LTS",                 managerName: "Hirak Karmaker",  contact: "hkarmaker@ltschem.com" },
+    { id: 116, name: "Quality Key Materials", managerName: "Janey Jia",    contact: "janey.jia@qukinsh.com" },
+    { id: 117, name: "RND코리아",            managerName: null,              contact: null },
+    { id: 118, name: "SCM",                 managerName: "Savy",            contact: "savy@scm-inc.com" },
+    { id: 119, name: "Shanghai Famous Trd.", managerName: "Lia Wang",       contact: "lia@zmsh-materials.com" },
+    { id: 120, name: "SMC Tech",            managerName: "윤현중",           contact: "ysmctech@naver.com" },
+    { id: 121, name: "Toshima",             managerName: null,              contact: null },
+    { id: 122, name: "Zhonggui",            managerName: "Lia",             contact: "daiyining00@gmail.com" },
+    { id: 123, name: "최종생산",             managerName: null,              contact: null },
+    { id: 142, name: "KIST",                managerName: null,              contact: null },
+    { id: 162, name: "고려대",               managerName: null,              contact: null },
+    { id: 183, name: "인하대학교",            managerName: "백인환 교수",      contact: null },
+    { id: 214, name: "한양대",               managerName: "김상태 교수",      contact: null },
+    { id: 250, name: "KETI",                managerName: "한승호 박사",       contact: null },
+  ];
 
-  // ── 5. 샘플 품목 ──────────────────────────────
-  const wafer  = await prisma.itemCategory.findUnique({ where: { name: "웨이퍼" } });
-  const target = await prisma.itemCategory.findUnique({ where: { name: "타겟" } });
-  const gas    = await prisma.itemCategory.findUnique({ where: { name: "가스" } });
-  const etc    = await prisma.itemCategory.findUnique({ where: { name: "기자재/소모품" } });
-
-  if (wafer && target && gas && etc) {
-    await prisma.item.createMany({
-      data: [
-        { categoryId: wafer.id,  code: "W4P0BT-89", name: '4" P-type Boron 웨이퍼', unit: "장" },
-        { categoryId: wafer.id,  code: "W6P0SB-45", name: '6" P-type Sb 웨이퍼',    unit: "장" },
-        { categoryId: target.id, code: "T-AU-3N",   name: "Au Target 3N 2인치",      unit: "개" },
-        { categoryId: target.id, code: "T-TI-4N",   name: "Ti Target 4N 3인치",      unit: "개" },
-        { categoryId: gas.id,    code: "G-AR-HP",   name: "Ar 고순도 가스 (99.999%)", unit: "병" },
-        { categoryId: gas.id,    code: "G-N2-UHP",  name: "N₂ 초고순도 가스",         unit: "병" },
-        { categoryId: etc.id,    code: "E-GLV-CR",  name: "클린룸 장갑 (M)",          unit: "개" },
-        { categoryId: etc.id,    code: "E-WPR-A4",  name: "클린룸 와이퍼 A4",         unit: "장" },
-      ],
-      skipDuplicates: true,
+  for (const p of partners) {
+    await prisma.partner.upsert({
+      where:  { id: p.id },
+      update: { name: p.name, managerName: p.managerName ?? null, contact: p.contact ?? null },
+      create: { id: p.id, name: p.name, managerName: p.managerName ?? null, contact: p.contact ?? null },
     });
-    console.log("  ✓ 샘플 품목");
   }
+
+  // Rayvac — ID 미지정, name으로 upsert
+  await prisma.partner.upsert({
+    where:  { name: "Rayvac" },
+    update: { managerName: "민경대", contact: "mirror@rayvactech.com" },
+    create: { name: "Rayvac", managerName: "민경대", contact: "mirror@rayvactech.com" },
+  });
+
+  console.log("  ✓ 거래처 (23개 + Rayvac)");
 
   console.log("✅ Seed 완료!");
 }

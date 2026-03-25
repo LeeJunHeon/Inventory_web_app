@@ -7,13 +7,13 @@ import { CATEGORY_COLORS } from "@/lib/data";
 interface ItemOption {
   id: number; code: string; name: string;
   category: string; categoryId: number;
-  unit: string | null; spec: string | null; note: string | null; isActive: boolean;
+  unit: string | null; note: string | null; isActive: boolean;
 }
 interface CategoryOption { id: number; name: string; codePrefix: string | null; }
 
 const CATS = ["전체", "웨이퍼", "타겟", "가스", "기자재/소모품"];
 
-const EMPTY_FORM = { code: "", name: "", categoryId: "", unit: "", spec: "", note: "" };
+const EMPTY_FORM = { code: "", name: "", categoryId: "", unit: "", note: "" };
 
 export default function ItemsPage() {
   const [items, setItems]                   = useState<ItemOption[]>([]);
@@ -36,13 +36,13 @@ export default function ItemsPage() {
       .then(r => r.json())
       .then(setCategories)
       .catch(() => {
-        // fallback: 하드코딩
         setCategories([
           { id: 1, name: "웨이퍼",      codePrefix: "W" },
           { id: 2, name: "타겟",        codePrefix: "T" },
           { id: 3, name: "가스",        codePrefix: "G" },
           { id: 4, name: "기자재/소모품", codePrefix: "E" },
         ]);
+        showToast("품목군 목록을 불러오지 못했습니다. 페이지를 새로고침 해주세요.");
       });
   }, []);
 
@@ -78,7 +78,6 @@ export default function ItemsPage() {
       name: item.name,
       categoryId: String(item.categoryId),
       unit: item.unit || "",
-      spec: item.spec || "",
       note: item.note || "",
     });
     setFormError("");
@@ -102,7 +101,6 @@ export default function ItemsPage() {
           name:       form.name.trim(),
           categoryId: Number(form.categoryId),
           unit:       form.unit.trim() || null,
-          spec:       form.spec.trim() || null,
           note:       form.note.trim() || null,
         }),
       });
@@ -188,13 +186,6 @@ export default function ItemsPage() {
                 placeholder="예: 장, 개, 병, kg"
                 className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400" />
             </div>
-            {/* 규격 */}
-            <div>
-              <label className="block text-xs font-semibold text-blue-700 mb-1">규격/사양</label>
-              <input value={form.spec} onChange={e => setForm(f => ({ ...f, spec: e.target.value }))}
-                placeholder="예: 4인치, 99.99%, 10L"
-                className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400" />
-            </div>
             {/* 비고 */}
             <div>
               <label className="block text-xs font-semibold text-blue-700 mb-1">비고</label>
@@ -251,7 +242,7 @@ export default function ItemsPage() {
                 <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">품목명</th>
                 <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">품목군</th>
                 <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">단위</th>
-                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">규격</th>
+                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">비고</th>
                 <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">상태</th>
                 <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">작업</th>
               </tr></thead>
@@ -261,10 +252,7 @@ export default function ItemsPage() {
                 ) : items.map(item => (
                   <tr key={item.id} className={`border-b border-gray-50 hover:bg-blue-50/30 group ${!item.isActive ? "opacity-40" : ""}`}>
                     <td className="px-5 py-3 text-sm font-mono font-semibold text-gray-900">{item.code}</td>
-                    <td className="px-5 py-3 text-sm font-medium text-gray-900">
-                      {item.name}
-                      {item.spec && <span className="ml-2 text-xs text-gray-400">{item.spec}</span>}
-                    </td>
+                    <td className="px-5 py-3 text-sm font-medium text-gray-900">{item.name}</td>
                     <td className="px-5 py-3">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[item.category] || ""}`}>{item.category}</span>
                     </td>
@@ -306,7 +294,7 @@ export default function ItemsPage() {
                   </div>
                 </div>
                 <p className="text-sm font-medium text-gray-900">{item.name}</p>
-                <p className="text-xs text-gray-400">{[item.unit, item.spec, item.note].filter(Boolean).join(" · ") || "-"}</p>
+                <p className="text-xs text-gray-400">{[item.unit, item.note].filter(Boolean).join(" · ") || "-"}</p>
               </div>
             ))}
           </div>

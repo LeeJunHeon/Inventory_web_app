@@ -55,7 +55,8 @@ export default function BarcodePage() {
   // 바코드 생성 폼 품목군 바뀔 때 품목 로드
   useEffect(() => {
     fetch(`/api/items?category=${encodeURIComponent(createCategory)}`)
-      .then(r => r.json()).then(setItemOptions).catch(console.error);
+      .then(r => r.json()).then(setItemOptions)
+      .catch(() => setCreateError("품목 목록을 불러오지 못했습니다. 페이지를 새로고침 해주세요."));
     setCreateItemId(null); setCreateItemCode(""); setCreateItemName("");
   }, [createCategory]);
 

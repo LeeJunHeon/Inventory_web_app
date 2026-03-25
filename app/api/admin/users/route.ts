@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { requireAdmin } from "@/lib/auth-helpers";
 
 // GET /api/admin/users — 사용자 + 권한 목록
 export async function GET() {
+  const authResult = await requireAdmin();
+  if ("error" in authResult) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
   try {
     const users = await prisma.user.findMany({
       include: { permission: true },
@@ -39,6 +44,10 @@ export async function GET() {
 
 // PUT /api/admin/users — 사용자 권한/역할/활성 일괄 저장
 export async function PUT(request: NextRequest) {
+  const authResult = await requireAdmin();
+  if ("error" in authResult) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
   try {
     const body = await request.json();
     const { users } = body;
@@ -81,6 +90,10 @@ export async function PUT(request: NextRequest) {
 
 // POST /api/admin/users — 사용자 추가
 export async function POST(request: NextRequest) {
+  const authResult = await requireAdmin();
+  if ("error" in authResult) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
   try {
     const body = await request.json();
     const { name, email, role } = body;
@@ -115,6 +128,10 @@ export async function POST(request: NextRequest) {
 
 // DELETE /api/admin/users?userId=1 — 사용자 삭제 또는 비활성화
 export async function DELETE(request: NextRequest) {
+  const authResult = await requireAdmin();
+  if ("error" in authResult) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
   try {
     const session = await auth();
     const { searchParams } = new URL(request.url);

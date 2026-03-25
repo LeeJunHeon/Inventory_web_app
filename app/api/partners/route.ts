@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth-helpers";
 
 // GET /api/partners
 export async function GET(request: NextRequest) {
@@ -31,6 +32,10 @@ export async function GET(request: NextRequest) {
 
 // POST /api/partners — 거래처 등록
 export async function POST(request: NextRequest) {
+  const authResult = await requireAdmin();
+  if ("error" in authResult) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
   try {
     const body = await request.json();
     const { name, managerName, contact, email } = body;
@@ -66,6 +71,10 @@ export async function POST(request: NextRequest) {
 
 // PUT /api/partners?id=1 — 거래처 수정
 export async function PUT(request: NextRequest) {
+  const authResult = await requireAdmin();
+  if ("error" in authResult) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
@@ -97,6 +106,10 @@ export async function PUT(request: NextRequest) {
 
 // DELETE /api/partners?id=1 — 거래처 삭제
 export async function DELETE(request: NextRequest) {
+  const authResult = await requireAdmin();
+  if ("error" in authResult) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");

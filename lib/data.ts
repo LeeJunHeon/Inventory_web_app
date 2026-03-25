@@ -18,10 +18,7 @@ export interface InventoryItem {
   location: string;
   locationId: number;
   userName: string | null;
-  waferResistance: string;
-  waferThickness: string;
-  waferDirection: string;
-  waferSurface: string;
+  itemSpec: string | null;
 }
 
 export interface TargetUnit {

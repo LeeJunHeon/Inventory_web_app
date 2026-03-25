@@ -1,6 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { requireAuth } from "@/lib/auth-helpers";
+
+function buildItemSpec(ws: {
+  waferType?: string | null; diameterInch?: number | null;
+  resistivity?: string | null; thicknessNote?: string | null;
+  orientation?: string | null; surface?: string | null;
+} | null): string | null {
+  if (!ws) return null;
+  const parts = [
+    ws.diameterInch  ? `${ws.diameterInch}"` : null,
+    ws.waferType     ? `${ws.waferType}` : null,
+    ws.resistivity   ? `저항: ${ws.resistivity}` : null,
+    ws.thicknessNote ? `두께: ${ws.thicknessNote}` : null,
+    ws.orientation   ? `방향: ${ws.orientation}` : null,
+    ws.surface       ? `표면: ${ws.surface}` : null,
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(" | ") : null;
+}
 
 const VALID_TYPES = ["입고", "출고", "불출"];
 
@@ -43,7 +61,7 @@ export async function GET(request: NextRequest) {
     const transactions = await prisma.inventoryTx.findMany({
       where,
       include: {
-        item:     { include: { category: true } },
+        item:     { include: { category: true, waferSpec: true } },
         partner:  true,
         barcode:  true,
         location: true,
@@ -71,6 +89,7 @@ export async function GET(request: NextRequest) {
       locationId: tx.locationId,
       txReason:   tx.txReason?.name  || "",
       userName:   tx.user?.name      ?? null,
+      itemSpec:   buildItemSpec(tx.item.waferSpec),
     }));
 
     return NextResponse.json(result);
@@ -82,6 +101,10 @@ export async function GET(request: NextRequest) {
 
 // POST /api/inventory — 새 재고 트랜잭션 생성
 export async function POST(request: NextRequest) {
+  const authResult = await requireAuth();
+  if ("error" in authResult) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
   try {
     // 세션에서 로그인 사용자 id 조회
     const session = await auth();
@@ -110,6 +133,9 @@ export async function POST(request: NextRequest) {
     }
     if (!body.locationId) {
       return NextResponse.json({ error: "위치를 선택해주세요." }, { status: 400 });
+    }
+    if ((body.txType === "출고" || body.txType === "불출") && !body.refTxNo) {
+      return NextResponse.json({ error: "출고/불출 시 참조 입고 전표번호가 필요합니다." }, { status: 400 });
     }
 
     // 전표번호 자동 채번: 기존 tx_no 중 가장 큰 숫자 + 1
@@ -150,6 +176,10 @@ export async function POST(request: NextRequest) {
 
 // PUT /api/inventory?id=123 — 트랜잭션 수정
 export async function PUT(request: NextRequest) {
+  const authResult = await requireAuth();
+  if ("error" in authResult) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
@@ -195,6 +225,10 @@ export async function PUT(request: NextRequest) {
 
 // DELETE /api/inventory?id=123 — 트랜잭션 삭제
 export async function DELETE(request: NextRequest) {
+  const authResult = await requireAuth();
+  if ("error" in authResult) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");

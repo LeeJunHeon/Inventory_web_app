@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth-helpers";
 
 // GET /api/items
 export async function GET(request: NextRequest) {
@@ -7,8 +8,13 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category") || "";
     const search   = searchParams.get("search")   || "";
+    const showAll  = searchParams.get("showAll")  === "true";
 
     const where: any = {};
+
+    if (!showAll) {
+      where.isActive = true;
+    }
 
     if (category && category !== "전체") {
       where.category = { name: category };
@@ -45,6 +51,10 @@ export async function GET(request: NextRequest) {
 
 // POST /api/items — 품목 등록
 export async function POST(request: NextRequest) {
+  const authResult = await requireAdmin();
+  if ("error" in authResult) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
   try {
     const body = await request.json();
     const { code, name, categoryId, unit, minStockQty, note } = body;
@@ -84,6 +94,10 @@ export async function POST(request: NextRequest) {
 
 // PUT /api/items?id=1 — 품목 수정
 export async function PUT(request: NextRequest) {
+  const authResult = await requireAdmin();
+  if ("error" in authResult) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
@@ -118,6 +132,10 @@ export async function PUT(request: NextRequest) {
 
 // DELETE /api/items?id=1 — 품목 삭제
 export async function DELETE(request: NextRequest) {
+  const authResult = await requireAdmin();
+  if ("error" in authResult) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");

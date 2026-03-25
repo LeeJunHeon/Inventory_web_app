@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth-helpers";
 
 // GET /api/barcodes — 바코드 목록 조회
 export async function GET(request: NextRequest) {
@@ -65,6 +66,10 @@ export async function GET(request: NextRequest) {
 
 // POST /api/barcodes — 바코드 생성
 export async function POST(request: NextRequest) {
+  const authResult = await requireAuth();
+  if ("error" in authResult) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
   try {
     const body = await request.json();
     const { itemId } = body;
@@ -152,6 +157,10 @@ export async function POST(request: NextRequest) {
 
 // DELETE /api/barcodes?id=1 — 바코드 삭제
 export async function DELETE(request: NextRequest) {
+  const authResult = await requireAuth();
+  if ("error" in authResult) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");

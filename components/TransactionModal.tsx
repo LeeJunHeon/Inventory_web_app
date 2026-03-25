@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, ScanLine, PenLine } from "lucide-react";
+import { X, ScanLine, PenLine, List, Loader2 } from "lucide-react";
 import { TYPE_COLORS, CATEGORY_COLORS } from "@/lib/data";
+import InboundSelectModal, { type InboundTx } from "./InboundSelectModal";
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -13,6 +14,16 @@ interface TransactionModalProps {
 interface ItemOption     { id: number; code: string; name: string; }
 interface PartnerOption  { id: number; name: string; type: string; }
 interface LocationOption { id: number; name: string; }
+interface BarcodeOption  { id: number; code: string; itemCode: string; itemName: string; isActive: string; }
+interface WaferSpecInfo  {
+  waferType: string | null; diameterInch: number | null;
+  resistivity: string | null; thicknessNote: string | null;
+  orientation: string | null; surface: string | null;
+}
+interface SelectedInbound {
+  txNo: string; remainQty: number;
+  barcodeId: number | null; targetUnitId: number | null;
+}
 
 export default function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModalProps) {
   const [type, setType]         = useState<"입고" | "출고" | "불출">("입고");
@@ -42,11 +53,25 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const [showItemSelector, setShowItemSelector] = useState(false);
   const selectorRef = useRef<HTMLDivElement>(null);
 
+  // 바코드 선택기
+  const [showBarcodeSelector, setShowBarcodeSelector] = useState(false);
+  const [barcodeSelectorSearch, setBarcodeSelectorSearch] = useState("");
+  const [barcodeSelectorList, setBarcodeSelectorList]     = useState<BarcodeOption[]>([]);
+  const [barcodeSelectorLoading, setBarcodeSelectorLoading] = useState(false);
+
+  // 웨이퍼 스펙
+  const [waferSpec, setWaferSpec] = useState<WaferSpecInfo | null>(null);
+
+  // 입고 참조 선택
+  const [showInboundSelect, setShowInboundSelect] = useState(false);
+  const [selectedInbound, setSelectedInbound] = useState<SelectedInbound | null>(null);
+
   // 모달 열릴 때 거래처 + 위치 로드 (한 번만)
   useEffect(() => {
     if (!isOpen) return;
     fetch("/api/partners")
-      .then(r => r.json()).then(setPartnerOptions).catch(console.error);
+      .then(r => r.json()).then(setPartnerOptions)
+      .catch(() => setError("거래처 목록을 불러오지 못했습니다. 페이지를 새로고침 해주세요."));
     fetch("/api/locations")
       .then(r => r.json()).then((locs: LocationOption[]) => {
         // 거래 입력용: 본사(id=1), 공덕(id=2)만 표시
@@ -57,7 +82,8 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         if (!filtered.find(l => l.id === 1) && filtered.length > 0) {
           setLocationId(filtered[0].id);
         }
-      }).catch(console.error);
+      })
+      .catch(() => setError("위치 목록을 불러오지 못했습니다. 페이지를 새로고침 해주세요."));
   }, [isOpen]);
 
   // 모달 닫힐 때 전체 폼 초기화
@@ -71,6 +97,9 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       setPartnerId(null); setPartnerName("");
       setLocationId(1);
       setMemo(""); setError(""); setShowItemSelector(false);
+      setShowBarcodeSelector(false); setBarcodeSelectorSearch(""); setBarcodeSelectorList([]);
+      setWaferSpec(null);
+      setShowInboundSelect(false); setSelectedInbound(null);
     }
   }, [isOpen]);
 
@@ -81,7 +110,18 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       .then(r => r.json()).then(setItemOptions).catch(console.error);
     setItemId(null); setItemCode(""); setItemName("");
     setShowItemSelector(false);
+    setWaferSpec(null);
+    setSelectedInbound(null);
   }, [category]);
+
+  // 웨이퍼 품목 선택 시 스펙 조회
+  useEffect(() => {
+    if (category !== "웨이퍼" || !itemId || !isOpen) { setWaferSpec(null); return; }
+    fetch(`/api/items/${itemId}/spec`)
+      .then(r => r.json())
+      .then(data => setWaferSpec(data?.waferSpec ?? null))
+      .catch(() => setWaferSpec(null));
+  }, [itemId, category, isOpen]);
 
   // 드롭다운 외부 클릭 시 닫기
   useEffect(() => {
@@ -98,16 +138,34 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
     setDirectInput(v => !v);
     setBarcodeInput(""); setBarcodeId(null); setTargetUnitId(null); setRefTxNo(null);
     setItemId(null); setItemCode(""); setItemName("");
+    setSelectedInbound(null);
     setError("");
   };
 
+  // 바코드 목록 선택기 열기
+  const openBarcodeSelector = async () => {
+    setShowBarcodeSelector(true);
+    setBarcodeSelectorSearch("");
+    setBarcodeSelectorLoading(true);
+    try {
+      const res = await fetch(`/api/barcodes?category=${encodeURIComponent(category)}`);
+      if (res.ok) {
+        const all: BarcodeOption[] = await res.json();
+        setBarcodeSelectorList(all.filter(b => b.isActive !== "N"));
+      }
+    } catch { /* ignore */ }
+    finally { setBarcodeSelectorLoading(false); }
+  };
+
   // 바코드 조회 — 출고/불출: /lookup (refTxNo 포함), 입고: /barcodes?search
-  const handleBarcodeLookup = async () => {
-    if (!barcodeInput.trim()) return;
+  // codeOverride: 목록 선택 시 직접 코드 전달 (state 비동기 문제 우회)
+  const handleBarcodeLookup = async (codeOverride?: string) => {
+    const lookupCode = (codeOverride ?? barcodeInput).trim();
+    if (!lookupCode) return;
     setError("");
     try {
       if (type === "출고" || type === "불출") {
-        const res = await fetch(`/api/barcodes/lookup?code=${encodeURIComponent(barcodeInput.trim())}`);
+        const res = await fetch(`/api/barcodes/lookup?code=${encodeURIComponent(lookupCode)}`);
         const bc = await res.json();
         if (!res.ok) { setError(bc.error || "바코드 조회 실패"); return; }
         setBarcodeId(bc.barcodeId);
@@ -129,7 +187,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         setItemName(bc.itemName);
       } else {
         // 입고: 단순 바코드 조회
-        const res = await fetch(`/api/barcodes?search=${encodeURIComponent(barcodeInput.trim())}`);
+        const res = await fetch(`/api/barcodes?search=${encodeURIComponent(lookupCode)}`);
         const data = await res.json();
         if (!Array.isArray(data) || data.length === 0) { setError("해당 바코드를 찾을 수 없습니다. (비활성 바코드이거나 미등록 바코드)"); return; }
         const bc = data[0];
@@ -152,6 +210,14 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         setItemName(bc.itemName);
       }
     } catch { setError("바코드 조회 실패"); }
+  };
+
+  // 입고 참조 선택 콜백
+  const handleInboundSelect = (inbound: InboundTx) => {
+    setRefTxNo(inbound.txNo);
+    setSelectedInbound({ txNo: inbound.txNo, remainQty: inbound.remainQty, barcodeId: inbound.barcodeId, targetUnitId: inbound.targetUnitId });
+    if (inbound.barcodeId)    setBarcodeId(inbound.barcodeId);
+    if (inbound.targetUnitId) setTargetUnitId(inbound.targetUnitId);
   };
 
   // 금액 자동계산
@@ -196,7 +262,70 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
 
   if (!isOpen) return null;
 
+  // 바코드 선택기 검색 필터
+  const filteredBarcodes = barcodeSelectorList.filter(b => {
+    if (!barcodeSelectorSearch) return true;
+    const s = barcodeSelectorSearch.toLowerCase();
+    return b.code.toLowerCase().includes(s) ||
+           b.itemCode.toLowerCase().includes(s) ||
+           b.itemName.toLowerCase().includes(s);
+  });
+
   return (
+    <>
+    {/* 입고 참조 선택 모달 */}
+    <InboundSelectModal
+      isOpen={showInboundSelect}
+      itemId={itemId}
+      onSelect={handleInboundSelect}
+      onClose={() => setShowInboundSelect(false)}
+    />
+    {/* 바코드 선택기 팝업 */}
+    {showBarcodeSelector && (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[70vh] flex flex-col">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <h3 className="font-bold text-gray-900 text-sm">바코드 선택 — {category}</h3>
+            <button onClick={() => setShowBarcodeSelector(false)} className="p-1.5 rounded-lg hover:bg-gray-100">
+              <X size={18} className="text-gray-400" />
+            </button>
+          </div>
+          <div className="px-4 py-3 border-b border-gray-100">
+            <input
+              type="text"
+              placeholder="바코드코드, 품목코드, 품목명 검색..."
+              value={barcodeSelectorSearch}
+              onChange={e => setBarcodeSelectorSearch(e.target.value)}
+              autoFocus
+              className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {barcodeSelectorLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 size={20} className="animate-spin text-blue-500" />
+              </div>
+            ) : filteredBarcodes.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-10">해당 바코드가 없습니다</p>
+            ) : filteredBarcodes.map(b => (
+              <button key={b.id}
+                onClick={() => {
+                  setBarcodeInput(b.code);
+                  setShowBarcodeSelector(false);
+                  handleBarcodeLookup(b.code);
+                }}
+                className="w-full text-left px-5 py-3 hover:bg-blue-50 border-b border-gray-50 last:border-0 transition-colors">
+                <p className="text-sm font-mono font-semibold text-gray-900">{b.code}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{b.itemName} <span className="text-gray-400 font-mono">· {b.itemCode}</span></p>
+              </button>
+            ))}
+          </div>
+          <div className="px-4 py-2 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+            <p className="text-xs text-gray-400">{filteredBarcodes.length}개</p>
+          </div>
+        </div>
+      </div>
+    )}
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.4)" }}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
 
@@ -215,7 +344,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
             <label className="block text-sm font-semibold text-gray-700 mb-2">구분</label>
             <div className="flex gap-2">
               {(["입고", "출고", "불출"] as const).map((t) => (
-                <button key={t} onClick={() => { setType(t); setBarcodeInput(""); setBarcodeId(null); setRefTxNo(null); }}
+                <button key={t} onClick={() => { setType(t); setBarcodeInput(""); setBarcodeId(null); setRefTxNo(null); setSelectedInbound(null); }}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                     type === t
                       ? `${TYPE_COLORS[t].bg} ${TYPE_COLORS[t].text} ${TYPE_COLORS[t].border} border-2 shadow-sm`
@@ -259,9 +388,14 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                     : "border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 }`}
               />
-              <button onClick={handleBarcodeLookup} disabled={directInput}
+              <button onClick={() => handleBarcodeLookup()} disabled={directInput}
                 className="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed">
                 조회
+              </button>
+              <button onClick={openBarcodeSelector} disabled={directInput}
+                className="flex items-center gap-1.5 px-3 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+                title="바코드 목록에서 선택">
+                <List size={15} />목록
               </button>
             </div>
             <p className="mt-1.5 text-xs text-gray-400">
@@ -269,15 +403,35 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 ? "품목을 직접 선택합니다 (바코드 미연결)"
                 : "바코드를 스캔하면 품목이 자동으로 선택됩니다"}
             </p>
-            {/* 출고/불출에서 refTxNo 자동 연결 안내 */}
-            {(type === "출고" || type === "불출") && refTxNo && (
-              <p className="mt-1 text-xs text-blue-600 font-medium">입고 참조: {refTxNo}</p>
-            )}
             {/* 타겟 ID 연결 안내 */}
             {targetUnitId && (
               <span className="inline-flex items-center mt-1.5 gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700">
                 타겟 ID: TU-{String(targetUnitId).padStart(3, "0")} 연결됨
               </span>
+            )}
+            {/* 출고/불출: 입고 참조 선택 */}
+            {(type === "출고" || type === "불출") && (
+              <div className="mt-2">
+                {selectedInbound ? (
+                  <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2">
+                    <div className="flex-1 text-xs">
+                      <span className="font-semibold text-emerald-700">입고 참조: #{selectedInbound.txNo}</span>
+                      <span className="text-emerald-500 ml-2">잔여 {selectedInbound.remainQty.toLocaleString()}개</span>
+                    </div>
+                    <button onClick={() => setShowInboundSelect(true)}
+                      className="text-xs px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition-colors">
+                      변경
+                    </button>
+                  </div>
+                ) : refTxNo ? (
+                  <p className="text-xs text-blue-600 font-medium">입고 참조: {refTxNo}</p>
+                ) : itemId ? (
+                  <button onClick={() => setShowInboundSelect(true)}
+                    className="mt-1 text-xs px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl hover:bg-amber-100 transition-colors">
+                    입고 참조 선택 (필수)
+                  </button>
+                ) : null}
+              </div>
             )}
           </div>
 
@@ -319,9 +473,11 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                         <button key={opt.id}
                           onClick={() => {
                             setItemId(opt.id); setItemCode(opt.code); setItemName(opt.name);
-                            // 직접 선택 시 바코드/타겟 연결 항상 해제
-                            setBarcodeId(null); setTargetUnitId(null); setRefTxNo(null);
+                            // 직접 선택 시 바코드/타겟/입고참조 해제
+                            setBarcodeId(null); setTargetUnitId(null); setRefTxNo(null); setSelectedInbound(null);
                             setShowItemSelector(false);
+                            // 출고/불출 직접입력 모드: 입고 참조 선택 자동 오픈
+                            if ((type === "출고" || type === "불출") && directInput) setShowInboundSelect(true);
                           }}
                           className="w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-0">
                           <span className="font-medium text-gray-900">{opt.name}</span>
@@ -339,6 +495,25 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
             </div>
           </div>
+
+          {/* 웨이퍼 스펙 정보 (웨이퍼 품목 선택 시만 표시) */}
+          {category === "웨이퍼" && itemId && (
+            <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
+              <p className="text-xs font-semibold text-blue-700 mb-2">웨이퍼 스펙 정보</p>
+              {waferSpec ? (
+                <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-blue-800">
+                  <span><span className="text-blue-400">직경: </span>{waferSpec.diameterInch ? `${waferSpec.diameterInch}"` : "-"}</span>
+                  <span><span className="text-blue-400">타입: </span>{waferSpec.waferType || "-"}</span>
+                  <span><span className="text-blue-400">저항: </span>{waferSpec.resistivity || "-"}</span>
+                  <span><span className="text-blue-400">두께: </span>{waferSpec.thicknessNote || "-"}</span>
+                  <span><span className="text-blue-400">방향: </span>{waferSpec.orientation || "-"}</span>
+                  <span><span className="text-blue-400">표면: </span>{waferSpec.surface || "-"}</span>
+                </div>
+              ) : (
+                <p className="text-xs text-blue-400">스펙 정보 없음</p>
+              )}
+            </div>
+          )}
 
           {/* 수량 / 단가 / 금액 */}
           <div className="grid grid-cols-3 gap-4">
@@ -358,6 +533,13 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
             </div>
           </div>
+
+          {/* 잔여수량 초과 경고 */}
+          {(type === "출고" || type === "불출") && selectedInbound && quantity && Number(quantity) > selectedInbound.remainQty && (
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl">
+              수량({quantity})이 잔여수량({selectedInbound.remainQty.toLocaleString()})을 초과합니다.
+            </p>
+          )}
 
           {/* 거래처 / 불출처 */}
           <div>
@@ -420,5 +602,6 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         </div>
       </div>
     </div>
+    </>
   );
 }

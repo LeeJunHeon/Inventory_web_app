@@ -195,7 +195,13 @@ export default function InventoryPage() {
                       </td>
                       <td className="px-5 py-3.5"><span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[item.category] || ""}`}>{item.category}</span></td>
                       <td className="px-5 py-3.5 text-sm text-gray-500 font-mono">{item.barcode || "-"}</td>
-                      <td className="px-5 py-3.5"><p className="text-sm font-medium text-gray-900">{item.name}</p><p className="text-xs text-gray-400">{item.code}</p></td>
+                      <td className="px-5 py-3.5" title={item.itemSpec ?? undefined}>
+                        <p className="text-sm font-medium text-gray-900">
+                          {item.name}
+                          {item.itemSpec && <span className="ml-1.5 text-[10px] text-violet-400 font-normal">ℹ</span>}
+                        </p>
+                        <p className="text-xs text-gray-400">{item.code}</p>
+                      </td>
                       <td className="px-5 py-3.5 text-sm text-right font-semibold text-gray-900">{formatQty(item.qty)}</td>
                       <td className="px-5 py-3.5 text-sm text-right text-gray-600">{formatPrice(item.amount)}</td>
                       <td className="px-5 py-3.5 text-sm text-gray-600">{item.partner}</td>

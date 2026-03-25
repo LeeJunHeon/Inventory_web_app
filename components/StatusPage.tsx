@@ -58,7 +58,10 @@ export default function StatusPage({ initialLocationId }: StatusPageProps) {
         const filtered = locs.filter(l => l.id === 1 || l.id === 2);
         setLocationOptions(filtered.length > 0 ? filtered : locs);
       })
-      .catch(console.error);
+      .catch(() => {
+        setToast("위치 목록을 불러오지 못했습니다. 페이지를 새로고침 해주세요.");
+        setTimeout(() => setToast(""), 4000);
+      });
   }, []);
 
   // 위치 바뀔 때마다 재고 재조회
