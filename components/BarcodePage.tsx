@@ -115,7 +115,7 @@ export default function BarcodePage() {
 
     const QR = 400; // QRCodeCanvas size prop과 동일
     const PAD = 30;
-    const TEXT_H = 80; // 텍스트 영역 높이
+    const TEXT_H = 110; // 텍스트 영역 높이
 
     const out = document.createElement("canvas");
     out.width  = QR + PAD * 2;        // 460
@@ -148,7 +148,13 @@ export default function BarcodePage() {
     if (printItem.itemName) {
       ctx.fillStyle = "#374151";
       ctx.font = "20px sans-serif";
-      ctx.fillText(printItem.itemName, out.width / 2, QR + PAD + 70);
+      ctx.fillText(printItem.itemName, out.width / 2, QR + PAD + 65);
+    }
+    // 품목코드
+    if (printItem.itemCode) {
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "16px monospace";
+      ctx.fillText(printItem.itemCode, out.width / 2, QR + PAD + 92);
     }
 
     const link = document.createElement("a");

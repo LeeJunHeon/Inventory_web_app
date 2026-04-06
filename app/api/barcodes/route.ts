@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
       update: { lastNo: { increment: 1 } },
       create: { prefix, lastNo: 1 },
     });
-    const newCode = `${prefix}-${String(seq.lastNo).padStart(4, "0")}`;
+    const newCode = `${prefix}-${seq.lastNo}`;
 
     // 타겟 품목인 경우 TargetUnit + Barcode를 트랜잭션으로 원자적 생성
     if (item.category.name === "타겟") {

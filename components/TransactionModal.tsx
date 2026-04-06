@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { X, ScanLine, PenLine, List, Loader2 } from "lucide-react";
+import { X, ScanLine, PenLine, List, Loader2, Plus } from "lucide-react";
 import { TYPE_COLORS, CATEGORY_COLORS } from "@/lib/data";
 import InboundSelectModal, { type InboundTx } from "./InboundSelectModal";
 
@@ -75,6 +75,10 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const [barcodeSelectorSearch, setBarcodeSelectorSearch] = useState("");
   const [barcodeSelectorList, setBarcodeSelectorList]     = useState<BarcodeOption[]>([]);
   const [barcodeSelectorLoading, setBarcodeSelectorLoading] = useState(false);
+  const [showBarcodeCreate, setShowBarcodeCreate] = useState(false);
+  const [barcodeCreateMaterial, setBarcodeCreateMaterial] = useState("");
+  const [barcodeCreating, setBarcodeCreating] = useState(false);
+  const [barcodeCreateError, setBarcodeCreateError] = useState("");
 
   // 웨이퍼 스펙
   const [waferSpec, setWaferSpec] = useState<WaferSpecInfo | null>(null);
@@ -143,6 +147,10 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       setTxReasonId(null);
       setDisburseeId(null);
       setStockMap(new Map());
+      setShowBarcodeCreate(false);
+      setBarcodeCreateMaterial("");
+      setBarcodeCreating(false);
+      setBarcodeCreateError("");
     }
   }, [isOpen]);
 
@@ -302,6 +310,28 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
     });
     if (inbound.barcodeId)    setBarcodeId(inbound.barcodeId);
     if (inbound.targetUnitId) setTargetUnitId(inbound.targetUnitId);
+  };
+
+  // 인라인 바코드 생성
+  const handleBarcodeCreate = async () => {
+    if (!itemId) { setBarcodeCreateError("먼저 품목을 선택해주세요."); return; }
+    setBarcodeCreating(true);
+    setBarcodeCreateError("");
+    try {
+      const res = await fetch("/api/barcodes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemId, materialName: barcodeCreateMaterial || null }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setBarcodeCreateError(data.error || "생성 실패"); return; }
+      // 생성된 바코드를 자동으로 입력란에 채우고 조회
+      setBarcodeInput(data.code);
+      setShowBarcodeCreate(false);
+      setBarcodeCreateMaterial("");
+      await handleBarcodeLookup(data.code);
+    } catch { setBarcodeCreateError("네트워크 오류"); }
+    finally { setBarcodeCreating(false); }
   };
 
   // 금액 자동계산
@@ -480,6 +510,9 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                   setPartnerId(null); setPartnerName("");
                   setTxReasonId(null); setDisburseeId(null);
                   setMemo(""); setWaferSpec(null); setError("");
+                  setShowBarcodeCreate(false);
+                  setBarcodeCreateMaterial("");
+                  setBarcodeCreateError("");
                 }}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                     type === t
@@ -533,6 +566,17 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 title="바코드 목록에서 선택">
                 <List size={15} />목록
               </button>
+              {type === "입고" && !directInput && (
+                <button onClick={() => { setShowBarcodeCreate(v => !v); setBarcodeCreateError(""); }}
+                  className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
+                    showBarcodeCreate
+                      ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                  title="새 바코드 생성">
+                  <Plus size={15} />생성
+                </button>
+              )}
             </div>
             <p className="mt-1.5 text-xs text-gray-400">
               {directInput
@@ -544,6 +588,31 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
               <span className="inline-flex items-center mt-1.5 gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700">
                 타겟 ID: TU-{String(targetUnitId).padStart(3, "0")} 연결됨
               </span>
+            )}
+            {/* 입고: 인라인 바코드 생성 폼 */}
+            {type === "입고" && showBarcodeCreate && (
+              <div className="mt-2 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 space-y-2">
+                <p className="text-xs font-semibold text-blue-700">새 바코드 생성</p>
+                {category === "타겟" && (
+                  <input type="text" value={barcodeCreateMaterial}
+                    onChange={e => setBarcodeCreateMaterial(e.target.value)}
+                    placeholder='물질명 (예: Au 2" 0.125t)'
+                    className="w-full px-3 py-2 border border-blue-200 rounded-xl text-sm outline-none bg-white focus:ring-2 focus:ring-blue-400" />
+                )}
+                {barcodeCreateError && (
+                  <p className="text-xs text-red-500">{barcodeCreateError}</p>
+                )}
+                <div className="flex gap-2">
+                  <button onClick={handleBarcodeCreate} disabled={barcodeCreating || !itemId}
+                    className="flex-1 px-4 py-2 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:opacity-60">
+                    {barcodeCreating ? "생성 중..." : "생성 + 자동 연결"}
+                  </button>
+                  <button onClick={() => { setShowBarcodeCreate(false); setBarcodeCreateError(""); }}
+                    className="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200">
+                    취소
+                  </button>
+                </div>
+              </div>
             )}
             {/* 출고/불출: 입고 참조 선택 */}
             {(type === "출고" || type === "불출") && (
