@@ -238,6 +238,7 @@ model InventoryTx {
   memo         String?
   refTxNo      String?  @map("ref_tx_no")
   barcodeId    Int?     @map("barcode_id")
+  currency     String?  @default("KRW")
 
   item       Item       @relation(fields: [itemId], references: [id])
   targetUnit TargetUnit? @relation(fields: [targetUnitId], references: [id])
@@ -268,4 +269,14 @@ model BarcodeScan {
   inventoryTx InventoryTx? @relation(fields: [inventoryTxId], references: [id])
 
   @@map("barcode_scan")
+}
+
+// ── 앱 설정 (범용 키-값) ──
+model AppSetting {
+  key         String   @id
+  value       String
+  description String?
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("app_setting")
 }

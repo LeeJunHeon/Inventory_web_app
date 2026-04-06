@@ -97,3 +97,8 @@ export type InventoryTx = Prisma.InventoryTxModel
  * 
  */
 export type BarcodeScan = Prisma.BarcodeScanModel
+/**
+ * Model AppSetting
+ * 
+ */
+export type AppSetting = Prisma.AppSettingModel

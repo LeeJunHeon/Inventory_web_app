@@ -66,7 +66,8 @@ export const ModelName = {
   BarcodeSeq: 'BarcodeSeq',
   Barcode: 'Barcode',
   InventoryTx: 'InventoryTx',
-  BarcodeScan: 'BarcodeScan'
+  BarcodeScan: 'BarcodeScan',
+  AppSetting: 'AppSetting'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -267,7 +268,8 @@ export const InventoryTxScalarFieldEnum = {
   userId: 'userId',
   memo: 'memo',
   refTxNo: 'refTxNo',
-  barcodeId: 'barcodeId'
+  barcodeId: 'barcodeId',
+  currency: 'currency'
 } as const
 
 export type InventoryTxScalarFieldEnum = (typeof InventoryTxScalarFieldEnum)[keyof typeof InventoryTxScalarFieldEnum]
@@ -285,6 +287,16 @@ export const BarcodeScanScalarFieldEnum = {
 } as const
 
 export type BarcodeScanScalarFieldEnum = (typeof BarcodeScanScalarFieldEnum)[keyof typeof BarcodeScanScalarFieldEnum]
+
+
+export const AppSettingScalarFieldEnum = {
+  key: 'key',
+  value: 'value',
+  description: 'description',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AppSettingScalarFieldEnum = (typeof AppSettingScalarFieldEnum)[keyof typeof AppSettingScalarFieldEnum]
 
 
 export const SortOrder = {
