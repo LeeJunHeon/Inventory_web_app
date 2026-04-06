@@ -273,6 +273,13 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const handleSave = async () => {
     if (!itemId)                            { setError("품목을 선택해주세요.");  return; }
     if (!quantity || Number(quantity) <= 0) { setError("수량을 입력해주세요.");  return; }
+    // 수량 초과 시 저장 차단
+    if ((type === "출고" || type === "불출") && selectedInbound) {
+      if (Number(quantity) > selectedInbound.remainQty) {
+        setError(`수량 초과: 선택한 입고건의 잔여수량은 ${selectedInbound.remainQty.toLocaleString()}개입니다.`);
+        return;
+      }
+    }
     // 출고/불출 시 바코드 필수 검증
     if ((type === "출고" || type === "불출") && !barcodeId) {
       try {

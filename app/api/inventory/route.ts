@@ -171,6 +171,31 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 출고/불출 수량 초과 방지
+    if ((body.txType === "출고" || body.txType === "불출") && body.refTxNo) {
+      const refInbound = await prisma.inventoryTx.findUnique({
+        where: { txNo: body.refTxNo },
+        select: { qty: true },
+      });
+      if (refInbound) {
+        const consumed = await prisma.inventoryTx.aggregate({
+          where: {
+            refTxNo: body.refTxNo,
+            txType: { in: ["출고", "불출"] },
+          },
+          _sum: { qty: true },
+        });
+        const usedQty = consumed._sum.qty ?? 0;
+        const remainQty = refInbound.qty - usedQty;
+        if (Number(body.qty) > remainQty) {
+          return NextResponse.json(
+            { error: `수량 초과: 해당 입고건의 잔여수량은 ${remainQty}개입니다. (요청: ${body.qty}개)` },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
     // 전표번호 자동 채번: 기존 tx_no 중 가장 큰 숫자 + 1
     const lastTx = await prisma.inventoryTx.findFirst({
       where:   { txNo: { not: null } },
