@@ -282,35 +282,43 @@ export default function InventoryPage() {
                     {item.barcode && <span className="text-xs font-mono text-gray-400">· {item.barcode}</span>}
                   </div>
                 </div>
-                <div className="flex items-center justify-between pt-2 border-t border-gray-50">
-                  <div className="flex items-center gap-4">
-                    <div><p className="text-[10px] text-gray-400">수량</p><p className="text-sm font-bold text-gray-900">{formatQty(item.qty)}</p></div>
-                    <div>
-                      <p className="text-[10px] text-gray-400">금액</p>
-                      {item.currency === "USD" ? (
-                        <div>
-                          <p className="text-sm text-gray-600">
-                            {item.amount != null ? `$${item.amount.toLocaleString()}` : "-"}
-                          </p>
-                          {item.exchangeRateAtEntry && item.amount != null && (
-                            <p className="text-xs text-gray-400 whitespace-nowrap">등록시 ₩{Math.round(item.amount * item.exchangeRateAtEntry).toLocaleString()} ({item.exchangeRateAtEntry.toLocaleString()}원)</p>
-                          )}
-                          {exchangeRate && item.amount != null && (
-                            <p className="text-xs text-gray-400 whitespace-nowrap">현재 ₩{Math.round(item.amount * exchangeRate).toLocaleString()} ({exchangeRate.toLocaleString()}원)</p>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-gray-600">{formatPrice(item.amount)}</p>
+                {item.currency !== "USD" ? (
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-50">
+                    <div className="flex items-center gap-4">
+                      <div><p className="text-[10px] text-gray-400">수량</p><p className="text-sm font-bold text-gray-900">{formatQty(item.qty)}</p></div>
+                      <div><p className="text-[10px] text-gray-400">금액</p><p className="text-sm text-gray-600">{formatPrice(item.amount)}</p></div>
+                      <div><p className="text-[10px] text-gray-400">거래처</p><p className="text-sm text-gray-600 max-w-[120px] truncate">{item.partner || "-"}</p></div>
+                      {item.userName && <div><p className="text-[10px] text-gray-400">등록자</p><p className="text-sm text-gray-500 max-w-[80px] truncate">{item.userName}</p></div>}
+                    </div>
+                    <div className="flex gap-1">
+                      <button onClick={() => setEditItem(item)} className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600"><Edit size={16} /></button>
+                      <button onClick={() => handleDelete(item.id)} className="p-2 rounded-lg hover:bg-rose-50 text-gray-400 hover:text-rose-600"><Trash2 size={16} /></button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="pt-2 border-t border-gray-50 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div><p className="text-[10px] text-gray-400">수량</p><p className="text-sm font-bold text-gray-900">{formatQty(item.qty)}</p></div>
+                        <div><p className="text-[10px] text-gray-400">거래처</p><p className="text-sm text-gray-600 max-w-[120px] truncate">{item.partner || "-"}</p></div>
+                        {item.userName && <div><p className="text-[10px] text-gray-400">등록자</p><p className="text-sm text-gray-500 max-w-[80px] truncate">{item.userName}</p></div>}
+                      </div>
+                      <div className="flex gap-1">
+                        <button onClick={() => setEditItem(item)} className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600"><Edit size={16} /></button>
+                        <button onClick={() => handleDelete(item.id)} className="p-2 rounded-lg hover:bg-rose-50 text-gray-400 hover:text-rose-600"><Trash2 size={16} /></button>
+                      </div>
+                    </div>
+                    <div className="bg-gray-50 rounded-xl px-3 py-2 space-y-1">
+                      <p className="text-sm font-semibold text-gray-700">{item.amount != null ? `$${item.amount.toLocaleString()}` : "-"}</p>
+                      {item.exchangeRateAtEntry && item.amount != null && (
+                        <p className="text-xs text-gray-400">등록시 ₩{Math.round(item.amount * item.exchangeRateAtEntry).toLocaleString()} ({item.exchangeRateAtEntry.toLocaleString()}원)</p>
+                      )}
+                      {exchangeRate && item.amount != null && (
+                        <p className="text-xs text-gray-400">현재 ₩{Math.round(item.amount * exchangeRate).toLocaleString()} ({exchangeRate.toLocaleString()}원)</p>
                       )}
                     </div>
-                    <div><p className="text-[10px] text-gray-400">거래처</p><p className="text-sm text-gray-600 max-w-[120px] truncate">{item.partner || "-"}</p></div>
-                    {item.userName && <div><p className="text-[10px] text-gray-400">등록자</p><p className="text-sm text-gray-500 max-w-[80px] truncate">{item.userName}</p></div>}
                   </div>
-                  <div className="flex gap-1">
-                    <button onClick={() => setEditItem(item)} className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600"><Edit size={16} /></button>
-                    <button onClick={() => handleDelete(item.id)} className="p-2 rounded-lg hover:bg-rose-50 text-gray-400 hover:text-rose-600"><Trash2 size={16} /></button>
-                  </div>
-                </div>
+                )}
               </div>
             ))}
           </div>
