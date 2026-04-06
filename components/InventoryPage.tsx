@@ -189,7 +189,7 @@ export default function InventoryPage() {
                       <td className="px-5 py-3.5 text-sm text-gray-500 font-mono">{item.id}</td>
                       <td className="px-5 py-3.5 text-sm text-gray-600">{item.date}</td>
                       <td className="px-5 py-3.5">
-                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg ${TYPE_COLORS[item.type]?.bg} ${TYPE_COLORS[item.type]?.text}`}>
+                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg whitespace-nowrap ${TYPE_COLORS[item.type]?.bg} ${TYPE_COLORS[item.type]?.text}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${TYPE_COLORS[item.type]?.dot}`} />{item.type}
                         </span>
                       </td>
@@ -233,7 +233,7 @@ export default function InventoryPage() {
               <div key={item.id} className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg ${TYPE_COLORS[item.type]?.bg} ${TYPE_COLORS[item.type]?.text}`}>
+                    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg whitespace-nowrap ${TYPE_COLORS[item.type]?.bg} ${TYPE_COLORS[item.type]?.text}`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${TYPE_COLORS[item.type]?.dot}`} />{item.type}
                     </span>
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[item.category] || ""}`}>{item.category}</span>

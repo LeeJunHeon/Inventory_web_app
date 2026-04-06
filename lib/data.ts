@@ -68,6 +68,7 @@ export const TARGET_STATUS_LABELS: Record<string, { label: string; color: string
 };
 
 // ──────── 포맷터 ────────
-export const formatPrice  = (v: number) => v ? `₩${v.toLocaleString()}` : "-";
+export const formatPrice = (v: number | null | undefined) =>
+  (v == null) ? "-" : v === 0 ? "₩0" : `₩${v.toLocaleString()}`;
 export const formatQty    = (v: number) => v ? v.toLocaleString() : "0";
 export const formatWeight = (v: number | null) => v !== null ? `${v.toFixed(3)}g` : "-";
