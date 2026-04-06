@@ -218,6 +218,8 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
     const lookupCode = (codeOverride ?? barcodeInput).trim();
     if (!lookupCode) return;
     setError("");
+    setSelectedInbound(null);
+    setRefTxNo(null);
     try {
       if (type === "출고" || type === "불출") {
         const res = await fetch(`/api/barcodes/lookup?code=${encodeURIComponent(lookupCode)}`);
@@ -240,6 +242,26 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         // useEffect([category])가 초기화한 뒤에 덮어씀
         setItemCode(bc.itemCode);
         setItemName(bc.itemName);
+        // refTxNo가 있으면 inbound API 호출해서 selectedInbound 자동 채우기
+        if (bc.refTxNo) {
+          const itemIdToUse = bc.itemId ?? itemId;
+          fetch(`/api/inventory/inbound?itemId=${itemIdToUse}&locationId=${locationId}`)
+            .then(r => r.json())
+            .then((list: InboundTx[]) => {
+              const found = list.find(tx => tx.txNo === bc.refTxNo);
+              if (found) {
+                setSelectedInbound({
+                  txNo: found.txNo,
+                  txDate: found.txDate,
+                  remainQty: found.remainQty,
+                  barcodeId: found.barcodeId,
+                  targetUnitId: found.targetUnitId,
+                  partnerName: found.partnerName,
+                });
+              }
+            })
+            .catch(() => {});
+        }
       } else {
         // 입고: 단순 바코드 조회
         const res = await fetch(`/api/barcodes?search=${encodeURIComponent(lookupCode)}`);

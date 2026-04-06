@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     }
 
     const barcode = await prisma.barcode.findFirst({
-      where: { code },
+      where: { code: { equals: code, mode: "insensitive" } },
       include: {
         item: { include: { category: true } },
         targetUnit: { include: { item: { include: { category: true } } } },
