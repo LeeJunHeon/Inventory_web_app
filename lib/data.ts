@@ -7,9 +7,9 @@ export interface InventoryItem {
   category: string;
   code: string;
   name: string;
-  price: number;
+  price: number | null;
   qty: number;
-  amount: number;
+  amount: number | null;
   currency: string;
   partner: string;
   handler: string;

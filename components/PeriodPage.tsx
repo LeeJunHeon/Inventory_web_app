@@ -61,7 +61,7 @@ export default function PeriodPage() {
   const summary = { 입고: { count: 0, qty: 0, amount: 0 }, 출고: { count: 0, qty: 0, amount: 0 }, 불출: { count: 0, qty: 0, amount: 0 } };
   items.forEach((item) => {
     const s = summary[item.type as keyof typeof summary];
-    if (s) { s.count++; s.qty += item.qty; s.amount += item.amount; }
+    if (s) { s.count++; s.qty += item.qty; s.amount += (item.amount ?? 0); }
   });
 
   return (

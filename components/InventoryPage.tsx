@@ -62,7 +62,7 @@ export default function InventoryPage() {
     if (sortField === "id")     return (a.id - b.id) * dir;
     if (sortField === "date")   return a.date.localeCompare(b.date) * dir;
     if (sortField === "qty")    return (a.qty - b.qty) * dir;
-    if (sortField === "amount") return (a.amount - b.amount) * dir;
+    if (sortField === "amount") return ((a.amount ?? 0) - (b.amount ?? 0)) * dir;
     return 0;
   });
 
@@ -219,7 +219,7 @@ export default function InventoryPage() {
             </div>
             <div className="px-5 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
               <p className="text-xs text-gray-500">총 <span className="font-semibold text-gray-700">{sorted.length}건</span></p>
-              <p className="text-xs text-gray-400">합계: <span className="font-semibold text-gray-600">{formatPrice(sorted.reduce((s, i) => s + i.amount, 0))}</span></p>
+              <p className="text-xs text-gray-400">합계: <span className="font-semibold text-gray-600">{formatPrice(sorted.reduce((s, i) => s + (i.amount ?? 0), 0))}</span></p>
             </div>
           </div>
 
@@ -227,7 +227,7 @@ export default function InventoryPage() {
           <div className="lg:hidden space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-xs text-gray-500">총 <span className="font-semibold">{sorted.length}건</span></p>
-              <p className="text-xs text-gray-400">합계: <span className="font-semibold">{formatPrice(sorted.reduce((s, i) => s + i.amount, 0))}</span></p>
+              <p className="text-xs text-gray-400">합계: <span className="font-semibold">{formatPrice(sorted.reduce((s, i) => s + (i.amount ?? 0), 0))}</span></p>
             </div>
             {sorted.map((item) => (
               <div key={item.id} className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
