@@ -25,10 +25,13 @@ function downloadCSV(data: InventoryItem[], filename: string) {
   URL.revokeObjectURL(url);
 }
 
+const SEARCH_FIELDS = ["전체", "품목명", "품목코드", "바코드", "거래처"];
+
 export default function InventoryPage() {
   const [items, setItems]               = useState<InventoryItem[]>([]);
   const [loading, setLoading]           = useState(true);
   const [search, setSearch]             = useState("");
+  const [searchField, setSearchField]   = useState("전체");
   const [typeFilter, setTypeFilter]     = useState("전체");
   const [categoryFilter, setCategoryFilter] = useState("전체");
   const [modalOpen, setModalOpen]       = useState(false);
@@ -44,6 +47,7 @@ export default function InventoryPage() {
     try {
       const params = new URLSearchParams();
       if (search)               params.set("search", search);
+      if (search && searchField !== "전체") params.set("searchField", searchField);
       if (typeFilter !== "전체")    params.set("type", typeFilter);
       if (categoryFilter !== "전체") params.set("category", categoryFilter);
       const res = await fetch(`/api/inventory?${params}`);
@@ -51,7 +55,7 @@ export default function InventoryPage() {
       setItems(await res.json());
     } catch { setToast("데이터 조회에 실패했습니다."); setTimeout(() => setToast(""), 3000); }
     finally { setLoading(false); }
-  }, [search, typeFilter, categoryFilter]);
+  }, [search, searchField, typeFilter, categoryFilter]);
 
   useEffect(() => {
     const timer = setTimeout(fetchData, 300);
@@ -138,11 +142,20 @@ export default function InventoryPage() {
       {/* 필터 */}
       <div className="bg-white rounded-2xl border border-gray-100 p-3 sm:p-4 space-y-3">
         <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input type="text" placeholder="품목명, 품목코드, 바코드 검색..." value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+          <div className="relative flex-1 flex gap-2">
+            <select value={searchField} onChange={e => { setSearchField(e.target.value); setSearch(""); }}
+              className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 shrink-0 text-gray-600">
+              {SEARCH_FIELDS.map(f => <option key={f} value={f}>{f}</option>)}
+            </select>
+            <div className="relative flex-1">
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input type="text"
+                placeholder={searchField === "전체" ? "품목명, 품목코드, 바코드, 거래처 검색..." :
+                  searchField === "바코드" ? "바코드 정확히 입력 (예: T-3)" :
+                  `${searchField} 검색...`}
+                value={search} onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+            </div>
           </div>
           <button onClick={() => setShowFilters(!showFilters)}
             className="sm:hidden flex items-center gap-1 px-3 py-2.5 bg-gray-50 text-gray-600 rounded-xl text-sm font-medium">

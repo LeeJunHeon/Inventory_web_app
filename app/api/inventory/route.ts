@@ -46,14 +46,26 @@ export async function GET(request: NextRequest) {
       andConditions.push({ item: { category: { name: category } } });
     }
 
+    const searchField = searchParams.get("searchField") || "전체";
     if (search) {
-      andConditions.push({
-        OR: [
-          { item: { name: { contains: search, mode: "insensitive" } } },
-          { item: { code: { contains: search, mode: "insensitive" } } },
-          { barcode: { code: { contains: search, mode: "insensitive" } } },
-        ],
-      });
+      if (searchField === "품목명") {
+        andConditions.push({ item: { name: { contains: search, mode: "insensitive" } } });
+      } else if (searchField === "품목코드") {
+        andConditions.push({ item: { code: { contains: search, mode: "insensitive" } } });
+      } else if (searchField === "바코드") {
+        andConditions.push({ barcode: { code: { equals: search, mode: "insensitive" } } });
+      } else if (searchField === "거래처") {
+        andConditions.push({ partner: { name: { contains: search, mode: "insensitive" } } });
+      } else {
+        andConditions.push({
+          OR: [
+            { item: { name: { contains: search, mode: "insensitive" } } },
+            { item: { code: { contains: search, mode: "insensitive" } } },
+            { barcode: { code: { contains: search, mode: "insensitive" } } },
+            { partner: { name: { contains: search, mode: "insensitive" } } },
+          ],
+        });
+      }
     }
 
     const where = andConditions.length > 0 ? { AND: andConditions } : {};
