@@ -20,18 +20,19 @@ export interface InboundTx {
 interface InboundSelectModalProps {
   isOpen: boolean;
   itemId: number | null;
+  locationId?: number | null;
   onSelect: (inbound: InboundTx) => void;
   onClose: () => void;
 }
 
-export default function InboundSelectModal({ isOpen, itemId, onSelect, onClose }: InboundSelectModalProps) {
+export default function InboundSelectModal({ isOpen, itemId, locationId, onSelect, onClose }: InboundSelectModalProps) {
   const [list, setList] = useState<InboundTx[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!isOpen || !itemId) return;
     setLoading(true);
-    fetch(`/api/inventory/inbound?itemId=${itemId}`)
+    fetch(`/api/inventory/inbound?itemId=${itemId}${locationId ? `&locationId=${locationId}` : ""}`)
       .then(r => r.json())
       .then(data => setList(Array.isArray(data) ? data : []))
       .catch(() => setList([]))
@@ -55,7 +56,16 @@ export default function InboundSelectModal({ isOpen, itemId, onSelect, onClose }
               <Loader2 size={20} className="animate-spin text-blue-500" />
             </div>
           ) : list.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-12">선택 가능한 입고 건이 없습니다</p>
+            <>
+              <p className="text-sm text-gray-400 text-center py-8">
+                선택 가능한 입고 건이 없습니다
+              </p>
+              {locationId && (
+                <p className="text-xs text-amber-600 text-center bg-amber-50 mx-4 px-3 py-2 rounded-xl">
+                  현재 위치({locationId === 1 ? "본사" : "공덕"})의 입고 건만 표시됩니다
+                </p>
+              )}
+            </>
           ) : list.map(tx => (
             <button key={tx.txNo}
               onClick={() => { onSelect(tx); onClose(); }}

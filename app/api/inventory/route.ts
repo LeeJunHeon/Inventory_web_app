@@ -189,8 +189,14 @@ export async function POST(request: NextRequest) {
     if ((body.txType === "출고" || body.txType === "불출") && body.refTxNo) {
       const refTx = await prisma.inventoryTx.findUnique({
         where:  { txNo: body.refTxNo },
-        select: { unitPrice: true, amount: true, currency: true, exchangeRateAtEntry: true, qty: true },
+        select: { unitPrice: true, amount: true, currency: true, exchangeRateAtEntry: true, qty: true, locationId: true },
       });
+      if (refTx && refTx.locationId !== Number(body.locationId)) {
+        return NextResponse.json(
+          { error: `입고 위치(${refTx.locationId === 1 ? "본사" : "공덕"})와 출고 위치가 다릅니다. 입고된 위치에서만 출고/불출이 가능합니다.` },
+          { status: 400 }
+        );
+      }
       if (refTx) {
         resolvedCurrency = refTx.currency ?? "KRW";
         resolvedExchangeRate = refTx.exchangeRateAtEntry != null ? Number(refTx.exchangeRateAtEntry) : null;

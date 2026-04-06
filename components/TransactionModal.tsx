@@ -340,6 +340,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
     <InboundSelectModal
       isOpen={showInboundSelect}
       itemId={itemId}
+      locationId={locationId}
       onSelect={handleInboundSelect}
       onClose={() => setShowInboundSelect(false)}
     />
