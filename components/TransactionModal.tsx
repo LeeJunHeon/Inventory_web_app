@@ -24,8 +24,12 @@ interface WaferSpecInfo  {
   orientation: string | null; surface: string | null;
 }
 interface SelectedInbound {
-  txNo: string; remainQty: number;
-  barcodeId: number | null; targetUnitId: number | null;
+  txNo: string;
+  txDate: string;
+  remainQty: number;
+  barcodeId: number | null;
+  targetUnitId: number | null;
+  partnerName: string;
 }
 
 export default function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModalProps) {
@@ -250,7 +254,14 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   // 입고 참조 선택 콜백
   const handleInboundSelect = (inbound: InboundTx) => {
     setRefTxNo(inbound.txNo);
-    setSelectedInbound({ txNo: inbound.txNo, remainQty: inbound.remainQty, barcodeId: inbound.barcodeId, targetUnitId: inbound.targetUnitId });
+    setSelectedInbound({
+      txNo: inbound.txNo,
+      txDate: inbound.txDate,
+      remainQty: inbound.remainQty,
+      barcodeId: inbound.barcodeId,
+      targetUnitId: inbound.targetUnitId,
+      partnerName: inbound.partnerName,
+    });
     if (inbound.barcodeId)    setBarcodeId(inbound.barcodeId);
     if (inbound.targetUnitId) setTargetUnitId(inbound.targetUnitId);
   };
@@ -475,9 +486,15 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
               <div className="mt-2">
                 {selectedInbound ? (
                   <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2">
-                    <div className="flex-1 text-xs">
-                      <span className="font-semibold text-emerald-700">입고 참조: #{selectedInbound.txNo}</span>
-                      <span className="text-emerald-500 ml-2">잔여 {selectedInbound.remainQty.toLocaleString()}개</span>
+                    <div className="flex-1 text-xs space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-emerald-700">#{selectedInbound.txNo}</span>
+                        <span className="text-emerald-500">{selectedInbound.txDate}</span>
+                        {selectedInbound.partnerName && (
+                          <span className="text-emerald-500">· {selectedInbound.partnerName}</span>
+                        )}
+                      </div>
+                      <p className="text-emerald-400">잔여 {selectedInbound.remainQty.toLocaleString()}개</p>
                     </div>
                     <button onClick={() => setShowInboundSelect(true)}
                       className="text-xs px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition-colors">

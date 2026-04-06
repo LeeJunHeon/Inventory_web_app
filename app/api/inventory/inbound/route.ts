@@ -47,6 +47,8 @@ export async function GET(request: NextRequest) {
           txDate:       tx.txDate.toISOString().split("T")[0].replace(/-/g, "."),
           qty:          tx.qty,
           remainQty,
+          unitPrice:    tx.unitPrice != null ? Number(tx.unitPrice) : null,
+          currency:     tx.currency ?? "KRW",
           partnerName:  tx.partner?.name  ?? "",
           locationName: tx.location?.name ?? "",
           memo:         tx.memo           ?? "",
