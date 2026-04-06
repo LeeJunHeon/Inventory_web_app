@@ -396,7 +396,16 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
             <label className="block text-sm font-semibold text-gray-700 mb-2">구분</label>
             <div className="flex gap-2">
               {(["입고", "출고", "불출"] as const).map((t) => (
-                <button key={t} onClick={() => { setType(t); setBarcodeInput(""); setBarcodeId(null); setRefTxNo(null); setSelectedInbound(null); setTxReasonId(null); setDisburseeId(null); }}
+                <button key={t} onClick={() => {
+                  setType(t);
+                  setItemId(null); setItemCode(""); setItemName("");
+                  setBarcodeInput(""); setBarcodeId(null); setTargetUnitId(null);
+                  setRefTxNo(null); setSelectedInbound(null);
+                  setQuantity(""); setUnitPrice("");
+                  setPartnerId(null); setPartnerName("");
+                  setTxReasonId(null); setDisburseeId(null);
+                  setMemo(""); setWaferSpec(null); setError("");
+                }}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                     type === t
                       ? `${TYPE_COLORS[t].bg} ${TYPE_COLORS[t].text} ${TYPE_COLORS[t].border} border-2 shadow-sm`
