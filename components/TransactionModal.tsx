@@ -262,6 +262,19 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const handleSave = async () => {
     if (!itemId)                            { setError("품목을 선택해주세요.");  return; }
     if (!quantity || Number(quantity) <= 0) { setError("수량을 입력해주세요.");  return; }
+    // 출고/불출 시 바코드 필수 검증
+    if ((type === "출고" || type === "불출") && !barcodeId) {
+      try {
+        const res = await fetch(`/api/barcodes?itemId=${itemId}&activeOnly=true`);
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setError("해당 품목은 바코드 스캔이 필요합니다.");
+          return;
+        }
+      } catch {
+        // 조회 실패 시 API에서 검증하므로 통과
+      }
+    }
     setError(""); setSaving(true);
     try {
       const res = await fetch("/api/inventory", {

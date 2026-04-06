@@ -143,6 +143,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "출고/불출 시 참조 입고 전표번호가 필요합니다." }, { status: 400 });
     }
 
+    // 출고/불출 시 바코드 연결 품목 검증
+    if ((body.txType === "출고" || body.txType === "불출") && !body.barcodeId) {
+      const barcodeCount = await prisma.barcode.count({
+        where: { itemId: Number(body.itemId), isActive: "Y" },
+      });
+      if (barcodeCount > 0) {
+        return NextResponse.json(
+          { error: "해당 품목은 바코드 스캔이 필요합니다." },
+          { status: 400 }
+        );
+      }
+    }
+
     // 전표번호 자동 채번: 기존 tx_no 중 가장 큰 숫자 + 1
     const lastTx = await prisma.inventoryTx.findFirst({
       where:   { txNo: { not: null } },

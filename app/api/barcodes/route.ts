@@ -6,10 +6,18 @@ import { requireAuth } from "@/lib/auth-helpers";
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const search   = searchParams.get("search")   || "";
-    const category = searchParams.get("category") || "";
+    const search     = searchParams.get("search")     || "";
+    const category   = searchParams.get("category")   || "";
+    const itemId     = searchParams.get("itemId");
+    const activeOnly = searchParams.get("activeOnly");
 
     const where: any = {};
+    if (itemId) {
+      where.itemId = Number(itemId);
+    }
+    if (activeOnly === "true") {
+      where.isActive = "Y";
+    }
     if (category && category !== "전체") {
       where.OR = [
         { item: { category: { name: category } } },
