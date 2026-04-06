@@ -82,6 +82,7 @@ export async function GET(request: NextRequest) {
       price:      tx.unitPrice != null ? Number(tx.unitPrice) : null,
       qty:        tx.qty,
       amount:     tx.amount    != null ? Number(tx.amount)    : null,
+      currency:   tx.currency ?? "KRW",
       partner:    tx.partner?.name   || "",
       memo:       tx.memo            || "",
       barcode:    tx.barcode?.code   || "",
@@ -164,6 +165,7 @@ export async function POST(request: NextRequest) {
         targetUnitId: body.targetUnitId || null,
         barcodeId:    body.barcodeId    || null,
         refTxNo:      body.refTxNo      || null,
+        currency:     body.currency     ?? "KRW",
       },
     });
 
@@ -213,6 +215,7 @@ export async function PUT(request: NextRequest) {
         locationId: body.locationId ?? undefined,
         barcodeId:  body.barcodeId  ?? undefined,
         txReasonId: body.txReasonId ?? undefined,
+        currency:   body.currency   ?? undefined,
       },
     });
 
