@@ -70,7 +70,11 @@ export default function InventoryPage() {
     if (sortField === "id")     return (a.id - b.id) * dir;
     if (sortField === "date")   return a.date.localeCompare(b.date) * dir;
     if (sortField === "qty")    return (a.qty - b.qty) * dir;
-    if (sortField === "amount") return ((a.amount ?? 0) - (b.amount ?? 0)) * dir;
+    if (sortField === "amount") {
+      const aVal = a.currency === "USD" ? (a.amount ?? 0) * (exchangeRate ?? 1) : (a.amount ?? 0);
+      const bVal = b.currency === "USD" ? (b.amount ?? 0) * (exchangeRate ?? 1) : (b.amount ?? 0);
+      return (aVal - bVal) * dir;
+    }
     return 0;
   });
 
@@ -218,13 +222,13 @@ export default function InventoryPage() {
                               {item.amount != null ? `$${item.amount.toLocaleString()}` : "-"}
                             </p>
                             {item.exchangeRateAtEntry && item.amount != null && (
-                              <p className="text-xs text-gray-400 mt-0.5">
-                                ₩{Math.round(item.amount * item.exchangeRateAtEntry).toLocaleString()} <span className="text-gray-300">({item.exchangeRateAtEntry.toLocaleString()}원)</span>
+                              <p className="text-xs text-gray-400 mt-0.5 whitespace-nowrap">
+                                등록시 ₩{Math.round(item.amount * item.exchangeRateAtEntry).toLocaleString()} ({item.exchangeRateAtEntry.toLocaleString()}원)
                               </p>
                             )}
-                            {exchangeRate && item.exchangeRateAtEntry !== exchangeRate && item.amount != null && (
-                              <p className="text-xs text-gray-300 mt-0.5">
-                                현재 ₩{Math.round(item.amount * exchangeRate).toLocaleString()}
+                            {exchangeRate && item.amount != null && (
+                              <p className="text-xs text-gray-400 mt-0.5 whitespace-nowrap">
+                                현재 ₩{Math.round(item.amount * exchangeRate).toLocaleString()} ({exchangeRate.toLocaleString()}원)
                               </p>
                             )}
                           </div>
@@ -289,10 +293,10 @@ export default function InventoryPage() {
                             {item.amount != null ? `$${item.amount.toLocaleString()}` : "-"}
                           </p>
                           {item.exchangeRateAtEntry && item.amount != null && (
-                            <p className="text-xs text-gray-400">₩{Math.round(item.amount * item.exchangeRateAtEntry).toLocaleString()} <span className="text-gray-300">({item.exchangeRateAtEntry.toLocaleString()}원)</span></p>
+                            <p className="text-xs text-gray-400 whitespace-nowrap">등록시 ₩{Math.round(item.amount * item.exchangeRateAtEntry).toLocaleString()} ({item.exchangeRateAtEntry.toLocaleString()}원)</p>
                           )}
-                          {exchangeRate && item.exchangeRateAtEntry !== exchangeRate && item.amount != null && (
-                            <p className="text-xs text-gray-300">현재 ₩{Math.round(item.amount * exchangeRate).toLocaleString()}</p>
+                          {exchangeRate && item.amount != null && (
+                            <p className="text-xs text-gray-400 whitespace-nowrap">현재 ₩{Math.round(item.amount * exchangeRate).toLocaleString()} ({exchangeRate.toLocaleString()}원)</p>
                           )}
                         </div>
                       ) : (
