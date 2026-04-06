@@ -56,16 +56,14 @@ export default function InboundSelectModal({ isOpen, itemId, locationId, onSelec
               <Loader2 size={20} className="animate-spin text-blue-500" />
             </div>
           ) : list.length === 0 ? (
-            <>
-              <p className="text-sm text-gray-400 text-center py-8">
-                선택 가능한 입고 건이 없습니다
-              </p>
+            <div className="text-center py-8 space-y-2">
+              <p className="text-sm text-gray-400">선택 가능한 입고 건이 없습니다</p>
               {locationId && (
-                <p className="text-xs text-amber-600 text-center bg-amber-50 mx-4 px-3 py-2 rounded-xl">
-                  현재 위치({locationId === 1 ? "본사" : "공덕"})의 입고 건만 표시됩니다
+                <p className="text-xs text-amber-600 bg-amber-50 mx-4 px-3 py-2 rounded-xl">
+                  현재 선택된 위치({locationId === 1 ? "본사" : "공덕"})의 입고 건만 표시됩니다
                 </p>
               )}
-            </>
+            </div>
           ) : list.map(tx => (
             <button key={tx.txNo}
               onClick={() => { onSelect(tx); onClose(); }}
