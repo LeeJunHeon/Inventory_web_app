@@ -589,17 +589,18 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
             )}
             {!(isEmployee && (type === "출고" || type === "불출")) && (
               <div>
-                {currency === "USD" && exchangeRateAtEntry && (
-                  <p className="text-xs text-gray-400 mt-1">
-                    현재 환율 {exchangeRateAtEntry.toLocaleString()}원 기준으로 저장됩니다
-                  </p>
-                )}
                 <label className="block text-sm font-semibold text-gray-700 mb-2">금액</label>
                 <input type="text" value={amount ? (currency === "USD" ? `$${amount.toLocaleString()}` : `₩${amount.toLocaleString()}`) : ""} readOnly placeholder="자동 계산"
                   className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
               </div>
             )}
           </div>
+
+          {currency === "USD" && exchangeRateAtEntry && !(isEmployee && (type === "출고" || type === "불출")) && (
+            <p className="text-xs text-gray-400 -mt-2">
+              현재 환율 {exchangeRateAtEntry.toLocaleString()}원 기준으로 저장됩니다
+            </p>
+          )}
 
           {/* 잔여수량 초과 경고 */}
           {(type === "출고" || type === "불출") && selectedInbound && quantity && Number(quantity) > selectedInbound.remainQty && (
