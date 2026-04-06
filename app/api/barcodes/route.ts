@@ -49,6 +49,9 @@ export async function GET(request: NextRequest) {
       include: {
         item: { include: { category: true } },
         targetUnit: { include: { item: { include: { category: true } } } },
+        inventoryTxs: {
+          select: { txType: true, qty: true },
+        },
       },
       orderBy: { id: "desc" },
     });
@@ -56,6 +59,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(barcodes.map((b) => {
       // barcode.item 우선, 없으면 targetUnit.item에서 품목 정보 추출
       const item = b.item ?? b.targetUnit?.item ?? null;
+      const inQty = b.inventoryTxs
+        .filter(t => t.txType === "입고")
+        .reduce((sum, t) => sum + t.qty, 0);
+      const outQty = b.inventoryTxs
+        .filter(t => t.txType === "출고" || t.txType === "불출")
+        .reduce((sum, t) => sum + t.qty, 0);
+      const remainQty = inQty - outQty;
       return {
         id:           b.id,
         code:         b.code,
@@ -64,6 +74,7 @@ export async function GET(request: NextRequest) {
         category:     item?.category?.name || "",
         targetUnitId: b.targetUnit?.id ?? null,
         isActive:     b.isActive,
+        remainQty,
       };
     }));
   } catch (error) {

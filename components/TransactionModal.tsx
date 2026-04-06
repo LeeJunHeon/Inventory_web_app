@@ -17,7 +17,7 @@ interface PartnerOption  { id: number; name: string; type: string; }
 interface TxReasonOption { id: number; name: string; }
 interface UserOption { id: number; name: string; role: string; }
 interface LocationOption { id: number; name: string; }
-interface BarcodeOption  { id: number; code: string; itemCode: string; itemName: string; isActive: string; }
+interface BarcodeOption  { id: number; code: string; itemCode: string; itemName: string; isActive: string; remainQty: number; }
 interface WaferSpecInfo  {
   waferType: string | null; diameterInch: number | null;
   resistivity: string | null; thicknessNote: string | null;
@@ -459,20 +459,13 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                     <p className="text-sm font-mono font-semibold text-gray-900">{b.code}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{b.itemName} <span className="text-gray-400 font-mono">· {b.itemCode}</span></p>
                   </div>
-                  {(() => {
-                    const itemOpt = itemOptions.find(i => i.code === b.itemCode);
-                    if (itemOpt && stockMap.has(itemOpt.id)) {
-                      const qty = stockMap.get(itemOpt.id) ?? 0;
-                      return (
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ml-2 shrink-0 ${
-                          qty > 0 ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"
-                        }`}>
-                          {qty.toLocaleString()}개
-                        </span>
-                      );
-                    }
-                    return null;
-                  })()}
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ml-2 shrink-0 ${
+                    b.remainQty > 0
+                      ? "bg-emerald-50 text-emerald-600"
+                      : "bg-gray-100 text-gray-400"
+                  }`}>
+                    {b.remainQty.toLocaleString()}개
+                  </span>
                 </div>
               </button>
             ))}
