@@ -37,6 +37,7 @@ export default function InventoryPage() {
   const [showFilters, setShowFilters]   = useState(false);
   const [editItem, setEditItem]         = useState<InventoryItem | null>(null);
   const [toast, setToast]               = useState("");
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -203,7 +204,22 @@ export default function InventoryPage() {
                         <p className="text-xs text-gray-400">{item.code}</p>
                       </td>
                       <td className="px-5 py-3.5 text-sm text-right font-semibold text-gray-900">{formatQty(item.qty)}</td>
-                      <td className="px-5 py-3.5 text-sm text-right text-gray-600">{formatPrice(item.amount)}</td>
+                      <td className="px-5 py-3.5 text-sm text-right text-gray-600">
+                        {item.currency === "USD" ? (
+                          <div>
+                            <p className="font-semibold text-emerald-700">
+                              {item.amount != null ? `$${item.amount.toLocaleString()}` : "-"}
+                            </p>
+                            {exchangeRate && item.amount != null && (
+                              <p className="text-xs text-gray-400 mt-0.5">
+                                ≈ ₩{Math.round(item.amount * exchangeRate).toLocaleString()}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          formatPrice(item.amount)
+                        )}
+                      </td>
                       <td className="px-5 py-3.5 text-sm text-gray-600">{item.partner}</td>
                       <td className="px-5 py-3.5 text-sm text-gray-500">{item.userName ?? "-"}</td>
                       <td className="px-5 py-3.5">
@@ -219,7 +235,7 @@ export default function InventoryPage() {
             </div>
             <div className="px-5 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
               <p className="text-xs text-gray-500">총 <span className="font-semibold text-gray-700">{sorted.length}건</span></p>
-              <p className="text-xs text-gray-400">합계: <span className="font-semibold text-gray-600">{formatPrice(sorted.reduce((s, i) => s + (i.amount ?? 0), 0))}</span></p>
+              <p className="text-xs text-gray-400">합계: <span className="font-semibold text-gray-600">{formatPrice(sorted.filter(i => i.currency !== "USD").reduce((s, i) => s + (i.amount ?? 0), 0))}</span></p>
             </div>
           </div>
 
@@ -227,7 +243,7 @@ export default function InventoryPage() {
           <div className="lg:hidden space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-xs text-gray-500">총 <span className="font-semibold">{sorted.length}건</span></p>
-              <p className="text-xs text-gray-400">합계: <span className="font-semibold">{formatPrice(sorted.reduce((s, i) => s + (i.amount ?? 0), 0))}</span></p>
+              <p className="text-xs text-gray-400">합계: <span className="font-semibold">{formatPrice(sorted.filter(i => i.currency !== "USD").reduce((s, i) => s + (i.amount ?? 0), 0))}</span></p>
             </div>
             {sorted.map((item) => (
               <div key={item.id} className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
@@ -253,7 +269,21 @@ export default function InventoryPage() {
                 <div className="flex items-center justify-between pt-2 border-t border-gray-50">
                   <div className="flex items-center gap-4">
                     <div><p className="text-[10px] text-gray-400">수량</p><p className="text-sm font-bold text-gray-900">{formatQty(item.qty)}</p></div>
-                    <div><p className="text-[10px] text-gray-400">금액</p><p className="text-sm text-gray-600">{formatPrice(item.amount)}</p></div>
+                    <div>
+                      <p className="text-[10px] text-gray-400">금액</p>
+                      {item.currency === "USD" ? (
+                        <div>
+                          <p className="text-sm font-semibold text-emerald-700">
+                            {item.amount != null ? `$${item.amount.toLocaleString()}` : "-"}
+                          </p>
+                          {exchangeRate && item.amount != null && (
+                            <p className="text-xs text-gray-400">≈ ₩{Math.round(item.amount * exchangeRate).toLocaleString()}</p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-600">{formatPrice(item.amount)}</p>
+                      )}
+                    </div>
                     <div><p className="text-[10px] text-gray-400">거래처</p><p className="text-sm text-gray-600 max-w-[120px] truncate">{item.partner || "-"}</p></div>
                     {item.userName && <div><p className="text-[10px] text-gray-400">등록자</p><p className="text-sm text-gray-500 max-w-[80px] truncate">{item.userName}</p></div>}
                   </div>

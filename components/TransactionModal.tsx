@@ -42,6 +42,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const [unitPrice, setUnitPrice]   = useState("");
   const [partnerId, setPartnerId]   = useState<number | null>(null);
   const [partnerName, setPartnerName] = useState("");
+  const [currency, setCurrency]     = useState<"KRW" | "USD">("KRW");
   const [memo, setMemo]             = useState("");
   const [saving, setSaving]         = useState(false);
   const [error, setError]           = useState("");
@@ -96,6 +97,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       setQuantity(""); setUnitPrice("");
       setPartnerId(null); setPartnerName("");
       setLocationId(1);
+      setCurrency("KRW");
       setMemo(""); setError(""); setShowItemSelector(false);
       setShowBarcodeSelector(false); setBarcodeSelectorSearch(""); setBarcodeSelectorList([]);
       setWaferSpec(null);
@@ -244,6 +246,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           barcodeId:    barcodeId    || null,
           targetUnitId: targetUnitId || null,
           refTxNo:      refTxNo      || null,
+          currency:     currency,
           locationId:   locationId,
         }),
       });
@@ -523,13 +526,28 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">단가</label>
-              <input type="text" value={unitPrice} onChange={e => setUnitPrice(e.target.value)} placeholder="₩0"
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-semibold text-gray-700">단가</label>
+                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+                  {(["KRW", "USD"] as const).map(c => (
+                    <button key={c} type="button" onClick={() => setCurrency(c)}
+                      className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                        currency === c
+                          ? "bg-white text-gray-900 shadow-sm"
+                          : "text-gray-400 hover:text-gray-600"
+                      }`}>
+                      {c === "KRW" ? "₩ KRW" : "$ USD"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <input type="text" value={unitPrice} onChange={e => setUnitPrice(e.target.value)}
+                placeholder={currency === "USD" ? "$0.00" : "₩0"}
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">금액</label>
-              <input type="text" value={amount ? `₩${amount.toLocaleString()}` : ""} readOnly placeholder="자동 계산"
+              <input type="text" value={amount ? (currency === "USD" ? `$${amount.toLocaleString()}` : `₩${amount.toLocaleString()}`) : ""} readOnly placeholder="자동 계산"
                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
             </div>
           </div>
