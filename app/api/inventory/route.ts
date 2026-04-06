@@ -156,6 +156,21 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 바코드와 품목 불일치 검증
+    if (body.barcodeId) {
+      const barcode = await prisma.barcode.findUnique({
+        where: { id: Number(body.barcodeId) },
+        select: { itemId: true, targetUnit: { select: { itemId: true } } },
+      });
+      const barcodeItemId = barcode?.itemId ?? barcode?.targetUnit?.itemId;
+      if (barcodeItemId && barcodeItemId !== Number(body.itemId)) {
+        return NextResponse.json(
+          { error: "바코드와 품목이 일치하지 않습니다." },
+          { status: 400 }
+        );
+      }
+    }
+
     // 전표번호 자동 채번: 기존 tx_no 중 가장 큰 숫자 + 1
     const lastTx = await prisma.inventoryTx.findFirst({
       where:   { txNo: { not: null } },

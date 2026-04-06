@@ -147,7 +147,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
     setShowItemSelector(false);
     setWaferSpec(null);
     setSelectedInbound(null);
-  }, [category]);
+  }, [category, isOpen]);
 
   // 웨이퍼 품목 선택 시 스펙 조회
   useEffect(() => {
@@ -526,6 +526,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                           onClick={() => {
                             setItemId(opt.id); setItemCode(opt.code); setItemName(opt.name);
                             // 직접 선택 시 바코드/타겟/입고참조 해제
+                            setBarcodeInput("");
                             setBarcodeId(null); setTargetUnitId(null); setRefTxNo(null); setSelectedInbound(null);
                             setShowItemSelector(false);
                             // 출고/불출 직접입력 모드: 입고 참조 선택 자동 오픈
