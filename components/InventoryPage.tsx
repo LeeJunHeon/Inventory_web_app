@@ -58,6 +58,13 @@ export default function InventoryPage() {
     return () => clearTimeout(timer);
   }, [fetchData]);
 
+  useEffect(() => {
+    fetch("/api/exchange-rate")
+      .then(r => r.json())
+      .then(data => setExchangeRate(data.rate))
+      .catch(() => setExchangeRate(1400));
+  }, []);
+
   const sorted = [...items].sort((a, b) => {
     const dir = sortDir === "asc" ? 1 : -1;
     if (sortField === "id")     return (a.id - b.id) * dir;
