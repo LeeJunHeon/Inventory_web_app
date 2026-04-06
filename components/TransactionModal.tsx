@@ -83,6 +83,9 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const [showInboundSelect, setShowInboundSelect] = useState(false);
   const [selectedInbound, setSelectedInbound] = useState<SelectedInbound | null>(null);
 
+  // 위치별 재고 수량
+  const [stockMap, setStockMap] = useState<Map<number, number>>(new Map());
+
   // currency 변경 시 환율 자동 조회
   useEffect(() => {
     if (currency === "USD") {
@@ -139,8 +142,21 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       setShowInboundSelect(false); setSelectedInbound(null);
       setTxReasonId(null);
       setDisburseeId(null);
+      setStockMap(new Map());
     }
   }, [isOpen]);
+
+  // isOpen 또는 locationId 변경 시 재고 수량 조회
+  useEffect(() => {
+    if (!isOpen) return;
+    fetch(`/api/status?locationId=${locationId}`)
+      .then(r => r.json())
+      .then((data: { id: number; currentQty: number }[]) => {
+        const map = new Map(data.map(d => [d.id, d.currentQty]));
+        setStockMap(map);
+      })
+      .catch(() => {});
+  }, [isOpen, locationId]);
 
   // 품목군 바뀔 때 품목 목록 새로 로드 + 선택 초기화
   useEffect(() => {
@@ -386,8 +402,26 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                   handleBarcodeLookup(b.code);
                 }}
                 className="w-full text-left px-5 py-3 hover:bg-blue-50 border-b border-gray-50 last:border-0 transition-colors">
-                <p className="text-sm font-mono font-semibold text-gray-900">{b.code}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{b.itemName} <span className="text-gray-400 font-mono">· {b.itemCode}</span></p>
+                <div className="flex items-center justify-between w-full">
+                  <div>
+                    <p className="text-sm font-mono font-semibold text-gray-900">{b.code}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{b.itemName} <span className="text-gray-400 font-mono">· {b.itemCode}</span></p>
+                  </div>
+                  {(() => {
+                    const itemOpt = itemOptions.find(i => i.code === b.itemCode);
+                    if (itemOpt && stockMap.has(itemOpt.id)) {
+                      const qty = stockMap.get(itemOpt.id) ?? 0;
+                      return (
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ml-2 shrink-0 ${
+                          qty > 0 ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"
+                        }`}>
+                          {qty.toLocaleString()}개
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
               </button>
             ))}
           </div>
@@ -567,8 +601,21 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                             if ((type === "출고" || type === "불출") && directInput) setShowInboundSelect(true);
                           }}
                           className="w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-0">
-                          <span className="font-medium text-gray-900">{opt.name}</span>
-                          <span className="ml-2 text-xs text-gray-400 font-mono">{opt.code}</span>
+                          <div className="flex items-center justify-between w-full">
+                            <div>
+                              <span className="font-medium text-gray-900">{opt.name}</span>
+                              <span className="ml-2 text-xs text-gray-400 font-mono">{opt.code}</span>
+                            </div>
+                            {stockMap.has(opt.id) && (
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ml-2 shrink-0 ${
+                                (stockMap.get(opt.id) ?? 0) > 0
+                                  ? "bg-emerald-50 text-emerald-600"
+                                  : "bg-gray-100 text-gray-400"
+                              }`}>
+                                {(stockMap.get(opt.id) ?? 0).toLocaleString()}개
+                              </span>
+                            )}
+                          </div>
                         </button>
                       ))
                     )}
