@@ -173,6 +173,21 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 불출처 처리: disburseeUserId로 user 조회 후 partner 매칭
+    let finalPartnerId = body.txType === "불출" ? null : (body.partnerId || null);
+    if (body.txType === "불출" && body.disburseeUserId) {
+      const disburseeUser = await prisma.user.findUnique({
+        where: { id: Number(body.disburseeUserId) },
+        select: { name: true },
+      });
+      if (disburseeUser) {
+        const matchedPartner = await prisma.partner.findFirst({
+          where: { name: disburseeUser.name },
+        });
+        finalPartnerId = matchedPartner?.id ?? null;
+      }
+    }
+
     const tx = await prisma.inventoryTx.create({
       data: {
         txNo:         newTxNo,
@@ -182,7 +197,7 @@ export async function POST(request: NextRequest) {
         qty:          Number(body.qty),
         unitPrice:           resolvedUnitPrice,
         amount:              resolvedAmount,
-        partnerId:    body.partnerId    || null,
+        partnerId:    finalPartnerId,
         txReasonId:   body.txReasonId   || null,
         locationId:   Number(body.locationId),
         userId:       sessionUserId      ?? body.userId ?? null,

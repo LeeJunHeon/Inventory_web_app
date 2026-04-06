@@ -14,6 +14,8 @@ interface TransactionModalProps {
 
 interface ItemOption     { id: number; code: string; name: string; }
 interface PartnerOption  { id: number; name: string; type: string; }
+interface TxReasonOption { id: number; name: string; }
+interface UserOption { id: number; name: string; role: string; }
 interface LocationOption { id: number; name: string; }
 interface BarcodeOption  { id: number; code: string; itemCode: string; itemName: string; isActive: string; }
 interface WaferSpecInfo  {
@@ -51,6 +53,11 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const [memo, setMemo]             = useState("");
   const [saving, setSaving]         = useState(false);
   const [error, setError]           = useState("");
+
+  const [txReasonId, setTxReasonId] = useState<number | null>(null);
+  const [txReasonOptions, setTxReasonOptions] = useState<TxReasonOption[]>([]);
+  const [userOptions, setUserOptions] = useState<UserOption[]>([]);
+  const [disburseeId, setDisburseeId] = useState<number | null>(null);
 
   const [itemOptions, setItemOptions]         = useState<ItemOption[]>([]);
   const [partnerOptions, setPartnerOptions]   = useState<PartnerOption[]>([]);
@@ -90,6 +97,12 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
     fetch("/api/partners")
       .then(r => r.json()).then(setPartnerOptions)
       .catch(() => setError("거래처 목록을 불러오지 못했습니다. 페이지를 새로고침 해주세요."));
+    fetch("/api/tx-reasons")
+      .then(r => r.json()).then(setTxReasonOptions)
+      .catch(() => {});
+    fetch("/api/users")
+      .then(r => r.json()).then(setUserOptions)
+      .catch(() => {});
     fetch("/api/locations")
       .then(r => r.json()).then((locs: LocationOption[]) => {
         // 거래 입력용: 본사(id=1), 공덕(id=2)만 표시
@@ -120,6 +133,8 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       setShowBarcodeSelector(false); setBarcodeSelectorSearch(""); setBarcodeSelectorList([]);
       setWaferSpec(null);
       setShowInboundSelect(false); setSelectedInbound(null);
+      setTxReasonId(null);
+      setDisburseeId(null);
     }
   }, [isOpen]);
 
@@ -259,7 +274,9 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           qty:       Number(quantity),
           unitPrice: Number(unitPrice) || null,
           amount:    amount || null,
-          partnerId: partnerId || null,
+          partnerId: type === "불출" ? null : (partnerId || null),
+          txReasonId: txReasonId || null,
+          disburseeUserId: type === "불출" ? (disburseeId || null) : null,
           memo:      memo || null,
           barcodeId:    barcodeId    || null,
           targetUnitId: targetUnitId || null,
@@ -366,7 +383,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
             <label className="block text-sm font-semibold text-gray-700 mb-2">구분</label>
             <div className="flex gap-2">
               {(["입고", "출고", "불출"] as const).map((t) => (
-                <button key={t} onClick={() => { setType(t); setBarcodeInput(""); setBarcodeId(null); setRefTxNo(null); setSelectedInbound(null); }}
+                <button key={t} onClick={() => { setType(t); setBarcodeInput(""); setBarcodeId(null); setRefTxNo(null); setSelectedInbound(null); setTxReasonId(null); setDisburseeId(null); }}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                     type === t
                       ? `${TYPE_COLORS[t].bg} ${TYPE_COLORS[t].text} ${TYPE_COLORS[t].border} border-2 shadow-sm`
@@ -591,26 +608,49 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
             </p>
           )}
 
-          {/* 거래처 / 불출처 */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {type === "불출" ? "불출처" : "거래처"}
-            </label>
-            <select
-              value={partnerId ?? ""}
-              onChange={e => {
+          {/* 거래처 — 입고/출고만 표시 */}
+          {type !== "불출" && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">거래처</label>
+              <select value={partnerId ?? ""} onChange={e => {
                 const id = Number(e.target.value);
                 setPartnerId(id || null);
                 const found = partnerOptions.find(p => p.id === id);
                 setPartnerName(found?.name || "");
-              }}
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
-              <option value="">선택하세요</option>
-              {partnerOptions.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          </div>
+              }} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+                <option value="">선택하세요</option>
+                {partnerOptions.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* 불출처 + 사용목적 — 불출만 표시 */}
+          {type === "불출" && (
+            <>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">불출처 <span className="text-rose-500">*</span></label>
+                <select value={disburseeId ?? ""} onChange={e => setDisburseeId(Number(e.target.value) || null)}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+                  <option value="">사용자 선택</option>
+                  {userOptions.map(u => (
+                    <option key={u.id} value={u.id}>{u.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">불출유형</label>
+                <select value={txReasonId ?? ""} onChange={e => setTxReasonId(Number(e.target.value) || null)}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+                  <option value="">선택하세요</option>
+                  {txReasonOptions.map(r => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
 
           {/* 위치 */}
           <div>
