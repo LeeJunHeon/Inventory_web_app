@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useSession } from "next-auth/react";
 import { X, ScanLine, PenLine, List, Loader2 } from "lucide-react";
 import { TYPE_COLORS, CATEGORY_COLORS } from "@/lib/data";
 import InboundSelectModal, { type InboundTx } from "./InboundSelectModal";
@@ -26,6 +27,9 @@ interface SelectedInbound {
 }
 
 export default function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModalProps) {
+  const { data: session } = useSession();
+  const isEmployee = (session?.user as any)?.role === "employee";
+
   const [type, setType]         = useState<"입고" | "출고" | "불출">("입고");
   const [category, setCategory] = useState("웨이퍼");
 
@@ -540,36 +544,44 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
               <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} placeholder="0"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
             </div>
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-semibold text-gray-700">단가</label>
-                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
-                  {(["KRW", "USD"] as const).map(c => (
-                    <button key={c} type="button" onClick={() => setCurrency(c)}
-                      className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
-                        currency === c
-                          ? "bg-white text-gray-900 shadow-sm"
-                          : "text-gray-400 hover:text-gray-600"
-                      }`}>
-                      {c === "KRW" ? "₩ KRW" : "$ USD"}
-                    </button>
-                  ))}
+            {!(isEmployee && (type === "출고" || type === "불출")) ? (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-semibold text-gray-700">단가</label>
+                  <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+                    {(["KRW", "USD"] as const).map(c => (
+                      <button key={c} type="button" onClick={() => setCurrency(c)}
+                        className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                          currency === c
+                            ? "bg-white text-gray-900 shadow-sm"
+                            : "text-gray-400 hover:text-gray-600"
+                        }`}>
+                        {c === "KRW" ? "₩ KRW" : "$ USD"}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+                <input type="text" value={unitPrice} onChange={e => setUnitPrice(e.target.value)}
+                  placeholder={currency === "USD" ? "$0.00" : "₩0"}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
               </div>
-              <input type="text" value={unitPrice} onChange={e => setUnitPrice(e.target.value)}
-                placeholder={currency === "USD" ? "$0.00" : "₩0"}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
-            </div>
-            <div>
-              {currency === "USD" && exchangeRateAtEntry && (
-                <p className="text-xs text-gray-400 mt-1">
-                  현재 환율 {exchangeRateAtEntry.toLocaleString()}원 기준으로 저장됩니다
-                </p>
-              )}
-              <label className="block text-sm font-semibold text-gray-700 mb-2">금액</label>
-              <input type="text" value={amount ? (currency === "USD" ? `$${amount.toLocaleString()}` : `₩${amount.toLocaleString()}`) : ""} readOnly placeholder="자동 계산"
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
-            </div>
+            ) : (
+              <div className="bg-gray-50 rounded-xl px-4 py-3">
+                <p className="text-xs text-gray-400">단가는 참조 입고 기준으로 자동 입력됩니다</p>
+              </div>
+            )}
+            {!(isEmployee && (type === "출고" || type === "불출")) && (
+              <div>
+                {currency === "USD" && exchangeRateAtEntry && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    현재 환율 {exchangeRateAtEntry.toLocaleString()}원 기준으로 저장됩니다
+                  </p>
+                )}
+                <label className="block text-sm font-semibold text-gray-700 mb-2">금액</label>
+                <input type="text" value={amount ? (currency === "USD" ? `$${amount.toLocaleString()}` : `₩${amount.toLocaleString()}`) : ""} readOnly placeholder="자동 계산"
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
+              </div>
+            )}
           </div>
 
           {/* 잔여수량 초과 경고 */}

@@ -30,3 +30,19 @@ export async function requireAdmin(): Promise<{ role: string } | AuthError> {
   }
   return { role: user.role };
 }
+
+/** 세션 사용자 email + role 반환 */
+export async function getSessionUser(): Promise<{ email: string; role: string } | AuthError> {
+  const session = await auth();
+  if (!session?.user?.email) {
+    return { error: "로그인이 필요합니다.", status: 401 };
+  }
+  const user = await prisma.user.findUnique({
+    where:  { email: session.user.email },
+    select: { role: true, isActive: true },
+  });
+  if (!user || user.isActive === "N") {
+    return { error: "접근 권한이 없습니다.", status: 403 };
+  }
+  return { email: session.user.email, role: user.role ?? "" };
+}

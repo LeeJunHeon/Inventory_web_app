@@ -3,6 +3,18 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
+    const { auth } = await import("@/auth");
+    const { prisma: p } = await import("@/lib/prisma");
+    const session = await auth();
+    let isEmployee = false;
+    if (session?.user?.email) {
+      const u = await p.user.findUnique({
+        where: { email: session.user.email },
+        select: { role: true },
+      });
+      isEmployee = u?.role === "employee";
+    }
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
@@ -110,12 +122,12 @@ export async function GET() {
 
     return NextResponse.json({
       todayIn: {
-        count: todayIn.length,
-        amount: todayIn.reduce((s, t) => s + Number(t.amount || 0), 0),
+        count:  todayIn.length,
+        amount: isEmployee ? 0 : todayIn.reduce((s, t) => s + Number(t.amount || 0), 0),
       },
       todayOut: {
-        count: todayOut.length,
-        amount: todayOut.reduce((s, t) => s + Number(t.amount || 0), 0),
+        count:  todayOut.length,
+        amount: isEmployee ? 0 : todayOut.reduce((s, t) => s + Number(t.amount || 0), 0),
       },
       shortageCount,
       totalItems,
@@ -127,7 +139,7 @@ export async function GET() {
         category: tx.item.category.name,
         name: tx.item.name,
         qty: tx.qty,
-        amount: Number(tx.amount || 0),
+        amount: isEmployee ? 0 : Number(tx.amount || 0),
         partner: tx.partner?.name || "",
         barcode: tx.barcode?.code || "",
       })),

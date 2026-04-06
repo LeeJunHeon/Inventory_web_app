@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
-import { requireAuth } from "@/lib/auth-helpers";
+import { requireAuth, getSessionUser } from "@/lib/auth-helpers";
 
 function buildItemSpec(ws: {
   waferType?: string | null; diameterInch?: number | null;
@@ -58,6 +58,9 @@ export async function GET(request: NextRequest) {
 
     const where = andConditions.length > 0 ? { AND: andConditions } : {};
 
+    const sessionUser = await getSessionUser();
+    const isEmployee = !("error" in sessionUser) && sessionUser.role === "employee";
+
     const transactions = await prisma.inventoryTx.findMany({
       where,
       include: {
@@ -79,9 +82,9 @@ export async function GET(request: NextRequest) {
       category:   tx.item.category.name,
       code:       tx.item.code,
       name:       tx.item.name,
-      price:      tx.unitPrice != null ? Number(tx.unitPrice) : null,
+      price:      isEmployee ? null : (tx.unitPrice != null ? Number(tx.unitPrice) : null),
       qty:        tx.qty,
-      amount:     tx.amount    != null ? Number(tx.amount)    : null,
+      amount:     isEmployee ? null : (tx.amount    != null ? Number(tx.amount)    : null),
       currency:   tx.currency ?? "KRW",
       exchangeRateAtEntry: tx.exchangeRateAtEntry != null ? Number(tx.exchangeRateAtEntry) : null,
       partner:    tx.partner?.name   || "",
@@ -149,6 +152,27 @@ export async function POST(request: NextRequest) {
     const lastNo  = lastTx?.txNo ? (parseInt(lastTx.txNo, 10) || 0) : 0;
     const newTxNo = String(lastNo + 1);
 
+    // 출고/불출 시 참조 입고 건 가격 자동 복사
+    let resolvedUnitPrice = body.unitPrice || null;
+    let resolvedAmount = body.amount || null;
+    let resolvedCurrency = body.currency ?? "KRW";
+    let resolvedExchangeRate = body.currency === "USD" ? (body.exchangeRateAtEntry ?? null) : null;
+
+    if ((body.txType === "출고" || body.txType === "불출") && body.refTxNo) {
+      const refTx = await prisma.inventoryTx.findUnique({
+        where:  { txNo: body.refTxNo },
+        select: { unitPrice: true, amount: true, currency: true, exchangeRateAtEntry: true, qty: true },
+      });
+      if (refTx) {
+        resolvedCurrency = refTx.currency ?? "KRW";
+        resolvedExchangeRate = refTx.exchangeRateAtEntry != null ? Number(refTx.exchangeRateAtEntry) : null;
+        if (refTx.unitPrice != null) {
+          resolvedUnitPrice = Number(refTx.unitPrice);
+          resolvedAmount = Number(refTx.unitPrice) * Number(body.qty);
+        }
+      }
+    }
+
     const tx = await prisma.inventoryTx.create({
       data: {
         txNo:         newTxNo,
@@ -156,8 +180,8 @@ export async function POST(request: NextRequest) {
         txType:       body.txType,
         itemId:       Number(body.itemId),
         qty:          Number(body.qty),
-        unitPrice:    body.unitPrice    || null,
-        amount:       body.amount       || null,
+        unitPrice:           resolvedUnitPrice,
+        amount:              resolvedAmount,
         partnerId:    body.partnerId    || null,
         txReasonId:   body.txReasonId   || null,
         locationId:   Number(body.locationId),
@@ -166,8 +190,8 @@ export async function POST(request: NextRequest) {
         targetUnitId: body.targetUnitId || null,
         barcodeId:    body.barcodeId    || null,
         refTxNo:      body.refTxNo      || null,
-        currency:     body.currency     ?? "KRW",
-        exchangeRateAtEntry: body.currency === "USD" ? (body.exchangeRateAtEntry ?? null) : null,
+        currency:            resolvedCurrency,
+        exchangeRateAtEntry: resolvedExchangeRate,
       },
     });
 
