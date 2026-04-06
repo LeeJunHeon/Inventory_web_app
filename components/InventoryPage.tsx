@@ -207,7 +207,7 @@ export default function InventoryPage() {
                       <td className="px-5 py-3.5 text-sm text-right text-gray-600">
                         {item.currency === "USD" ? (
                           <div>
-                            <p className="font-semibold text-emerald-700">
+                            <p className="text-gray-600">
                               {item.amount != null ? `$${item.amount.toLocaleString()}` : "-"}
                             </p>
                             {exchangeRate && item.amount != null && (
@@ -273,7 +273,7 @@ export default function InventoryPage() {
                       <p className="text-[10px] text-gray-400">금액</p>
                       {item.currency === "USD" ? (
                         <div>
-                          <p className="text-sm font-semibold text-emerald-700">
+                          <p className="text-sm text-gray-600">
                             {item.amount != null ? `$${item.amount.toLocaleString()}` : "-"}
                           </p>
                           {exchangeRate && item.amount != null && (
