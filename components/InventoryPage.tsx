@@ -201,7 +201,7 @@ export default function InventoryPage() {
                           <span className={`w-1.5 h-1.5 rounded-full ${TYPE_COLORS[item.type]?.dot}`} />{item.type}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5"><span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[item.category] || ""}`}>{item.category}</span></td>
+                      <td className="px-5 py-3.5"><span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${CATEGORY_COLORS[item.category] || ""}`}>{item.category}</span></td>
                       <td className="px-5 py-3.5 text-sm text-gray-500 font-mono">{item.barcode || "-"}</td>
                       <td className="px-5 py-3.5" title={item.itemSpec ?? undefined}>
                         <p className="text-sm font-medium text-gray-900">
@@ -217,9 +217,14 @@ export default function InventoryPage() {
                             <p className="text-gray-600">
                               {item.amount != null ? `$${item.amount.toLocaleString()}` : "-"}
                             </p>
-                            {exchangeRate && item.amount != null && (
+                            {item.exchangeRateAtEntry && item.amount != null && (
                               <p className="text-xs text-gray-400 mt-0.5">
-                                ≈ ₩{Math.round(item.amount * exchangeRate).toLocaleString()}
+                                ₩{Math.round(item.amount * item.exchangeRateAtEntry).toLocaleString()} <span className="text-gray-300">({item.exchangeRateAtEntry.toLocaleString()}원)</span>
+                              </p>
+                            )}
+                            {exchangeRate && item.exchangeRateAtEntry !== exchangeRate && item.amount != null && (
+                              <p className="text-xs text-gray-300 mt-0.5">
+                                현재 ₩{Math.round(item.amount * exchangeRate).toLocaleString()}
                               </p>
                             )}
                           </div>
@@ -259,7 +264,7 @@ export default function InventoryPage() {
                     <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg whitespace-nowrap ${TYPE_COLORS[item.type]?.bg} ${TYPE_COLORS[item.type]?.text}`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${TYPE_COLORS[item.type]?.dot}`} />{item.type}
                     </span>
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[item.category] || ""}`}>{item.category}</span>
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${CATEGORY_COLORS[item.category] || ""}`}>{item.category}</span>
                   </div>
                   <div className="text-right">
                     {item.txNo && <p className="text-xs font-mono font-semibold text-gray-600">#{item.txNo}</p>}
@@ -283,8 +288,11 @@ export default function InventoryPage() {
                           <p className="text-sm text-gray-600">
                             {item.amount != null ? `$${item.amount.toLocaleString()}` : "-"}
                           </p>
-                          {exchangeRate && item.amount != null && (
-                            <p className="text-xs text-gray-400">≈ ₩{Math.round(item.amount * exchangeRate).toLocaleString()}</p>
+                          {item.exchangeRateAtEntry && item.amount != null && (
+                            <p className="text-xs text-gray-400">₩{Math.round(item.amount * item.exchangeRateAtEntry).toLocaleString()} <span className="text-gray-300">({item.exchangeRateAtEntry.toLocaleString()}원)</span></p>
+                          )}
+                          {exchangeRate && item.exchangeRateAtEntry !== exchangeRate && item.amount != null && (
+                            <p className="text-xs text-gray-300">현재 ₩{Math.round(item.amount * exchangeRate).toLocaleString()}</p>
                           )}
                         </div>
                       ) : (

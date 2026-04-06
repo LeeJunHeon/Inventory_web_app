@@ -43,6 +43,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const [partnerId, setPartnerId]   = useState<number | null>(null);
   const [partnerName, setPartnerName] = useState("");
   const [currency, setCurrency]     = useState<"KRW" | "USD">("KRW");
+  const [exchangeRateAtEntry, setExchangeRateAtEntry] = useState<number | null>(null);
   const [memo, setMemo]             = useState("");
   const [saving, setSaving]         = useState(false);
   const [error, setError]           = useState("");
@@ -66,6 +67,18 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   // 입고 참조 선택
   const [showInboundSelect, setShowInboundSelect] = useState(false);
   const [selectedInbound, setSelectedInbound] = useState<SelectedInbound | null>(null);
+
+  // currency 변경 시 환율 자동 조회
+  useEffect(() => {
+    if (currency === "USD") {
+      fetch("/api/exchange-rate")
+        .then(r => r.json())
+        .then(data => setExchangeRateAtEntry(data.rate))
+        .catch(() => {});
+    } else {
+      setExchangeRateAtEntry(null);
+    }
+  }, [currency]);
 
   // 모달 열릴 때 거래처 + 위치 로드 (한 번만)
   useEffect(() => {
@@ -98,6 +111,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       setPartnerId(null); setPartnerName("");
       setLocationId(1);
       setCurrency("KRW");
+      setExchangeRateAtEntry(null);
       setMemo(""); setError(""); setShowItemSelector(false);
       setShowBarcodeSelector(false); setBarcodeSelectorSearch(""); setBarcodeSelectorList([]);
       setWaferSpec(null);
@@ -247,6 +261,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           targetUnitId: targetUnitId || null,
           refTxNo:      refTxNo      || null,
           currency:     currency,
+          exchangeRateAtEntry: currency === "USD" ? exchangeRateAtEntry : null,
           locationId:   locationId,
         }),
       });
@@ -546,6 +561,11 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
             </div>
             <div>
+              {currency === "USD" && exchangeRateAtEntry && (
+                <p className="text-xs text-gray-400 mt-1">
+                  현재 환율 {exchangeRateAtEntry.toLocaleString()}원 기준으로 저장됩니다
+                </p>
+              )}
               <label className="block text-sm font-semibold text-gray-700 mb-2">금액</label>
               <input type="text" value={amount ? (currency === "USD" ? `$${amount.toLocaleString()}` : `₩${amount.toLocaleString()}`) : ""} readOnly placeholder="자동 계산"
                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />

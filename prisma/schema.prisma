@@ -239,6 +239,7 @@ model InventoryTx {
   refTxNo      String?  @map("ref_tx_no")
   barcodeId    Int?     @map("barcode_id")
   currency     String?  @default("KRW")
+  exchangeRateAtEntry Decimal? @map("exchange_rate_at_entry") @db.Decimal(10, 2)
 
   item       Item       @relation(fields: [itemId], references: [id])
   targetUnit TargetUnit? @relation(fields: [targetUnitId], references: [id])

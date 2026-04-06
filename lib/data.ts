@@ -11,6 +11,7 @@ export interface InventoryItem {
   qty: number;
   amount: number | null;
   currency: string;
+  exchangeRateAtEntry: number | null;
   partner: string;
   handler: string;
   memo: string;
