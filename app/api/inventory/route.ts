@@ -171,6 +171,25 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 타겟 바코드 중복 입고 방지
+    if (body.txType === "입고" && body.barcodeId) {
+      const barcode = await prisma.barcode.findUnique({
+        where: { id: Number(body.barcodeId) },
+        include: { item: { include: { category: true } } },
+      });
+      if (barcode?.item?.category?.name === "타겟") {
+        const existingInbound = await prisma.inventoryTx.findFirst({
+          where: { barcodeId: Number(body.barcodeId), txType: "입고" },
+        });
+        if (existingInbound) {
+          return NextResponse.json(
+            { error: `해당 타겟 바코드(${barcode.code})는 이미 입고된 이력이 있습니다. 타겟은 바코드당 1회만 입고 가능합니다.` },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
     // 출고/불출 수량 초과 방지
     if ((body.txType === "출고" || body.txType === "불출") && body.refTxNo) {
       const refInbound = await prisma.inventoryTx.findUnique({
