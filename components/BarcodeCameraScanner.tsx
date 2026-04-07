@@ -13,8 +13,6 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
   const mountedRef = useRef(true);
   const [error, setError] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
-
-  // 매 mount마다 고유한 div id 사용 (중복 방지)
   const divIdRef = useRef(`barcode-scanner-${Date.now()}`);
 
   useEffect(() => {
@@ -25,16 +23,25 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
       try {
         const { Html5Qrcode } = await import("html5-qrcode");
 
-        // 혹시 이전 인스턴스가 같은 div를 사용 중이면 정리
+        // 이전 인스턴스 완전 정리
         const existingEl = document.getElementById(divId);
-        if (existingEl) existingEl.innerHTML = "";
+        if (existingEl) {
+          // video 태그 명시적 정지 후 제거
+          const videos = existingEl.querySelectorAll("video");
+          videos.forEach(v => { v.srcObject = null; v.remove(); });
+          existingEl.innerHTML = "";
+        }
 
-        const scanner = new Html5Qrcode(divId);
+        const scanner = new Html5Qrcode(divId, { verbose: false } as any);
         scannerRef.current = scanner;
 
         await scanner.start(
           { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 240, height: 240 } },
+          {
+            fps: 10,
+            qrbox: { width: 220, height: 220 },
+            videoConstraints: { facingMode: "environment" },
+          },
           (decodedText: string) => {
             if (mountedRef.current) onDetected(decodedText);
           },
@@ -42,9 +49,19 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
         );
 
         if (!mountedRef.current) {
-          // 이미 unmount됐으면 즉시 정지
           await scanner.stop().catch(() => {});
           return;
+        }
+
+        // 라이브러리가 추가로 생성한 중복 video 제거 (첫 번째만 유지)
+        const el = document.getElementById(divId);
+        if (el) {
+          const videos = el.querySelectorAll("video");
+          // 첫 번째 video만 유지, 나머지 제거
+          for (let i = 1; i < videos.length; i++) {
+            videos[i].srcObject = null;
+            videos[i].remove();
+          }
         }
 
         isRunningRef.current = true;
@@ -66,15 +83,22 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
 
     return () => {
       mountedRef.current = false;
+      const el = document.getElementById(divId);
       if (scannerRef.current && isRunningRef.current) {
         isRunningRef.current = false;
         scannerRef.current.stop()
           .catch(() => {})
           .finally(() => {
-            // div 내용 정리
-            const el = document.getElementById(divId);
-            if (el) el.innerHTML = "";
+            if (el) {
+              const videos = el.querySelectorAll("video");
+              videos.forEach(v => { v.srcObject = null; v.remove(); });
+              el.innerHTML = "";
+            }
           });
+      } else if (el) {
+        const videos = el.querySelectorAll("video");
+        videos.forEach(v => { v.srcObject = null; v.remove(); });
+        el.innerHTML = "";
       }
     };
   }, []);
@@ -96,7 +120,7 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
     <div className="mt-2 rounded-xl border border-blue-200 overflow-hidden relative bg-black">
       <div
         id={divIdRef.current}
-        className="w-full [&_button]:hidden [&_select]:hidden [&_img]:hidden"
+        className="w-full [&_button]:hidden [&_select]:hidden [&_img]:hidden [&_video:not(:first-of-type)]:hidden"
       />
       <button
         onClick={onClose}
