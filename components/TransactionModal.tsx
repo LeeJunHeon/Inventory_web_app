@@ -777,10 +777,18 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
             )}
           </div>
 
-          {currency === "USD" && exchangeRateAtEntry && !(isEmployee && (type === "출고" || type === "불출")) && (
-            <p className="text-xs text-gray-400 -mt-2">
-              현재 환율 {exchangeRateAtEntry.toLocaleString()}원 기준으로 저장됩니다
-            </p>
+          {currency === "USD" && !(isEmployee && (type === "출고" || type === "불출")) && (
+            <div className="flex items-center gap-2 -mt-2">
+              <p className="text-xs text-gray-400 shrink-0">적용 환율</p>
+              <input
+                type="number"
+                value={exchangeRateAtEntry ?? ""}
+                onChange={e => setExchangeRateAtEntry(Number(e.target.value) || null)}
+                placeholder="환율 입력"
+                className="w-28 px-2 py-1 border border-gray-200 rounded-lg text-xs text-gray-700 outline-none focus:ring-1 focus:ring-blue-400"
+              />
+              <p className="text-xs text-gray-400 shrink-0">원/USD (이 건에만 적용)</p>
+            </div>
           )}
 
           {/* 잔여수량 초과 경고 */}
