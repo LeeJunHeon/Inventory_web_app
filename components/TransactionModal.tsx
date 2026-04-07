@@ -36,6 +36,8 @@ interface SelectedInbound {
 export default function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModalProps) {
   const { data: session } = useSession();
   const isEmployee = (session?.user as any)?.role === "employee";
+  const isMobile = typeof navigator !== "undefined" &&
+    (navigator.maxTouchPoints > 0 || /Mobi|Android/i.test(navigator.userAgent));
 
   const [type, setType]         = useState<"입고" | "출고" | "불출">("입고");
   const [category, setCategory] = useState("웨이퍼");
@@ -69,6 +71,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const [locationId, setLocationId]           = useState<number>(1);
   const [showItemSelector, setShowItemSelector] = useState(false);
   const selectorRef = useRef<HTMLDivElement>(null);
+  const barcodeInputRef = useRef<HTMLInputElement>(null);
 
   // 바코드 선택기
   const [showBarcodeSelector, setShowBarcodeSelector] = useState(false);
@@ -188,6 +191,14 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       .then(data => setWaferSpec(data?.waferSpec ?? null))
       .catch(() => setWaferSpec(null));
   }, [itemId, category, isOpen]);
+
+  // 모달 열릴 때 바코드 input 자동 포커스
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => barcodeInputRef.current?.focus(), 150);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
 
   // 드롭다운 외부 클릭 시 닫기
   useEffect(() => {
@@ -520,9 +531,15 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
 
           {/* 바코드 — 입고/출고/불출 모두 표시 */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">바코드</label>
+            <div className="flex items-center gap-2 mb-2">
+              <label className="text-sm font-semibold text-gray-700">바코드</label>
+              <span className="text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
+                USB 스캐너 또는 직접 입력
+              </span>
+            </div>
             <div className="flex gap-2">
               <input
+                ref={barcodeInputRef}
                 type="text"
                 value={barcodeInput}
                 onChange={e => setBarcodeInput(e.target.value)}
@@ -547,18 +564,20 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 </button>
               )}
             </div>
-            {/* 카메라 버튼 */}
-            <div className="flex gap-2 mt-1.5">
-              <button onClick={() => setShowCameraScanner(v => !v)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  showCameraScanner
-                    ? "bg-blue-100 text-blue-700"
-                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                }`}>
-                <Camera size={12} />카메라 스캔
-              </button>
-            </div>
-            {showCameraScanner && (
+            {/* 카메라 버튼 — 모바일만 표시 */}
+            {isMobile && (
+              <div className="flex gap-2 mt-1.5">
+                <button onClick={() => setShowCameraScanner(v => !v)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    showCameraScanner
+                      ? "bg-blue-100 text-blue-700"
+                      : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                  }`}>
+                  <Camera size={12} />카메라 스캔
+                </button>
+              </div>
+            )}
+            {isMobile && showCameraScanner && (
               <BarcodeCameraScanner
                 onDetected={(code) => {
                   setBarcodeInput(code);
