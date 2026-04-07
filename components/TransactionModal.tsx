@@ -250,7 +250,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       if (type === "출고" || type === "불출") {
         const res = await fetch(`/api/barcodes/lookup?code=${encodeURIComponent(lookupCode)}`);
         const bc = await res.json();
-        if (!res.ok) { setError(bc.error || "바코드 조회 실패"); return; }
+        if (!res.ok) { setError(bc.error || "바코드 조회 실패"); barcodeInputRef.current?.focus(); return; }
         setBarcodeId(bc.barcodeId);
         setTargetUnitId(bc.targetUnitId ?? null);
         setRefTxNo(bc.refTxNo ?? null);
@@ -292,7 +292,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         // 입고: 단순 바코드 조회
         const res = await fetch(`/api/barcodes?search=${encodeURIComponent(lookupCode)}`);
         const data = await res.json();
-        if (!Array.isArray(data) || data.length === 0) { setError("해당 바코드를 찾을 수 없습니다. (비활성 바코드이거나 미등록 바코드)"); return; }
+        if (!Array.isArray(data) || data.length === 0) { setError("해당 바코드를 찾을 수 없습니다. (비활성 바코드이거나 미등록 바코드)"); barcodeInputRef.current?.focus(); return; }
         const bc = data[0];
         setBarcodeId(bc.id);
         setTargetUnitId(bc.targetUnitId ?? null);
@@ -312,7 +312,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         setItemCode(bc.itemCode);
         setItemName(bc.itemName);
       }
-    } catch { setError("바코드 조회 실패"); }
+    } catch { setError("바코드 조회 실패"); barcodeInputRef.current?.focus(); }
   };
 
   // 입고 참조 선택 콜백
@@ -357,13 +357,13 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
 
   // 저장
   const handleSave = async () => {
-    if (!itemId)                            { setError("품목을 선택해주세요.");  return; }
-    if (!quantity || Number(quantity) <= 0) { setError("수량을 입력해주세요.");  return; }
+    if (!itemId)                            { setError("품목을 선택해주세요.");  barcodeInputRef.current?.focus(); return; }
+    if (!quantity || Number(quantity) <= 0) { setError("수량을 입력해주세요.");  barcodeInputRef.current?.focus(); return; }
     // 수량 초과 시 저장 차단
     if ((type === "출고" || type === "불출") && selectedInbound) {
       if (Number(quantity) > selectedInbound.remainQty) {
         setError(`수량 초과: 선택한 입고건의 잔여수량은 ${selectedInbound.remainQty.toLocaleString()}개입니다.`);
-        return;
+        barcodeInputRef.current?.focus(); return;
       }
     }
     // 출고/불출 시 바코드 필수 검증
@@ -373,7 +373,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
           setError("해당 품목은 바코드 스캔이 필요합니다.");
-          return;
+          barcodeInputRef.current?.focus(); return;
         }
       } catch {
         // 조회 실패 시 API에서 검증하므로 통과
@@ -405,12 +405,12 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       });
       if (!res.ok) {
         const d = await res.json();
-        setError(d.error || "저장 실패"); return;
+        setError(d.error || "저장 실패"); barcodeInputRef.current?.focus(); return;
       }
       onSuccess?.();
       onClose();
     } catch {
-      setError("네트워크 오류");
+      setError("네트워크 오류"); barcodeInputRef.current?.focus();
     } finally {
       setSaving(false);
     }
@@ -609,6 +609,14 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
               />
             )}
             <p className="mt-1.5 text-xs text-gray-400">바코드를 스캔하거나 품목을 직접 선택하세요</p>
+            {error && (
+              <div className="flex items-center gap-2 mt-1.5 px-3 py-2 bg-red-50 border border-red-200 rounded-xl">
+                <span className="text-xs text-red-500 font-medium">⚠️ {error}</span>
+                <button onClick={() => setError("")} className="ml-auto text-red-400 hover:text-red-600">
+                  <X size={14} />
+                </button>
+              </div>
+            )}
             {/* 타겟 ID 연결 안내 */}
             {targetUnitId && (
               <span className="inline-flex items-center mt-1.5 gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700">
@@ -902,8 +910,6 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none" />
           </div>
 
-          {/* 에러 */}
-          {error && <p className="text-sm text-red-500 bg-red-50 px-4 py-2.5 rounded-xl">{error}</p>}
         </div>
 
         {/* 하단 버튼 */}
