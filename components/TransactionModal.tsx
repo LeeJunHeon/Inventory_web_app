@@ -555,7 +555,15 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 ref={barcodeInputRef}
                 type="text"
                 value={barcodeInput}
-                onChange={e => setBarcodeInput(normalizeBarcodeInput(e.target.value))}
+                onChange={e => {
+                  // IME 조합 중(한글 타이핑 중)에는 무시 — 조합 완료 후 onCompositionEnd에서 처리
+                  if ((e.nativeEvent as any).isComposing) return;
+                  setBarcodeInput(normalizeBarcodeInput(e.target.value));
+                }}
+                onCompositionEnd={e => {
+                  // 한글 조합 완료 시 변환 (ㅆ → T 등)
+                  setBarcodeInput(normalizeBarcodeInput((e.target as HTMLInputElement).value));
+                }}
                 onKeyDown={e => e.key === "Enter" && handleBarcodeLookup()}
                 placeholder="바코드를 스캔하거나 입력하세요"
                 className="flex-1 min-w-0 px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
