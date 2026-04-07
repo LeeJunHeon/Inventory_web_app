@@ -10,25 +10,47 @@ interface Props {
 export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
   const scannerRef = useRef<any>(null);
   const isRunningRef = useRef(false);
+  const mountedRef = useRef(true);
   const [error, setError] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
-  const divId = "barcode-camera-scanner-div";
+
+  // 매 mount마다 고유한 div id 사용 (중복 방지)
+  const divIdRef = useRef(`barcode-scanner-${Date.now()}`);
 
   useEffect(() => {
+    mountedRef.current = true;
+    const divId = divIdRef.current;
+
     const init = async () => {
       try {
         const { Html5Qrcode } = await import("html5-qrcode");
+
+        // 혹시 이전 인스턴스가 같은 div를 사용 중이면 정리
+        const existingEl = document.getElementById(divId);
+        if (existingEl) existingEl.innerHTML = "";
+
         const scanner = new Html5Qrcode(divId);
         scannerRef.current = scanner;
+
         await scanner.start(
           { facingMode: "environment" },
           { fps: 10, qrbox: { width: 240, height: 240 } },
-          (decodedText: string) => { onDetected(decodedText); },
+          (decodedText: string) => {
+            if (mountedRef.current) onDetected(decodedText);
+          },
           undefined
         );
+
+        if (!mountedRef.current) {
+          // 이미 unmount됐으면 즉시 정지
+          await scanner.stop().catch(() => {});
+          return;
+        }
+
         isRunningRef.current = true;
         setStarted(true);
       } catch (err: any) {
+        if (!mountedRef.current) return;
         const msg = String(err);
         if (msg.includes("NotAllowedError") || msg.includes("Permission")) {
           setError("카메라 권한이 거부되었습니다.\n브라우저 주소창 옆 카메라 아이콘을 클릭해 권한을 허용해주세요.");
@@ -39,11 +61,20 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
         }
       }
     };
+
     init();
+
     return () => {
+      mountedRef.current = false;
       if (scannerRef.current && isRunningRef.current) {
         isRunningRef.current = false;
-        scannerRef.current.stop().catch(() => {});
+        scannerRef.current.stop()
+          .catch(() => {})
+          .finally(() => {
+            // div 내용 정리
+            const el = document.getElementById(divId);
+            if (el) el.innerHTML = "";
+          });
       }
     };
   }, []);
@@ -64,8 +95,8 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
   return (
     <div className="mt-2 rounded-xl border border-blue-200 overflow-hidden relative bg-black">
       <div
-        id={divId}
-        className="w-full [&_button]:hidden [&_select]:hidden [&_img]:hidden [&_#html5-qrcode-anchor-scan-type-change]:hidden"
+        id={divIdRef.current}
+        className="w-full [&_button]:hidden [&_select]:hidden [&_img]:hidden"
       />
       <button
         onClick={onClose}
