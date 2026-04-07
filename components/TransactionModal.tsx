@@ -518,19 +518,8 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
 
           {/* 바코드 — 입고/출고/불출 모두 표시 */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-semibold text-gray-700">바코드</label>
-              <button
-                onClick={() => setShowCameraScanner(v => !v)}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                  showCameraScanner
-                    ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                }`}>
-                <Camera size={12} />카메라
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">바코드</label>
+            <div className="flex gap-2">
               <input
                 type="text"
                 value={barcodeInput}
@@ -540,7 +529,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 className="flex-1 min-w-0 px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
               <button onClick={() => handleBarcodeLookup()}
-                className="shrink-0 px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap">
+                className="shrink-0 px-3 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap">
                 조회
               </button>
               <button onClick={openBarcodeSelector}
@@ -548,17 +537,24 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 title="바코드 목록에서 선택">
                 <List size={15} />목록
               </button>
-              {type === "입고" && (
+              {type === "입고" && !showCameraScanner && (
                 <button onClick={() => { setShowBarcodeCreate(v => !v); setBarcodeCreateError(""); }}
-                  className={`shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
-                    showBarcodeCreate
-                      ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap"
                   title="새 바코드 생성">
                   <Plus size={15} />생성
                 </button>
               )}
+            </div>
+            {/* 카메라 버튼 */}
+            <div className="flex gap-2 mt-1.5">
+              <button onClick={() => setShowCameraScanner(v => !v)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  showCameraScanner
+                    ? "bg-blue-100 text-blue-700"
+                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                }`}>
+                <Camera size={12} />카메라 스캔
+              </button>
             </div>
             {showCameraScanner && (
               <BarcodeCameraScanner
@@ -650,13 +646,13 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           </div>
 
           {/* 품목코드 / 품목명 */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">품목코드</label>
               <div className="relative" ref={selectorRef}>
                 <div className="flex gap-2">
                   <input value={itemCode} readOnly placeholder="자동 입력"
-                    className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
+                    className="flex-1 min-w-0 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
                   <button
                     onClick={() => setShowItemSelector(v => !v)}
                     className="px-3 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-medium hover:bg-blue-600 transition-colors whitespace-nowrap">
