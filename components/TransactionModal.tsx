@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { X, ScanLine, PenLine, List, Loader2, Plus } from "lucide-react";
+import { X, List, Loader2, Plus, Camera } from "lucide-react";
 import { TYPE_COLORS, CATEGORY_COLORS } from "@/lib/data";
 import InboundSelectModal, { type InboundTx } from "./InboundSelectModal";
+import BarcodeCameraScanner from "./BarcodeCameraScanner";
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -47,7 +48,6 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const [barcodeId, setBarcodeId]     = useState<number | null>(null);
   const [targetUnitId, setTargetUnitId] = useState<number | null>(null);
   const [refTxNo, setRefTxNo]         = useState<string | null>(null);
-  const [directInput, setDirectInput] = useState(false); // false=스캔모드, true=직접입력모드
   const [quantity, setQuantity]     = useState("");
   const [unitPrice, setUnitPrice]   = useState("");
   const [partnerId, setPartnerId]   = useState<number | null>(null);
@@ -72,6 +72,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
 
   // 바코드 선택기
   const [showBarcodeSelector, setShowBarcodeSelector] = useState(false);
+  const [showCameraScanner, setShowCameraScanner] = useState(false);
   const [barcodeSelectorSearch, setBarcodeSelectorSearch] = useState("");
   const [barcodeSelectorList, setBarcodeSelectorList]     = useState<BarcodeOption[]>([]);
   const [barcodeSelectorLoading, setBarcodeSelectorLoading] = useState(false);
@@ -134,7 +135,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       setType("입고"); setCategory("웨이퍼"); setDate(new Date().toISOString().split("T")[0]);
       setItemId(null); setItemCode(""); setItemName("");
       setBarcodeInput(""); setBarcodeId(null); setTargetUnitId(null); setRefTxNo(null);
-      setDirectInput(false);
+      setShowCameraScanner(false);
       setQuantity(""); setUnitPrice("");
       setPartnerId(null); setPartnerName("");
       setLocationId(1);
@@ -195,15 +196,6 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
-
-  // 직접입력 토글 시 바코드/품목 초기화
-  const handleToggleDirectInput = () => {
-    setDirectInput(v => !v);
-    setBarcodeInput(""); setBarcodeId(null); setTargetUnitId(null); setRefTxNo(null);
-    setItemId(null); setItemCode(""); setItemName("");
-    setSelectedInbound(null);
-    setError("");
-  };
 
   // 바코드 목록 선택기 열기
   const openBarcodeSelector = async () => {
@@ -506,6 +498,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                   setShowBarcodeCreate(false);
                   setBarcodeCreateMaterial("");
                   setBarcodeCreateError("");
+                  setShowCameraScanner(false);
                 }}
                   className={`flex-1 py-2 sm:py-2.5 rounded-xl text-sm font-semibold transition-all ${
                     type === t
@@ -527,13 +520,14 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm font-semibold text-gray-700">바코드</label>
-              <button onClick={handleToggleDirectInput}
+              <button
+                onClick={() => setShowCameraScanner(v => !v)}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                  directInput
-                    ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                  showCameraScanner
+                    ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
                     : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                 }`}>
-                {directInput ? <><PenLine size={12} />직접 입력 중</> : <><ScanLine size={12} />스캔 모드</>}
+                <Camera size={12} />카메라
               </button>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -541,25 +535,20 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 type="text"
                 value={barcodeInput}
                 onChange={e => setBarcodeInput(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && !directInput && handleBarcodeLookup()}
-                placeholder={directInput ? "직접 입력 모드 (바코드 비활성)" : "바코드를 스캔하거나 입력하세요"}
-                disabled={directInput}
-                className={`flex-1 min-w-0 px-4 py-2.5 border rounded-xl text-sm outline-none transition-colors ${
-                  directInput
-                    ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"
-                    : "border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                }`}
+                onKeyDown={e => e.key === "Enter" && handleBarcodeLookup()}
+                placeholder="바코드를 스캔하거나 입력하세요"
+                className="flex-1 min-w-0 px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
-              <button onClick={() => handleBarcodeLookup()} disabled={directInput}
-                className="shrink-0 px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed">
+              <button onClick={() => handleBarcodeLookup()}
+                className="shrink-0 px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap">
                 조회
               </button>
-              <button onClick={openBarcodeSelector} disabled={directInput}
-                className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+              <button onClick={openBarcodeSelector}
+                className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap"
                 title="바코드 목록에서 선택">
                 <List size={15} />목록
               </button>
-              {type === "입고" && !directInput && (
+              {type === "입고" && (
                 <button onClick={() => { setShowBarcodeCreate(v => !v); setBarcodeCreateError(""); }}
                   className={`shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
                     showBarcodeCreate
@@ -571,11 +560,17 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 </button>
               )}
             </div>
-            <p className="mt-1.5 text-xs text-gray-400">
-              {directInput
-                ? "품목을 직접 선택합니다 (바코드 미연결)"
-                : "바코드를 스캔하면 품목이 자동으로 선택됩니다"}
-            </p>
+            {showCameraScanner && (
+              <BarcodeCameraScanner
+                onDetected={(code) => {
+                  setBarcodeInput(code);
+                  setShowCameraScanner(false);
+                  handleBarcodeLookup(code);
+                }}
+                onClose={() => setShowCameraScanner(false)}
+              />
+            )}
+            <p className="mt-1.5 text-xs text-gray-400">바코드를 스캔하거나 품목을 직접 선택하세요</p>
             {/* 타겟 ID 연결 안내 */}
             {targetUnitId && (
               <span className="inline-flex items-center mt-1.5 gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700">
@@ -681,8 +676,8 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                             setBarcodeInput("");
                             setBarcodeId(null); setTargetUnitId(null); setRefTxNo(null); setSelectedInbound(null);
                             setShowItemSelector(false);
-                            // 출고/불출 직접입력 모드: 입고 참조 선택 자동 오픈
-                            if ((type === "출고" || type === "불출") && directInput) setShowInboundSelect(true);
+                            // 출고/불출: 입고 참조 선택 자동 오픈
+                            if (type === "출고" || type === "불출") setShowInboundSelect(true);
                           }}
                           className="w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-0">
                           <div className="flex items-center justify-between w-full">
