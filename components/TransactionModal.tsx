@@ -171,7 +171,9 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   useEffect(() => {
     if (!isOpen) return;
     fetch(`/api/items?category=${encodeURIComponent(category)}`)
-      .then(r => r.json()).then(setItemOptions).catch(console.error);
+      .then(r => r.json())
+      .then(setItemOptions)
+      .catch(() => setError("품목 목록을 불러오지 못했습니다."));
     setItemId(null); setItemCode(""); setItemName("");
     setShowItemSelector(false);
     setWaferSpec(null);
