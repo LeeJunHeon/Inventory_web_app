@@ -38,6 +38,7 @@ export type InventoryTxAvgAggregateOutputType = {
   locationId: number | null
   userId: number | null
   barcodeId: number | null
+  exchangeRateAtEntry: runtime.Decimal | null
 }
 
 export type InventoryTxSumAggregateOutputType = {
@@ -52,6 +53,7 @@ export type InventoryTxSumAggregateOutputType = {
   locationId: number | null
   userId: number | null
   barcodeId: number | null
+  exchangeRateAtEntry: runtime.Decimal | null
 }
 
 export type InventoryTxMinAggregateOutputType = {
@@ -72,6 +74,7 @@ export type InventoryTxMinAggregateOutputType = {
   refTxNo: string | null
   barcodeId: number | null
   currency: string | null
+  exchangeRateAtEntry: runtime.Decimal | null
 }
 
 export type InventoryTxMaxAggregateOutputType = {
@@ -92,6 +95,7 @@ export type InventoryTxMaxAggregateOutputType = {
   refTxNo: string | null
   barcodeId: number | null
   currency: string | null
+  exchangeRateAtEntry: runtime.Decimal | null
 }
 
 export type InventoryTxCountAggregateOutputType = {
@@ -112,6 +116,7 @@ export type InventoryTxCountAggregateOutputType = {
   refTxNo: number
   barcodeId: number
   currency: number
+  exchangeRateAtEntry: number
   _all: number
 }
 
@@ -128,6 +133,7 @@ export type InventoryTxAvgAggregateInputType = {
   locationId?: true
   userId?: true
   barcodeId?: true
+  exchangeRateAtEntry?: true
 }
 
 export type InventoryTxSumAggregateInputType = {
@@ -142,6 +148,7 @@ export type InventoryTxSumAggregateInputType = {
   locationId?: true
   userId?: true
   barcodeId?: true
+  exchangeRateAtEntry?: true
 }
 
 export type InventoryTxMinAggregateInputType = {
@@ -162,6 +169,7 @@ export type InventoryTxMinAggregateInputType = {
   refTxNo?: true
   barcodeId?: true
   currency?: true
+  exchangeRateAtEntry?: true
 }
 
 export type InventoryTxMaxAggregateInputType = {
@@ -182,6 +190,7 @@ export type InventoryTxMaxAggregateInputType = {
   refTxNo?: true
   barcodeId?: true
   currency?: true
+  exchangeRateAtEntry?: true
 }
 
 export type InventoryTxCountAggregateInputType = {
@@ -202,6 +211,7 @@ export type InventoryTxCountAggregateInputType = {
   refTxNo?: true
   barcodeId?: true
   currency?: true
+  exchangeRateAtEntry?: true
   _all?: true
 }
 
@@ -309,6 +319,7 @@ export type InventoryTxGroupByOutputType = {
   refTxNo: string | null
   barcodeId: number | null
   currency: string | null
+  exchangeRateAtEntry: runtime.Decimal | null
   _count: InventoryTxCountAggregateOutputType | null
   _avg: InventoryTxAvgAggregateOutputType | null
   _sum: InventoryTxSumAggregateOutputType | null
@@ -352,6 +363,7 @@ export type InventoryTxWhereInput = {
   refTxNo?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
   barcodeId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
   currency?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
+  exchangeRateAtEntry?: Prisma.DecimalNullableFilter<"InventoryTx"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   item?: Prisma.XOR<Prisma.ItemScalarRelationFilter, Prisma.ItemWhereInput>
   targetUnit?: Prisma.XOR<Prisma.TargetUnitNullableScalarRelationFilter, Prisma.TargetUnitWhereInput> | null
   partner?: Prisma.XOR<Prisma.PartnerNullableScalarRelationFilter, Prisma.PartnerWhereInput> | null
@@ -380,6 +392,7 @@ export type InventoryTxOrderByWithRelationInput = {
   refTxNo?: Prisma.SortOrderInput | Prisma.SortOrder
   barcodeId?: Prisma.SortOrderInput | Prisma.SortOrder
   currency?: Prisma.SortOrderInput | Prisma.SortOrder
+  exchangeRateAtEntry?: Prisma.SortOrderInput | Prisma.SortOrder
   item?: Prisma.ItemOrderByWithRelationInput
   targetUnit?: Prisma.TargetUnitOrderByWithRelationInput
   partner?: Prisma.PartnerOrderByWithRelationInput
@@ -411,6 +424,7 @@ export type InventoryTxWhereUniqueInput = Prisma.AtLeast<{
   refTxNo?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
   barcodeId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
   currency?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
+  exchangeRateAtEntry?: Prisma.DecimalNullableFilter<"InventoryTx"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   item?: Prisma.XOR<Prisma.ItemScalarRelationFilter, Prisma.ItemWhereInput>
   targetUnit?: Prisma.XOR<Prisma.TargetUnitNullableScalarRelationFilter, Prisma.TargetUnitWhereInput> | null
   partner?: Prisma.XOR<Prisma.PartnerNullableScalarRelationFilter, Prisma.PartnerWhereInput> | null
@@ -439,6 +453,7 @@ export type InventoryTxOrderByWithAggregationInput = {
   refTxNo?: Prisma.SortOrderInput | Prisma.SortOrder
   barcodeId?: Prisma.SortOrderInput | Prisma.SortOrder
   currency?: Prisma.SortOrderInput | Prisma.SortOrder
+  exchangeRateAtEntry?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.InventoryTxCountOrderByAggregateInput
   _avg?: Prisma.InventoryTxAvgOrderByAggregateInput
   _max?: Prisma.InventoryTxMaxOrderByAggregateInput
@@ -467,6 +482,7 @@ export type InventoryTxScalarWhereWithAggregatesInput = {
   refTxNo?: Prisma.StringNullableWithAggregatesFilter<"InventoryTx"> | string | null
   barcodeId?: Prisma.IntNullableWithAggregatesFilter<"InventoryTx"> | number | null
   currency?: Prisma.StringNullableWithAggregatesFilter<"InventoryTx"> | string | null
+  exchangeRateAtEntry?: Prisma.DecimalNullableWithAggregatesFilter<"InventoryTx"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type InventoryTxCreateInput = {
@@ -479,6 +495,7 @@ export type InventoryTxCreateInput = {
   memo?: string | null
   refTxNo?: string | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   item: Prisma.ItemCreateNestedOneWithoutInventoryTxsInput
   targetUnit?: Prisma.TargetUnitCreateNestedOneWithoutInventoryTxsInput
   partner?: Prisma.PartnerCreateNestedOneWithoutInventoryTxsInput
@@ -507,6 +524,7 @@ export type InventoryTxUncheckedCreateInput = {
   refTxNo?: string | null
   barcodeId?: number | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutInventoryTxInput
 }
 
@@ -520,6 +538,7 @@ export type InventoryTxUpdateInput = {
   memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   item?: Prisma.ItemUpdateOneRequiredWithoutInventoryTxsNestedInput
   targetUnit?: Prisma.TargetUnitUpdateOneWithoutInventoryTxsNestedInput
   partner?: Prisma.PartnerUpdateOneWithoutInventoryTxsNestedInput
@@ -548,6 +567,7 @@ export type InventoryTxUncheckedUpdateInput = {
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutInventoryTxNestedInput
 }
 
@@ -569,6 +589,7 @@ export type InventoryTxCreateManyInput = {
   refTxNo?: string | null
   barcodeId?: number | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type InventoryTxUpdateManyMutationInput = {
@@ -581,6 +602,7 @@ export type InventoryTxUpdateManyMutationInput = {
   memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type InventoryTxUncheckedUpdateManyInput = {
@@ -601,6 +623,7 @@ export type InventoryTxUncheckedUpdateManyInput = {
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type InventoryTxListRelationFilter = {
@@ -631,6 +654,7 @@ export type InventoryTxCountOrderByAggregateInput = {
   refTxNo?: Prisma.SortOrder
   barcodeId?: Prisma.SortOrder
   currency?: Prisma.SortOrder
+  exchangeRateAtEntry?: Prisma.SortOrder
 }
 
 export type InventoryTxAvgOrderByAggregateInput = {
@@ -645,6 +669,7 @@ export type InventoryTxAvgOrderByAggregateInput = {
   locationId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   barcodeId?: Prisma.SortOrder
+  exchangeRateAtEntry?: Prisma.SortOrder
 }
 
 export type InventoryTxMaxOrderByAggregateInput = {
@@ -665,6 +690,7 @@ export type InventoryTxMaxOrderByAggregateInput = {
   refTxNo?: Prisma.SortOrder
   barcodeId?: Prisma.SortOrder
   currency?: Prisma.SortOrder
+  exchangeRateAtEntry?: Prisma.SortOrder
 }
 
 export type InventoryTxMinOrderByAggregateInput = {
@@ -685,6 +711,7 @@ export type InventoryTxMinOrderByAggregateInput = {
   refTxNo?: Prisma.SortOrder
   barcodeId?: Prisma.SortOrder
   currency?: Prisma.SortOrder
+  exchangeRateAtEntry?: Prisma.SortOrder
 }
 
 export type InventoryTxSumOrderByAggregateInput = {
@@ -699,6 +726,7 @@ export type InventoryTxSumOrderByAggregateInput = {
   locationId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   barcodeId?: Prisma.SortOrder
+  exchangeRateAtEntry?: Prisma.SortOrder
 }
 
 export type InventoryTxNullableScalarRelationFilter = {
@@ -1026,6 +1054,7 @@ export type InventoryTxCreateWithoutLocationInput = {
   memo?: string | null
   refTxNo?: string | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   item: Prisma.ItemCreateNestedOneWithoutInventoryTxsInput
   targetUnit?: Prisma.TargetUnitCreateNestedOneWithoutInventoryTxsInput
   partner?: Prisma.PartnerCreateNestedOneWithoutInventoryTxsInput
@@ -1052,6 +1081,7 @@ export type InventoryTxUncheckedCreateWithoutLocationInput = {
   refTxNo?: string | null
   barcodeId?: number | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutInventoryTxInput
 }
 
@@ -1102,6 +1132,7 @@ export type InventoryTxScalarWhereInput = {
   refTxNo?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
   barcodeId?: Prisma.IntNullableFilter<"InventoryTx"> | number | null
   currency?: Prisma.StringNullableFilter<"InventoryTx"> | string | null
+  exchangeRateAtEntry?: Prisma.DecimalNullableFilter<"InventoryTx"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type InventoryTxCreateWithoutTxReasonInput = {
@@ -1114,6 +1145,7 @@ export type InventoryTxCreateWithoutTxReasonInput = {
   memo?: string | null
   refTxNo?: string | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   item: Prisma.ItemCreateNestedOneWithoutInventoryTxsInput
   targetUnit?: Prisma.TargetUnitCreateNestedOneWithoutInventoryTxsInput
   partner?: Prisma.PartnerCreateNestedOneWithoutInventoryTxsInput
@@ -1140,6 +1172,7 @@ export type InventoryTxUncheckedCreateWithoutTxReasonInput = {
   refTxNo?: string | null
   barcodeId?: number | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutInventoryTxInput
 }
 
@@ -1179,6 +1212,7 @@ export type InventoryTxCreateWithoutPartnerInput = {
   memo?: string | null
   refTxNo?: string | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   item: Prisma.ItemCreateNestedOneWithoutInventoryTxsInput
   targetUnit?: Prisma.TargetUnitCreateNestedOneWithoutInventoryTxsInput
   txReason?: Prisma.TxReasonCreateNestedOneWithoutInventoryTxsInput
@@ -1205,6 +1239,7 @@ export type InventoryTxUncheckedCreateWithoutPartnerInput = {
   refTxNo?: string | null
   barcodeId?: number | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutInventoryTxInput
 }
 
@@ -1244,6 +1279,7 @@ export type InventoryTxCreateWithoutUserInput = {
   memo?: string | null
   refTxNo?: string | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   item: Prisma.ItemCreateNestedOneWithoutInventoryTxsInput
   targetUnit?: Prisma.TargetUnitCreateNestedOneWithoutInventoryTxsInput
   partner?: Prisma.PartnerCreateNestedOneWithoutInventoryTxsInput
@@ -1270,6 +1306,7 @@ export type InventoryTxUncheckedCreateWithoutUserInput = {
   refTxNo?: string | null
   barcodeId?: number | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutInventoryTxInput
 }
 
@@ -1309,6 +1346,7 @@ export type InventoryTxCreateWithoutItemInput = {
   memo?: string | null
   refTxNo?: string | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetUnit?: Prisma.TargetUnitCreateNestedOneWithoutInventoryTxsInput
   partner?: Prisma.PartnerCreateNestedOneWithoutInventoryTxsInput
   txReason?: Prisma.TxReasonCreateNestedOneWithoutInventoryTxsInput
@@ -1335,6 +1373,7 @@ export type InventoryTxUncheckedCreateWithoutItemInput = {
   refTxNo?: string | null
   barcodeId?: number | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutInventoryTxInput
 }
 
@@ -1374,6 +1413,7 @@ export type InventoryTxCreateWithoutTargetUnitInput = {
   memo?: string | null
   refTxNo?: string | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   item: Prisma.ItemCreateNestedOneWithoutInventoryTxsInput
   partner?: Prisma.PartnerCreateNestedOneWithoutInventoryTxsInput
   txReason?: Prisma.TxReasonCreateNestedOneWithoutInventoryTxsInput
@@ -1400,6 +1440,7 @@ export type InventoryTxUncheckedCreateWithoutTargetUnitInput = {
   refTxNo?: string | null
   barcodeId?: number | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutInventoryTxInput
 }
 
@@ -1439,6 +1480,7 @@ export type InventoryTxCreateWithoutBarcodeInput = {
   memo?: string | null
   refTxNo?: string | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   item: Prisma.ItemCreateNestedOneWithoutInventoryTxsInput
   targetUnit?: Prisma.TargetUnitCreateNestedOneWithoutInventoryTxsInput
   partner?: Prisma.PartnerCreateNestedOneWithoutInventoryTxsInput
@@ -1465,6 +1507,7 @@ export type InventoryTxUncheckedCreateWithoutBarcodeInput = {
   memo?: string | null
   refTxNo?: string | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   barcodeScans?: Prisma.BarcodeScanUncheckedCreateNestedManyWithoutInventoryTxInput
 }
 
@@ -1504,6 +1547,7 @@ export type InventoryTxCreateWithoutBarcodeScansInput = {
   memo?: string | null
   refTxNo?: string | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   item: Prisma.ItemCreateNestedOneWithoutInventoryTxsInput
   targetUnit?: Prisma.TargetUnitCreateNestedOneWithoutInventoryTxsInput
   partner?: Prisma.PartnerCreateNestedOneWithoutInventoryTxsInput
@@ -1531,6 +1575,7 @@ export type InventoryTxUncheckedCreateWithoutBarcodeScansInput = {
   refTxNo?: string | null
   barcodeId?: number | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type InventoryTxCreateOrConnectWithoutBarcodeScansInput = {
@@ -1559,6 +1604,7 @@ export type InventoryTxUpdateWithoutBarcodeScansInput = {
   memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   item?: Prisma.ItemUpdateOneRequiredWithoutInventoryTxsNestedInput
   targetUnit?: Prisma.TargetUnitUpdateOneWithoutInventoryTxsNestedInput
   partner?: Prisma.PartnerUpdateOneWithoutInventoryTxsNestedInput
@@ -1586,6 +1632,7 @@ export type InventoryTxUncheckedUpdateWithoutBarcodeScansInput = {
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type InventoryTxCreateManyLocationInput = {
@@ -1605,6 +1652,7 @@ export type InventoryTxCreateManyLocationInput = {
   refTxNo?: string | null
   barcodeId?: number | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type InventoryTxUpdateWithoutLocationInput = {
@@ -1617,6 +1665,7 @@ export type InventoryTxUpdateWithoutLocationInput = {
   memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   item?: Prisma.ItemUpdateOneRequiredWithoutInventoryTxsNestedInput
   targetUnit?: Prisma.TargetUnitUpdateOneWithoutInventoryTxsNestedInput
   partner?: Prisma.PartnerUpdateOneWithoutInventoryTxsNestedInput
@@ -1643,6 +1692,7 @@ export type InventoryTxUncheckedUpdateWithoutLocationInput = {
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutInventoryTxNestedInput
 }
 
@@ -1663,6 +1713,7 @@ export type InventoryTxUncheckedUpdateManyWithoutLocationInput = {
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type InventoryTxCreateManyTxReasonInput = {
@@ -1682,6 +1733,7 @@ export type InventoryTxCreateManyTxReasonInput = {
   refTxNo?: string | null
   barcodeId?: number | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type InventoryTxUpdateWithoutTxReasonInput = {
@@ -1694,6 +1746,7 @@ export type InventoryTxUpdateWithoutTxReasonInput = {
   memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   item?: Prisma.ItemUpdateOneRequiredWithoutInventoryTxsNestedInput
   targetUnit?: Prisma.TargetUnitUpdateOneWithoutInventoryTxsNestedInput
   partner?: Prisma.PartnerUpdateOneWithoutInventoryTxsNestedInput
@@ -1720,6 +1773,7 @@ export type InventoryTxUncheckedUpdateWithoutTxReasonInput = {
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutInventoryTxNestedInput
 }
 
@@ -1740,6 +1794,7 @@ export type InventoryTxUncheckedUpdateManyWithoutTxReasonInput = {
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type InventoryTxCreateManyPartnerInput = {
@@ -1759,6 +1814,7 @@ export type InventoryTxCreateManyPartnerInput = {
   refTxNo?: string | null
   barcodeId?: number | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type InventoryTxUpdateWithoutPartnerInput = {
@@ -1771,6 +1827,7 @@ export type InventoryTxUpdateWithoutPartnerInput = {
   memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   item?: Prisma.ItemUpdateOneRequiredWithoutInventoryTxsNestedInput
   targetUnit?: Prisma.TargetUnitUpdateOneWithoutInventoryTxsNestedInput
   txReason?: Prisma.TxReasonUpdateOneWithoutInventoryTxsNestedInput
@@ -1797,6 +1854,7 @@ export type InventoryTxUncheckedUpdateWithoutPartnerInput = {
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutInventoryTxNestedInput
 }
 
@@ -1817,6 +1875,7 @@ export type InventoryTxUncheckedUpdateManyWithoutPartnerInput = {
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type InventoryTxCreateManyUserInput = {
@@ -1836,6 +1895,7 @@ export type InventoryTxCreateManyUserInput = {
   refTxNo?: string | null
   barcodeId?: number | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type InventoryTxUpdateWithoutUserInput = {
@@ -1848,6 +1908,7 @@ export type InventoryTxUpdateWithoutUserInput = {
   memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   item?: Prisma.ItemUpdateOneRequiredWithoutInventoryTxsNestedInput
   targetUnit?: Prisma.TargetUnitUpdateOneWithoutInventoryTxsNestedInput
   partner?: Prisma.PartnerUpdateOneWithoutInventoryTxsNestedInput
@@ -1874,6 +1935,7 @@ export type InventoryTxUncheckedUpdateWithoutUserInput = {
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutInventoryTxNestedInput
 }
 
@@ -1894,6 +1956,7 @@ export type InventoryTxUncheckedUpdateManyWithoutUserInput = {
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type InventoryTxCreateManyItemInput = {
@@ -1913,6 +1976,7 @@ export type InventoryTxCreateManyItemInput = {
   refTxNo?: string | null
   barcodeId?: number | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type InventoryTxUpdateWithoutItemInput = {
@@ -1925,6 +1989,7 @@ export type InventoryTxUpdateWithoutItemInput = {
   memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   targetUnit?: Prisma.TargetUnitUpdateOneWithoutInventoryTxsNestedInput
   partner?: Prisma.PartnerUpdateOneWithoutInventoryTxsNestedInput
   txReason?: Prisma.TxReasonUpdateOneWithoutInventoryTxsNestedInput
@@ -1951,6 +2016,7 @@ export type InventoryTxUncheckedUpdateWithoutItemInput = {
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutInventoryTxNestedInput
 }
 
@@ -1971,6 +2037,7 @@ export type InventoryTxUncheckedUpdateManyWithoutItemInput = {
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type InventoryTxCreateManyTargetUnitInput = {
@@ -1990,6 +2057,7 @@ export type InventoryTxCreateManyTargetUnitInput = {
   refTxNo?: string | null
   barcodeId?: number | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type InventoryTxUpdateWithoutTargetUnitInput = {
@@ -2002,6 +2070,7 @@ export type InventoryTxUpdateWithoutTargetUnitInput = {
   memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   item?: Prisma.ItemUpdateOneRequiredWithoutInventoryTxsNestedInput
   partner?: Prisma.PartnerUpdateOneWithoutInventoryTxsNestedInput
   txReason?: Prisma.TxReasonUpdateOneWithoutInventoryTxsNestedInput
@@ -2028,6 +2097,7 @@ export type InventoryTxUncheckedUpdateWithoutTargetUnitInput = {
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutInventoryTxNestedInput
 }
 
@@ -2048,6 +2118,7 @@ export type InventoryTxUncheckedUpdateManyWithoutTargetUnitInput = {
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   barcodeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type InventoryTxCreateManyBarcodeInput = {
@@ -2067,6 +2138,7 @@ export type InventoryTxCreateManyBarcodeInput = {
   memo?: string | null
   refTxNo?: string | null
   currency?: string | null
+  exchangeRateAtEntry?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 export type InventoryTxUpdateWithoutBarcodeInput = {
@@ -2079,6 +2151,7 @@ export type InventoryTxUpdateWithoutBarcodeInput = {
   memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   item?: Prisma.ItemUpdateOneRequiredWithoutInventoryTxsNestedInput
   targetUnit?: Prisma.TargetUnitUpdateOneWithoutInventoryTxsNestedInput
   partner?: Prisma.PartnerUpdateOneWithoutInventoryTxsNestedInput
@@ -2105,6 +2178,7 @@ export type InventoryTxUncheckedUpdateWithoutBarcodeInput = {
   memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
   barcodeScans?: Prisma.BarcodeScanUncheckedUpdateManyWithoutInventoryTxNestedInput
 }
 
@@ -2125,6 +2199,7 @@ export type InventoryTxUncheckedUpdateManyWithoutBarcodeInput = {
   memo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   refTxNo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currency?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  exchangeRateAtEntry?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
 }
 
 
@@ -2176,6 +2251,7 @@ export type InventoryTxSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   refTxNo?: boolean
   barcodeId?: boolean
   currency?: boolean
+  exchangeRateAtEntry?: boolean
   item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
   targetUnit?: boolean | Prisma.InventoryTx$targetUnitArgs<ExtArgs>
   partner?: boolean | Prisma.InventoryTx$partnerArgs<ExtArgs>
@@ -2205,6 +2281,7 @@ export type InventoryTxSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   refTxNo?: boolean
   barcodeId?: boolean
   currency?: boolean
+  exchangeRateAtEntry?: boolean
   item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
   targetUnit?: boolean | Prisma.InventoryTx$targetUnitArgs<ExtArgs>
   partner?: boolean | Prisma.InventoryTx$partnerArgs<ExtArgs>
@@ -2232,6 +2309,7 @@ export type InventoryTxSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   refTxNo?: boolean
   barcodeId?: boolean
   currency?: boolean
+  exchangeRateAtEntry?: boolean
   item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
   targetUnit?: boolean | Prisma.InventoryTx$targetUnitArgs<ExtArgs>
   partner?: boolean | Prisma.InventoryTx$partnerArgs<ExtArgs>
@@ -2259,9 +2337,10 @@ export type InventoryTxSelectScalar = {
   refTxNo?: boolean
   barcodeId?: boolean
   currency?: boolean
+  exchangeRateAtEntry?: boolean
 }
 
-export type InventoryTxOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "txNo" | "txDate" | "txType" | "itemId" | "targetUnitId" | "qty" | "unitPrice" | "amount" | "partnerId" | "txReasonId" | "locationId" | "userId" | "memo" | "refTxNo" | "barcodeId" | "currency", ExtArgs["result"]["inventoryTx"]>
+export type InventoryTxOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "txNo" | "txDate" | "txType" | "itemId" | "targetUnitId" | "qty" | "unitPrice" | "amount" | "partnerId" | "txReasonId" | "locationId" | "userId" | "memo" | "refTxNo" | "barcodeId" | "currency" | "exchangeRateAtEntry", ExtArgs["result"]["inventoryTx"]>
 export type InventoryTxInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   item?: boolean | Prisma.ItemDefaultArgs<ExtArgs>
   targetUnit?: boolean | Prisma.InventoryTx$targetUnitArgs<ExtArgs>
@@ -2322,6 +2401,7 @@ export type $InventoryTxPayload<ExtArgs extends runtime.Types.Extensions.Interna
     refTxNo: string | null
     barcodeId: number | null
     currency: string | null
+    exchangeRateAtEntry: runtime.Decimal | null
   }, ExtArgs["result"]["inventoryTx"]>
   composites: {}
 }
@@ -2770,6 +2850,7 @@ export interface InventoryTxFieldRefs {
   readonly refTxNo: Prisma.FieldRef<"InventoryTx", 'String'>
   readonly barcodeId: Prisma.FieldRef<"InventoryTx", 'Int'>
   readonly currency: Prisma.FieldRef<"InventoryTx", 'String'>
+  readonly exchangeRateAtEntry: Prisma.FieldRef<"InventoryTx", 'Decimal'>
 }
     
 

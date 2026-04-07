@@ -43,9 +43,14 @@ function NoAccess({ pageName }: { pageName: string }) {
 export default function Home() {
   const { data: session } = useSession();
   const [page, setPage]               = useState<PageId>("dashboard");
-  const [sidebarOpen, setSidebarOpen] = useState(
-    typeof window !== "undefined" ? window.innerWidth >= 1024 : true
-  );
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // 클라이언트에서만 모바일 감지 → 모바일이면 초기에 닫음
+  useEffect(() => {
+    if (window.innerWidth < 1024) {
+      setSidebarOpen(false);
+    }
+  }, []);
   const [shortageCount, setShortageCount] = useState(0);
   const [showNotif, setShowNotif]     = useState(false);
   const [perms, setPerms]             = useState<Perms | null>(null);

@@ -1900,7 +1900,8 @@ export const InventoryTxScalarFieldEnum = {
   memo: 'memo',
   refTxNo: 'refTxNo',
   barcodeId: 'barcodeId',
-  currency: 'currency'
+  currency: 'currency',
+  exchangeRateAtEntry: 'exchangeRateAtEntry'
 } as const
 
 export type InventoryTxScalarFieldEnum = (typeof InventoryTxScalarFieldEnum)[keyof typeof InventoryTxScalarFieldEnum]
