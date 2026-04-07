@@ -33,6 +33,19 @@ interface SelectedInbound {
   partnerName: string;
 }
 
+const HANGUL_TO_ENG: Record<string, string> = {
+  'ㅂ':'q','ㅈ':'w','ㄷ':'e','ㄱ':'r','ㅅ':'t','ㅛ':'y','ㅕ':'u','ㅑ':'i','ㅐ':'o','ㅔ':'p',
+  'ㅁ':'a','ㄴ':'s','ㅇ':'d','ㄹ':'f','ㅎ':'g','ㅗ':'h','ㅓ':'j','ㅏ':'k','ㅣ':'l',
+  'ㅋ':'z','ㅌ':'x','ㅊ':'c','ㅍ':'v','ㅠ':'b','ㅜ':'n','ㅡ':'m',
+  'ㅃ':'Q','ㅉ':'W','ㄸ':'E','ㄲ':'R','ㅆ':'T','ㅒ':'O','ㅖ':'P',
+  'ㅘ':'hk','ㅙ':'ho','ㅚ':'hl','ㅝ':'nj','ㅞ':'np','ㅟ':'nl','ㅢ':'ml',
+};
+
+function normalizeBarcodeInput(str: string): string {
+  // 한글 자모 → 영문 역변환 후 전체 대문자로
+  return str.split('').map(ch => HANGUL_TO_ENG[ch] ?? ch).join('').toUpperCase();
+}
+
 export default function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModalProps) {
   const { data: session } = useSession();
   const isEmployee = (session?.user as any)?.role === "employee";
@@ -542,7 +555,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 ref={barcodeInputRef}
                 type="text"
                 value={barcodeInput}
-                onChange={e => setBarcodeInput(e.target.value)}
+                onChange={e => setBarcodeInput(normalizeBarcodeInput(e.target.value))}
                 onKeyDown={e => e.key === "Enter" && handleBarcodeLookup()}
                 placeholder="바코드를 스캔하거나 입력하세요"
                 className="flex-1 min-w-0 px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
