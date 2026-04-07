@@ -477,7 +477,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       </div>
     )}
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.4)" }}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] overflow-y-auto">
 
         {/* 헤더 */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
@@ -507,7 +507,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                   setBarcodeCreateMaterial("");
                   setBarcodeCreateError("");
                 }}
-                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                  className={`flex-1 py-2 sm:py-2.5 rounded-xl text-sm font-semibold transition-all ${
                     type === t
                       ? `${TYPE_COLORS[t].bg} ${TYPE_COLORS[t].text} ${TYPE_COLORS[t].border} border-2 shadow-sm`
                       : "bg-gray-50 text-gray-500 border-2 border-transparent hover:bg-gray-100"
@@ -536,7 +536,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 {directInput ? <><PenLine size={12} />직접 입력 중</> : <><ScanLine size={12} />스캔 모드</>}
               </button>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <input
                 type="text"
                 value={barcodeInput}
@@ -544,24 +544,24 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 onKeyDown={e => e.key === "Enter" && !directInput && handleBarcodeLookup()}
                 placeholder={directInput ? "직접 입력 모드 (바코드 비활성)" : "바코드를 스캔하거나 입력하세요"}
                 disabled={directInput}
-                className={`flex-1 px-4 py-2.5 border rounded-xl text-sm outline-none transition-colors ${
+                className={`flex-1 min-w-0 px-4 py-2.5 border rounded-xl text-sm outline-none transition-colors ${
                   directInput
                     ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"
                     : "border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 }`}
               />
               <button onClick={() => handleBarcodeLookup()} disabled={directInput}
-                className="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed">
+                className="shrink-0 px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed">
                 조회
               </button>
               <button onClick={openBarcodeSelector} disabled={directInput}
-                className="flex items-center gap-1.5 px-3 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+                className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
                 title="바코드 목록에서 선택">
                 <List size={15} />목록
               </button>
               {type === "입고" && !directInput && (
                 <button onClick={() => { setShowBarcodeCreate(v => !v); setBarcodeCreateError(""); }}
-                  className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
+                  className={`shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
                     showBarcodeCreate
                       ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -750,7 +750,11 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
               </div>
             </div>
           )}
-          <div className="grid grid-cols-3 gap-4">
+          <div className={`grid gap-4 ${
+            isEmployee && (type === "출고" || type === "불출")
+              ? "grid-cols-1 sm:grid-cols-2"
+              : "grid-cols-2 sm:grid-cols-3"
+          }`}>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">수량 <span className="text-rose-500">*</span></label>
               <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} placeholder="0"

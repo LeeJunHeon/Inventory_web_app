@@ -43,7 +43,9 @@ function NoAccess({ pageName }: { pageName: string }) {
 export default function Home() {
   const { data: session } = useSession();
   const [page, setPage]               = useState<PageId>("dashboard");
-  const [sidebarOpen, setSidebarOpen] = useState(true);   // 기본 열림
+  const [sidebarOpen, setSidebarOpen] = useState(
+    typeof window !== "undefined" ? window.innerWidth >= 1024 : true
+  );
   const [shortageCount, setShortageCount] = useState(0);
   const [showNotif, setShowNotif]     = useState(false);
   const [perms, setPerms]             = useState<Perms | null>(null);
