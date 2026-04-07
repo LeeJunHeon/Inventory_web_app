@@ -9,6 +9,7 @@ interface Props {
 
 export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
   const scannerRef = useRef<any>(null);
+  const isRunningRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
   const divId = "barcode-camera-scanner-div";
@@ -25,6 +26,7 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
           (decodedText: string) => { onDetected(decodedText); },
           undefined
         );
+        isRunningRef.current = true;
         setStarted(true);
       } catch (err: any) {
         const msg = String(err);
@@ -39,7 +41,8 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
     };
     init();
     return () => {
-      if (scannerRef.current) {
+      if (scannerRef.current && isRunningRef.current) {
+        isRunningRef.current = false;
         scannerRef.current.stop().catch(() => {});
       }
     };
