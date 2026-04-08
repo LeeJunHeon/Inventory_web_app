@@ -97,6 +97,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const barcodeInputRef = useRef<HTMLInputElement>(null);
   const inboundModalBarcodeId = useRef<number | null>(null);
   const isFromLookupRef = useRef(false);
+  const justCreatedBarcodeId = useRef<number | null>(null);
 
   // 바코드 선택기
   const [showBarcodeSelector, setShowBarcodeSelector] = useState(false);
@@ -368,6 +369,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       if (!res.ok) { setBarcodeCreateError(data.error || "생성 실패"); return; }
       // 생성된 바코드를 자동으로 입력란에 채우고 조회
       setBarcodeInput(data.code);
+      justCreatedBarcodeId.current = data.id;
       setShowBarcodeCreate(false);
       setBarcodeCreateMaterial("");
       await handleBarcodeLookup(data.code);
@@ -431,6 +433,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         setError(d.error || "저장 실패"); barcodeInputRef.current?.focus(); return;
       }
       onSuccess?.();
+      justCreatedBarcodeId.current = null;
       onClose();
     } catch {
       setError("네트워크 오류"); barcodeInputRef.current?.focus();
@@ -524,7 +527,13 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         {/* 헤더 */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-900">새 기록 작성</h2>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+          <button onClick={() => {
+            if (justCreatedBarcodeId.current !== null) {
+              fetch(`/api/barcodes?id=${justCreatedBarcodeId.current}`, { method: "DELETE" }).catch(() => {});
+              justCreatedBarcodeId.current = null;
+            }
+            onClose();
+          }} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
             <X size={20} className="text-gray-400" />
           </button>
         </div>
