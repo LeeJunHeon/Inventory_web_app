@@ -88,6 +88,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const selectorRef = useRef<HTMLDivElement>(null);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
   const inboundModalBarcodeId = useRef<number | null>(null);
+  const isFromLookupRef = useRef(false);
 
   // 바코드 선택기
   const [showBarcodeSelector, setShowBarcodeSelector] = useState(false);
@@ -190,6 +191,10 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   // 품목군 바뀔 때 품목 목록 새로 로드 + 선택 초기화
   useEffect(() => {
     if (!isOpen) return;
+    if (isFromLookupRef.current) {
+      isFromLookupRef.current = false;
+      return;
+    }
     fetch(`/api/items?category=${encodeURIComponent(category)}`)
       .then(r => r.json())
       .then(setItemOptions)
@@ -230,7 +235,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   // 바코드 목록 선택기 열기
   const openBarcodeSelector = async () => {
     setShowBarcodeSelector(true);
-    setBarcodeSelectorSearch("");
+    setBarcodeSelectorSearch(barcodeInput.trim());
     setBarcodeSelectorLoading(true);
     try {
       const res = await fetch(`/api/barcodes?category=${encodeURIComponent(category)}`);
@@ -262,6 +267,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         if (bc.category && bc.category !== category) {
           // setCategory → category useEffect가 setItemCode/setItemName을 "" 로 초기화함
           // await 이후에 덮어써야 하므로 setItemCode/setItemName은 아래로 이동
+          isFromLookupRef.current = true;
           setCategory(bc.category);
           const items = await fetch(`/api/items?category=${encodeURIComponent(bc.category)}`).then(r => r.json());
           setItemOptions(items);
@@ -305,6 +311,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         if (bc.category && bc.category !== category) {
           // setCategory → category useEffect가, setItemCode/setItemName을 "" 로 초기화
           // await 이전에 먼저 하면, setItemCode/setItemName이 날려 이후
+          isFromLookupRef.current = true;
           setCategory(bc.category);
           const items = await fetch(`/api/items?category=${encodeURIComponent(bc.category)}`).then(r => r.json()).then((r: ItemOption[]) => { setItemOptions(r); return r; });
           setItemOptions(items);
