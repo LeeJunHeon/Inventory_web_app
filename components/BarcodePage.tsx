@@ -26,7 +26,7 @@ export default function BarcodePage() {
   const [createItemId, setCreateItemId]     = useState<number | null>(null);
   const [createItemCode, setCreateItemCode] = useState("");
   const [createItemName, setCreateItemName] = useState("");
-  const [createMaterial, setCreateMaterial] = useState("");
+  const [createMemo, setCreateMemo]         = useState("")
   const [itemOptions, setItemOptions]       = useState<ItemOption[]>([]);
   const [showItemDrop, setShowItemDrop]     = useState(false);
   const [creating, setCreating]             = useState(false);
@@ -86,7 +86,7 @@ export default function BarcodePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           itemId: createItemId,
-          materialName: createMaterial || null,
+          memo: createMemo|| null,
         }),
       });
       const data = await res.json();
@@ -95,7 +95,7 @@ export default function BarcodePage() {
       setCreateSuccess(`바코드 ${data.code} 생성 완료!`);
       setTimeout(() => setCreateSuccess(""), 3000);
       // 폼 초기화
-      setCreateItemId(null); setCreateItemCode(""); setCreateItemName(""); setCreateMaterial("");
+      setCreateItemId(null); setCreateItemCode(""); setCreateItemName(""); setCreateMemo("");
       fetchData();
     } catch { setCreateError("네트워크 오류"); }
     finally { setCreating(false); }
@@ -353,7 +353,7 @@ export default function BarcodePage() {
         <button onClick={() => {
             if (showCreate) {
               // 닫을 때 폼 전체 리셋
-              setCreateItemId(null); setCreateItemCode(""); setCreateItemName(""); setCreateMaterial("");
+              setCreateItemId(null); setCreateItemCode(""); setCreateItemName(""); setCreateMemo("");
             }
             setShowCreate(!showCreate); setCreateError(""); setCreateSuccess("");
           }}
@@ -415,7 +415,7 @@ export default function BarcodePage() {
                 {createCategory === "타겟" ? "물질명 (타겟)" : "품목명"}
               </label>
               {createCategory === "타겟" ? (
-                <input type="text" value={createMaterial} onChange={e => setCreateMaterial(e.target.value)}
+                <input type="text" value={createMemo} onChange={e => setCreateMemo(e.target.value)}
                   placeholder='예: Au 2" 0.125t'
                   className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm outline-none bg-white" />
               ) : (

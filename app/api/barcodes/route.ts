@@ -190,7 +190,7 @@ export async function PATCH(request: NextRequest) {
       data: {
         ...(body.isActive    !== undefined ? { isActive:     body.isActive }    : {}),
         ...(body.code        !== undefined ? { code:         body.code }        : {}),
-        ...(body.materialName !== undefined ? { materialName: body.materialName } : {}),
+        ...(body.memo        !== undefined ? { memo: body.memo }                : {}),
       },
     });
     return NextResponse.json(barcode);
