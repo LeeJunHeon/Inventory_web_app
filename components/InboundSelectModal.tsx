@@ -16,6 +16,7 @@ export interface InboundTx {
   barcodeId: number | null;
   targetUnitId: number | null;
   itemCode:     string;
+  itemName:     string;
   barcodeCode:  string;
 }
 
@@ -88,6 +89,9 @@ export default function InboundSelectModal({ isOpen, itemId, locationId, onSelec
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
+                    {tx.itemName && (
+                      <span className="text-sm font-semibold text-gray-800">{tx.itemName}</span>
+                    )}
                     {tx.partnerName && (
                       <span className="text-sm text-gray-700 font-medium">{tx.partnerName}</span>
                     )}

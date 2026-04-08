@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
           select: { txType: true, qty: true },
         },
       },
-      orderBy: { id: "desc" },
+      orderBy: { code: "asc" },
     });
 
     return NextResponse.json(barcodes.map((b) => {

@@ -60,6 +60,7 @@ export async function GET(request: NextRequest) {
           barcodeId:    tx.barcodeId      ?? null,
           targetUnitId: tx.targetUnitId   ?? null,
           itemCode:      tx.item?.code     ?? "",
+          itemName:      tx.item?.name     ?? "",
           barcodeCode:   tx.barcode?.code  ?? "",
         };
       })
