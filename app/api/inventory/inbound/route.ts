@@ -7,8 +7,9 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const itemIdParam = searchParams.get("itemId");
+    const itemIdParam     = searchParams.get("itemId");
     const locationIdParam = searchParams.get("locationId");
+    const barcodeIdParam  = searchParams.get("barcodeId");
 
     if (!itemIdParam || isNaN(Number(itemIdParam))) {
       return NextResponse.json({ error: "itemId가 필요합니다." }, { status: 400 });
@@ -21,6 +22,7 @@ export async function GET(request: NextRequest) {
         txType: "입고", itemId, txNo: { not: null },
         // locationId가 있으면 해당 위치 입고건만 조회
         ...(locationIdParam ? { locationId: Number(locationIdParam) } : {}),
+        ...(barcodeIdParam   ? { barcodeId:  Number(barcodeIdParam)  } : {}),
       },
       include: { partner: true, location: true, item: true, barcode: true },
       orderBy: { id: "desc" },

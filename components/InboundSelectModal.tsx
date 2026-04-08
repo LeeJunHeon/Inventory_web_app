@@ -24,23 +24,24 @@ interface InboundSelectModalProps {
   isOpen: boolean;
   itemId: number | null;
   locationId?: number | null;
+  barcodeId?: number | null;
   onSelect: (inbound: InboundTx) => void;
   onClose: () => void;
 }
 
-export default function InboundSelectModal({ isOpen, itemId, locationId, onSelect, onClose }: InboundSelectModalProps) {
+export default function InboundSelectModal({ isOpen, itemId, locationId, barcodeId, onSelect, onClose }: InboundSelectModalProps) {
   const [list, setList] = useState<InboundTx[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!isOpen || !itemId) return;
     setLoading(true);
-    fetch(`/api/inventory/inbound?itemId=${itemId}${locationId ? `&locationId=${locationId}` : ""}`)
+    fetch(`/api/inventory/inbound?itemId=${itemId}${locationId ? `&locationId=${locationId}` : ""}${barcodeId ? `&barcodeId=${barcodeId}` : ""}`)
       .then(r => r.json())
       .then(data => setList(Array.isArray(data) ? data : []))
       .catch(() => setList([]))
       .finally(() => setLoading(false));
-  }, [isOpen, itemId]);
+  }, [isOpen, itemId, barcodeId]);
 
   if (!isOpen) return null;
 

@@ -275,7 +275,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         // refTxNo가 있으면 inbound API 호출해서 selectedInbound 자동 채우기
         if (bc.refTxNo) {
           const itemIdToUse = bc.itemId ?? itemId;
-          fetch(`/api/inventory/inbound?itemId=${itemIdToUse}&locationId=${locationId}`)
+          fetch(`/api/inventory/inbound?itemId=${itemIdToUse}&locationId=${locationId}&barcodeId=${bc.barcodeId}`)
             .then(r => r.json())
             .then((list: InboundTx[]) => {
               const found = list.find(tx => tx.txNo === bc.refTxNo);
@@ -441,6 +441,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       isOpen={showInboundSelect}
       itemId={itemId}
       locationId={locationId}
+      barcodeId={barcodeId}
       onSelect={handleInboundSelect}
       onClose={() => setShowInboundSelect(false)}
     />
@@ -578,9 +579,9 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
               />
               {isBarcodeLooking && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none">
-                  <Loader2 size={15} className="animate-spin text-blue-500" />
-                  <span className="text-xs text-blue-500">조회 중...</span>
+                <div className="absolute right-10 top-1/2 -translate-y-1/2 flex items-center gap-1 pointer-events-none">
+                  <Loader2 size={14} className="animate-spin text-blue-500" />
+                  <span className="text-xs text-blue-500 whitespace-nowrap">조회 중...</span>
                 </div>
               )}
               </div>
