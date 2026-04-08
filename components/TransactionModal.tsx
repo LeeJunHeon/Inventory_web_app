@@ -94,6 +94,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const [barcodeSelectorSearch, setBarcodeSelectorSearch] = useState("");
   const [barcodeSelectorList, setBarcodeSelectorList]     = useState<BarcodeOption[]>([]);
   const [barcodeSelectorLoading, setBarcodeSelectorLoading] = useState(false);
+  const [isBarcodeLooking, setIsBarcodeLooking] = useState(false);
   const [showBarcodeCreate, setShowBarcodeCreate] = useState(false);
   const [barcodeCreateMaterial, setBarcodeCreateMaterial] = useState("");
   const [barcodeCreating, setBarcodeCreating] = useState(false);
@@ -248,6 +249,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
     setError("");
     setSelectedInbound(null);
     setRefTxNo(null);
+    setIsBarcodeLooking(true);
     try {
       if (type === "출고" || type === "불출") {
         const res = await fetch(`/api/barcodes/lookup?code=${encodeURIComponent(lookupCode)}`);
@@ -315,6 +317,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         setItemName(bc.itemName);
       }
     } catch { setError("바코드 조회 실패"); barcodeInputRef.current?.focus(); }
+    finally { setIsBarcodeLooking(false); }
   };
 
   // 입고 참조 선택 콜백
@@ -555,10 +558,12 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
               </span>
             </div>
             <div className="flex gap-2">
+              <div className="relative flex-1 min-w-0">
               <input
                 ref={barcodeInputRef}
                 type="text"
                 value={barcodeInput}
+                disabled={isBarcodeLooking}
                 onChange={e => {
                   // IME 조합 중(한글 타이핑 중)에는 무시 — 조합 완료 후 onCompositionEnd에서 처리
                   if ((e.nativeEvent as any).isComposing) return;
@@ -570,8 +575,15 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 }}
                 onKeyDown={e => e.key === "Enter" && handleBarcodeLookup()}
                 placeholder="바코드를 스캔하거나 입력하세요"
-                className="flex-1 min-w-0 px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
               />
+              {isBarcodeLooking && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none">
+                  <Loader2 size={15} className="animate-spin text-blue-500" />
+                  <span className="text-xs text-blue-500">조회 중...</span>
+                </div>
+              )}
+              </div>
               <button onClick={() => handleBarcodeLookup()}
                 className="shrink-0 px-3 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap">
                 조회
