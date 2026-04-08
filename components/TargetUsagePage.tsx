@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Search, Save, AlertTriangle, Weight, MapPin, FileText, ArrowDown, ArrowUp, ArrowUpDown, Loader2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Search, Save, AlertTriangle, Weight, MapPin, FileText, ArrowDown, ArrowUp, ArrowUpDown, Loader2, Camera } from "lucide-react";
 import { TARGET_STATUS_LABELS, formatWeight } from "@/lib/data";
+import BarcodeCameraScanner from "./BarcodeCameraScanner";
 
 interface TargetInfo { id: number; barcodeCode: string; itemCode: string; itemName: string; materialName: string; status: string; memo: string; }
 interface LogItem { id: number; targetId: number; timestamp: string; type: string; weight: number | null; location: string; reason: string; userName: string; barcodeCode: string; itemName: string; }
@@ -11,8 +12,24 @@ interface LocationOption { id: number; name: string; }
 
 const PAGE_LIMIT = 50;
 
+const HANGUL_TO_ENG: Record<string, string> = {
+  'ㅂ':'q','ㅈ':'w','ㄷ':'e','ㄱ':'r','ㅅ':'t','ㅛ':'y','ㅕ':'u','ㅑ':'i','ㅐ':'o','ㅔ':'p',
+  'ㅁ':'a','ㄴ':'s','ㅇ':'d','ㄹ':'f','ㅎ':'g','ㅗ':'h','ㅓ':'j','ㅏ':'k','ㅣ':'l',
+  'ㅋ':'z','ㅌ':'x','ㅊ':'c','ㅍ':'v','ㅠ':'b','ㅜ':'n','ㅡ':'m',
+  'ㅃ':'Q','ㅉ':'W','ㄸ':'E','ㄲ':'R','ㅆ':'T','ㅒ':'O','ㅖ':'P',
+  'ㅘ':'hk','ㅙ':'ho','ㅚ':'hl','ㅝ':'nj','ㅞ':'np','ㅟ':'nl','ㅢ':'ml',
+};
+
+function normalizeBarcodeInput(str: string): string {
+  return str.split('').map(ch => HANGUL_TO_ENG[ch] ?? ch).join('').toUpperCase();
+}
+
 export default function TargetUsagePage() {
+  const isMobile = typeof navigator !== "undefined" && (navigator.maxTouchPoints > 0 || /Mobi|Android/i.test(navigator.userAgent));
   const [barcodeInput, setBarcodeInput]     = useState("");
+  const barcodeInputRef                     = useRef<HTMLInputElement>(null);
+  const [isComposing, setIsComposing]       = useState(false);
+  const [showCameraScanner, setShowCameraScanner] = useState(false);
   const [selectedTarget, setSelectedTarget] = useState<TargetInfo | null>(null);
   const [logs, setLogs]                     = useState<LogItem[]>([]);
   const [total, setTotal]                   = useState(0);
@@ -30,6 +47,12 @@ export default function TargetUsagePage() {
   const [locationOptions, setLocationOptions] = useState<LocationOption[]>([]);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3000); };
+
+  // 마운트 시 바코드 input 자동 포커스
+  useEffect(() => {
+    const timer = setTimeout(() => { barcodeInputRef.current?.focus(); }, 150);
+    return () => clearTimeout(timer);
+  }, []);
 
   // 장비 위치 목록 로드 (마운트 시 1회)
   useEffect(() => {
@@ -77,6 +100,13 @@ export default function TargetUsagePage() {
   // 무게 측정값 저장
   const handleSaveWeight = async () => {
     if (!selectedTarget || !weight) { showToast("무게를 입력하세요."); return; }
+    const latestLog = logs.length > 0 ? logs[logs.length - 1] : null;
+    const latestWeight = latestLog?.weight != null ? Number(latestLog.weight) : null;
+    const newWeight = Number(weight);
+    if (latestWeight !== null && newWeight > latestWeight) {
+      showToast("입력한 무게가 이전 기록보다 큽니다. 타겟은 사용할수록 무게가 줄어듭니다.");
+      return;
+    }
     setSaving(true);
     try {
       const res = await fetch("/api/targets", {
@@ -171,11 +201,35 @@ export default function TargetUsagePage() {
         <div className="flex gap-2">
           <div className="relative flex-1 max-w-md">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input type="text" placeholder="타겟 바코드를 스캔하거나 입력 (예: T-0187)"
-              value={barcodeInput} onChange={(e) => { setBarcodeInput(e.target.value); setSearchError(""); }}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+            <input
+              ref={barcodeInputRef}
+              type="text"
+              placeholder="타겟 바코드를 스캔하거나 입력 (예: T-0187)"
+              value={barcodeInput}
+              onChange={e => {
+                if ((e.nativeEvent as any).isComposing) return;
+                setBarcodeInput(normalizeBarcodeInput(e.target.value));
+                setSearchError("");
+              }}
+              onCompositionStart={() => setIsComposing(true)}
+              onCompositionEnd={e => {
+                setIsComposing(false);
+                setBarcodeInput(normalizeBarcodeInput(e.currentTarget.value));
+              }}
+              onKeyDown={e => { if (e.key === "Enter" && !isComposing) handleSearch(); }}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            />
           </div>
+          {isMobile && (
+            <button
+              type="button"
+              onClick={() => setShowCameraScanner(true)}
+              className="p-2 rounded border border-gray-300 hover:bg-gray-100"
+              title="카메라로 스캔"
+            >
+              <Camera size={18} />
+            </button>
+          )}
           <button onClick={handleSearch} className="px-5 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600">조회</button>
         </div>
         {searchError && <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-xl">{searchError}</p>}
@@ -341,6 +395,16 @@ export default function TargetUsagePage() {
           </>
         )}
       </div>
+      {showCameraScanner && (
+        <BarcodeCameraScanner
+          onScan={code => {
+            setShowCameraScanner(false);
+            setBarcodeInput(code);
+            setTimeout(() => handleSearch(), 100);
+          }}
+          onClose={() => setShowCameraScanner(false)}
+        />
+      )}
     </div>
   );
 }
