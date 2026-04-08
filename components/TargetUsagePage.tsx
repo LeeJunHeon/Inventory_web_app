@@ -25,7 +25,10 @@ function normalizeBarcodeInput(str: string): string {
 }
 
 export default function TargetUsagePage() {
-  const isMobile = typeof navigator !== "undefined" && (navigator.maxTouchPoints > 0 || /Mobi|Android/i.test(navigator.userAgent));
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    setIsMobile(typeof navigator !== "undefined" && (navigator.maxTouchPoints > 0 || /Mobi|Android/i.test(navigator.userAgent)));
+  }, []);
   const [barcodeInput, setBarcodeInput]     = useState("");
   const barcodeInputRef                     = useRef<HTMLInputElement>(null);
   const [isComposing, setIsComposing]       = useState(false);
