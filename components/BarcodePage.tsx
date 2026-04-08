@@ -8,7 +8,7 @@ import { CATEGORY_COLORS } from "@/lib/data";
 interface BarcodeItem {
   id: number; code: string; itemCode: string; itemName: string;
   category: string; targetUnitId: number | null; isActive: string;
-  materialName?: string;
+  memo?: string;
 }
 interface ItemOption { id: number; code: string; name: string; }
 
@@ -36,7 +36,7 @@ export default function BarcodePage() {
   const [printItem, setPrintItem]           = useState<BarcodeItem | null>(null);
   const [editTarget, setEditTarget]         = useState<BarcodeItem | null>(null);
   const [editCode, setEditCode]             = useState("");
-  const [editMaterial, setEditMaterial]     = useState("");
+  const [editMemo, setEditMemo]             = useState("");
   const [editIsActive, setEditIsActive]     = useState<"Y" | "N">("Y");
   const [editSaving, setEditSaving]         = useState(false);
   const itemDropRef = useRef<HTMLDivElement>(null);
@@ -121,7 +121,7 @@ export default function BarcodePage() {
 
     const QR = 400; // QRCodeCanvas size prop과 동일
     const PAD = 30;
-    const TEXT_H = 110; // 텍스트 영역 높이
+    const TEXT_H = 140; // 텍스트 영역 높이
 
     const out = document.createElement("canvas");
     out.width  = QR + PAD * 2;        // 460
@@ -161,6 +161,17 @@ export default function BarcodePage() {
       ctx.fillStyle = "#6b7280";
       ctx.font = "16px monospace";
       ctx.fillText(printItem.itemCode, out.width / 2, QR + PAD + 92);
+    }
+    // 메모
+    if (printItem.memo) {
+      ctx.fillStyle = "#9CA3AF";
+      ctx.font = "14px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(
+        printItem.memo.length > 30 ? printItem.memo.slice(0, 30) + "…" : printItem.memo,
+        out.width / 2,
+        QR + PAD + 116
+      );
     }
 
     const link = document.createElement("a");
@@ -213,12 +224,12 @@ export default function BarcodePage() {
               />
             </div>
             <div className="mb-3">
-              <label className="block text-sm font-medium text-gray-700 mb-1">재료명</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">메모</label>
               <p className="text-xs text-gray-400 mt-0.5">타겟 소재명 (예: VO2, ITO, Ta₂O₅). 바코드 출력물에 표시됩니다.</p>
               <input
                 type="text"
-                value={editMaterial}
-                onChange={e => setEditMaterial(e.target.value)}
+                value={editMemo}
+                onChange={e => setEditMemo(e.target.value)}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -253,7 +264,7 @@ export default function BarcodePage() {
                     body: JSON.stringify({
                       id: editTarget.id,
                       code: editCode,
-                      materialName: editMaterial || null,
+                      memo: editMemo || null,
                       isActive: editIsActive,
                     }),
                   });
@@ -493,7 +504,7 @@ export default function BarcodePage() {
                           className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600" title="라벨 인쇄">
                           <Printer size={15} />
                         </button>
-                        <button onClick={() => { setEditTarget(b); setEditCode(b.code); setEditMaterial(b.materialName ?? ""); setEditIsActive(b.isActive === "Y" || b.isActive === "true" ? "Y" : "N"); }}
+                        <button onClick={() => { setEditTarget(b); setEditCode(b.code); setEditMemo(b.memo ?? ""); setEditIsActive(b.isActive === "Y" || b.isActive === "true" ? "Y" : "N"); }}
                           className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600" title="수정">
                           <Pencil size={15} />
                         </button>
@@ -532,7 +543,7 @@ export default function BarcodePage() {
                       className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600" title="라벨 인쇄">
                       <Printer size={15} />
                     </button>
-                    <button onClick={() => { setEditTarget(b); setEditCode(b.code); setEditMaterial(b.materialName ?? ""); setEditIsActive(b.isActive === "Y" || b.isActive === "true" ? "Y" : "N"); }}
+                    <button onClick={() => { setEditTarget(b); setEditCode(b.code); setEditMemo(b.memo ?? ""); setEditIsActive(b.isActive === "Y" || b.isActive === "true" ? "Y" : "N"); }}
                       className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600" title="수정">
                       <Pencil size={15} />
                     </button>

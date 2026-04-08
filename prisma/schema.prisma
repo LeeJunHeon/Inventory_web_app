@@ -211,7 +211,7 @@ model Barcode {
   itemId       Int?    @map("item_id")
   targetUnitId Int?    @unique @map("target_unit_id")
   isActive     String  @default("Y") @map("is_active")
-  materialName String? @map("material_name")
+  memo         String? @map("memo")
 
   item         Item?         @relation(fields: [itemId], references: [id])
   targetUnit   TargetUnit?   @relation(fields: [targetUnitId], references: [id])

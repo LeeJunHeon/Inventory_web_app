@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
         category:     item?.category?.name || "",
         targetUnitId: b.targetUnit?.id ?? null,
         isActive:     b.isActive,
-        materialName: b.materialName ?? null,
+        memo:         b.memo ?? null,
         remainQty,
       };
     }));
