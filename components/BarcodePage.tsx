@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Search, Plus, Trash2, Copy, QrCode, Check, X, Loader2, Printer, ImageDown } from "lucide-react";
+import { Search, Plus, Trash2, Copy, QrCode, Check, X, Loader2, Printer, ImageDown, Pencil } from "lucide-react";
 import { QRCodeSVG, QRCodeCanvas } from "qrcode.react";
 import { CATEGORY_COLORS } from "@/lib/data";
 
 interface BarcodeItem {
   id: number; code: string; itemCode: string; itemName: string;
   category: string; targetUnitId: number | null; isActive: string;
+  materialName?: string;
 }
 interface ItemOption { id: number; code: string; name: string; }
 
@@ -33,6 +34,11 @@ export default function BarcodePage() {
   const [createSuccess, setCreateSuccess]   = useState("");
   const [toast, setToast]                   = useState("");
   const [printItem, setPrintItem]           = useState<BarcodeItem | null>(null);
+  const [editTarget, setEditTarget]         = useState<BarcodeItem | null>(null);
+  const [editCode, setEditCode]             = useState("");
+  const [editMaterial, setEditMaterial]     = useState("");
+  const [editIsActive, setEditIsActive]     = useState<"Y" | "N">("Y");
+  const [editSaving, setEditSaving]         = useState(false);
   const itemDropRef = useRef<HTMLDivElement>(null);
 
   const fetchData = useCallback(async () => {
@@ -184,6 +190,90 @@ export default function BarcodePage() {
 
   return (
     <div className="space-y-5">
+      {/* 바코드 수정 모달 */}
+      {editTarget && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-gray-900">바코드 정보 수정</h3>
+              <button onClick={() => setEditTarget(null)} className="p-1 rounded hover:bg-gray-100">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="text-sm text-gray-500 mb-3">
+              {editTarget.itemCode} · {editTarget.itemName}
+            </div>
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-gray-700 mb-1">바코드 코드</label>
+              <input
+                type="text"
+                value={editCode}
+                onChange={e => setEditCode(e.target.value.toUpperCase())}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-gray-700 mb-1">재료명</label>
+              <input
+                type="text"
+                value={editMaterial}
+                onChange={e => setEditMaterial(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">상태</label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setEditIsActive("Y")}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    editIsActive === "Y" ? "bg-green-600 text-white border-green-600" : "bg-white text-gray-600 border-gray-300 hover:border-green-400"
+                  }`}
+                >
+                  활성 (Y)
+                </button>
+                <button
+                  onClick={() => setEditIsActive("N")}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    editIsActive === "N" ? "bg-red-600 text-white border-red-600" : "bg-white text-gray-600 border-gray-300 hover:border-red-400"
+                  }`}
+                >
+                  비활성 (N)
+                </button>
+              </div>
+            </div>
+            <button
+              onClick={async () => {
+                setEditSaving(true);
+                try {
+                  const res = await fetch("/api/barcodes", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      id: editTarget.id,
+                      code: editCode,
+                      materialName: editMaterial || null,
+                      isActive: editIsActive,
+                    }),
+                  });
+                  if (!res.ok) throw new Error("저장 실패");
+                  setEditTarget(null);
+                  fetchData();
+                } catch {
+                  alert("저장에 실패했습니다.");
+                } finally {
+                  setEditSaving(false);
+                }
+              }}
+              disabled={editSaving}
+              className="w-full py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
+            >
+              {editSaving ? "저장 중..." : "저장"}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 프린트 미리보기 모달 */}
       {printItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
@@ -402,6 +492,10 @@ export default function BarcodePage() {
                           className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600" title="라벨 인쇄">
                           <Printer size={15} />
                         </button>
+                        <button onClick={() => { setEditTarget(b); setEditCode(b.code); setEditMaterial(b.materialName ?? ""); setEditIsActive(b.isActive === "N" ? "N" : "Y"); }}
+                          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600" title="수정">
+                          <Pencil size={15} />
+                        </button>
                         <button onClick={() => handleDelete(b)}
                           className="p-1.5 rounded-lg hover:bg-rose-100 text-gray-400 hover:text-rose-600" title="삭제">
                           <Trash2 size={15} />
@@ -436,6 +530,10 @@ export default function BarcodePage() {
                     <button onClick={() => setPrintItem(b)}
                       className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600" title="라벨 인쇄">
                       <Printer size={15} />
+                    </button>
+                    <button onClick={() => { setEditTarget(b); setEditCode(b.code); setEditMaterial(b.materialName ?? ""); setEditIsActive(b.isActive === "N" ? "N" : "Y"); }}
+                      className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600" title="수정">
+                      <Pencil size={15} />
                     </button>
                     <button onClick={() => handleDelete(b)}
                       className="p-1.5 rounded-lg hover:bg-rose-50 text-gray-400 hover:text-rose-600">

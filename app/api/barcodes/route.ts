@@ -174,6 +174,31 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// PATCH /api/barcodes — 바코드 정보 수정
+export async function PATCH(request: NextRequest) {
+  const authResult = await requireAuth();
+  if ("error" in authResult) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
+  try {
+    const body = await request.json();
+    if (!body.id) return NextResponse.json({ error: "id가 필요합니다." }, { status: 400 });
+
+    const barcode = await prisma.barcode.update({
+      where: { id: body.id },
+      data: {
+        ...(body.isActive    !== undefined ? { isActive:     body.isActive }    : {}),
+        ...(body.code        !== undefined ? { code:         body.code }        : {}),
+        ...(body.materialName !== undefined ? { materialName: body.materialName } : {}),
+      },
+    });
+    return NextResponse.json(barcode);
+  } catch (error) {
+    console.error("PATCH /api/barcodes error:", error);
+    return NextResponse.json({ error: "바코드 수정 실패" }, { status: 500 });
+  }
+}
+
 // DELETE /api/barcodes?id=1 — 바코드 삭제
 export async function DELETE(request: NextRequest) {
   const authResult = await requireAuth();
