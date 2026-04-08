@@ -366,7 +366,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         body: JSON.stringify({ itemId, materialName: barcodeCreateMaterial || null }),
       });
       const data = await res.json();
-      if (!res.ok) { setBarcodeCreateError(data.error || "생성 실패"); return; }
+      if (!res.ok) { setBarcodeCreateError((data.error || "생성 실패") + (data.detail ? `\n${data.detail}` : "")); return; }
       // 생성된 바코드를 자동으로 입력란에 채우고 조회
       setBarcodeInput(data.code);
       justCreatedBarcodeId.current = data.id;
@@ -676,7 +676,12 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                     className="w-full px-3 py-2 border border-blue-200 rounded-xl text-sm outline-none bg-white focus:ring-2 focus:ring-blue-400" />
                 )}
                 {barcodeCreateError && (
-                  <p className="text-xs text-red-500">{barcodeCreateError}</p>
+                  <p className="text-xs text-red-500 whitespace-pre-line">{barcodeCreateError}</p>
+                )}
+                {!itemId && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    ※ 먼저 품목코드를 선택해야 바코드를 생성할 수 있습니다.
+                  </p>
                 )}
                 <div className="flex gap-2">
                   <button onClick={handleBarcodeCreate} disabled={barcodeCreating || !itemId}

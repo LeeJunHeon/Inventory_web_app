@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
   } catch (error) {
     console.error("POST /api/barcodes error:", error);
-    return NextResponse.json({ error: "바코드 생성 실패" }, { status: 500 });
+    return NextResponse.json({ error: "바코드 생성 실패", detail: String(error) }, { status: 500 });
   }
 }
 
