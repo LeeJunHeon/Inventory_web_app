@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     if (!query) return NextResponse.json([]);
 
     const whereCondition = (() => {
-      if (searchType === "바코드")  return { barcodes: { some: { code: { contains: query, mode: "insensitive" as const } } } };
+      if (searchType === "바코드")  return { barcodes: { some: { code: { equals: query, mode: "insensitive" as const } } } };
       if (searchType === "품목코드") return { code: { contains: query, mode: "insensitive" as const } };
       if (searchType === "품목명")  return { name: { contains: query, mode: "insensitive" as const } };
       return {
