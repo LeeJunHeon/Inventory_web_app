@@ -214,6 +214,7 @@ export default function BarcodePage() {
             </div>
             <div className="mb-3">
               <label className="block text-sm font-medium text-gray-700 mb-1">재료명</label>
+              <p className="text-xs text-gray-400 mt-0.5">타겟 소재명 (예: VO2, ITO, Ta₂O₅). 바코드 출력물에 표시됩니다.</p>
               <input
                 type="text"
                 value={editMaterial}
@@ -492,7 +493,7 @@ export default function BarcodePage() {
                           className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600" title="라벨 인쇄">
                           <Printer size={15} />
                         </button>
-                        <button onClick={() => { setEditTarget(b); setEditCode(b.code); setEditMaterial(b.materialName ?? ""); setEditIsActive(b.isActive === "N" ? "N" : "Y"); }}
+                        <button onClick={() => { setEditTarget(b); setEditCode(b.code); setEditMaterial(b.materialName ?? ""); setEditIsActive(b.isActive === "Y" || b.isActive === "true" ? "Y" : "N"); }}
                           className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600" title="수정">
                           <Pencil size={15} />
                         </button>
@@ -531,7 +532,7 @@ export default function BarcodePage() {
                       className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600" title="라벨 인쇄">
                       <Printer size={15} />
                     </button>
-                    <button onClick={() => { setEditTarget(b); setEditCode(b.code); setEditMaterial(b.materialName ?? ""); setEditIsActive(b.isActive === "N" ? "N" : "Y"); }}
+                    <button onClick={() => { setEditTarget(b); setEditCode(b.code); setEditMaterial(b.materialName ?? ""); setEditIsActive(b.isActive === "Y" || b.isActive === "true" ? "Y" : "N"); }}
                       className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600" title="수정">
                       <Pencil size={15} />
                     </button>
