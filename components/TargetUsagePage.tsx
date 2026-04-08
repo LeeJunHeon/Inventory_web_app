@@ -397,7 +397,7 @@ export default function TargetUsagePage() {
       </div>
       {showCameraScanner && (
         <BarcodeCameraScanner
-          onScan={code => {
+          onDetected={code => {
             setShowCameraScanner(false);
             setBarcodeInput(code);
             setTimeout(() => handleSearch(), 100);
