@@ -87,6 +87,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const [showItemSelector, setShowItemSelector] = useState(false);
   const selectorRef = useRef<HTMLDivElement>(null);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
+  const inboundModalBarcodeId = useRef<number | null>(null);
 
   // 바코드 선택기
   const [showBarcodeSelector, setShowBarcodeSelector] = useState(false);
@@ -441,7 +442,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       isOpen={showInboundSelect}
       itemId={itemId}
       locationId={locationId}
-      barcodeId={barcodeId}
+      barcodeId={inboundModalBarcodeId.current}
       onSelect={handleInboundSelect}
       onClose={() => setShowInboundSelect(false)}
     />
@@ -685,7 +686,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                       </div>
                       <p className="text-emerald-400">잔여 {selectedInbound.remainQty.toLocaleString()}개</p>
                     </div>
-                    <button onClick={() => setShowInboundSelect(true)}
+                    <button onClick={() => { inboundModalBarcodeId.current = barcodeId; setShowInboundSelect(true); }}
                       className="text-xs px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition-colors">
                       변경
                     </button>
@@ -693,7 +694,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 ) : refTxNo ? (
                   <p className="text-xs text-blue-600 font-medium">입고 참조: {refTxNo}</p>
                 ) : itemId ? (
-                  <button onClick={() => setShowInboundSelect(true)}
+                  <button onClick={() => { inboundModalBarcodeId.current = barcodeId; setShowInboundSelect(true); }}
                     className="mt-1 text-xs px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl hover:bg-amber-100 transition-colors">
                     입고 참조 선택 (필수)
                   </button>
@@ -745,7 +746,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                             setBarcodeId(null); setTargetUnitId(null); setRefTxNo(null); setSelectedInbound(null);
                             setShowItemSelector(false);
                             // 출고/불출: 입고 참조 선택 자동 오픈
-                            if (type === "출고" || type === "불출") setShowInboundSelect(true);
+                            if (type === "출고" || type === "불출") { inboundModalBarcodeId.current = barcodeId; setShowInboundSelect(true); }
                           }}
                           className="w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-0">
                           <div className="flex items-center justify-between w-full">

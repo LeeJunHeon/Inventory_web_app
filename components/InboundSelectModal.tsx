@@ -41,7 +41,7 @@ export default function InboundSelectModal({ isOpen, itemId, locationId, barcode
       .then(data => setList(Array.isArray(data) ? data : []))
       .catch(() => setList([]))
       .finally(() => setLoading(false));
-  }, [isOpen, itemId, barcodeId]);
+  }, [isOpen, itemId]);
 
   if (!isOpen) return null;
 
