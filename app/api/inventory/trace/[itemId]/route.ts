@@ -6,10 +6,11 @@ export const dynamic = "force-dynamic";
 // GET /api/inventory/trace/[itemId]?barcodeId=... — 품목 거래 이력 조회
 export async function GET(
   request: NextRequest,
-  { params }: { params: { itemId: string } }
+  { params }: { params: Promise<{ itemId: string }> }
 ) {
   try {
-    const itemId = Number(params.itemId);
+    const { itemId: itemIdStr } = await params;
+    const itemId = Number(itemIdStr);
     if (isNaN(itemId)) {
       return NextResponse.json({ error: "유효하지 않은 itemId" }, { status: 400 });
     }
