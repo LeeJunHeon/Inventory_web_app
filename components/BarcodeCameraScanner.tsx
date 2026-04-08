@@ -105,33 +105,41 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
 
   if (error) {
     return (
-      <div className="mt-2 rounded-xl border border-gray-200 bg-gray-50 flex flex-col items-center gap-3 py-6 px-4">
-        <CameraOff size={28} className="text-gray-400" />
-        <p className="text-xs text-gray-500 text-center whitespace-pre-line leading-relaxed">{error}</p>
-        <button onClick={onClose}
-          className="px-4 py-1.5 bg-gray-200 text-gray-700 rounded-xl text-xs font-medium hover:bg-gray-300">
-          닫기
-        </button>
+      <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4">
+        <div className="w-full max-w-sm">
+          <div className="mt-2 rounded-xl border border-gray-200 bg-gray-50 flex flex-col items-center gap-3 py-6 px-4">
+            <CameraOff size={28} className="text-gray-400" />
+            <p className="text-xs text-gray-500 text-center whitespace-pre-line leading-relaxed">{error}</p>
+            <button onClick={onClose}
+              className="px-4 py-1.5 bg-gray-200 text-gray-700 rounded-xl text-xs font-medium hover:bg-gray-300">
+              닫기
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mt-2 rounded-xl border border-blue-200 overflow-hidden relative bg-black">
-      <div
-        id={divIdRef.current}
-        className="w-full [&_button]:hidden [&_select]:hidden [&_img]:hidden [&_video:not(:first-of-type)]:hidden"
-      />
-      <button
-        onClick={onClose}
-        className="absolute top-2 right-2 z-10 p-1.5 bg-white/90 rounded-full shadow hover:bg-white">
-        <X size={16} className="text-gray-700" />
-      </button>
-      {started && (
-        <p className="absolute bottom-0 left-0 right-0 text-center text-xs text-white/80 py-1.5 bg-black/50">
-          바코드를 사각형 안에 맞춰주세요
-        </p>
-      )}
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4">
+      <div className="w-full max-w-sm">
+        <div className="mt-2 rounded-xl border border-blue-200 overflow-hidden relative bg-black">
+          <div
+            id={divIdRef.current}
+            className="w-full [&_button]:hidden [&_select]:hidden [&_img]:hidden [&_video:not(:first-of-type)]:hidden"
+          />
+          <button
+            onClick={onClose}
+            className="absolute top-2 right-2 z-10 p-1.5 bg-white/90 rounded-full shadow hover:bg-white">
+            <X size={16} className="text-gray-700" />
+          </button>
+          {started && (
+            <p className="absolute bottom-0 left-0 right-0 text-center text-xs text-white/80 py-1.5 bg-black/50">
+              바코드를 사각형 안에 맞춰주세요
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
