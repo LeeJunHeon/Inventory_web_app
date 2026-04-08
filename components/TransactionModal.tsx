@@ -14,7 +14,14 @@ interface TransactionModalProps {
 }
 
 interface ItemOption     { id: number; code: string; name: string; }
-interface PartnerOption  { id: number; name: string; type: string; }
+interface PartnerOption  {
+  id: number;
+  name: string;
+  type: string;
+  contact?: string | null;
+  email?: string | null;
+  managerName?: string | null;
+}
 interface TxReasonOption { id: number; name: string; }
 interface UserOption { id: number; name: string; role: string; }
 interface LocationOption { id: number; name: string; }
@@ -69,6 +76,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const [unitPrice, setUnitPrice]   = useState("");
   const [partnerId, setPartnerId]   = useState<number | null>(null);
   const [partnerName, setPartnerName] = useState("");
+  const [selectedPartnerContact, setSelectedPartnerContact] = useState<{ contact: string | null; email: string | null; managerName: string | null } | null>(null);
   const [currency, setCurrency]     = useState<"KRW" | "USD">("KRW");
   const [exchangeRateAtEntry, setExchangeRateAtEntry] = useState<number | null>(null);
   const [memo, setMemo]             = useState("");
@@ -158,7 +166,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       setBarcodeInput(""); setBarcodeId(null); setTargetUnitId(null); setRefTxNo(null);
       setShowCameraScanner(false);
       setQuantity(""); setUnitPrice("");
-      setPartnerId(null); setPartnerName("");
+      setPartnerId(null); setPartnerName(""); setSelectedPartnerContact(null);
       setLocationId(1);
       setCurrency("KRW");
       setExchangeRateAtEntry(null);
@@ -882,12 +890,36 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 setPartnerId(id || null);
                 const found = partnerOptions.find(p => p.id === id);
                 setPartnerName(found?.name || "");
+                setSelectedPartnerContact(found ? {
+                  contact:     found.contact     ?? null,
+                  email:       found.email       ?? null,
+                  managerName: found.managerName ?? null,
+                } : null);
               }} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
                 <option value="">선택하세요</option>
                 {partnerOptions.map(p => (
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
               </select>
+              {selectedPartnerContact && partnerId && (
+                <div className="mt-1.5 rounded-lg bg-gray-50 border border-gray-200 px-3 py-2 text-xs text-gray-600 space-y-0.5">
+                  {selectedPartnerContact.managerName && (
+                    <div>담당자: <span className="font-medium text-gray-800">{selectedPartnerContact.managerName}</span></div>
+                  )}
+                  {selectedPartnerContact.contact && (
+                    <div>연락처: <span className="font-medium text-gray-800">{selectedPartnerContact.contact}</span></div>
+                  )}
+                  {selectedPartnerContact.email && (
+                    <div>이메일: <span className="font-medium text-gray-800">{selectedPartnerContact.email}</span></div>
+                  )}
+                  {!selectedPartnerContact.managerName && !selectedPartnerContact.contact && !selectedPartnerContact.email && (
+                    <div className="text-gray-400">등록된 연락처 정보가 없습니다.</div>
+                  )}
+                  <div className="pt-0.5 text-gray-400">
+                    연락처 수정은 <span className="font-medium text-blue-500">거래처 관리</span> 탭에서 해주세요.
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
