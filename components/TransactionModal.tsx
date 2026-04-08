@@ -31,6 +31,8 @@ interface SelectedInbound {
   barcodeId: number | null;
   targetUnitId: number | null;
   partnerName: string;
+  itemCode:     string;
+  barcodeCode:  string;
 }
 
 const HANGUL_TO_ENG: Record<string, string> = {
@@ -283,32 +285,32 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                   barcodeId: found.barcodeId,
                   targetUnitId: found.targetUnitId,
                   partnerName: found.partnerName,
+                  itemCode:    found.itemCode    ?? "",
+                  barcodeCode: found.barcodeCode ?? "",
                 });
               }
             })
             .catch(() => {});
         }
       } else {
-        // 입고: 단순 바코드 조회
-        const res = await fetch(`/api/barcodes?search=${encodeURIComponent(lookupCode)}`);
-        const data = await res.json();
-        if (!Array.isArray(data) || data.length === 0) { setError("해당 바코드를 찾을 수 없습니다. (비활성 바코드이거나 미등록 바코드)"); barcodeInputRef.current?.focus(); return; }
-        const bc = data[0];
-        setBarcodeId(bc.id);
+        // 입고: 정확한 바코드 조회 (출고/불출과 동일한 lookup API 사용)
+        const res = await fetch(`/api/barcodes/lookup?code=${encodeURIComponent(lookupCode)}`);
+        const bc = await res.json();
+        if (!res.ok) { setError(bc.error ?? "바코드 조회 실패"); barcodeInputRef.current?.focus(); return; }
+        setBarcodeId(bc.barcodeId);
         setTargetUnitId(bc.targetUnitId ?? null);
         if (bc.category && bc.category !== category) {
-          // setCategory → category useEffect가 setItemCode/setItemName을 "" 로 초기화함
-          // await 이후에 덮어써야 하므로 setItemCode/setItemName은 아래로 이동
+          // setCategory → category useEffect가, setItemCode/setItemName을 "" 로 초기화
+          // await 이전에 먼저 하면, setItemCode/setItemName이 날려 이후
           setCategory(bc.category);
-          const items = await fetch(`/api/items?category=${encodeURIComponent(bc.category)}`).then(r => r.json());
+          const items = await fetch(`/api/items?category=${encodeURIComponent(bc.category)}`).then(r => r.json()).then((r: ItemOption[]) => { setItemOptions(r); return r; });
           setItemOptions(items);
-          const found = items.find((i: ItemOption) => i.code === bc.itemCode);
+          const found = items.find((i: ItemOption) => i.id === bc.itemId);
           if (found) setItemId(found.id);
         } else {
-          const found = itemOptions.find(i => i.code === bc.itemCode);
-          if (found) setItemId(found.id);
+          if (bc.itemId) setItemId(bc.itemId);
         }
-        // useEffect([category])가 초기화한 뒤에 덮어씀
+        // useEffect([category])가, 카테고리 바뀔 때 실행
         setItemCode(bc.itemCode);
         setItemName(bc.itemName);
       }
@@ -325,6 +327,8 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       barcodeId: inbound.barcodeId,
       targetUnitId: inbound.targetUnitId,
       partnerName: inbound.partnerName,
+      itemCode:    inbound.itemCode    ?? "",
+      barcodeCode: inbound.barcodeCode ?? "",
     });
     if (inbound.barcodeId)    setBarcodeId(inbound.barcodeId);
     if (inbound.targetUnitId) setTargetUnitId(inbound.targetUnitId);
