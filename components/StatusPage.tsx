@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Search, AlertTriangle, CheckCircle, AlertCircle, Loader2, Check, X } from "lucide-react";
+import { Search, AlertTriangle, CheckCircle, AlertCircle, Loader2, Check, X, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { CATEGORY_COLORS } from "@/lib/data";
 
 interface LocationOption { id: number; name: string; }
@@ -38,6 +38,9 @@ export default function StatusPage({ initialLocationId }: StatusPageProps) {
   const [editValue, setEditValue]           = useState("");
   const [savingId, setSavingId]             = useState<number | null>(null);
   const [toast, setToast]                   = useState("");
+  const [stockFilter, setStockFilter]       = useState<"전체" | "보유중" | "미보유">("전체");
+  const [sortField, setSortField]           = useState<"name" | "code" | "category" | "currentQty" | "requiredQty">("name");
+  const [sortDir, setSortDir]               = useState<"asc" | "desc">("asc");
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -89,11 +92,36 @@ export default function StatusPage({ initialLocationId }: StatusPageProps) {
     finally { setSavingId(null); setEditingId(null); }
   };
 
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortField(field); setSortDir("asc"); }
+  };
+
+  const SortIcon = ({ field }: { field: typeof sortField }) => {
+    if (sortField !== field) return <ChevronsUpDown size={12} className="opacity-30 inline ml-0.5" />;
+    return sortDir === "asc"
+      ? <ChevronUp size={12} className="text-blue-600 inline ml-0.5" />
+      : <ChevronDown size={12} className="text-blue-600 inline ml-0.5" />;
+  };
+
   const filtered = items.filter((item) => {
     const q = search.toLowerCase();
     const matchSearch = !search || item.name.toLowerCase().includes(q) || item.code.toLowerCase().includes(q);
     const matchCat    = selectedCategory === "전체" || item.category === selectedCategory;
     return matchSearch && matchCat;
+  });
+
+  const filteredItems = filtered.filter(item => {
+    if (stockFilter === "보유중") return item.currentQty > 0;
+    if (stockFilter === "미보유") return item.currentQty === 0;
+    return true;
+  });
+
+  const sortedItems = [...filteredItems].sort((a, b) => {
+    const v = sortDir === "asc" ? 1 : -1;
+    if (sortField === "currentQty" || sortField === "requiredQty")
+      return (a[sortField] - b[sortField]) * v;
+    return String(a[sortField]).localeCompare(String(b[sortField]), "ko") * v;
   });
 
   const shortageCount = items.filter((i) => i.requiredQty > 0 && i.currentQty < i.requiredQty).length;
@@ -160,6 +188,25 @@ export default function StatusPage({ initialLocationId }: StatusPageProps) {
         </div>
       )}
 
+      {/* 보유상태 필터 */}
+      <div className="flex gap-2 mb-3">
+        {(["전체", "보유중", "미보유"] as const).map(f => (
+          <button
+            key={f}
+            onClick={() => setStockFilter(f)}
+            className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+              stockFilter === f
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-white text-gray-600 border-gray-300 hover:border-blue-400"
+            }`}
+          >
+            {f}
+            {f === "보유중" && <span className="ml-1 text-xs opacity-75">({items.filter(i=>i.currentQty>0).length})</span>}
+            {f === "미보유" && <span className="ml-1 text-xs opacity-75">({items.filter(i=>i.currentQty===0).length})</span>}
+          </button>
+        ))}
+      </div>
+
       {/* 검색 + 품목군 필터 */}
       <div className="bg-white rounded-2xl border border-gray-100 p-3 sm:p-4">
         <div className="flex flex-wrap gap-3 items-center">
@@ -178,7 +225,7 @@ export default function StatusPage({ initialLocationId }: StatusPageProps) {
       </div>
 
       {CATS.filter((cat) => selectedCategory === "전체" || selectedCategory === cat).map((cat) => {
-        const catItems = filtered.filter((i) => i.category === cat);
+        const catItems = sortedItems.filter((i) => i.category === cat);
         if (catItems.length === 0 && search) return null;
         return (
           <div key={cat} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
@@ -198,12 +245,12 @@ export default function StatusPage({ initialLocationId }: StatusPageProps) {
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full">
                     <thead><tr className="bg-gray-50/50">
-                      <th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">품목코드</th>
-                      <th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">품목명</th>
+                      <th onClick={() => handleSort("code")} className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5 cursor-pointer select-none hover:text-blue-600">품목코드<SortIcon field="code" /></th>
+                      <th onClick={() => handleSort("name")} className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5 cursor-pointer select-none hover:text-blue-600">품목명<SortIcon field="name" /></th>
                       {cat === "웨이퍼" && <><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">저항</th><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">두께</th></>}
                       {cat === "타겟"   && <><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">순도</th><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">Copper</th></>}
-                      <th className="text-right text-xs font-semibold text-gray-500 px-5 py-2.5">보유수량</th>
-                      <th className="text-right text-xs font-semibold text-gray-500 px-5 py-2.5">필요수량 ✏️</th>
+                      <th onClick={() => handleSort("currentQty")} className="text-right text-xs font-semibold text-gray-500 px-5 py-2.5 cursor-pointer select-none hover:text-blue-600">보유수량<SortIcon field="currentQty" /></th>
+                      <th onClick={() => handleSort("requiredQty")} className="text-right text-xs font-semibold text-gray-500 px-5 py-2.5 cursor-pointer select-none hover:text-blue-600">필요수량 ✏️<SortIcon field="requiredQty" /></th>
                       <th className="text-center text-xs font-semibold text-gray-500 px-5 py-2.5">수급상태</th>
                     </tr></thead>
                     <tbody>
