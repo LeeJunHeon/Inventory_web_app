@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
         // locationId가 있으면 해당 위치 입고건만 조회
         ...(locationIdParam ? { locationId: Number(locationIdParam) } : {}),
       },
-      include: { partner: true, location: true },
+      include: { partner: true, location: true, item: true, barcode: true },
       orderBy: { id: "desc" },
     });
 
@@ -59,6 +59,8 @@ export async function GET(request: NextRequest) {
           memo:         tx.memo           ?? "",
           barcodeId:    tx.barcodeId      ?? null,
           targetUnitId: tx.targetUnitId   ?? null,
+          itemCode:      tx.item?.code     ?? "",
+          barcodeCode:   tx.barcode?.code  ?? "",
         };
       })
       .filter(tx => tx.remainQty > 0);

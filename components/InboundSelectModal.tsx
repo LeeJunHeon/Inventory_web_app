@@ -15,6 +15,8 @@ export interface InboundTx {
   memo: string;
   barcodeId: number | null;
   targetUnitId: number | null;
+  itemCode:     string;
+  barcodeCode:  string;
 }
 
 interface InboundSelectModalProps {
@@ -75,7 +77,15 @@ export default function InboundSelectModal({ isOpen, itemId, locationId, onSelec
                     <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg group-hover:bg-blue-100">
                       #{tx.txNo}
                     </span>
+                    {tx.itemCode && (
+                      <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
+                        {tx.itemCode}
+                      </span>
+                    )}
                     <span className="text-sm text-gray-500">{tx.txDate}</span>
+                    <span className="text-xs text-emerald-700 font-medium bg-emerald-50 px-1.5 py-0.5 rounded">
+                      잔여 {tx.remainQty}개
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     {tx.partnerName && (
