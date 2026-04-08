@@ -31,7 +31,7 @@ export default function TargetUsagePage() {
   }, []);
   const [barcodeInput, setBarcodeInput]     = useState("");
   const barcodeInputRef                     = useRef<HTMLInputElement>(null);
-  const [isComposing, setIsComposing]       = useState(false);
+  const isComposingRef                      = useRef(false);
   const [showCameraScanner, setShowCameraScanner] = useState(false);
   const [selectedTarget, setSelectedTarget] = useState<TargetInfo | null>(null);
   const [logs, setLogs]                     = useState<LogItem[]>([]);
@@ -47,6 +47,8 @@ export default function TargetUsagePage() {
   const [disposeConfirm, setDisposeConfirm] = useState(false);
   const [toast, setToast]                   = useState("");
   const [searchError, setSearchError]       = useState("");
+  const [isSearching, setIsSearching]       = useState(false);
+  const [weightError, setWeightError]       = useState("");
   const [locationOptions, setLocationOptions] = useState<LocationOption[]>([]);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3000); };
@@ -97,7 +99,12 @@ export default function TargetUsagePage() {
       fetchLogs(1);
       return;
     }
-    fetchLogs(1, code);
+    setIsSearching(true);
+    try {
+      await fetchLogs(1, code);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   // 무게 측정값 저장
@@ -107,9 +114,10 @@ export default function TargetUsagePage() {
     const latestWeight = latestLog?.weight != null ? Number(latestLog.weight) : null;
     const newWeight = Number(weight);
     if (latestWeight !== null && newWeight > latestWeight) {
-      showToast("입력한 무게가 이전 기록보다 큽니다. 타겟은 사용할수록 무게가 줄어듭니다.");
+      setWeightError("이전 기록보다 큰 값입니다. 다시 확인해주세요.");
       return;
     }
+    setWeightError("");
     setSaving(true);
     try {
       const res = await fetch("/api/targets", {
@@ -214,14 +222,19 @@ export default function TargetUsagePage() {
                 setBarcodeInput(normalizeBarcodeInput(e.target.value));
                 setSearchError("");
               }}
-              onCompositionStart={() => setIsComposing(true)}
+              onCompositionStart={() => { isComposingRef.current = true; }}
               onCompositionEnd={e => {
-                setIsComposing(false);
+                isComposingRef.current = false;
                 setBarcodeInput(normalizeBarcodeInput(e.currentTarget.value));
               }}
-              onKeyDown={e => { if (e.key === "Enter" && !isComposing) handleSearch(); }}
+              onKeyDown={e => { if (e.key === "Enter" && !isComposingRef.current) handleSearch(); }}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             />
+            {isSearching && (
+              <div className="absolute right-10 top-1/2 -translate-y-1/2 pointer-events-none">
+                <Loader2 size={14} className="animate-spin text-blue-500" />
+              </div>
+            )}
           </div>
           {isMobile && (
             <button
@@ -298,8 +311,14 @@ export default function TargetUsagePage() {
             <div className="flex-1 space-y-3">
               <div>
                 <label className="block text-xs text-gray-400 mb-1"><span className="inline-flex items-center gap-1"><Weight size={12} />무게 (g)</span></label>
-                <input type="text" placeholder="예: 182.450" value={weight} onChange={(e) => setWeight(e.target.value)}
+                <input type="text" placeholder="예: 182.450" value={weight} onChange={(e) => { setWeight(e.target.value); setWeightError(""); }}
                   className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                {weightError && (
+                  <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                    <AlertTriangle size={12} />
+                    {weightError}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-xs text-gray-400 mb-1"><span className="inline-flex items-center gap-1"><MapPin size={12} />사용/보관처</span></label>
