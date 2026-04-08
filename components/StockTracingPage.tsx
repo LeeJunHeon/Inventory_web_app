@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, ArrowDownCircle, ArrowUpCircle, Share2, ChevronRight, Loader2, Tag } from "lucide-react";
+import { Search, ArrowDownCircle, ArrowUpCircle, Share2, ChevronRight, Loader2, Tag, X } from "lucide-react";
 import { CATEGORY_COLORS } from "@/lib/data";
 
 interface BarcodeInfo  { id: number; code: string; isActive: string; }
@@ -32,6 +32,7 @@ const TYPE_DOT: Record<string, string> = {
 
 export default function StockTracingPage() {
   const [query, setQuery]                   = useState("");
+  const [searchType, setSearchType]         = useState("전체");
   const [results, setResults]               = useState<SearchResult[]>([]);
   const [selectedItem, setSelectedItem]     = useState<SearchResult | null>(null);
   const [selectedBarcodeId, setSelectedBarcodeId] = useState<number | null>(null);
@@ -39,6 +40,7 @@ export default function StockTracingPage() {
   const [loading, setLoading]               = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [searched, setSearched]             = useState(false);
+  const [selectedTx, setSelectedTx]         = useState<TxRecord | null>(null);
 
   const handleSearch = async () => {
     const q = query.trim();
@@ -48,7 +50,7 @@ export default function StockTracingPage() {
     setTxHistory([]);
     setSearched(true);
     try {
-      const res = await fetch(`/api/inventory/trace?query=${encodeURIComponent(q)}`);
+      const res = await fetch(`/api/inventory/trace?query=${encodeURIComponent(q)}&searchType=${encodeURIComponent(searchType)}`);
       const data = await res.json();
       setResults(Array.isArray(data) ? data : []);
     } catch {
@@ -89,6 +91,16 @@ export default function StockTracingPage() {
       {/* 검색창 */}
       <div className="bg-white rounded-2xl border border-gray-100 p-5">
         <div className="flex gap-2">
+          <select
+            value={searchType}
+            onChange={e => setSearchType(e.target.value)}
+            className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none bg-white shrink-0"
+          >
+            <option value="전체">전체</option>
+            <option value="품목코드">품목코드</option>
+            <option value="품목명">품목명</option>
+            <option value="바코드">바코드</option>
+          </select>
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -118,9 +130,16 @@ export default function StockTracingPage() {
             <div className="flex items-center justify-center py-16 bg-white rounded-2xl border border-gray-100">
               <Loader2 size={22} className="animate-spin text-blue-500" />
             </div>
-          ) : searched && results.length === 0 ? (
-            <div className="flex items-center justify-center py-16 bg-white rounded-2xl border border-gray-100">
-              <p className="text-sm text-gray-400">검색 결과가 없습니다</p>
+          ) : !searched ? (
+            <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-gray-100 space-y-2">
+              <Search size={28} className="text-gray-200" />
+              <p className="text-sm text-gray-400">검색어를 입력하고 검색하세요</p>
+            </div>
+          ) : results.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-gray-100 space-y-2">
+              <Search size={28} className="text-gray-200" />
+              <p className="text-sm text-gray-500 font-medium">검색 결과 없음</p>
+              <p className="text-xs text-gray-400">다른 검색어 또는 검색 기준을 사용해보세요</p>
             </div>
           ) : results.map(item => (
             <button
@@ -154,7 +173,7 @@ export default function StockTracingPage() {
                   <Share2 size={12} />불출 {item.txCount.disburse}건
                 </span>
                 <span className="ml-auto font-semibold text-emerald-700">
-                  현재고 {item.currentQty}
+                  재고 {item.currentQty}개
                 </span>
               </div>
 
@@ -246,7 +265,7 @@ export default function StockTracingPage() {
                     </thead>
                     <tbody>
                       {txHistory.map(tx => (
-                        <tr key={tx.id} className="border-b border-gray-50 hover:bg-blue-50/20">
+                        <tr key={tx.id} onClick={() => setSelectedTx(tx)} className="border-b border-gray-50 hover:bg-blue-50/30 cursor-pointer">
                           <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{tx.txDate}</td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-lg border ${TYPE_STYLE[tx.txType] ?? "bg-gray-50 text-gray-600 border-gray-200"}`}>
@@ -296,6 +315,44 @@ export default function StockTracingPage() {
           )}
         </div>
       </div>
+      {/* 거래 상세 팝업 */}
+      {selectedTx && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setSelectedTx(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg border ${TYPE_STYLE[selectedTx.txType] ?? "bg-gray-50 text-gray-600 border-gray-200"}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${TYPE_DOT[selectedTx.txType] ?? "bg-gray-400"}`} />
+                  {selectedTx.txType}
+                </span>
+                <span className="text-sm font-semibold text-gray-800">{selectedTx.txDate}</span>
+              </div>
+              <button onClick={() => setSelectedTx(null)} className="text-gray-400 hover:text-gray-600">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="divide-y divide-gray-100 text-sm">
+              {[
+                { label: "전표번호", value: selectedTx.txNo ? `#${selectedTx.txNo}` : "-" },
+                { label: "참조전표", value: selectedTx.refTxNo || "-" },
+                { label: "수량",     value: `${selectedTx.txType === "입고" ? "+" : "-"}${selectedTx.qty.toLocaleString()}` },
+                { label: "단가",     value: selectedTx.unitPrice != null ? (selectedTx.currency === "USD" ? `$${selectedTx.unitPrice.toLocaleString()}` : `₩${selectedTx.unitPrice.toLocaleString()}`) : "-" },
+                { label: "거래처",   value: selectedTx.partnerName || "-" },
+                { label: "사유",     value: selectedTx.reasonName || "-" },
+                { label: "위치",     value: selectedTx.locationName || "-" },
+                { label: "바코드",   value: selectedTx.barcodeCode || "-" },
+                { label: "담당자",   value: selectedTx.userName || "-" },
+                { label: "메모",     value: selectedTx.memo || "-" },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex items-start py-2 gap-3">
+                  <span className="w-20 text-xs text-gray-400 shrink-0 pt-0.5">{label}</span>
+                  <span className="text-gray-800 font-mono text-xs break-all">{value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

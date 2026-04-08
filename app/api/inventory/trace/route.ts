@@ -7,18 +7,26 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get("query")?.trim() ?? "";
+    const query      = searchParams.get("query")?.trim() ?? "";
+    const searchType = searchParams.get("searchType") ?? "전체";
 
     if (!query) return NextResponse.json([]);
 
-    const items = await prisma.item.findMany({
-      where: {
+    const whereCondition = (() => {
+      if (searchType === "바코드")  return { barcodes: { some: { code: { contains: query, mode: "insensitive" as const } } } };
+      if (searchType === "품목코드") return { code: { contains: query, mode: "insensitive" as const } };
+      if (searchType === "품목명")  return { name: { contains: query, mode: "insensitive" as const } };
+      return {
         OR: [
-          { code: { contains: query, mode: "insensitive" } },
-          { name: { contains: query, mode: "insensitive" } },
-          { barcodes: { some: { code: { contains: query, mode: "insensitive" } } } },
+          { code: { contains: query, mode: "insensitive" as const } },
+          { name: { contains: query, mode: "insensitive" as const } },
+          { barcodes: { some: { code: { contains: query, mode: "insensitive" as const } } } },
         ],
-      },
+      };
+    })();
+
+    const items = await prisma.item.findMany({
+      where: whereCondition,
       include: {
         category: { select: { name: true } },
         barcodes: { select: { id: true, code: true, isActive: true } },
