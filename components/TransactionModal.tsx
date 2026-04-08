@@ -660,6 +660,11 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                     <div className="flex-1 text-xs space-y-0.5">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-emerald-700">#{selectedInbound.txNo}</span>
+                        {selectedInbound.itemCode && (
+                          <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded ml-1">
+                            {selectedInbound.itemCode}
+                          </span>
+                        )}
                         <span className="text-emerald-500">{selectedInbound.txDate}</span>
                         {selectedInbound.partnerName && (
                           <span className="text-emerald-500">· {selectedInbound.partnerName}</span>
