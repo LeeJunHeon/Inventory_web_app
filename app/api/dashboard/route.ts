@@ -112,7 +112,7 @@ export async function GET() {
     // 최근 5건
     const recent = await prisma.inventoryTx.findMany({
       take: 5,
-      orderBy: { id: "desc" },
+      orderBy: [{ txDate: "desc" }, { id: "desc" }],
       include: {
         item: { include: { category: true } },
         partner: true,

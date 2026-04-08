@@ -35,7 +35,7 @@ export default function InventoryPage() {
   const [typeFilter, setTypeFilter]     = useState("전체");
   const [categoryFilter, setCategoryFilter] = useState("전체");
   const [modalOpen, setModalOpen]       = useState(false);
-  const [sortField, setSortField]       = useState("id");
+  const [sortField, setSortField]       = useState("date");
   const [sortDir, setSortDir]           = useState<"asc" | "desc">("desc");
   const [showFilters, setShowFilters]   = useState(false);
   const [editItem, setEditItem]         = useState<InventoryItem | null>(null);

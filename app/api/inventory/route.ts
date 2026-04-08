@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
         txReason: true,
         user:     true,
       },
-      orderBy: { id: "desc" },
+      orderBy: [{ txDate: "desc" }, { id: "desc" }],
     });
 
     const result = transactions.map((tx) => ({
