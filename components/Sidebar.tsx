@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
-import { Home, Package, BarChart3, Clock, Target, QrCode, Users, LogOut, Boxes, X, Layers, Building2 } from "lucide-react";
+import { Home, Package, BarChart3, Clock, Target, QrCode, Users, LogOut, Boxes, X, Layers, Building2, Search } from "lucide-react";
 
 export type PageId =
   | "dashboard" | "inventory" | "status" | "period"
-  | "target" | "barcode" | "items" | "partners" | "admin";
+  | "target" | "barcode" | "tracing" | "items" | "partners" | "admin";
 
 interface Perms {
   role: string;
@@ -29,6 +29,7 @@ const ALL_NAV_ITEMS: {
   { id: "period",    label: "기간별 조회", icon: Clock },
   { id: "target",    label: "타겟 사용현황", icon: Target },
   { id: "barcode",   label: "바코드",      icon: QrCode },
+  { id: "tracing",   label: "재고 추적",   icon: Search },
   { id: "items",     label: "품목 관리",   icon: Layers,    group: "마스터" },
   { id: "partners",  label: "거래처 관리", icon: Building2, group: "마스터" },
   { id: "admin",     label: "관리자 설정", icon: Users,     group: "마스터" },
@@ -43,6 +44,7 @@ function isVisible(id: PageId, perms: Perms | null): boolean {
     case "period":     return perms.canViewPeriod;
     case "target":     return perms.canViewTargetUsage;
     case "barcode":    return perms.canViewBarcode;
+    case "tracing":    return true;
     case "items":
     case "partners":   return perms.role === "admin";
     case "admin":      return perms.canViewUserPerm;

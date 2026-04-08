@@ -13,6 +13,7 @@ import BarcodePage      from "@/components/BarcodePage";
 import ItemsPage        from "@/components/ItemsPage";
 import PartnersPage     from "@/components/PartnersPage";
 import AdminPage        from "@/components/AdminPage";
+import StockTracingPage from "@/components/StockTracingPage";
 
 interface Perms {
   role: string;
@@ -83,6 +84,7 @@ export default function Home() {
     period:    "기간별 조회",
     target:    "타겟 사용현황",
     barcode:   "바코드",
+    tracing:   "재고 추적",
     items:     "품목 관리",
     partners:  "거래처 관리",
     admin:     "관리자 설정",
@@ -98,6 +100,7 @@ export default function Home() {
       case "period":     return perms.canViewPeriod;
       case "target":     return perms.canViewTargetUsage;
       case "barcode":    return perms.canViewBarcode;
+      case "tracing":    return true;
       case "items":
       case "partners":   return perms.role === "admin";
       case "admin":      return perms.canViewUserPerm;
@@ -120,6 +123,7 @@ export default function Home() {
       case "period":    return <PeriodPage />;
       case "target":    return <TargetUsagePage />;
       case "barcode":   return <BarcodePage />;
+      case "tracing":   return <StockTracingPage />;
       case "items":     return <ItemsPage />;
       case "partners":  return <PartnersPage />;
       case "admin":     return <AdminPage />;
