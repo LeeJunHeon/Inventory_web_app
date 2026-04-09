@@ -227,13 +227,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 전표번호 자동 채번: 기존 tx_no 중 가장 큰 숫자 + 1
-    const lastTx = await prisma.inventoryTx.findFirst({
-      where:   { txNo: { not: null } },
-      orderBy: { id: "desc" },
-      select:  { txNo: true },
+    // 전표번호 자동 채번: 숫자형 tx_no 중 가장 큰 값 + 1
+    const allTxNos = await prisma.inventoryTx.findMany({
+      where: { txNo: { not: null } },
+      select: { txNo: true },
     });
-    const lastNo  = lastTx?.txNo ? (parseInt(lastTx.txNo, 10) || 0) : 0;
+    const lastNo = allTxNos.reduce((max, tx) => {
+      const num = parseInt(tx.txNo ?? "", 10);
+      return isNaN(num) ? max : Math.max(max, num);
+    }, 0);
     const newTxNo = String(lastNo + 1);
 
     // 출고/불출 시 참조 입고 건 가격 자동 복사
