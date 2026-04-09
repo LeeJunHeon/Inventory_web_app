@@ -53,6 +53,9 @@ export default function Home() {
     }
   }, []);
   const [shortageCount, setShortageCount] = useState(0);
+  const [shortageItems, setShortageItems] = useState<{
+    itemId: number; itemName: string; itemCode: string; currentQty: number; minQty: number;
+  }[]>([]);
   const [showNotif, setShowNotif]     = useState(false);
   const [perms, setPerms]             = useState<Perms | null>(null);
   const [statusLocationId, setStatusLocationId] = useState<number | null>(null);
@@ -73,7 +76,10 @@ export default function Home() {
   useEffect(() => {
     fetch("/api/dashboard")
       .then(r => r.json())
-      .then(data => setShortageCount(data.shortageCount || 0))
+      .then(data => {
+        setShortageCount(data.shortageCount || 0);
+        setShortageItems(data.shortageItems || []);
+      })
       .catch(() => {});
   }, [page]);
 
@@ -174,23 +180,43 @@ export default function Home() {
 
             {/* 알림 드롭다운 */}
             {showNotif && (
-              <div className="absolute top-full right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-lg z-50">
-                <div className="px-4 py-3 border-b border-gray-100">
+              <div className="absolute top-full right-0 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-50">
+                <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                   <p className="text-sm font-bold text-gray-900">알림</p>
-                </div>
-                <div className="px-4 py-3">
-                  {shortageCount > 0 ? (
-                    <button
-                      onClick={() => { setPage("status"); setShowNotif(false); }}
-                      className="w-full text-left space-y-1 hover:bg-gray-50 -mx-2 px-2 py-2 rounded-lg transition-colors"
-                    >
-                      <p className="text-sm text-rose-600 font-semibold">재고 부족 {shortageCount}건</p>
-                      <p className="text-xs text-gray-400">보유 현황에서 확인하세요</p>
-                    </button>
-                  ) : (
-                    <p className="text-sm text-gray-400 text-center py-2">새로운 알림이 없습니다</p>
+                  {shortageCount > 0 && (
+                    <span className="text-xs font-semibold text-rose-500">재고 부족 {shortageCount}건</span>
                   )}
                 </div>
+                {shortageCount > 0 ? (
+                  <>
+                    <ul className="max-h-64 overflow-y-auto divide-y divide-gray-50">
+                      {shortageItems.map((item) => (
+                        <li key={item.itemId} className="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-gray-800 truncate">{item.itemName}</p>
+                            <p className="text-xs text-gray-400">{item.itemCode}</p>
+                          </div>
+                          <div className="ml-3 shrink-0 text-right">
+                            <p className="text-sm font-bold text-rose-500">{item.currentQty}개</p>
+                            <p className="text-xs text-gray-400">최소 {item.minQty}개</p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="px-4 py-2.5 border-t border-gray-100">
+                      <button
+                        onClick={() => { setPage("status"); setShowNotif(false); }}
+                        className="w-full text-xs font-semibold text-blue-500 hover:text-blue-600 text-center py-1"
+                      >
+                        보유 현황에서 전체 확인 →
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="px-4 py-4">
+                    <p className="text-sm text-gray-400 text-center">새로운 알림이 없습니다</p>
+                  </div>
+                )}
               </div>
             )}
           </div>

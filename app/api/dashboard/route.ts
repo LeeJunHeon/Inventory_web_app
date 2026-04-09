@@ -31,10 +31,17 @@ export async function GET() {
     // 재고 부족 품목 수 — item.minStockQty 기준
     const itemsWithMin = await prisma.item.findMany({
       where: { minStockQty: { gt: 0 } },
-      select: { id: true, minStockQty: true },
+      select: { id: true, name: true, code: true, minStockQty: true },
     });
 
     let shortageCount = 0;
+    const shortageItems: {
+      itemId: number;
+      itemName: string;
+      itemCode: string;
+      currentQty: number;
+      minQty: number;
+    }[] = [];
 
     if (itemsWithMin.length > 0) {
       const itemIds = itemsWithMin.map((i) => i.id);
@@ -56,7 +63,16 @@ export async function GET() {
 
       for (const item of itemsWithMin) {
         const current = (inMap.get(item.id) || 0) - (outMap.get(item.id) || 0);
-        if (current < item.minStockQty) shortageCount++;
+        if (current < (item.minStockQty ?? 0)) {
+          shortageCount++;
+          shortageItems.push({
+            itemId:     item.id,
+            itemName:   item.name,
+            itemCode:   item.code,
+            currentQty: current,
+            minQty:     item.minStockQty ?? 0,
+          });
+        }
       }
     }
 
@@ -130,6 +146,7 @@ export async function GET() {
         amount: isEmployee ? 0 : todayOut.reduce((s, t) => s + Number(t.amount || 0), 0),
       },
       shortageCount,
+      shortageItems,
       totalItems,
       locationSummary,
       recent: recent.map((tx) => ({
