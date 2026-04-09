@@ -43,3 +43,6 @@ next-env.d.ts
 
 /lib/generated/prisma
 /app/generated/prisma
+
+# NAS 전용 파일
+DB/

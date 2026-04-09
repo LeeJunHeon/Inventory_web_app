@@ -9,9 +9,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - /volume1/docker/inventory-web/DB:/DB:ro
+    ports:
+      - "5433:5432"
     networks:
       - internal
-    # 외부 포트 노출 없음 (보안)
 
   nextjs:
     build:
@@ -25,6 +27,9 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       NEXTAUTH_URL: ${NEXTAUTH_URL}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      AUTH_TRUST_HOST: "true"
     depends_on:
       - postgres
     networks:
