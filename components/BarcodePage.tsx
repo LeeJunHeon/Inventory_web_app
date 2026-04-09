@@ -39,19 +39,25 @@ export default function BarcodePage() {
   const [editMemo, setEditMemo]             = useState("");
   const [editIsActive, setEditIsActive]     = useState<"Y" | "N">("Y");
   const [editSaving, setEditSaving]         = useState(false);
+  const [sortField, setSortField]           = useState<"id" | "code" | "category">("id");
+  const [sortDir, setSortDir]               = useState<"asc" | "desc">("desc");
+  const [searchType, setSearchType]         = useState<"전체" | "바코드" | "품목코드" | "품목명">("전체");
   const itemDropRef = useRef<HTMLDivElement>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (search) params.set("search", search);
+      if (search) {
+        params.set("search", search);
+        params.set("searchType", searchType);
+      }
       if (categoryFilter !== "전체") params.set("category", categoryFilter);
       const res = await fetch(`/api/barcodes?${params}`);
       if (res.ok) setBarcodes(await res.json());
     } catch { setToast("바코드 목록 조회 실패"); setTimeout(() => setToast(""), 3000); }
     finally { setLoading(false); }
-  }, [search, categoryFilter]);
+  }, [search, categoryFilter, searchType]);
 
   useEffect(() => {
     const timer = setTimeout(fetchData, 300);
@@ -441,6 +447,16 @@ export default function BarcodePage() {
       {/* ── 검색 필터 ── */}
       <div className="bg-white rounded-2xl border border-gray-100 p-3 sm:p-4">
         <div className="flex flex-wrap gap-3 items-center">
+          <select
+            value={searchType}
+            onChange={e => setSearchType(e.target.value as any)}
+            className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none bg-white shrink-0"
+          >
+            <option value="전체">전체</option>
+            <option value="바코드">바코드</option>
+            <option value="품목코드">품목코드</option>
+            <option value="품목명">품목명</option>
+          </select>
           <div className="relative flex-1 min-w-[200px]">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input type="text" placeholder="바코드, 품목코드, 품목명 검색..." value={search}
@@ -460,25 +476,50 @@ export default function BarcodePage() {
       {/* ── 바코드 목록 ── */}
       {loading ? (
         <div className="flex items-center justify-center h-32"><Loader2 size={24} className="animate-spin text-blue-500" /></div>
-      ) : (
+      ) : (() => {
+        const sortedBarcodes = [...barcodes].sort((a, b) => {
+          const dir = sortDir === "asc" ? 1 : -1;
+          if (sortField === "id")       return (a.id - b.id) * dir;
+          if (sortField === "code")     return a.code.localeCompare(b.code) * dir;
+          if (sortField === "category") return a.category.localeCompare(b.category) * dir;
+          return 0;
+        });
+
+        const handleSort = (field: "id" | "code" | "category") => {
+          if (sortField === field) setSortDir(sortDir === "asc" ? "desc" : "asc");
+          else { setSortField(field); setSortDir("desc"); }
+        };
+
+        const SortIcon = ({ field }: { field: string }) => {
+          if (sortField !== field) return <span className="text-gray-300">↕</span>;
+          return sortDir === "asc" ? <span className="text-blue-500">↑</span> : <span className="text-blue-500">↓</span>;
+        };
+
+        return (
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
           {/* 데스크탑 테이블 */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead><tr className="bg-gray-50 border-b border-gray-100">
-                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">ID</th>
-                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">바코드</th>
+                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("id")}>
+                  <div className="flex items-center gap-1">ID <SortIcon field="id" /></div>
+                </th>
+                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("code")}>
+                  <div className="flex items-center gap-1">바코드 <SortIcon field="code" /></div>
+                </th>
                 <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">품목코드</th>
                 <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">품목명</th>
-                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">품목군</th>
+                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("category")}>
+                  <div className="flex items-center gap-1">품목군 <SortIcon field="category" /></div>
+                </th>
                 <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">타겟ID</th>
                 <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">활성</th>
                 <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">작업</th>
               </tr></thead>
               <tbody>
-                {barcodes.length === 0 ? (
+                {sortedBarcodes.length === 0 ? (
                   <tr><td colSpan={8} className="px-5 py-12 text-center text-sm text-gray-400">등록된 바코드가 없습니다</td></tr>
-                ) : barcodes.map((b) => (
+                ) : sortedBarcodes.map((b) => (
                   <tr key={b.id} className="border-b border-gray-50 hover:bg-blue-50/30 group">
                     <td className="px-5 py-3 text-sm text-gray-400">{b.id}</td>
                     <td className="px-5 py-3 text-sm font-mono font-semibold text-gray-900">{b.code}</td>
@@ -523,7 +564,7 @@ export default function BarcodePage() {
 
           {/* 모바일 카드 */}
           <div className="md:hidden divide-y divide-gray-50">
-            {barcodes.map((b) => (
+            {sortedBarcodes.map((b) => (
               <div key={b.id} className="px-4 py-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-mono font-bold text-gray-900">{b.code}</span>
@@ -559,10 +600,11 @@ export default function BarcodePage() {
           </div>
 
           <div className="px-5 py-3 border-t border-gray-100 bg-gray-50">
-            <p className="text-xs text-gray-500">총 <span className="font-semibold text-gray-700">{barcodes.length}건</span></p>
+            <p className="text-xs text-gray-500">총 <span className="font-semibold text-gray-700">{sortedBarcodes.length}건</span></p>
           </div>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

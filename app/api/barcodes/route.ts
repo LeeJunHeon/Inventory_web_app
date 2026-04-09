@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const search     = searchParams.get("search")     || "";
+    const searchType = searchParams.get("searchType") || "전체";
     const category   = searchParams.get("category")   || "";
     const itemId     = searchParams.get("itemId");
     const activeOnly = searchParams.get("activeOnly");
@@ -28,13 +29,28 @@ export async function GET(request: NextRequest) {
       // 검색어(스캔 조회)가 있을 때만 비활성 바코드 제외
       // BarcodePage 목록에서는 비활성도 보여야 하므로 search 없는 경우는 필터 미적용
       where.isActive = { not: "N" };
-      const searchOR = [
-        { code: { contains: search, mode: "insensitive" } },
-        { item: { code: { contains: search, mode: "insensitive" } } },
-        { item: { name: { contains: search, mode: "insensitive" } } },
-        { targetUnit: { item: { code: { contains: search, mode: "insensitive" } } } },
-        { targetUnit: { item: { name: { contains: search, mode: "insensitive" } } } },
-      ];
+      let searchOR;
+      if (searchType === "바코드") {
+        searchOR = [{ code: { equals: search, mode: "insensitive" as const } }];
+      } else if (searchType === "품목코드") {
+        searchOR = [
+          { item: { code: { contains: search, mode: "insensitive" as const } } },
+          { targetUnit: { item: { code: { contains: search, mode: "insensitive" as const } } } },
+        ];
+      } else if (searchType === "품목명") {
+        searchOR = [
+          { item: { name: { contains: search, mode: "insensitive" as const } } },
+          { targetUnit: { item: { name: { contains: search, mode: "insensitive" as const } } } },
+        ];
+      } else {
+        searchOR = [
+          { code: { contains: search, mode: "insensitive" as const } },
+          { item: { code: { contains: search, mode: "insensitive" as const } } },
+          { item: { name: { contains: search, mode: "insensitive" as const } } },
+          { targetUnit: { item: { code: { contains: search, mode: "insensitive" as const } } } },
+          { targetUnit: { item: { name: { contains: search, mode: "insensitive" as const } } } },
+        ];
+      }
       // category 필터와 search가 동시에 적용될 때 AND 조건으로 결합
       if (where.OR) {
         where.AND = [{ OR: where.OR }, { OR: searchOR }];
