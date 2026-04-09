@@ -36,6 +36,11 @@ export async function GET(request: NextRequest) {
     });
 
     const result = items.map(item => {
+      // 바코드 검색 시 해당 바코드만 필터링
+      const filteredBarcodes = searchType === "바코드"
+        ? item.barcodes.filter(b => b.code.toLowerCase() === query.toLowerCase())
+        : item.barcodes;
+
       const inbound  = item.inventoryTxs.filter(t => t.txType === "입고");
       const outbound = item.inventoryTxs.filter(t => t.txType === "출고");
       const disburse = item.inventoryTxs.filter(t => t.txType === "불출");
@@ -48,7 +53,7 @@ export async function GET(request: NextRequest) {
         itemCode:  item.code,
         itemName:  item.name,
         category:  item.category?.name ?? "",
-        barcodes:  item.barcodes.map(b => ({ id: b.id, code: b.code, isActive: b.isActive })),
+        barcodes:  filteredBarcodes.map(b => ({ id: b.id, code: b.code, isActive: b.isActive })),
         txCount:   { inbound: inbound.length, outbound: outbound.length, disburse: disburse.length },
         currentQty: totalIn - totalOut,
       };
