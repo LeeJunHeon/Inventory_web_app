@@ -98,6 +98,12 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const inboundModalBarcodeId = useRef<number | null>(null);
   const isFromLookupRef = useRef(false);
   const justCreatedBarcodeId = useRef<number | null>(null);
+  const cancelCreatedBarcode = () => {
+    if (justCreatedBarcodeId.current !== null) {
+      fetch(`/api/barcodes?id=${justCreatedBarcodeId.current}`, { method: "DELETE" }).catch(() => {});
+      justCreatedBarcodeId.current = null;
+    }
+  };
 
   // 바코드 선택기
   const [showBarcodeSelector, setShowBarcodeSelector] = useState(false);
@@ -527,13 +533,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         {/* 헤더 */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-900">새 기록 작성</h2>
-          <button onClick={() => {
-            if (justCreatedBarcodeId.current !== null) {
-              fetch(`/api/barcodes?id=${justCreatedBarcodeId.current}`, { method: "DELETE" }).catch(() => {});
-              justCreatedBarcodeId.current = null;
-            }
-            onClose();
-          }} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+          <button onClick={() => { cancelCreatedBarcode(); onClose(); }} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
             <X size={20} className="text-gray-400" />
           </button>
         </div>
@@ -546,6 +546,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
             <div className="flex gap-2">
               {(["입고", "출고", "불출"] as const).map((t) => (
                 <button key={t} onClick={() => {
+                  cancelCreatedBarcode();
                   setType(t);
                   setItemId(null); setItemCode(""); setItemName("");
                   setBarcodeInput(""); setBarcodeId(null); setTargetUnitId(null);
@@ -769,6 +770,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                       itemOptions.map(opt => (
                         <button key={opt.id}
                           onClick={() => {
+                            cancelCreatedBarcode();
                             setItemId(opt.id); setItemCode(opt.code); setItemName(opt.name);
                             // 직접 선택 시 바코드/타겟/입고참조 해제
                             setBarcodeInput("");
