@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Download, Calendar, Loader2 } from "lucide-react";
 import { TYPE_COLORS, CATEGORY_COLORS, formatPrice, formatQty, InventoryItem } from "@/lib/data";
 
@@ -38,9 +38,25 @@ export default function PeriodPage() {
   const [endDate, setEndDate]           = useState(defaults.end);
   const [categoryFilter, setCategoryFilter] = useState("전체");
   const [typeFilter, setTypeFilter]         = useState("전체");
+  const [manualRate, setManualRate]         = useState<string>("");
+  const [currentRate, setCurrentRate]       = useState<number | null>(null);
+  const [usingCurrentRate, setUsingCurrentRate] = useState(false);
   const [items, setItems]               = useState<InventoryItem[]>([]);
   const [loading, setLoading]           = useState(false);
   const [searched, setSearched]         = useState(false);
+
+  useEffect(() => {
+    fetch("/api/exchange-rate")
+      .then(r => r.json())
+      .then(data => setCurrentRate(data.rate))
+      .catch(() => setCurrentRate(1400));
+  }, []);
+
+  const getRate = (item: InventoryItem): number => {
+    if (manualRate && Number(manualRate) > 0) return Number(manualRate);
+    if (item.exchangeRateAtEntry) return item.exchangeRateAtEntry;
+    return currentRate ?? 1400;
+  };
 
   const handleSearch = async () => {
     setLoading(true);
@@ -50,7 +66,15 @@ export default function PeriodPage() {
       if (categoryFilter !== "전체") params.set("category", categoryFilter);
       if (typeFilter !== "전체") params.set("type", typeFilter);
       const res = await fetch(`/api/inventory?${params}`);
-      if (res.ok) { const json = await res.json(); setItems(json.data ?? json); }
+      if (res.ok) {
+        const json = await res.json();
+        const data: InventoryItem[] = json.data ?? json;
+        setItems(data);
+        const hasUsdWithNoRate = data.some(
+          (item: InventoryItem) => item.currency === "USD" && !item.exchangeRateAtEntry
+        );
+        setUsingCurrentRate(!manualRate && hasUsdWithNoRate);
+      }
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
@@ -63,7 +87,14 @@ export default function PeriodPage() {
   const summary = { 입고: { count: 0, qty: 0, amount: 0 }, 출고: { count: 0, qty: 0, amount: 0 }, 불출: { count: 0, qty: 0, amount: 0 } };
   items.forEach((item) => {
     const s = summary[item.type as keyof typeof summary];
-    if (s) { s.count++; s.qty += item.qty; s.amount += (item.amount ?? 0); }
+    if (s) {
+      s.count++;
+      s.qty += item.qty;
+      const krwAmount = item.currency === "USD"
+        ? (item.amount ?? 0) * getRate(item)
+        : (item.amount ?? 0);
+      s.amount += krwAmount;
+    }
   });
 
   return (
@@ -110,6 +141,19 @@ export default function PeriodPage() {
               >{t}</button>
             ))}
           </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold text-gray-500 shrink-0">환율</label>
+            <div className="relative">
+              <input
+                type="number"
+                placeholder="비우면 등록시 환율 사용"
+                value={manualRate}
+                onChange={e => setManualRate(e.target.value)}
+                className="w-44 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">원/USD</span>
+            </div>
+          </div>
           <button onClick={handleSearch}
             className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600">
             <Search size={16} />조회
@@ -123,6 +167,17 @@ export default function PeriodPage() {
           </button>
         </div>
       </div>
+
+      {searched && usingCurrentRate && currentRate && (
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
+          <span>⚠</span>
+          <span>
+            등록시 환율이 없는 USD 거래가 있어 현재 환율
+            <span className="font-bold mx-1">₩{currentRate.toLocaleString()}</span>
+            을 기준으로 계산되었습니다.
+          </span>
+        </div>
+      )}
 
       {searched && (
         <>
@@ -177,7 +232,11 @@ export default function PeriodPage() {
                           <td className="px-5 py-3"><span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[item.category] || ""}`}>{item.category}</span></td>
                           <td className="px-5 py-3"><p className="text-sm font-medium text-gray-900">{item.name}</p><p className="text-xs text-gray-400">{item.code}</p></td>
                           <td className="px-5 py-3 text-sm text-right font-semibold">{formatQty(item.qty)}</td>
-                          <td className="px-5 py-3 text-sm text-right text-gray-600">{formatPrice(item.amount)}</td>
+                          <td className="px-5 py-3 text-sm text-right text-gray-600">
+                            {item.currency === "USD"
+                              ? `₩${Math.round((item.amount ?? 0) * getRate(item)).toLocaleString()}`
+                              : formatPrice(item.amount)}
+                          </td>
                           <td className="px-5 py-3 text-sm text-gray-600">{item.partner}</td>
                         </tr>
                       ))}
@@ -197,7 +256,11 @@ export default function PeriodPage() {
                       <p className="text-sm font-semibold text-gray-900">{item.name}</p>
                       <div className="flex items-center gap-4 text-sm">
                         <span>수량 <span className="font-bold">{item.qty}</span></span>
-                        <span className="text-gray-400">{formatPrice(item.amount)}</span>
+                        <span className="text-gray-400">
+                          {item.currency === "USD"
+                            ? `₩${Math.round((item.amount ?? 0) * getRate(item)).toLocaleString()}`
+                            : formatPrice(item.amount)}
+                        </span>
                         <span className="text-gray-400 truncate">{item.partner}</span>
                       </div>
                     </div>
