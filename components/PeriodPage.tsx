@@ -97,6 +97,33 @@ export default function PeriodPage() {
     }
   });
 
+  const CATEGORY_LIST = ["타겟", "웨이퍼", "가스", "기자재/소모품"];
+  const TYPE_LIST = ["입고", "출고", "불출"] as const;
+
+  const categoryBreakdown: Record<string, Record<string, { count: number; qty: number; amount: number }>> = {};
+  CATEGORY_LIST.forEach(cat => {
+    categoryBreakdown[cat] = {
+      입고: { count: 0, qty: 0, amount: 0 },
+      출고: { count: 0, qty: 0, amount: 0 },
+      불출: { count: 0, qty: 0, amount: 0 },
+    };
+  });
+  items.forEach(item => {
+    const cat = categoryBreakdown[item.category];
+    if (!cat) return;
+    const s = cat[item.type];
+    if (!s) return;
+    s.count++;
+    s.qty += item.qty;
+    const krwAmount = item.currency === "USD"
+      ? (item.amount ?? 0) * getRate(item)
+      : (item.amount ?? 0);
+    s.amount += krwAmount;
+  });
+  const activeCats = CATEGORY_LIST.filter(cat =>
+    TYPE_LIST.some(t => categoryBreakdown[cat][t].count > 0)
+  );
+
   return (
     <div className="space-y-5">
       <div>
@@ -200,6 +227,56 @@ export default function PeriodPage() {
               </div>
             ))}
           </div>
+
+          {activeCats.length > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-gray-100">
+                <h2 className="font-bold text-gray-900">품목군별 상세 현황</h2>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100">
+                      <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">품목군</th>
+                      {TYPE_LIST.map(t => (
+                        <th key={t} className={`text-center text-xs font-semibold px-5 py-3 ${TYPE_COLORS[t]?.text ?? "text-gray-500"}`}>
+                          {t}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeCats.map(cat => (
+                      <tr key={cat} className="border-b border-gray-50 hover:bg-gray-50/50">
+                        <td className="px-5 py-3">
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[cat] || ""}`}>
+                            {cat}
+                          </span>
+                        </td>
+                        {TYPE_LIST.map(t => {
+                          const s = categoryBreakdown[cat][t];
+                          return (
+                            <td key={t} className="px-5 py-3 text-center">
+                              {s.count > 0 ? (
+                                <div>
+                                  <p className="text-sm font-semibold text-gray-900">{s.count}건 / {s.qty.toLocaleString()}개</p>
+                                  <p className="text-xs text-gray-400 mt-0.5">
+                                    {s.amount > 0 ? `₩${Math.round(s.amount).toLocaleString()}` : "-"}
+                                  </p>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-gray-300">-</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
             <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
