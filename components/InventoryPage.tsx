@@ -41,6 +41,9 @@ export default function InventoryPage() {
   const [editItem, setEditItem]         = useState<InventoryItem | null>(null);
   const [toast, setToast]               = useState("");
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+  const [page, setPage]                 = useState(1);
+  const [limit, setLimit]               = useState(50);
+  const [total, setTotal]               = useState(0);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -50,12 +53,18 @@ export default function InventoryPage() {
       if (search && searchField !== "전체") params.set("searchField", searchField);
       if (typeFilter !== "전체")    params.set("type", typeFilter);
       if (categoryFilter !== "전체") params.set("category", categoryFilter);
+      params.set("page",      String(page));
+      params.set("limit",     String(limit));
+      params.set("sortField", sortField);
+      params.set("sortDir",   sortDir);
       const res = await fetch(`/api/inventory?${params}`);
       if (!res.ok) throw new Error("조회 실패");
-      setItems(await res.json());
+      const json = await res.json();
+      setItems(json.data);
+      setTotal(json.total);
     } catch { setToast("데이터 조회에 실패했습니다."); setTimeout(() => setToast(""), 3000); }
     finally { setLoading(false); }
-  }, [search, searchField, typeFilter, categoryFilter]);
+  }, [search, searchField, typeFilter, categoryFilter, page, limit, sortField, sortDir]);
 
   useEffect(() => {
     const timer = setTimeout(fetchData, 300);
@@ -69,22 +78,10 @@ export default function InventoryPage() {
       .catch(() => setExchangeRate(1400));
   }, []);
 
-  const sorted = [...items].sort((a, b) => {
-    const dir = sortDir === "asc" ? 1 : -1;
-    if (sortField === "id")     return (a.id - b.id) * dir;
-    if (sortField === "date")   return a.date.localeCompare(b.date) * dir;
-    if (sortField === "qty")    return (a.qty - b.qty) * dir;
-    if (sortField === "amount") {
-      const aVal = a.currency === "USD" ? (a.amount ?? 0) * (exchangeRate ?? 1) : (a.amount ?? 0);
-      const bVal = b.currency === "USD" ? (b.amount ?? 0) * (exchangeRate ?? 1) : (b.amount ?? 0);
-      return (aVal - bVal) * dir;
-    }
-    return 0;
-  });
-
   const handleSort = (field: string) => {
     if (sortField === field) setSortDir(sortDir === "asc" ? "desc" : "asc");
     else { setSortField(field); setSortDir("desc"); }
+    setPage(1);
   };
 
   const handleDelete = async (id: number) => {
@@ -98,11 +95,11 @@ export default function InventoryPage() {
 
   // ── CSV 내보내기 ──────────────────────────────────────
   const handleExport = () => {
-    if (sorted.length === 0) { setToast("내보낼 데이터가 없습니다."); setTimeout(() => setToast(""), 3000); return; }
+    if (items.length === 0) { setToast("내보낼 데이터가 없습니다."); setTimeout(() => setToast(""), 3000); return; }
     const now      = new Date();
     const dateStr  = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}`;
     const filename = `재고내역_${dateStr}.csv`;
-    downloadCSV(sorted, filename);
+    downloadCSV(items, filename);
   };
 
   const SortIcon = ({ field }: { field: string }) => {
@@ -143,7 +140,7 @@ export default function InventoryPage() {
       <div className="bg-white rounded-2xl border border-gray-100 p-3 sm:p-4 space-y-3">
         <div className="flex gap-2">
           <div className="relative flex-1 flex gap-2">
-            <select value={searchField} onChange={e => { setSearchField(e.target.value); setSearch(""); }}
+            <select value={searchField} onChange={e => { setSearchField(e.target.value); setSearch(""); setPage(1); }}
               className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 shrink-0 text-gray-600">
               {SEARCH_FIELDS.map(f => <option key={f} value={f}>{f}</option>)}
             </select>
@@ -153,7 +150,7 @@ export default function InventoryPage() {
                 placeholder={searchField === "전체" ? "품목명, 품목코드, 바코드, 거래처 검색..." :
                   searchField === "바코드" ? "바코드 정확히 입력 (예: T-3)" :
                   `${searchField} 검색...`}
-                value={search} onChange={(e) => setSearch(e.target.value)}
+                value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
             </div>
           </div>
@@ -165,13 +162,13 @@ export default function InventoryPage() {
         <div className={`flex-wrap gap-2 ${showFilters ? "flex" : "hidden"} sm:flex`}>
           <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1">
             {TYPES.map((t) => (
-              <button key={t} onClick={() => setTypeFilter(t)}
+              <button key={t} onClick={() => { setTypeFilter(t); setPage(1); }}
                 className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${typeFilter === t ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}>{t}</button>
             ))}
           </div>
           <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1 overflow-x-auto">
             {CATEGORIES.map((c) => (
-              <button key={c} onClick={() => setCategoryFilter(c)}
+              <button key={c} onClick={() => { setCategoryFilter(c); setPage(1); }}
                 className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${categoryFilter === c ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}>{c}</button>
             ))}
           </div>
@@ -206,9 +203,9 @@ export default function InventoryPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sorted.length === 0 ? (
+                  {items.length === 0 ? (
                     <tr><td colSpan={12} className="px-5 py-12 text-center text-sm text-gray-400">데이터가 없습니다</td></tr>
-                  ) : sorted.map((item) => (
+                  ) : items.map((item) => (
                     <tr key={item.id} className="border-b border-gray-50 hover:bg-blue-50/30 transition-colors group">
                       <td className="px-4 py-3.5 text-sm font-mono font-semibold text-gray-700">{item.txNo || "-"}</td>
                       <td className="px-5 py-3.5 text-sm text-gray-500 font-mono">{item.id}</td>
@@ -262,19 +259,65 @@ export default function InventoryPage() {
                 </tbody>
               </table>
             </div>
-            <div className="px-5 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
-              <p className="text-xs text-gray-500">총 <span className="font-semibold text-gray-700">{sorted.length}건</span></p>
-              <p className="text-xs text-gray-400">합계: <span className="font-semibold text-gray-600">{formatPrice(sorted.filter(i => i.currency !== "USD").reduce((s, i) => s + (i.amount ?? 0), 0))}</span></p>
+            <div className="px-5 py-3 border-t border-gray-100 bg-gray-50 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <p className="text-xs text-gray-500">총 <span className="font-semibold text-gray-700">{total}건</span></p>
+                <select
+                  value={limit}
+                  onChange={e => { setLimit(Number(e.target.value)); setPage(1); }}
+                  className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white outline-none"
+                >
+                  <option value={20}>20개씩</option>
+                  <option value={50}>50개씩</option>
+                  <option value={100}>100개씩</option>
+                  <option value={200}>200개씩</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                >이전</button>
+                <span className="text-xs text-gray-500 min-w-[80px] text-center">
+                  {page} / {Math.ceil(total / limit) || 1}
+                </span>
+                <button
+                  onClick={() => setPage(p => Math.min(Math.ceil(total / limit), p + 1))}
+                  disabled={page >= Math.ceil(total / limit)}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                >다음</button>
+              </div>
+              <p className="text-xs text-gray-400">합계: <span className="font-semibold text-gray-600">{formatPrice(items.filter(i => i.currency !== "USD").reduce((s, i) => s + (i.amount ?? 0), 0))}</span></p>
             </div>
           </div>
 
           {/* 모바일 카드 */}
           <div className="lg:hidden space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-gray-500">총 <span className="font-semibold">{sorted.length}건</span></p>
-              <p className="text-xs text-gray-400">합계: <span className="font-semibold">{formatPrice(sorted.filter(i => i.currency !== "USD").reduce((s, i) => s + (i.amount ?? 0), 0))}</span></p>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-3">
+                <p className="text-xs text-gray-500">총 <span className="font-semibold">{total}건</span></p>
+                <select
+                  value={limit}
+                  onChange={e => { setLimit(Number(e.target.value)); setPage(1); }}
+                  className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white outline-none"
+                >
+                  <option value={20}>20개씩</option>
+                  <option value={50}>50개씩</option>
+                  <option value={100}>100개씩</option>
+                  <option value={200}>200개씩</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">이전</button>
+                <span className="text-xs text-gray-500 min-w-[60px] text-center">{page} / {Math.ceil(total / limit) || 1}</span>
+                <button onClick={() => setPage(p => Math.min(Math.ceil(total / limit), p + 1))} disabled={page >= Math.ceil(total / limit)}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">다음</button>
+              </div>
+              <p className="text-xs text-gray-400">합계: <span className="font-semibold">{formatPrice(items.filter(i => i.currency !== "USD").reduce((s, i) => s + (i.amount ?? 0), 0))}</span></p>
             </div>
-            {sorted.map((item) => (
+            {items.map((item) => (
               <div key={item.id} className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">

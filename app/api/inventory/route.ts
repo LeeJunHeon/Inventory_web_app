@@ -70,21 +70,41 @@ export async function GET(request: NextRequest) {
 
     const where = andConditions.length > 0 ? { AND: andConditions } : {};
 
+    const page  = parseInt(searchParams.get("page")  ?? "1",  10);
+    const limit = parseInt(searchParams.get("limit") ?? "50", 10);
+    const skip  = (page - 1) * limit;
+
+    const sortFieldParam = searchParams.get("sortField") ?? "date";
+    const sortDirParam   = (searchParams.get("sortDir") ?? "desc") as "asc" | "desc";
+
+    const orderByMap: Record<string, any> = {
+      id:     { id: sortDirParam },
+      date:   [{ txDate: sortDirParam }, { id: sortDirParam }],
+      qty:    { qty: sortDirParam },
+      amount: { amount: sortDirParam },
+    };
+    const orderBy = orderByMap[sortFieldParam] ?? [{ txDate: "desc" }, { id: "desc" }];
+
+    const [total, transactions] = await Promise.all([
+      prisma.inventoryTx.count({ where }),
+      prisma.inventoryTx.findMany({
+        where,
+        include: {
+          item:     { include: { category: true, waferSpec: true } },
+          partner:  true,
+          barcode:  true,
+          location: true,
+          txReason: true,
+          user:     true,
+        },
+        orderBy,
+        take: limit,
+        skip,
+      }),
+    ]);
+
     const sessionUser = await getSessionUser();
     const isEmployee = !("error" in sessionUser) && sessionUser.role === "employee";
-
-    const transactions = await prisma.inventoryTx.findMany({
-      where,
-      include: {
-        item:     { include: { category: true, waferSpec: true } },
-        partner:  true,
-        barcode:  true,
-        location: true,
-        txReason: true,
-        user:     true,
-      },
-      orderBy: [{ txDate: "desc" }, { id: "desc" }],
-    });
 
     const result = transactions.map((tx) => ({
       id:         tx.id,
@@ -109,7 +129,7 @@ export async function GET(request: NextRequest) {
       itemSpec:   buildItemSpec(tx.item.waferSpec),
     }));
 
-    return NextResponse.json(result);
+    return NextResponse.json({ data: result, total, page, limit });
   } catch (error) {
     console.error("GET /api/inventory error:", error);
     return NextResponse.json({ error: "데이터 조회 실패" }, { status: 500 });
