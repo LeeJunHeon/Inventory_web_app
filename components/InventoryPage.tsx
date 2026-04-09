@@ -25,6 +25,8 @@ function downloadCSV(data: InventoryItem[], filename: string) {
   URL.revokeObjectURL(url);
 }
 
+interface LocationOption { id: number; name: string; }
+
 const SEARCH_FIELDS = ["전체", "품목명", "품목코드", "바코드", "거래처"];
 
 export default function InventoryPage() {
@@ -36,6 +38,8 @@ export default function InventoryPage() {
   const [categoryFilter, setCategoryFilter] = useState("전체");
   const [startDate, setStartDate]           = useState("");
   const [endDate, setEndDate]               = useState("");
+  const [locationFilter, setLocationFilter] = useState<number | "">("");
+  const [locationOptions, setLocationOptions] = useState<LocationOption[]>([]);
   const [modalOpen, setModalOpen]       = useState(false);
   const [sortField, setSortField]       = useState("date");
   const [sortDir, setSortDir]           = useState<"asc" | "desc">("desc");
@@ -57,6 +61,7 @@ export default function InventoryPage() {
       if (categoryFilter !== "전체") params.set("category", categoryFilter);
       if (startDate) params.set("startDate", startDate);
       if (endDate)   params.set("endDate",   endDate);
+      if (locationFilter !== "") params.set("locationId", String(locationFilter));
       params.set("page",      String(page));
       params.set("limit",     String(limit));
       params.set("sortField", sortField);
@@ -68,7 +73,7 @@ export default function InventoryPage() {
       setTotal(json.total);
     } catch { setToast("데이터 조회에 실패했습니다."); setTimeout(() => setToast(""), 3000); }
     finally { setLoading(false); }
-  }, [search, searchField, typeFilter, categoryFilter, startDate, endDate, page, limit, sortField, sortDir]);
+  }, [search, searchField, typeFilter, categoryFilter, startDate, endDate, locationFilter, page, limit, sortField, sortDir]);
 
   useEffect(() => {
     const timer = setTimeout(fetchData, 300);
@@ -80,6 +85,15 @@ export default function InventoryPage() {
       .then(r => r.json())
       .then(data => setExchangeRate(data.rate))
       .catch(() => setExchangeRate(1400));
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/locations")
+      .then(r => r.json())
+      .then((locs: LocationOption[]) => {
+        setLocationOptions(locs.filter(l => l.id === 1 || l.id === 2));
+      })
+      .catch(console.error);
   }, []);
 
   const handleSort = (field: string) => {
@@ -187,6 +201,16 @@ export default function InventoryPage() {
                 초기화
               </button>
             )}
+            <select
+              value={locationFilter}
+              onChange={e => { setLocationFilter(e.target.value === "" ? "" : Number(e.target.value)); setPage(1); }}
+              className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+            >
+              <option value="">전체 위치</option>
+              {locationOptions.map(loc => (
+                <option key={loc.id} value={loc.id}>{loc.name}</option>
+              ))}
+            </select>
           </div>
           <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1">
             {TYPES.map((t) => (

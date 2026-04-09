@@ -46,6 +46,11 @@ export async function GET(request: NextRequest) {
       andConditions.push({ item: { category: { name: category } } });
     }
 
+    const locationId = searchParams.get("locationId");
+    if (locationId) {
+      andConditions.push({ locationId: Number(locationId) });
+    }
+
     const searchField = searchParams.get("searchField") || "전체";
     if (search) {
       if (searchField === "품목명") {
