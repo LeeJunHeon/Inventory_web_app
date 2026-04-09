@@ -230,8 +230,13 @@ export default function TargetUsagePage() {
               onKeyDown={e => {
                 if (e.key === "Enter" && !isComposingRef.current) {
                   const code = e.currentTarget.value.trim();
-                  if (code) fetchLogs(1, code);
-                  else fetchLogs(1);
+                  if (code) {
+                    fetchLogs(1, code);
+                  } else {
+                    setSelectedTarget(null);
+                    setSearchError("");
+                    fetchLogs(1);
+                  }
                 }
               }}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"

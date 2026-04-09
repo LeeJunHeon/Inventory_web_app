@@ -445,6 +445,7 @@ export default function BarcodePage() {
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input type="text" placeholder="바코드, 품목코드, 품목명 검색..." value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && fetchData()}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
           </div>
           <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1 overflow-x-auto">
