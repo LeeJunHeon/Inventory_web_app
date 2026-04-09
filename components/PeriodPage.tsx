@@ -37,6 +37,7 @@ export default function PeriodPage() {
   const [startDate, setStartDate]       = useState(defaults.start);
   const [endDate, setEndDate]           = useState(defaults.end);
   const [categoryFilter, setCategoryFilter] = useState("전체");
+  const [typeFilter, setTypeFilter]         = useState("전체");
   const [items, setItems]               = useState<InventoryItem[]>([]);
   const [loading, setLoading]           = useState(false);
   const [searched, setSearched]         = useState(false);
@@ -45,10 +46,11 @@ export default function PeriodPage() {
     setLoading(true);
     setSearched(true);
     try {
-      const params = new URLSearchParams({ startDate, endDate });
+      const params = new URLSearchParams({ startDate, endDate, limit: "9999" });
       if (categoryFilter !== "전체") params.set("category", categoryFilter);
+      if (typeFilter !== "전체") params.set("type", typeFilter);
       const res = await fetch(`/api/inventory?${params}`);
-      if (res.ok) setItems(await res.json());
+      if (res.ok) { const json = await res.json(); setItems(json.data ?? json); }
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
@@ -97,6 +99,17 @@ export default function PeriodPage() {
               <option>전체</option><option>웨이퍼</option><option>타겟</option><option>가스</option><option>기자재/소모품</option>
             </select>
           </div>
+          <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1">
+            {["전체", "입고", "출고", "불출"].map(t => (
+              <button
+                key={t}
+                onClick={() => setTypeFilter(t)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                  typeFilter === t ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"
+                }`}
+              >{t}</button>
+            ))}
+          </div>
           <button onClick={handleSearch}
             className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600">
             <Search size={16} />조회
@@ -115,7 +128,11 @@ export default function PeriodPage() {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {(["입고", "출고", "불출"] as const).map((type) => (
-              <div key={type} className={`rounded-2xl border p-4 ${TYPE_COLORS[type].bg} ${TYPE_COLORS[type].border}`}>
+              <div key={type} className={`rounded-2xl border p-4 transition-all ${
+                typeFilter === "전체" || typeFilter === type
+                  ? `${TYPE_COLORS[type].bg} ${TYPE_COLORS[type].border}`
+                  : "bg-gray-50 border-gray-100 opacity-40"
+              }`}>
                 <div className="flex items-center gap-2 mb-2">
                   <span className={`w-2 h-2 rounded-full ${TYPE_COLORS[type].dot}`} />
                   <span className={`text-sm font-semibold ${TYPE_COLORS[type].text}`}>{type}</span>
