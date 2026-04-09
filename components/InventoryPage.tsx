@@ -34,6 +34,8 @@ export default function InventoryPage() {
   const [searchField, setSearchField]   = useState("전체");
   const [typeFilter, setTypeFilter]     = useState("전체");
   const [categoryFilter, setCategoryFilter] = useState("전체");
+  const [startDate, setStartDate]           = useState("");
+  const [endDate, setEndDate]               = useState("");
   const [modalOpen, setModalOpen]       = useState(false);
   const [sortField, setSortField]       = useState("date");
   const [sortDir, setSortDir]           = useState<"asc" | "desc">("desc");
@@ -53,6 +55,8 @@ export default function InventoryPage() {
       if (search && searchField !== "전체") params.set("searchField", searchField);
       if (typeFilter !== "전체")    params.set("type", typeFilter);
       if (categoryFilter !== "전체") params.set("category", categoryFilter);
+      if (startDate) params.set("startDate", startDate);
+      if (endDate)   params.set("endDate",   endDate);
       params.set("page",      String(page));
       params.set("limit",     String(limit));
       params.set("sortField", sortField);
@@ -64,7 +68,7 @@ export default function InventoryPage() {
       setTotal(json.total);
     } catch { setToast("데이터 조회에 실패했습니다."); setTimeout(() => setToast(""), 3000); }
     finally { setLoading(false); }
-  }, [search, searchField, typeFilter, categoryFilter, page, limit, sortField, sortDir]);
+  }, [search, searchField, typeFilter, categoryFilter, startDate, endDate, page, limit, sortField, sortDir]);
 
   useEffect(() => {
     const timer = setTimeout(fetchData, 300);
@@ -160,6 +164,30 @@ export default function InventoryPage() {
           </button>
         </div>
         <div className={`flex-wrap gap-2 ${showFilters ? "flex" : "hidden"} sm:flex`}>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-gray-500 font-medium shrink-0">날짜</span>
+            <input
+              type="date"
+              value={startDate}
+              onChange={e => { setStartDate(e.target.value); setPage(1); }}
+              className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+            <span className="text-xs text-gray-400">~</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={e => { setEndDate(e.target.value); setPage(1); }}
+              className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+            {(startDate || endDate) && (
+              <button
+                onClick={() => { setStartDate(""); setEndDate(""); setPage(1); }}
+                className="text-xs text-gray-400 hover:text-gray-600 underline"
+              >
+                초기화
+              </button>
+            )}
+          </div>
           <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1">
             {TYPES.map((t) => (
               <button key={t} onClick={() => { setTypeFilter(t); setPage(1); }}
