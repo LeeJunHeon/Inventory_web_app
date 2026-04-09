@@ -16,6 +16,8 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
   const [type, setType]           = useState(item.type);
   const [quantity, setQuantity]   = useState(String(item.qty));
   const [unitPrice, setUnitPrice] = useState(String(item.price));
+  const [currency, setCurrency]   = useState(item.currency ?? "KRW");
+  const [exchangeRateAtEntry]     = useState(item.exchangeRateAtEntry);
   const [memo, setMemo]           = useState(item.memo);
   const [locationId, setLocationId]           = useState<number>(item.locationId ?? 1);
   const [locationOptions, setLocationOptions] = useState<LocationOption[]>([]);
@@ -32,7 +34,9 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
       }).catch(console.error);
   }, []);
 
-  const amount = Number(quantity || 0) * Number(unitPrice || 0);
+  const amount = currency === "USD"
+    ? Number(unitPrice || 0)
+    : Number(quantity || 0) * Number(unitPrice || 0);
 
   const handleSave = async () => {
     if (!quantity || Number(quantity) <= 0) {
@@ -50,7 +54,9 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
           unitPrice:  Number(unitPrice) || 0,
           amount,
           memo,
-          locationId: locationId,
+          locationId,
+          currency,
+          exchangeRateAtEntry: exchangeRateAtEntry ?? null,
         }),
       });
       if (!res.ok) {
@@ -116,15 +122,30 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">단가</label>
-              <input type="number" value={unitPrice} onChange={e => setUnitPrice(e.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
+                  {currency === "USD" ? "$" : "₩"}
+                </span>
+                <input type="number" value={unitPrice} onChange={e => setUnitPrice(e.target.value)}
+                  className="w-full pl-7 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">금액</label>
-              <input readOnly value={amount ? `₩${amount.toLocaleString()}` : ""}
+              <input readOnly
+                value={currency === "USD"
+                  ? (amount ? `$${amount.toLocaleString()}` : "")
+                  : (amount ? `₩${amount.toLocaleString()}` : "")}
                 className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
             </div>
           </div>
+          {currency === "USD" && exchangeRateAtEntry && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">등록 당시 환율</label>
+              <input readOnly value={`₩${exchangeRateAtEntry.toLocaleString()}`}
+                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
+            </div>
+          )}
 
           {/* 위치 */}
           <div>
