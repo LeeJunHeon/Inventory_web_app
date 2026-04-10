@@ -151,6 +151,36 @@ export async function POST(request: NextRequest) {
     const isDispose   = logType === "폐기" || logType === "dispose";
     const isMeasure   = logType === "측정" || logType === "measure";
 
+    if (isMeasure) {
+      const STORAGE_IDS = [3, 4];
+      const CHAMBER_IDS = [5, 6, 7, 8, 9, 10];
+
+      // 직전 로그의 locationId 조회
+      const lastLocLog = await prisma.targetLog.findFirst({
+        where: { targetUnitId: body.targetUnitId },
+        orderBy: { loggedAt: "desc" },
+        select: { locationId: true },
+      });
+
+      const prevLocationId = lastLocLog?.locationId ?? null;
+      const currLocationId = body.locationId ? Number(body.locationId) : null;
+
+      const isStorageToChamber =
+        prevLocationId !== null &&
+        currLocationId !== null &&
+        STORAGE_IDS.includes(prevLocationId) &&
+        CHAMBER_IDS.includes(currLocationId);
+
+      const weightRequired = !isStorageToChamber;
+
+      if (weightRequired && body.weight == null) {
+        return NextResponse.json(
+          { error: "무게를 입력해주세요." },
+          { status: 400 }
+        );
+      }
+    }
+
     // 무게 측정 시: 이전 측정값보다 높으면 저장 차단
     if (isMeasure && body.weight != null) {
       const newWeight = Number(body.weight);

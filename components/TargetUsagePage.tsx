@@ -6,7 +6,7 @@ import { TARGET_STATUS_LABELS, formatWeight } from "@/lib/data";
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
 
 interface TargetInfo { id: number; barcodeCode: string; itemCode: string; itemName: string; materialName: string; status: string; memo: string; }
-interface LogItem { id: number; targetId: number; timestamp: string; type: string; weight: number | null; location: string; reason: string; userName: string; barcodeCode: string; itemName: string; }
+interface LogItem { id: number; targetId: number; timestamp: string; type: string; weight: number | null; location: string; locationId: number | null; reason: string; userName: string; barcodeCode: string; itemName: string; }
 
 interface LocationOption { id: number; name: string; }
 
@@ -139,11 +139,34 @@ export default function TargetUsagePage() {
 
   // 무게 측정값 저장
   const handleSaveWeight = async () => {
-    if (!selectedTarget || !weight) { showToast("무게를 입력하세요."); return; }
+    if (!selectedTarget) return;
+
+    // 위치 분류 상수
+    const STORAGE_IDS = [3, 4];
+    const CHAMBER_IDS = [5, 6, 7, 8, 9, 10];
+
+    const prevLocationId = logs.length > 0 ? (logs[0].locationId ?? null) : null;
+    const currLocationId = locationId !== "" ? Number(locationId) : null;
+
+    // 보관함 → Chamber 이동 시만 무게 선택 가능, 나머지는 무게 필수
+    const isStorageToChamber =
+      prevLocationId !== null &&
+      currLocationId !== null &&
+      STORAGE_IDS.includes(prevLocationId) &&
+      CHAMBER_IDS.includes(currLocationId);
+
+    const weightRequired = !isStorageToChamber;
+
+    if (weightRequired && !weight) {
+      showToast("무게를 입력하세요.");
+      return;
+    }
+
     const latestLog = logs.length > 0 ? logs[0] : null;
     const latestWeight = latestLog?.weight != null ? Number(latestLog.weight) : null;
-    const newWeight = Number(weight);
-    if (latestWeight !== null && newWeight > latestWeight) {
+    const newWeight = weight ? Number(weight) : null;
+
+    if (newWeight !== null && latestWeight !== null && newWeight > latestWeight) {
       setWeightError("이전 기록보다 큰 값입니다. 다시 확인해주세요.");
       return;
     }
@@ -153,7 +176,7 @@ export default function TargetUsagePage() {
       const res = await fetch("/api/targets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUnitId: selectedTarget.id, type: "측정", weight: parseFloat(weight), locationId: locationId || null, reason }),
+        body: JSON.stringify({ targetUnitId: selectedTarget.id, type: "측정", weight: weight ? parseFloat(weight) : null, locationId: locationId || null, reason }),
       });
       if (!res.ok) { const e = await res.json(); showToast(e.error || "저장 실패"); return; }
       showToast("측정값이 저장되었습니다.");
@@ -412,7 +435,16 @@ export default function TargetUsagePage() {
             <div className="flex-1 space-y-3">
               <div>
                 <label className="block text-xs text-gray-400 mb-1"><span className="inline-flex items-center gap-1"><Weight size={12} />무게 (g)</span></label>
-                <input type="text" placeholder="예: 182.450" value={weight} onChange={(e) => { setWeight(e.target.value); setWeightError(""); }}
+                <input type="text" placeholder={(() => {
+                    const STORAGE_IDS = [3, 4];
+                    const CHAMBER_IDS = [5, 6, 7, 8, 9, 10];
+                    const prevLocId = logs.length > 0 ? (logs[0].locationId ?? null) : null;
+                    const currLocId = locationId !== "" ? Number(locationId) : null;
+                    const isStorageToChamber =
+                      prevLocId !== null && currLocId !== null &&
+                      STORAGE_IDS.includes(prevLocId) && CHAMBER_IDS.includes(currLocId);
+                    return isStorageToChamber ? "선택 입력 (보관함→Chamber)" : "필수 입력 (예: 182.450)";
+                  })()} value={weight} onChange={(e) => { setWeight(e.target.value); setWeightError(""); }}
                   className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
                 {weightError && (
                   <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
