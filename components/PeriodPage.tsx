@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Search, Download, Calendar, Loader2 } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Download, Calendar, Loader2 } from "lucide-react";
 import { TYPE_COLORS, CATEGORY_COLORS, formatPrice, formatQty, InventoryItem } from "@/lib/data";
 
 // ── CSV 다운로드 헬퍼 ──────────────────────────────
@@ -58,7 +58,7 @@ export default function PeriodPage() {
     return currentRate ?? 1400;
   };
 
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
     setLoading(true);
     setSearched(true);
     try {
@@ -77,23 +77,34 @@ export default function PeriodPage() {
       }
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  };
+  }, [startDate, endDate, categoryFilter, typeFilter, manualRate, currentRate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 환율 로드 후 최초 실행 포함, 필터 변경 시 자동 조회
+  useEffect(() => {
+    if (currentRate === null) return;
+    handleSearch();
+  }, [startDate, endDate, categoryFilter, typeFilter, manualRate, currentRate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCSV = () => {
     if (items.length === 0) { alert("내보낼 데이터가 없습니다."); return; }
     downloadCSV(items, startDate, endDate);
   };
 
-  const summary = { 입고: { count: 0, qty: 0, amount: 0 }, 출고: { count: 0, qty: 0, amount: 0 }, 불출: { count: 0, qty: 0, amount: 0 } };
+  const summary = {
+    입고: { count: 0, qty: 0, krwAmount: 0, usdAmount: 0 },
+    출고: { count: 0, qty: 0, krwAmount: 0, usdAmount: 0 },
+    불출: { count: 0, qty: 0, krwAmount: 0, usdAmount: 0 },
+  };
   items.forEach((item) => {
     const s = summary[item.type as keyof typeof summary];
     if (s) {
       s.count++;
       s.qty += item.qty;
-      const krwAmount = item.currency === "USD"
-        ? (item.amount ?? 0) * getRate(item)
-        : (item.amount ?? 0);
-      s.amount += krwAmount;
+      if (item.currency === "USD") {
+        s.usdAmount += (item.amount ?? 0);
+      } else {
+        s.krwAmount += (item.amount ?? 0);
+      }
     }
   });
 
@@ -173,22 +184,18 @@ export default function PeriodPage() {
             <div className="relative">
               <input
                 type="number"
-                placeholder="비우면 등록시 환율 사용"
+                placeholder="등록시 환율 자동"
                 value={manualRate}
                 onChange={e => setManualRate(e.target.value)}
-                className="w-44 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-44 px-3 py-2.5 pr-16 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">원/USD</span>
             </div>
           </div>
-          <button onClick={handleSearch}
-            className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600">
-            <Search size={16} />조회
-          </button>
-          {/* ✅ CSV 버튼 — 실제 다운로드 */}
+          {/* CSV 버튼 */}
           <button
             onClick={handleCSV}
-            disabled={!searched || items.length === 0}
+            disabled={items.length === 0}
             className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
             <Download size={16} />CSV
           </button>
@@ -223,7 +230,21 @@ export default function PeriodPage() {
                   <span className="text-2xl font-bold text-gray-900">{summary[type].count}건</span>
                   <span className="text-sm text-gray-500">{formatQty(summary[type].qty)}개</span>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">{formatPrice(summary[type].amount)}</p>
+                <div className="mt-2 space-y-0.5">
+                  <p className="text-xs text-gray-500">
+                    ₩ {summary[type].krwAmount > 0 ? summary[type].krwAmount.toLocaleString() : "0"}
+                  </p>
+                  {summary[type].usdAmount > 0 && (
+                    <p className="text-xs text-gray-500">
+                      $ {summary[type].usdAmount.toLocaleString()}
+                    </p>
+                  )}
+                  {summary[type].usdAmount > 0 && (
+                    <p className="text-xs font-semibold text-gray-700 border-t border-gray-200 pt-0.5 mt-0.5">
+                      ≈ ₩ {Math.round(summary[type].krwAmount + summary[type].usdAmount * (Number(manualRate) > 0 ? Number(manualRate) : (currentRate ?? 1400))).toLocaleString()}
+                    </p>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -310,9 +331,16 @@ export default function PeriodPage() {
                           <td className="px-5 py-3"><p className="text-sm font-medium text-gray-900">{item.name}</p><p className="text-xs text-gray-400">{item.code}</p></td>
                           <td className="px-5 py-3 text-sm text-right font-semibold">{formatQty(item.qty)}</td>
                           <td className="px-5 py-3 text-sm text-right text-gray-600">
-                            {item.currency === "USD"
-                              ? `₩${Math.round((item.amount ?? 0) * getRate(item)).toLocaleString()}`
-                              : formatPrice(item.amount)}
+                            {item.currency === "USD" ? (
+                              <div>
+                                <p className="text-sm font-semibold text-gray-700">
+                                  ${(item.amount ?? 0).toLocaleString()} × {getRate(item).toLocaleString()}
+                                </p>
+                                <p className="text-xs text-gray-400 mt-0.5">
+                                  ≈ ₩{Math.round((item.amount ?? 0) * getRate(item)).toLocaleString()}
+                                </p>
+                              </div>
+                            ) : formatPrice(item.amount)}
                           </td>
                           <td className="px-5 py-3 text-sm text-gray-600">{item.partner}</td>
                         </tr>
@@ -334,9 +362,11 @@ export default function PeriodPage() {
                       <div className="flex items-center gap-4 text-sm">
                         <span>수량 <span className="font-bold">{item.qty}</span></span>
                         <span className="text-gray-400">
-                          {item.currency === "USD"
-                            ? `₩${Math.round((item.amount ?? 0) * getRate(item)).toLocaleString()}`
-                            : formatPrice(item.amount)}
+                          {item.currency === "USD" ? (
+                            <span>
+                              ${(item.amount ?? 0).toLocaleString()} × {getRate(item).toLocaleString()} ≈ ₩{Math.round((item.amount ?? 0) * getRate(item)).toLocaleString()}
+                            </span>
+                          ) : formatPrice(item.amount)}
                         </span>
                         <span className="text-gray-400 truncate">{item.partner}</span>
                       </div>
