@@ -28,6 +28,7 @@ model Location {
 
   inventoryTxs InventoryTx[]
   targetLogs   TargetLog[]
+  chamberSlots ChamberSlot[]
 
   @@map("location")
 }
@@ -72,6 +73,7 @@ model User {
   inventoryTxs    InventoryTx[]
   targetLogs      TargetLog[]
   barcodeScans    BarcodeScan[]
+  chamberSlots    ChamberSlot[]
 
   @@map("user")
 }
@@ -174,6 +176,7 @@ model TargetUnit {
   barcodes     Barcode[]
   inventoryTxs InventoryTx[]
   targetLogs   TargetLog[]
+  chamberSlot  ChamberSlot?
 
   @@map("target_unit")
 }
@@ -271,6 +274,22 @@ model BarcodeScan {
   inventoryTx InventoryTx? @relation(fields: [inventoryTxId], references: [id])
 
   @@map("barcode_scan")
+}
+
+// ── 챔버 슬롯 현황 ──
+model ChamberSlot {
+  id           Int         @id @default(autoincrement())
+  locationId   Int         @map("location_id")
+  targetUnitId Int?        @unique @map("target_unit_id")
+  loadedAt     DateTime?   @map("loaded_at")
+  updatedById  Int?        @map("updated_by_id")
+  note         String?
+
+  location     Location    @relation(fields: [locationId], references: [id])
+  targetUnit   TargetUnit? @relation(fields: [targetUnitId], references: [id])
+  updatedBy    User?       @relation(fields: [updatedById], references: [id])
+
+  @@map("chamber_slot")
 }
 
 // ── 앱 설정 (범용 키-값) ──

@@ -19,6 +19,22 @@ interface TargetListItem {
   status: string;
 }
 
+interface ChamberSlot {
+  id: number;
+  locationId: number;
+  locationName: string;
+  targetUnitId: number | null;
+  barcodeCode: string | null;
+  itemName: string | null;
+  itemCode: string | null;
+  materialCode: string | null;
+  latestWeight: number | null;
+  latestLoggedAt: string | null;
+  loadedAt: string | null;
+  updatedBy: string | null;
+  note: string | null;
+}
+
 const PAGE_LIMIT = 50;
 
 const HANGUL_TO_ENG: Record<string, string> = {
@@ -61,6 +77,11 @@ export default function TargetUsagePage() {
   const [isSearching, setIsSearching]       = useState(false);
   const [weightError, setWeightError]       = useState("");
   const [locationOptions, setLocationOptions] = useState<LocationOption[]>([]);
+  const [chamberSlots, setChamberSlots]     = useState<ChamberSlot[]>([]);
+  const [editingSlot, setEditingSlot]       = useState<ChamberSlot | null>(null);
+  const [editTargetInput, setEditTargetInput] = useState("");
+  const [editNote, setEditNote]             = useState("");
+  const [slotSaving, setSlotSaving]         = useState(false);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3000); };
 
@@ -75,6 +96,14 @@ export default function TargetUsagePage() {
     fetch("/api/locations?type=target")
       .then(r => r.json())
       .then(setLocationOptions)
+      .catch(console.error);
+  }, []);
+
+  // 챔버 슬롯 로드 (마운트 시 1회)
+  useEffect(() => {
+    fetch("/api/chamber-slots")
+      .then(r => r.json())
+      .then(data => Array.isArray(data) && setChamberSlots(data))
       .catch(console.error);
   }, []);
 
@@ -226,6 +255,39 @@ export default function TargetUsagePage() {
     finally { setSaving(false); }
   };
 
+  // 챔버 슬롯 수정 핸들러
+  const handleSlotSave = async () => {
+    if (!editingSlot) return;
+    setSlotSaving(true);
+    try {
+      let targetUnitId: number | null = null;
+      if (editTargetInput.trim()) {
+        const res = await fetch(`/api/targets?barcode=${encodeURIComponent(editTargetInput.trim())}`);
+        const data = await res.json();
+        if (!data.target) {
+          showToast("해당 바코드의 타겟을 찾을 수 없습니다.");
+          setSlotSaving(false);
+          return;
+        }
+        targetUnitId = data.target.id;
+      }
+      const res = await fetch("/api/chamber-slots", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: editingSlot.id, targetUnitId, note: editNote || null }),
+      });
+      if (!res.ok) { showToast("저장 실패"); return; }
+      const updated = await fetch("/api/chamber-slots").then(r => r.json());
+      setChamberSlots(updated);
+      setEditingSlot(null);
+      showToast("저장되었습니다.");
+    } catch {
+      showToast("오류가 발생했습니다.");
+    } finally {
+      setSlotSaving(false);
+    }
+  };
+
   const sorted = [...logs].sort((a, b) => {
     const dir = sortDir === "asc" ? 1 : -1;
     if (sortField === "timestamp") return a.timestamp.localeCompare(b.timestamp) * dir;
@@ -254,10 +316,127 @@ export default function TargetUsagePage() {
         </div>
       )}
 
+      {/* 챔버 슬롯 수정 모달 */}
+      {editingSlot && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+          onClick={() => setEditingSlot(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-gray-900">{editingSlot.locationName} 수정</h3>
+              <button
+                onClick={() => setEditingSlot(null)}
+                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 text-sm"
+              >✕</button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  타겟 바코드 (비우면 슬롯 비움)
+                </label>
+                <input
+                  type="text"
+                  value={editTargetInput}
+                  onChange={e => setEditTargetInput(e.target.value.toUpperCase())}
+                  placeholder="예: T-1"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  메모 (선택)
+                </label>
+                <input
+                  type="text"
+                  value={editNote}
+                  onChange={e => setEditNote(e.target.value)}
+                  placeholder="추가 메모"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setEditingSlot(null)}
+                className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50"
+              >취소</button>
+              <button
+                onClick={handleSlotSave}
+                disabled={slotSaving}
+                className="flex-1 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 disabled:opacity-60"
+              >{slotSaving ? "저장 중..." : "저장"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div>
         <h1 className="text-2xl font-bold text-gray-900">타겟 사용현황</h1>
         <p className="text-sm text-gray-500 mt-1">바코드로 타겟을 조회하고, 무게 측정 / 상태 / 폐기를 관리합니다</p>
       </div>
+
+      {/* 챔버별 타겟 현황 */}
+      {chamberSlots.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="font-bold text-gray-900">챔버별 타겟 현황</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {chamberSlots.map(slot => (
+              <div
+                key={slot.id}
+                className="bg-white rounded-2xl border border-gray-100 p-4 space-y-2 hover:shadow-sm transition-shadow"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-gray-700">{slot.locationName}</p>
+                  <button
+                    onClick={() => {
+                      setEditingSlot(slot);
+                      setEditTargetInput(slot.barcodeCode ?? "");
+                      setEditNote(slot.note ?? "");
+                    }}
+                    className="text-xs text-blue-500 hover:text-blue-600 font-medium"
+                  >
+                    수정
+                  </button>
+                </div>
+                {slot.targetUnitId ? (
+                  <>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900 truncate">
+                        {slot.barcodeCode}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">{slot.itemName}</p>
+                      {slot.materialCode && (
+                        <p className="text-xs text-gray-400">{slot.materialCode}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between pt-1 border-t border-gray-50">
+                      <div>
+                        <p className="text-xs text-gray-400">현재 무게</p>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {slot.latestWeight != null
+                            ? `${slot.latestWeight.toFixed(3)}g`
+                            : "-"}
+                        </p>
+                      </div>
+                      {slot.latestLoggedAt && (
+                        <p className="text-xs text-gray-400">
+                          {new Date(slot.latestLoggedAt).toLocaleDateString("ko-KR")}
+                        </p>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-400 py-2 text-center">비어있음</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 바코드 조회 */}
       <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-2">
