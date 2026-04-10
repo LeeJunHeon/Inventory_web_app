@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
         where = {
           barcodes: {
             some: {
-              code: { contains: q, mode: "insensitive" },
+              code: { equals: q, mode: "insensitive" },
               isActive: "Y",
             },
           },
