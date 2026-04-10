@@ -79,6 +79,26 @@ export async function GET() {
     // 총 품목 수
     const totalItems = await prisma.item.count();
 
+    // 현재 실제 보유 중인 품목 수 (현재고 > 0)
+    const [allInTxs, allOutTxs] = await Promise.all([
+      prisma.inventoryTx.groupBy({
+        by: ["itemId"],
+        where: { txType: "입고" },
+        _sum: { qty: true },
+      }),
+      prisma.inventoryTx.groupBy({
+        by: ["itemId"],
+        where: { txType: { in: ["출고", "불출"] } },
+        _sum: { qty: true },
+      }),
+    ]);
+    const allInMap2  = new Map(allInTxs.map(s  => [s.itemId, s._sum.qty || 0]));
+    const allOutMap2 = new Map(allOutTxs.map(s => [s.itemId, s._sum.qty || 0]));
+    const allTxItemIds = [...new Set([...allInMap2.keys(), ...allOutMap2.keys()])];
+    const inStockItems = allTxItemIds.filter(
+      id => (allInMap2.get(id) || 0) - (allOutMap2.get(id) || 0) > 0
+    ).length;
+
     // 위치별 현황 집계
     const locations = await prisma.location.findMany({
       orderBy: { id: "asc" },
@@ -148,6 +168,7 @@ export async function GET() {
       shortageCount,
       shortageItems,
       totalItems,
+      inStockItems,
       locationSummary,
       recent: recent.map((tx) => ({
         id: tx.id,

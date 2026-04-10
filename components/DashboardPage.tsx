@@ -16,6 +16,7 @@ interface DashboardData {
   todayOut: { count: number; amount: number };
   shortageCount: number;
   totalItems: number;
+  inStockItems: number;
   locationSummary: LocationSummary[];
   recent: {
     id: number; date: string; type: string; category: string;
@@ -28,12 +29,17 @@ const DEFAULT: DashboardData = {
   todayOut: { count: 0, amount: 0 },
   shortageCount: 0,
   totalItems: 0,
+  inStockItems: 0,
   locationSummary: [],
   recent: [],
 };
 
 interface DashboardPageProps {
-  onNavigate?: (page: PageId, locationId?: number | null, initialFilter?: { type?: string; date?: string }) => void;
+  onNavigate?: (
+    page: PageId,
+    locationId?: number | null,
+    initialFilter?: { type?: string; date?: string; stockFilter?: string }
+  ) => void;
 }
 
 export default function DashboardPage({ onNavigate }: DashboardPageProps) {
@@ -71,13 +77,13 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
       onClick: () => onNavigate?.("status", null),
     },
     {
-      label: "총 보유 품목",
-      value: `${data.totalItems}종`,
-      sub: "활성 품목 기준",
+      label: "현재 보유 품목",
+      value: `${data.inStockItems}종`,
+      sub: "현재 재고 있는 품목",
       icon: Boxes,
       color: "text-emerald-600",
       bg: "bg-emerald-50",
-      onClick: () => onNavigate?.("status", null),
+      onClick: () => onNavigate?.("status", null, { stockFilter: "보유중" }),
     },
   ];
 

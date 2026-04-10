@@ -25,9 +25,10 @@ const CATS = ["웨이퍼", "타겟", "가스", "기자재/소모품"];
 
 interface StatusPageProps {
   initialLocationId?: number | null;
+  initialStockFilter?: "전체" | "보유중" | "미보유";
 }
 
-export default function StatusPage({ initialLocationId }: StatusPageProps) {
+export default function StatusPage({ initialLocationId, initialStockFilter }: StatusPageProps) {
   const [items, setItems]                   = useState<StockItem[]>([]);
   const [loading, setLoading]               = useState(true);
   const [search, setSearch]                 = useState("");
@@ -39,7 +40,7 @@ export default function StatusPage({ initialLocationId }: StatusPageProps) {
   const [editValue, setEditValue]           = useState("");
   const [savingId, setSavingId]             = useState<number | null>(null);
   const [toast, setToast]                   = useState("");
-  const [stockFilter, setStockFilter]       = useState<"전체" | "보유중" | "미보유">("전체");
+  const [stockFilter, setStockFilter]       = useState<"전체" | "보유중" | "미보유">(initialStockFilter ?? "전체");
   const [sortField, setSortField]           = useState<"name" | "code" | "category" | "currentQty" | "requiredQty">("name");
   const [sortDir, setSortDir]               = useState<"asc" | "desc">("asc");
 

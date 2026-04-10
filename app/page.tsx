@@ -60,6 +60,7 @@ export default function Home() {
   const [showNotif, setShowNotif]     = useState(false);
   const [perms, setPerms]             = useState<Perms | null>(null);
   const [statusLocationId, setStatusLocationId] = useState<number | null>(null);
+  const [statusStockFilter, setStatusStockFilter] = useState<"전체" | "보유중" | "미보유">("전체");
   const [inventoryInitialFilter, setInventoryInitialFilter] = useState<{ type?: string; date?: string } | null>(null);
 
   const userName = session?.user?.name ?? "로딩중...";
@@ -125,6 +126,8 @@ export default function Home() {
           onNavigate={(p, lid, filter) => {
             setPage(p);
             if (lid !== undefined) setStatusLocationId(lid ?? null);
+            if (filter?.stockFilter) setStatusStockFilter(filter.stockFilter as "전체" | "보유중" | "미보유");
+            else setStatusStockFilter("전체");
             if (filter) setInventoryInitialFilter(filter);
             else setInventoryInitialFilter(null);
           }}
@@ -138,7 +141,7 @@ export default function Home() {
           onFilterApplied={() => setInventoryInitialFilter(null)}
         />
       );
-      case "status":    return <StatusPage initialLocationId={statusLocationId} />;
+      case "status":    return <StatusPage initialLocationId={statusLocationId} initialStockFilter={statusStockFilter} />;
       case "period":    return <PeriodPage />;
       case "target":    return <TargetUsagePage />;
       case "barcode":   return <BarcodePage />;
@@ -156,8 +159,10 @@ export default function Home() {
       <Sidebar
         currentPage={page}
         onNavigate={(p) => {
-          // 사이드바에서 보유현황으로 직접 이동 시 위치 필터 초기화
-          if (p === "status") setStatusLocationId(null);
+          if (p === "status") {
+            setStatusLocationId(null);
+            setStatusStockFilter("전체");
+          }
           setPage(p);
         }}
         isOpen={sidebarOpen}
