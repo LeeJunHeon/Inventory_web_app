@@ -143,62 +143,72 @@ export default function PeriodPage() {
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
-        <div className="flex flex-wrap gap-3 items-end">
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1.5">시작일</label>
-            <div className="relative">
-              <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
-                className="pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+        <div className="space-y-3">
+          {/* 첫 번째 줄: 날짜 + 품목군 + 구분 필터 */}
+          <div className="flex flex-wrap gap-3 items-end">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">시작일</label>
+              <div className="relative">
+                <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+                  className="pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+            </div>
+            <span className="text-gray-300 pb-2.5">~</span>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">종료일</label>
+              <div className="relative">
+                <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)}
+                  className="pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">품목군</label>
+              <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}
+                className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                <option>전체</option><option>웨이퍼</option><option>타겟</option><option>가스</option><option>기자재/소모품</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">구분</label>
+              <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1">
+                {["전체", "입고", "출고", "불출"].map(t => (
+                  <button
+                    key={t}
+                    onClick={() => setTypeFilter(t)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                      typeFilter === t ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"
+                    }`}
+                  >{t}</button>
+                ))}
+              </div>
             </div>
           </div>
-          <span className="text-gray-300 pb-2.5">~</span>
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1.5">종료일</label>
-            <div className="relative">
-              <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)}
-                className="pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+
+          {/* 두 번째 줄: 환율 + CSV */}
+          <div className="flex flex-wrap gap-3 items-end justify-between">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">환율 적용</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  placeholder="등록 시 환율 자동 적용"
+                  value={manualRate}
+                  onChange={e => setManualRate(e.target.value)}
+                  className="pl-3 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none w-52"
+                />
+                <span className="text-xs text-gray-400 whitespace-nowrap">원/USD</span>
+              </div>
             </div>
+            {/* CSV 버튼 */}
+            <button
+              onClick={handleCSV}
+              disabled={items.length === 0}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+              <Download size={16} />CSV
+            </button>
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1.5">품목군</label>
-            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}
-              className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-              <option>전체</option><option>웨이퍼</option><option>타겟</option><option>가스</option><option>기자재/소모품</option>
-            </select>
-          </div>
-          <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1">
-            {["전체", "입고", "출고", "불출"].map(t => (
-              <button
-                key={t}
-                onClick={() => setTypeFilter(t)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-                  typeFilter === t ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"
-                }`}
-              >{t}</button>
-            ))}
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-semibold text-gray-500 shrink-0">환율</label>
-            <div className="relative">
-              <input
-                type="number"
-                placeholder="등록시 환율 자동"
-                value={manualRate}
-                onChange={e => setManualRate(e.target.value)}
-                className="w-44 px-3 py-2.5 pr-16 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">원/USD</span>
-            </div>
-          </div>
-          {/* CSV 버튼 */}
-          <button
-            onClick={handleCSV}
-            disabled={items.length === 0}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
-            <Download size={16} />CSV
-          </button>
         </div>
       </div>
 
