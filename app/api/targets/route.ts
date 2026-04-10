@@ -215,6 +215,31 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // chamber_slot 자동 업데이트
+    const STORAGE_IDS_SLOT = [3, 4];
+    const CHAMBER_IDS_SLOT = [5, 6, 7, 8, 9, 10];
+    const newLocationId = body.locationId ? Number(body.locationId) : null;
+
+    if (newLocationId && CHAMBER_IDS_SLOT.includes(newLocationId)) {
+      // 챔버로 이동 → 해당 챔버 슬롯에 타겟 등록
+      await prisma.chamberSlot.updateMany({
+        where: { locationId: newLocationId },
+        data: {
+          targetUnitId: body.targetUnitId,
+          loadedAt: new Date(),
+        },
+      });
+    } else if (newLocationId && STORAGE_IDS_SLOT.includes(newLocationId)) {
+      // 보관함으로 이동 → 해당 타겟이 있던 챔버 슬롯 비우기
+      await prisma.chamberSlot.updateMany({
+        where: { targetUnitId: body.targetUnitId },
+        data: {
+          targetUnitId: null,
+          loadedAt: null,
+        },
+      });
+    }
+
     // 폐기 처리인 경우 타겟 상태 변경 + 바코드 비활성화
     if (isDispose) {
       await prisma.targetUnit.update({

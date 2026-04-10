@@ -19,6 +19,15 @@ interface TargetListItem {
   status: string;
 }
 
+interface TargetSearchResult {
+  id: number;
+  barcodeCode: string;
+  itemName: string;
+  itemCode: string;
+  materialCode: string;
+  status: string;
+}
+
 interface ChamberSlot {
   id: number;
   locationId: number;
@@ -79,7 +88,12 @@ export default function TargetUsagePage() {
   const [locationOptions, setLocationOptions] = useState<LocationOption[]>([]);
   const [chamberSlots, setChamberSlots]     = useState<ChamberSlot[]>([]);
   const [editingSlot, setEditingSlot]       = useState<ChamberSlot | null>(null);
-  const [editTargetInput, setEditTargetInput] = useState("");
+  const [slotSearchType, setSlotSearchType] = useState<"바코드" | "품목코드" | "품목명">("바코드");
+  const [slotSearchQuery, setSlotSearchQuery] = useState("");
+  const [slotSearchResults, setSlotSearchResults] = useState<TargetSearchResult[]>([]);
+  const [slotSelectedTarget, setSlotSelectedTarget] = useState<TargetSearchResult | null>(null);
+  const [slotSearchLoading, setSlotSearchLoading] = useState(false);
+  const [showSlotCamera, setShowSlotCamera] = useState(false);
   const [editNote, setEditNote]             = useState("");
   const [slotSaving, setSlotSaving]         = useState(false);
 
@@ -106,6 +120,29 @@ export default function TargetUsagePage() {
       .then(data => Array.isArray(data) && setChamberSlots(data))
       .catch(console.error);
   }, []);
+
+  // 슬롯 수정 모달 타겟 검색 자동 실행
+  useEffect(() => {
+    if (!slotSearchQuery.trim()) {
+      setSlotSearchResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setSlotSearchLoading(true);
+      try {
+        const res = await fetch(
+          `/api/chamber-slots?q=${encodeURIComponent(slotSearchQuery)}&type=${encodeURIComponent(slotSearchType)}`
+        );
+        const data = await res.json();
+        setSlotSearchResults(Array.isArray(data) ? data : []);
+      } catch {
+        setSlotSearchResults([]);
+      } finally {
+        setSlotSearchLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [slotSearchQuery, slotSearchType]);
 
   const fetchLogs = async (targetPage: number, barcode?: string) => {
     setLoading(true);
@@ -260,25 +297,18 @@ export default function TargetUsagePage() {
     if (!editingSlot) return;
     setSlotSaving(true);
     try {
-      let targetUnitId: number | null = null;
-      if (editTargetInput.trim()) {
-        const res = await fetch(`/api/targets?barcode=${encodeURIComponent(editTargetInput.trim())}`);
-        const data = await res.json();
-        if (!data.target) {
-          showToast("해당 바코드의 타겟을 찾을 수 없습니다.");
-          setSlotSaving(false);
-          return;
-        }
-        targetUnitId = data.target.id;
-      }
       const res = await fetch("/api/chamber-slots", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: editingSlot.id, targetUnitId, note: editNote || null }),
+        body: JSON.stringify({
+          id: editingSlot.id,
+          targetUnitId: slotSelectedTarget?.id ?? null,
+          note: editNote || null,
+        }),
       });
       if (!res.ok) { showToast("저장 실패"); return; }
       const updated = await fetch("/api/chamber-slots").then(r => r.json());
-      setChamberSlots(updated);
+      setChamberSlots(Array.isArray(updated) ? updated : []);
       setEditingSlot(null);
       showToast("저장되었습니다.");
     } catch {
@@ -333,33 +363,104 @@ export default function TargetUsagePage() {
                 className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 text-sm"
               >✕</button>
             </div>
+
             <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  타겟 바코드 (비우면 슬롯 비움)
-                </label>
-                <input
-                  type="text"
-                  value={editTargetInput}
-                  onChange={e => setEditTargetInput(e.target.value.toUpperCase())}
-                  placeholder="예: T-1"
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              {/* 현재 장착 타겟 표시 */}
+              <div className="px-3 py-2 bg-gray-50 rounded-xl text-sm">
+                <span className="text-xs text-gray-400">현재: </span>
+                <span className="font-semibold text-gray-800">
+                  {slotSelectedTarget
+                    ? `${slotSelectedTarget.barcodeCode} · ${slotSelectedTarget.itemName}`
+                    : "비어있음"}
+                </span>
               </div>
+
+              {/* 검색 타입 + 입력 */}
+              <div className="flex gap-2">
+                <select
+                  value={slotSearchType}
+                  onChange={e => {
+                    setSlotSearchType(e.target.value as "바코드" | "품목코드" | "품목명");
+                    setSlotSearchQuery("");
+                    setSlotSearchResults([]);
+                  }}
+                  className="px-2 py-2 border border-gray-200 rounded-xl text-xs bg-white outline-none shrink-0"
+                >
+                  <option value="바코드">바코드</option>
+                  <option value="품목코드">품목코드</option>
+                  <option value="품목명">품목명</option>
+                </select>
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={slotSearchQuery}
+                    onChange={e => setSlotSearchQuery(
+                      slotSearchType === "바코드"
+                        ? e.target.value.toUpperCase()
+                        : e.target.value
+                    )}
+                    placeholder={
+                      slotSearchType === "바코드"   ? "바코드 입력 또는 스캔" :
+                      slotSearchType === "품목코드" ? "품목코드 입력" : "품목명 입력"
+                    }
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 pr-8"
+                  />
+                  {slotSearchLoading && (
+                    <Loader2 size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 animate-spin text-blue-500" />
+                  )}
+                </div>
+                {isMobile && (
+                  <button
+                    type="button"
+                    onClick={() => setShowSlotCamera(true)}
+                    className="p-2 rounded-xl border border-gray-200 hover:bg-gray-50"
+                  >
+                    <Camera size={16} />
+                  </button>
+                )}
+              </div>
+
+              {/* 검색 결과 목록 */}
+              {slotSearchResults.length > 0 && (
+                <div className="max-h-48 overflow-y-auto space-y-1 border border-gray-100 rounded-xl p-1">
+                  {slotSearchResults.map(tu => (
+                    <button
+                      key={tu.id}
+                      onClick={() => {
+                        setSlotSelectedTarget(tu);
+                        setSlotSearchQuery("");
+                        setSlotSearchResults([]);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-blue-50 rounded-lg transition-colors"
+                    >
+                      <p className="text-sm font-semibold text-gray-900">{tu.barcodeCode}</p>
+                      <p className="text-xs text-gray-500">{tu.itemName}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* 메모 */}
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  메모 (선택)
-                </label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">메모 (선택)</label>
                 <input
                   type="text"
                   value={editNote}
                   onChange={e => setEditNote(e.target.value)}
                   placeholder="추가 메모"
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
+
             <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setSlotSelectedTarget(null);
+                  setSlotSearchQuery("");
+                }}
+                className="px-3 py-2.5 border border-rose-200 text-rose-500 rounded-xl text-sm hover:bg-rose-50"
+              >비우기</button>
               <button
                 onClick={() => setEditingSlot(null)}
                 className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50"
@@ -394,7 +495,20 @@ export default function TargetUsagePage() {
                   <button
                     onClick={() => {
                       setEditingSlot(slot);
-                      setEditTargetInput(slot.barcodeCode ?? "");
+                      setSlotSearchQuery("");
+                      setSlotSearchResults([]);
+                      setSlotSelectedTarget(
+                        slot.targetUnitId
+                          ? {
+                              id: slot.targetUnitId,
+                              barcodeCode: slot.barcodeCode ?? "",
+                              itemName: slot.itemName ?? "",
+                              itemCode: slot.itemCode ?? "",
+                              materialCode: slot.materialCode ?? "",
+                              status: "using",
+                            }
+                          : null
+                      );
                       setEditNote(slot.note ?? "");
                     }}
                     className="text-xs text-blue-500 hover:text-blue-600 font-medium"
@@ -738,6 +852,16 @@ export default function TargetUsagePage() {
             fetchLogs(1, code);
           }}
           onClose={() => setShowCameraScanner(false)}
+        />
+      )}
+      {showSlotCamera && (
+        <BarcodeCameraScanner
+          onDetected={code => {
+            setShowSlotCamera(false);
+            setSlotSearchType("바코드");
+            setSlotSearchQuery(code.toUpperCase());
+          }}
+          onClose={() => setShowSlotCamera(false)}
         />
       )}
     </div>

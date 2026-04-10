@@ -4,8 +4,58 @@ import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/chamber-slots — 챔버 슬롯 전체 조회
-export async function GET() {
+// GET /api/chamber-slots — 슬롯 전체 조회 또는 타겟 검색 (q 파라미터 있을 때)
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const q    = searchParams.get("q")?.trim() ?? "";
+  const type = searchParams.get("type") ?? "바코드";
+
+  // q가 있으면 타겟 검색 모드
+  if (q) {
+    try {
+      let where: any = {};
+      if (type === "바코드") {
+        where = {
+          barcodes: {
+            some: {
+              code: { contains: q, mode: "insensitive" },
+              isActive: "Y",
+            },
+          },
+        };
+      } else if (type === "품목코드") {
+        where = { item: { code: { contains: q, mode: "insensitive" } } };
+      } else if (type === "품목명") {
+        where = { item: { name: { contains: q, mode: "insensitive" } } };
+      }
+
+      const targets = await prisma.targetUnit.findMany({
+        where: { ...where, status: { not: "disposed" } },
+        include: {
+          item: { include: { targetSpec: true } },
+          barcodes: { where: { isActive: "Y" }, take: 1 },
+        },
+        take: 20,
+        orderBy: { id: "asc" },
+      });
+
+      return NextResponse.json(
+        targets.map(tu => ({
+          id:           tu.id,
+          barcodeCode:  tu.barcodes[0]?.code                     ?? "",
+          itemName:     tu.item?.name                            ?? "",
+          itemCode:     tu.item?.code                            ?? "",
+          materialCode: tu.item?.targetSpec?.materialCode        ?? "",
+          status:       tu.status,
+        }))
+      );
+    } catch (error) {
+      console.error("GET /api/chamber-slots search error:", error);
+      return NextResponse.json({ error: "검색 실패" }, { status: 500 });
+    }
+  }
+
+  // q 없으면 슬롯 전체 조회
   try {
     const slots = await prisma.chamberSlot.findMany({
       include: {
