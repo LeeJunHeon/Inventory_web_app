@@ -14,6 +14,7 @@ import ItemsPage        from "@/components/ItemsPage";
 import PartnersPage     from "@/components/PartnersPage";
 import AdminPage        from "@/components/AdminPage";
 import StockTracingPage from "@/components/StockTracingPage";
+import LogPage          from "@/components/LogPage";
 
 interface Perms {
   role: string;
@@ -95,6 +96,7 @@ export default function Home() {
     items:     "품목 관리",
     partners:  "거래처 관리",
     admin:     "관리자 설정",
+    logs:      "활동 로그",
   };
 
   // 현재 페이지 접근 권한 확인
@@ -111,6 +113,7 @@ export default function Home() {
       case "items":
       case "partners":   return perms.role === "admin";
       case "admin":      return perms.canViewUserPerm;
+      case "logs":       return perms.role === "admin";
     }
   }
 
@@ -143,6 +146,7 @@ export default function Home() {
       case "items":     return <ItemsPage />;
       case "partners":  return <PartnersPage />;
       case "admin":     return <AdminPage />;
+      case "logs":      return <LogPage />;
       default:          return <DashboardPage />;
     }
   };

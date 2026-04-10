@@ -77,7 +77,14 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900">기록 수정</h2>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">기록 수정</h2>
+            {item.createdAt && (
+              <p className="text-xs text-gray-400 mt-0.5">
+                등록 시각: {new Date(item.createdAt).toLocaleString("ko-KR")}
+              </p>
+            )}
+          </div>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100">
             <X size={20} className="text-gray-400" />
           </button>

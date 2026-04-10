@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
-import { Home, Package, BarChart3, Clock, Target, QrCode, Users, LogOut, Boxes, X, Layers, Building2, Search } from "lucide-react";
+import { Home, Package, BarChart3, Clock, Target, QrCode, Users, LogOut, Boxes, X, Layers, Building2, Search, FileText } from "lucide-react";
 
 export type PageId =
   | "dashboard" | "inventory" | "status" | "period"
-  | "target" | "barcode" | "tracing" | "items" | "partners" | "admin";
+  | "target" | "barcode" | "tracing" | "items" | "partners" | "admin" | "logs";
 
 interface Perms {
   role: string;
@@ -33,6 +33,7 @@ const ALL_NAV_ITEMS: {
   { id: "items",     label: "품목 관리",   icon: Layers,    group: "마스터" },
   { id: "partners",  label: "거래처 관리", icon: Building2, group: "마스터" },
   { id: "admin",     label: "관리자 설정", icon: Users,     group: "마스터" },
+  { id: "logs",      label: "활동 로그",   icon: FileText,  group: "마스터" },
 ];
 
 function isVisible(id: PageId, perms: Perms | null): boolean {
@@ -48,6 +49,7 @@ function isVisible(id: PageId, perms: Perms | null): boolean {
     case "items":
     case "partners":   return perms.role === "admin";
     case "admin":      return perms.canViewUserPerm;
+    case "logs":       return perms.role === "admin";
   }
 }
 

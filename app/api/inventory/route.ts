@@ -132,6 +132,7 @@ export async function GET(request: NextRequest) {
       txReason:   tx.txReason?.name  || "",
       userName:   tx.user?.name      ?? null,
       itemSpec:   buildItemSpec(tx.item.waferSpec),
+      createdAt:  tx.createdAt?.toISOString() ?? null,
     }));
 
     return NextResponse.json({ data: result, total, page, limit });
@@ -327,6 +328,18 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // activity_log 기록
+    if (sessionUserId) {
+      await prisma.activityLog.create({
+        data: {
+          userId:    sessionUserId,
+          action:    "CREATE",
+          tableName: "inventory_tx",
+          recordId:  tx.id,
+        },
+      });
+    }
+
     return NextResponse.json(tx, { status: 201 });
   } catch (error) {
     console.error("POST /api/inventory error:", error);
@@ -359,6 +372,17 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "유효한 날짜를 입력해주세요." }, { status: 400 });
     }
 
+    // 세션 사용자 id 조회
+    const session = await auth();
+    let sessionUserId: number | null = null;
+    if (session?.user?.email) {
+      const user = await prisma.user.findUnique({
+        where:  { email: session.user.email },
+        select: { id: true },
+      });
+      sessionUserId = user?.id ?? null;
+    }
+
     const tx = await prisma.inventoryTx.update({
       where: { id: Number(id) },
       data: {
@@ -377,6 +401,18 @@ export async function PUT(request: NextRequest) {
         exchangeRateAtEntry: body.exchangeRateAtEntry ?? undefined,
       },
     });
+
+    // activity_log 기록
+    if (sessionUserId) {
+      await prisma.activityLog.create({
+        data: {
+          userId:    sessionUserId,
+          action:    "UPDATE",
+          tableName: "inventory_tx",
+          recordId:  Number(id),
+        },
+      });
+    }
 
     return NextResponse.json(tx);
   } catch (error) {
@@ -398,7 +434,31 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "유효한 id 파라미터가 필요합니다." }, { status: 400 });
     }
 
+    // 세션 사용자 id 조회
+    const session = await auth();
+    let sessionUserId: number | null = null;
+    if (session?.user?.email) {
+      const user = await prisma.user.findUnique({
+        where:  { email: session.user.email },
+        select: { id: true },
+      });
+      sessionUserId = user?.id ?? null;
+    }
+
     await prisma.inventoryTx.delete({ where: { id: Number(id) } });
+
+    // activity_log 기록
+    if (sessionUserId) {
+      await prisma.activityLog.create({
+        data: {
+          userId:    sessionUserId,
+          action:    "DELETE",
+          tableName: "inventory_tx",
+          recordId:  Number(id),
+        },
+      });
+    }
+
     return NextResponse.json({ message: "삭제 완료" });
   } catch (error) {
     console.error("DELETE /api/inventory error:", error);

@@ -20,6 +20,7 @@ export interface InventoryItem {
   locationId: number;
   userName: string | null;
   itemSpec: string | null;
+  createdAt: string | null;
 }
 
 export interface TargetUnit {

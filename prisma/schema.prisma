@@ -74,6 +74,7 @@ model User {
   targetLogs      TargetLog[]
   barcodeScans    BarcodeScan[]
   chamberSlots    ChamberSlot[]
+  activityLogs    ActivityLog[]
 
   @@map("user")
 }
@@ -244,6 +245,7 @@ model InventoryTx {
   barcodeId    Int?     @map("barcode_id")
   currency     String?  @default("KRW")
   exchangeRateAtEntry Decimal? @map("exchange_rate_at_entry") @db.Decimal(10, 2)
+  createdAt    DateTime @default(now()) @map("created_at")
 
   item       Item       @relation(fields: [itemId], references: [id])
   targetUnit TargetUnit? @relation(fields: [targetUnitId], references: [id])
@@ -290,6 +292,20 @@ model ChamberSlot {
   updatedBy    User?       @relation(fields: [updatedById], references: [id])
 
   @@map("chamber_slot")
+}
+
+// ── 활동 로그 ──
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?     @map("user_id")
+  action    String   // CREATE, UPDATE, DELETE
+  tableName String   @map("table_name")
+  recordId  Int      @map("record_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("activity_log")
 }
 
 // ── 앱 설정 (범용 키-값) ──
