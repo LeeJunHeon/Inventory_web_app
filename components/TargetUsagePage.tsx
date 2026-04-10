@@ -140,7 +140,7 @@ export default function TargetUsagePage() {
   // 무게 측정값 저장
   const handleSaveWeight = async () => {
     if (!selectedTarget || !weight) { showToast("무게를 입력하세요."); return; }
-    const latestLog = logs.length > 0 ? logs[logs.length - 1] : null;
+    const latestLog = logs.length > 0 ? logs[0] : null;
     const latestWeight = latestLog?.weight != null ? Number(latestLog.weight) : null;
     const newWeight = Number(weight);
     if (latestWeight !== null && newWeight > latestWeight) {
