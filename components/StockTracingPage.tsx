@@ -144,7 +144,12 @@ export default function StockTracingPage() {
           ) : results.map(item => (
             <button
               key={item.itemId}
-              onClick={() => handleSelectItem(item, null)}
+              onClick={() => handleSelectItem(
+                item,
+                searchType === "바코드" && item.barcodes.length === 1
+                  ? item.barcodes[0].id
+                  : null
+              )}
               className={`w-full text-left bg-white rounded-2xl border transition-all p-4 space-y-3 hover:border-blue-400 hover:shadow-sm ${
                 selectedItem?.itemId === item.itemId ? "border-blue-500 shadow-sm ring-1 ring-blue-200" : "border-gray-100"
               }`}
