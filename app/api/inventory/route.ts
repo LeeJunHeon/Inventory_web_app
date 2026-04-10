@@ -38,8 +38,15 @@ export async function GET(request: NextRequest) {
       andConditions.push({ txType: type });
     }
 
-    if (startDate && endDate) {
-      andConditions.push({ txDate: { gte: new Date(startDate), lte: new Date(endDate) } });
+    if (startDate || endDate) {
+      const dateFilter: Record<string, Date> = {};
+      if (startDate) dateFilter.gte = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        dateFilter.lte = end;
+      }
+      andConditions.push({ txDate: dateFilter });
     }
 
     if (category && category !== "전체") {
