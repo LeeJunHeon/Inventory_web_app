@@ -295,25 +295,6 @@ async function main() {
     console.log(`✓ barcode_scan       : ${rows.length}건`);
   }
 
-  // 16. auth_refresh_token
-  {
-    const rows = readCsv("auth_refresh_token.csv");
-    await prisma.authRefreshToken.createMany({
-      data: rows.map(r => ({
-        id:              req(toInt(r.id),      "id"),
-        userId:          req(toInt(r.user_id), "user_id"),
-        tokenHash:       r.token_hash,
-        deviceId:        r.device_id          || "",
-        issuedAt:        req(toDate(r.issued_at),  "issued_at"),
-        expiresAt:       req(toDate(r.expires_at), "expires_at"),
-        revokedAt:       toDate(r.revoked_at),
-        rotatedFromHash: r.rotated_from_hash  || null,
-      })),
-      skipDuplicates: true,
-    });
-    console.log(`✓ auth_refresh_token : ${rows.length}건`);
-  }
-
   console.log("\n✅ 전체 업로드 완료!");
 }
 
