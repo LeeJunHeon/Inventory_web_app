@@ -16,7 +16,10 @@ export async function GET(request: NextRequest) {
 
     const items = await prisma.item.findMany({
       where,
-      include: { category: true },
+      include: {
+        category: true,
+        barcodes: { select: { code: true }, where: { isActive: "Y" } },
+      },
       orderBy: { code: "asc" },
     });
 
@@ -57,6 +60,7 @@ export async function GET(request: NextRequest) {
           category:    item.category.name,
           currentQty,
           requiredQty: item.minStockQty,
+          barcodes:    item.barcodes?.map(b => b.code) ?? [],
         };
       });
 

@@ -87,6 +87,7 @@ export default function TargetUsagePage() {
   const [weightError, setWeightError]       = useState("");
   const [locationOptions, setLocationOptions] = useState<LocationOption[]>([]);
   const [chamberSlots, setChamberSlots]     = useState<ChamberSlot[]>([]);
+  const [showChamberStatus, setShowChamberStatus] = useState(false);
   const [editingSlot, setEditingSlot]       = useState<ChamberSlot | null>(null);
   const [slotSearchType, setSlotSearchType] = useState<"바코드" | "품목코드" | "품목명">("바코드");
   const [slotSearchQuery, setSlotSearchQuery] = useState("");
@@ -483,7 +484,17 @@ export default function TargetUsagePage() {
       {/* 챔버별 타겟 현황 */}
       {chamberSlots.length > 0 && (
         <div className="space-y-3">
-          <h2 className="font-bold text-gray-900">챔버별 타겟 현황</h2>
+          <button
+            onClick={() => setShowChamberStatus(v => !v)}
+            className="flex items-center gap-2 text-sm font-bold text-gray-900 hover:text-blue-600 transition-colors"
+          >
+            <span>챔버별 타겟 현황</span>
+            <span className="text-xs text-gray-400 font-normal">
+              ({chamberSlots.filter(s => s.targetUnitId).length}/{chamberSlots.length})
+            </span>
+            <span className={`text-xs text-gray-400 transition-transform inline-block ${showChamberStatus ? "rotate-180" : ""}`}>▼</span>
+          </button>
+          {showChamberStatus && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {chamberSlots.map(slot => (
               <div
@@ -549,6 +560,7 @@ export default function TargetUsagePage() {
               </div>
             ))}
           </div>
+          )}
         </div>
       )}
 
