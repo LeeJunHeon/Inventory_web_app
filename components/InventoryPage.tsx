@@ -29,15 +29,27 @@ interface LocationOption { id: number; name: string; }
 
 const SEARCH_FIELDS = ["전체", "품목명", "품목코드", "바코드", "거래처"];
 
-export default function InventoryPage() {
+interface InventoryPageProps {
+  initialTypeFilter?: string;
+  initialStartDate?: string;
+  initialEndDate?: string;
+  onFilterApplied?: () => void;
+}
+
+export default function InventoryPage({
+  initialTypeFilter,
+  initialStartDate,
+  initialEndDate,
+  onFilterApplied,
+}: InventoryPageProps = {}) {
   const [items, setItems]               = useState<InventoryItem[]>([]);
   const [loading, setLoading]           = useState(true);
   const [search, setSearch]             = useState("");
   const [searchField, setSearchField]   = useState("전체");
-  const [typeFilter, setTypeFilter]     = useState("전체");
+  const [typeFilter, setTypeFilter]     = useState(initialTypeFilter ?? "전체");
   const [categoryFilter, setCategoryFilter] = useState("전체");
-  const [startDate, setStartDate]           = useState("");
-  const [endDate, setEndDate]               = useState("");
+  const [startDate, setStartDate]           = useState(initialStartDate ?? "");
+  const [endDate, setEndDate]               = useState(initialEndDate ?? "");
   const [locationFilter, setLocationFilter] = useState<number | "">("");
   const [locationOptions, setLocationOptions] = useState<LocationOption[]>([]);
   const [modalOpen, setModalOpen]       = useState(false);
@@ -79,6 +91,13 @@ export default function InventoryPage() {
     const timer = setTimeout(fetchData, 300);
     return () => clearTimeout(timer);
   }, [fetchData]);
+
+  // 초기 필터 적용 후 부모에 콜백 (마운트 시 1회)
+  useEffect(() => {
+    if (initialTypeFilter || initialStartDate) {
+      onFilterApplied?.();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetch("/api/exchange-rate")

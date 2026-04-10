@@ -59,6 +59,7 @@ export default function Home() {
   const [showNotif, setShowNotif]     = useState(false);
   const [perms, setPerms]             = useState<Perms | null>(null);
   const [statusLocationId, setStatusLocationId] = useState<number | null>(null);
+  const [inventoryInitialFilter, setInventoryInitialFilter] = useState<{ type?: string; date?: string } | null>(null);
 
   const userName = session?.user?.name ?? "로딩중...";
   const userRole = (session?.user as any)?.role ?? "";
@@ -118,13 +119,22 @@ export default function Home() {
     switch (page) {
       case "dashboard": return (
         <DashboardPage
-          onNavigate={(p, lid) => {
+          onNavigate={(p, lid, filter) => {
             setPage(p);
             if (lid !== undefined) setStatusLocationId(lid ?? null);
+            if (filter) setInventoryInitialFilter(filter);
+            else setInventoryInitialFilter(null);
           }}
         />
       );
-      case "inventory": return <InventoryPage />;
+      case "inventory": return (
+        <InventoryPage
+          initialTypeFilter={inventoryInitialFilter?.type}
+          initialStartDate={inventoryInitialFilter?.date}
+          initialEndDate={inventoryInitialFilter?.date}
+          onFilterApplied={() => setInventoryInitialFilter(null)}
+        />
+      );
       case "status":    return <StatusPage initialLocationId={statusLocationId} />;
       case "period":    return <PeriodPage />;
       case "target":    return <TargetUsagePage />;
