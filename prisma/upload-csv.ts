@@ -102,7 +102,6 @@ async function main() {
         email:        r.email         || null,
         role:         r.role          || null,
         isActive:     toYN(r.is_active),
-        passwordHash: r.password_hash || null,
       })),
       skipDuplicates: true,
     });
