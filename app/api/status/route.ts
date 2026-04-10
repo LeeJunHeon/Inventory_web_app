@@ -47,6 +47,41 @@ export async function GET(request: NextRequest) {
     const inMap = new Map(inSums.map((s) => [s.itemId, s._sum.qty || 0]));
     const outMap = new Map(outSums.map((s) => [s.itemId, s._sum.qty || 0]));
 
+    // 전체 조회 시 본사(1), 공덕(2) 위치별 수량 별도 집계
+    let loc1InMap  = new Map<number, number>();
+    let loc1OutMap = new Map<number, number>();
+    let loc2InMap  = new Map<number, number>();
+    let loc2OutMap = new Map<number, number>();
+
+    if (!locationId) {
+      const [loc1In, loc1Out, loc2In, loc2Out] = await Promise.all([
+        prisma.inventoryTx.groupBy({
+          by: ["itemId"],
+          where: { itemId: { in: itemIds }, txType: "입고", locationId: 1 },
+          _sum: { qty: true },
+        }),
+        prisma.inventoryTx.groupBy({
+          by: ["itemId"],
+          where: { itemId: { in: itemIds }, txType: { in: ["출고", "불출"] }, locationId: 1 },
+          _sum: { qty: true },
+        }),
+        prisma.inventoryTx.groupBy({
+          by: ["itemId"],
+          where: { itemId: { in: itemIds }, txType: "입고", locationId: 2 },
+          _sum: { qty: true },
+        }),
+        prisma.inventoryTx.groupBy({
+          by: ["itemId"],
+          where: { itemId: { in: itemIds }, txType: { in: ["출고", "불출"] }, locationId: 2 },
+          _sum: { qty: true },
+        }),
+      ]);
+      loc1InMap  = new Map(loc1In.map(s  => [s.itemId, s._sum.qty || 0]));
+      loc1OutMap = new Map(loc1Out.map(s => [s.itemId, s._sum.qty || 0]));
+      loc2InMap  = new Map(loc2In.map(s  => [s.itemId, s._sum.qty || 0]));
+      loc2OutMap = new Map(loc2Out.map(s => [s.itemId, s._sum.qty || 0]));
+    }
+
     const result = items
       // 위치 필터가 있을 때: 해당 위치에 실제 거래 기록이 있는 품목만 포함
       // 위치 필터가 없을 때(전체): 모든 품목 포함
@@ -61,6 +96,10 @@ export async function GET(request: NextRequest) {
           currentQty,
           requiredQty: item.minStockQty,
           barcodes:    item.barcodes?.map(b => b.code) ?? [],
+          locationQty: locationId ? undefined : {
+            1: (loc1InMap.get(item.id) || 0) - (loc1OutMap.get(item.id) || 0),
+            2: (loc2InMap.get(item.id) || 0) - (loc2OutMap.get(item.id) || 0),
+          },
         };
       });
 

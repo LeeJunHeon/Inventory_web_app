@@ -11,6 +11,7 @@ interface StockItem {
   currentQty: number; requiredQty: number;
   category: string; attrs?: Record<string, string>;
   barcodes?: string[];
+  locationQty?: Record<number, number>;
 }
 
 function getSupplyLevel(current: number, required: number) {
@@ -252,7 +253,15 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
                       <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">바코드</th>
                       {cat === "웨이퍼" && <><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">저항</th><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">두께</th></>}
                       {cat === "타겟"   && <><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">순도</th><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">Copper</th></>}
-                      <th onClick={() => handleSort("currentQty")} className="text-right text-xs font-semibold text-gray-500 px-5 py-2.5 cursor-pointer select-none hover:text-blue-600">보유수량<SortIcon field="currentQty" /></th>
+                      {selectedLocationId === null ? (
+                        <>
+                          <th className="text-right text-xs font-semibold text-gray-500 px-3 py-2.5 whitespace-nowrap">본사</th>
+                          <th className="text-right text-xs font-semibold text-gray-500 px-3 py-2.5 whitespace-nowrap">공덕</th>
+                          <th onClick={() => handleSort("currentQty")} className="text-right text-xs font-semibold text-gray-500 px-5 py-2.5 cursor-pointer select-none hover:text-blue-600 whitespace-nowrap">합계<SortIcon field="currentQty" /></th>
+                        </>
+                      ) : (
+                        <th onClick={() => handleSort("currentQty")} className="text-right text-xs font-semibold text-gray-500 px-5 py-2.5 cursor-pointer select-none hover:text-blue-600">보유수량<SortIcon field="currentQty" /></th>
+                      )}
                       <th onClick={() => handleSort("requiredQty")} className="text-right text-xs font-semibold text-gray-500 px-5 py-2.5 cursor-pointer select-none hover:text-blue-600">필요수량 ✏️<SortIcon field="requiredQty" /></th>
                       <th className="text-center text-xs font-semibold text-gray-500 px-5 py-2.5">수급상태</th>
                     </tr></thead>
@@ -267,7 +276,15 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
                             <td className="px-5 py-3 text-xs font-mono text-gray-400">{item.barcodes?.join(", ") || "-"}</td>
                             {cat === "웨이퍼" && <><td className="px-5 py-3 text-sm text-gray-500">{item.attrs?.["저항"] || "-"}</td><td className="px-5 py-3 text-sm text-gray-500">{item.attrs?.["두께"] || "-"}</td></>}
                             {cat === "타겟"   && <><td className="px-5 py-3 text-sm text-gray-500">{item.attrs?.["순도"] || "-"}</td><td className="px-5 py-3 text-sm text-gray-500">{item.attrs?.["Copper"] || "-"}</td></>}
-                            <td className="px-5 py-3 text-sm text-right font-semibold text-gray-900">{item.currentQty}</td>
+                            {selectedLocationId === null ? (
+                              <>
+                                <td className="px-3 py-3 text-sm text-right text-gray-600">{item.locationQty?.[1] ?? 0}</td>
+                                <td className="px-3 py-3 text-sm text-right text-gray-600">{item.locationQty?.[2] ?? 0}</td>
+                                <td className="px-5 py-3 text-sm text-right font-semibold text-gray-900">{item.currentQty}</td>
+                              </>
+                            ) : (
+                              <td className="px-5 py-3 text-sm text-right font-semibold text-gray-900">{item.currentQty}</td>
+                            )}
 
                             {/* ✅ 필요수량 인라인 편집 */}
                             <td className="px-5 py-3 text-sm text-right">
@@ -324,7 +341,17 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
                           <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg ${level.color}`}><level.icon size={12} />{level.label}</span>
                         </div>
                         <div className="flex items-center gap-4 text-sm">
-                          <span className="text-gray-500">보유 <span className="font-bold text-gray-900">{item.currentQty}</span></span>
+                          {selectedLocationId === null && item.locationQty ? (
+                            <span className="text-gray-500">
+                              본사 <span className="font-bold text-gray-900">{item.locationQty[1] ?? 0}</span>
+                              <span className="mx-1 text-gray-300">|</span>
+                              공덕 <span className="font-bold text-gray-900">{item.locationQty[2] ?? 0}</span>
+                              <span className="mx-1 text-gray-300">|</span>
+                              합계 <span className="font-bold text-gray-900">{item.currentQty}</span>
+                            </span>
+                          ) : (
+                            <span className="text-gray-500">보유 <span className="font-bold text-gray-900">{item.currentQty}</span></span>
+                          )}
                           <span className="text-gray-400">/ 필요{" "}
                             {editing ? (
                               <span className="inline-flex items-center gap-1">
