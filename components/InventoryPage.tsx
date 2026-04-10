@@ -5,6 +5,7 @@ import { Search, Plus, Download, Edit, Trash2, ArrowUpDown, ArrowDown, ArrowUp, 
 import { CATEGORIES, TYPES, TYPE_COLORS, CATEGORY_COLORS, formatPrice, formatQty, InventoryItem } from "@/lib/data";
 import TransactionModal     from "./TransactionModal";
 import EditTransactionModal from "./EditTransactionModal";
+import DatePicker           from "./DatePicker";
 
 // ── CSV 다운로드 헬퍼 ──────────────────────────────────
 function downloadCSV(data: InventoryItem[], filename: string) {
@@ -199,18 +200,16 @@ export default function InventoryPage({
         <div className={`flex-wrap gap-2 ${showFilters ? "flex" : "hidden"} sm:flex`}>
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-gray-500 font-medium shrink-0">날짜</span>
-            <input
-              type="date"
+            <DatePicker
               value={startDate}
-              onChange={e => { setStartDate(e.target.value); setPage(1); }}
-              className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              onChange={val => { setStartDate(val); setPage(1); }}
+              placeholder="시작일"
             />
             <span className="text-xs text-gray-400">~</span>
-            <input
-              type="date"
+            <DatePicker
               value={endDate}
-              onChange={e => { setEndDate(e.target.value); setPage(1); }}
-              className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              onChange={val => { setEndDate(val); setPage(1); }}
+              placeholder="종료일"
             />
             {(startDate || endDate) && (
               <button

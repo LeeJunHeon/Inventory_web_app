@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Download, Calendar, Loader2 } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
+import DatePicker from "./DatePicker";
 import { TYPE_COLORS, CATEGORY_COLORS, formatPrice, formatQty, InventoryItem } from "@/lib/data";
 
 // ── CSV 다운로드 헬퍼 ──────────────────────────────
@@ -148,20 +149,20 @@ export default function PeriodPage() {
           <div className="flex flex-wrap gap-3 items-end">
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1.5">시작일</label>
-              <div className="relative">
-                <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
-                  className="pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-              </div>
+              <DatePicker
+                value={startDate}
+                onChange={val => setStartDate(val)}
+                placeholder="시작일"
+              />
             </div>
             <span className="text-gray-300 pb-2.5">~</span>
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1.5">종료일</label>
-              <div className="relative">
-                <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)}
-                  className="pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-              </div>
+              <DatePicker
+                value={endDate}
+                onChange={val => setEndDate(val)}
+                placeholder="종료일"
+              />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1.5">품목군</label>

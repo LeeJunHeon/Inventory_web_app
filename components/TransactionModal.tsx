@@ -6,6 +6,7 @@ import { X, List, Loader2, Plus, Camera } from "lucide-react";
 import { TYPE_COLORS, CATEGORY_COLORS } from "@/lib/data";
 import InboundSelectModal, { type InboundTx } from "./InboundSelectModal";
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
+import DatePicker           from "./DatePicker";
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -572,8 +573,12 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           {/* 날짜 */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">날짜</label>
-            <input type="date" value={date} onChange={e => setDate(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+            <DatePicker
+              value={date}
+              onChange={val => setDate(val)}
+              placeholder="날짜 선택"
+              className="w-full"
+            />
           </div>
 
           {/* 바코드 — 입고/출고/불출 모두 표시 */}
