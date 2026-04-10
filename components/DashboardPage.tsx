@@ -77,13 +77,13 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
       onClick: () => onNavigate?.("status", null),
     },
     {
-      label: "현재 보유 품목",
-      value: `${data.inStockItems}종`,
-      sub: "현재 재고 있는 품목",
+      label: "총 품목",
+      value: `${data.totalItems}종`,
+      sub: "등록된 전체 품목",
       icon: Boxes,
       color: "text-emerald-600",
       bg: "bg-emerald-50",
-      onClick: () => onNavigate?.("status", null, { stockFilter: "보유중" }),
+      onClick: () => onNavigate?.("status", null),
     },
   ];
 
@@ -186,6 +186,24 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
             <h2 className="font-bold text-gray-900">위치별 재고 현황</h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            {/* 전체 카드 */}
+            <button
+              onClick={() => onNavigate?.("status", null, { stockFilter: "보유중" })}
+              className="bg-white rounded-2xl border border-gray-100 p-4 text-left hover:shadow-md hover:border-blue-200 transition-all group"
+            >
+              <div className="flex items-start justify-between mb-2">
+                <span className="text-sm font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
+                  전체
+                </span>
+              </div>
+              <p className="text-xl font-bold text-gray-900">
+                {data.inStockItems}
+                <span className="text-sm font-normal text-gray-400 ml-1">종</span>
+              </p>
+              <p className="text-xs mt-1 font-medium text-emerald-600">현재 보유 중</p>
+            </button>
+
+            {/* 본사/공덕 카드 */}
             {data.locationSummary.filter(loc => loc.locationId === 1 || loc.locationId === 2).map((loc) => (
               <button
                 key={loc.locationId}
