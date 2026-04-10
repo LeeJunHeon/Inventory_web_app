@@ -10,6 +10,15 @@ interface LogItem { id: number; targetId: number; timestamp: string; type: strin
 
 interface LocationOption { id: number; name: string; }
 
+interface TargetListItem {
+  id: number;
+  barcodeCode: string;
+  itemCode: string;
+  itemName: string;
+  materialName: string;
+  status: string;
+}
+
 const PAGE_LIMIT = 50;
 
 const HANGUL_TO_ENG: Record<string, string> = {
@@ -29,6 +38,8 @@ export default function TargetUsagePage() {
   useEffect(() => {
     setIsMobile(typeof navigator !== "undefined" && (navigator.maxTouchPoints > 0 || /Mobi|Android/i.test(navigator.userAgent)));
   }, []);
+  const [searchType, setSearchType]         = useState<"바코드" | "품목코드" | "품목명">("바코드");
+  const [targetList, setTargetList]         = useState<TargetListItem[]>([]);
   const [barcodeInput, setBarcodeInput]     = useState("");
   const barcodeInputRef                     = useRef<HTMLInputElement>(null);
   const isComposingRef                      = useRef(false);
@@ -95,13 +106,32 @@ export default function TargetUsagePage() {
     const code = barcodeInput.trim();
     if (!code) {
       setSelectedTarget(null);
+      setTargetList([]);
       setSearchError("");
       fetchLogs(1);
       return;
     }
+
     setIsSearching(true);
+    setTargetList([]);
+    setSelectedTarget(null);
+
     try {
-      await fetchLogs(1, code);
+      if (searchType === "바코드") {
+        await fetchLogs(1, code);
+      } else {
+        const params = new URLSearchParams();
+        if (searchType === "품목코드") params.set("itemCode", code);
+        if (searchType === "품목명")   params.set("itemName", code);
+        const res = await fetch(`/api/targets?${params}`);
+        const data = await res.json();
+        if (!data.targetList?.length) {
+          setSearchError("검색 결과가 없습니다.");
+        } else {
+          setTargetList(data.targetList);
+          setSearchError("");
+        }
+      }
     } finally {
       setIsSearching(false);
     }
@@ -208,35 +238,56 @@ export default function TargetUsagePage() {
 
       {/* 바코드 조회 */}
       <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-2">
-        <label className="block text-sm font-semibold text-gray-700 mb-2">바코드 조회</label>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">타겟 조회</label>
         <div className="flex gap-2">
+          <select
+            value={searchType}
+            onChange={e => {
+              setSearchType(e.target.value as "바코드" | "품목코드" | "품목명");
+              setBarcodeInput("");
+              setTargetList([]);
+              setSelectedTarget(null);
+              setSearchError("");
+            }}
+            className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 shrink-0"
+          >
+            <option value="바코드">바코드</option>
+            <option value="품목코드">품목코드</option>
+            <option value="품목명">품목명</option>
+          </select>
           <div className="relative flex-1 max-w-md">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               ref={barcodeInputRef}
               type="text"
-              placeholder="타겟 바코드를 스캔하거나 입력 (예: T-0187)"
+              placeholder={
+                searchType === "바코드"   ? "타겟 바코드를 스캔하거나 입력 (예: T-0187)" :
+                searchType === "품목코드" ? "품목코드 입력 (예: T-4-VO2-0250)" :
+                "품목명 입력 (예: Vanadium Dioxide)"
+              }
               value={barcodeInput}
               onChange={e => {
                 if ((e.nativeEvent as any).isComposing) return;
-                setBarcodeInput(normalizeBarcodeInput(e.target.value));
+                const val = searchType === "바코드"
+                  ? normalizeBarcodeInput(e.target.value)
+                  : e.target.value;
+                setBarcodeInput(val);
                 setSearchError("");
               }}
               onCompositionStart={() => { isComposingRef.current = true; }}
               onCompositionEnd={e => {
                 isComposingRef.current = false;
-                setBarcodeInput(normalizeBarcodeInput(e.currentTarget.value));
+                setBarcodeInput(
+                  searchType === "바코드"
+                    ? normalizeBarcodeInput(e.currentTarget.value)
+                    : e.currentTarget.value
+                );
               }}
               onKeyDown={e => {
                 if (e.key === "Enter" && !isComposingRef.current) {
                   const code = e.currentTarget.value.trim();
-                  if (code) {
-                    fetchLogs(1, code);
-                  } else {
-                    setSelectedTarget(null);
-                    setSearchError("");
-                    fetchLogs(1);
-                  }
+                  if (code) handleSearch();
+                  else { setSelectedTarget(null); setTargetList([]); setSearchError(""); fetchLogs(1); }
                 }
               }}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
@@ -260,6 +311,45 @@ export default function TargetUsagePage() {
           <button onClick={handleSearch} className="px-5 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600">조회</button>
         </div>
         {searchError && <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-xl">{searchError}</p>}
+
+        {targetList.length > 0 && (
+          <div className="mt-3 space-y-2">
+            <p className="text-xs text-gray-500 font-medium">
+              검색 결과 {targetList.length}건 — 타겟을 선택하세요
+            </p>
+            <div className="space-y-1.5 max-h-64 overflow-y-auto">
+              {targetList.map(tu => (
+                <button
+                  key={tu.id}
+                  onClick={() => {
+                    setBarcodeInput(tu.barcodeCode);
+                    setSearchType("바코드");
+                    setTargetList([]);
+                    fetchLogs(1, tu.barcodeCode);
+                  }}
+                  className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-blue-50 hover:border-blue-300 border border-gray-200 rounded-xl transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{tu.itemName}</p>
+                      <p className="text-xs text-gray-500 mt-0.5 font-mono">
+                        {tu.barcodeCode} · {tu.itemCode}
+                      </p>
+                    </div>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                      tu.status === "available" ? "bg-emerald-100 text-emerald-700" :
+                      tu.status === "using"     ? "bg-blue-100 text-blue-700" :
+                      "bg-gray-100 text-gray-500"
+                    }`}>
+                      {tu.status === "available" ? "사용가능" :
+                       tu.status === "using"     ? "사용중" : "폐기"}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 타겟 정보 + 측정 입력 */}
@@ -432,6 +522,7 @@ export default function TargetUsagePage() {
         <BarcodeCameraScanner
           onDetected={code => {
             setShowCameraScanner(false);
+            setSearchType("바코드");
             setBarcodeInput(code);
             fetchLogs(1, code);
           }}

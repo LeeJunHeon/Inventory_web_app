@@ -5,10 +5,39 @@ import { prisma } from "@/lib/prisma";
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const barcode = searchParams.get("barcode") || "";
+    const barcode   = searchParams.get("barcode")   || "";
+    const itemCode  = searchParams.get("itemCode")  || "";
+    const itemName  = searchParams.get("itemName")  || "";
     const page    = Math.max(1, parseInt(searchParams.get("page")  || "1", 10));
     const limit   = Math.max(1, parseInt(searchParams.get("limit") || "50", 10));
     const skip    = (page - 1) * limit;
+
+    // 품목코드 또는 품목명 검색: 해당 품목의 타겟 목록 반환
+    if (itemCode || itemName) {
+      const whereItem: any = {};
+      if (itemCode) whereItem.code = { contains: itemCode, mode: "insensitive" };
+      if (itemName) whereItem.name = { contains: itemName, mode: "insensitive" };
+
+      const targetUnits = await prisma.targetUnit.findMany({
+        where: { item: whereItem },
+        include: {
+          item: { include: { category: true, targetSpec: true } },
+          barcodes: { take: 1 },
+        },
+        orderBy: { id: "asc" },
+      });
+
+      const targetList = targetUnits.map(tu => ({
+        id:           tu.id,
+        barcodeCode:  tu.barcodes[0]?.code              || "",
+        itemCode:     tu.item?.code                     || "",
+        itemName:     tu.item?.name                     || "",
+        materialName: tu.item?.targetSpec?.materialCode || "",
+        status:       tu.status,
+      }));
+
+      return NextResponse.json({ targetList });
+    }
 
     // 바코드 지정 시: 해당 타겟 정보 + 로그 (페이지네이션 적용)
     if (barcode) {
