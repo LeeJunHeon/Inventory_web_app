@@ -373,9 +373,9 @@ export default function BarcodePage() {
         <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 space-y-4">
           <h2 className="font-bold text-blue-900">새 바코드 생성</h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="flex flex-wrap gap-3">
             {/* 품목군 */}
-            <div>
+            <div className="flex-1 min-w-[150px]">
               <label className="block text-xs font-semibold text-blue-700 mb-1">품목군</label>
               <select value={createCategory} onChange={e => setCreateCategory(e.target.value)}
                 className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none">
@@ -386,7 +386,7 @@ export default function BarcodePage() {
             </div>
 
             {/* 품목코드 + 선택 */}
-            <div>
+            <div className="flex-1 min-w-[160px]">
               <label className="block text-xs font-semibold text-blue-700 mb-1">품목코드</label>
               <div className="relative" ref={itemDropRef}>
                 <div className="flex gap-1">
@@ -415,25 +415,29 @@ export default function BarcodePage() {
               </div>
             </div>
 
-            {/* 물질명 (타겟 전용) */}
-            <div>
-              <label className="block text-xs font-semibold text-blue-700 mb-1">
-                {createCategory === "타겟" ? "물질명 (타겟)" : "품목명"}
-              </label>
-              {createCategory === "타겟" ? (
-                <input type="text" value={createMemo} onChange={e => setCreateMemo(e.target.value)}
-                  placeholder='예: Au 2" 0.125t'
-                  className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm outline-none bg-white" />
-              ) : (
+            {/* 품목명 자동 입력 (타겟 외에만 표시) */}
+            {createCategory !== "타겟" && (
+              <div className="flex-1 min-w-[150px]">
+                <label className="block text-xs font-semibold text-blue-700 mb-1">품목명</label>
                 <input value={createItemName} readOnly placeholder="자동 입력"
                   className="w-full px-3 py-2.5 bg-white border border-blue-200 rounded-xl text-sm" />
-              )}
+              </div>
+            )}
+
+            {/* 메모 (모든 카테고리) */}
+            <div className="flex-1 min-w-[160px]">
+              <label className="block text-xs font-semibold text-blue-700 mb-1">
+                메모 {createCategory !== "타겟" && <span className="text-blue-400 font-normal">(선택)</span>}
+              </label>
+              <input type="text" value={createMemo} onChange={e => setCreateMemo(e.target.value)}
+                placeholder={createCategory === "타겟" ? '예: Au 2" 0.125t' : "추가 설명 입력"}
+                className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm outline-none bg-white" />
             </div>
 
             {/* 버튼 */}
-            <div className="flex items-end gap-2">
+            <div className="flex items-end">
               <button onClick={handleCreate} disabled={creating}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:opacity-60">
+                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:opacity-60 whitespace-nowrap">
                 <QrCode size={16} />{creating ? "생성 중..." : "생성+저장"}
               </button>
             </div>
