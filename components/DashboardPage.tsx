@@ -5,6 +5,7 @@ import { TrendingUp, TrendingDown, AlertTriangle, Boxes, Loader2, MapPin } from 
 import { TYPE_COLORS, CATEGORY_COLORS, formatPrice } from "@/lib/data";
 import { useApi } from "@/lib/useApi";
 import type { PageId } from "@/components/Sidebar";
+import { useT } from "@/lib/i18n";
 
 interface LocationSummary {
   locationId: number; locationName: string;
@@ -45,13 +46,14 @@ interface DashboardPageProps {
 export default function DashboardPage({ onNavigate }: DashboardPageProps) {
   const { data, loading, error } = useApi<DashboardData>("/api/dashboard", DEFAULT);
   const [selectedRecent, setSelectedRecent] = useState<typeof data.recent[0] | null>(null);
+  const { t, lang } = useT();
 
   const today = new Date().toISOString().split("T")[0];
 
   const stats = [
     {
-      label: "오늘 입고",
-      value: `${data.todayIn.count}건`,
+      label: t.dashboard.todayIn,
+      value: `${data.todayIn.count}${t.dashboard.countUnit}`,
       sub: formatPrice(data.todayIn.amount),
       icon: TrendingUp,
       color: "text-blue-600",
@@ -59,8 +61,8 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
       onClick: () => onNavigate?.("inventory", null, { type: "입고", date: today }),
     },
     {
-      label: "오늘 출고",
-      value: `${data.todayOut.count}건`,
+      label: t.dashboard.todayOut,
+      value: `${data.todayOut.count}${t.dashboard.countUnit}`,
       sub: formatPrice(data.todayOut.amount),
       icon: TrendingDown,
       color: "text-rose-600",
@@ -68,18 +70,18 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
       onClick: () => onNavigate?.("inventory", null, { type: "출고", date: today }),
     },
     {
-      label: "재고 부족 품목",
-      value: `${data.shortageCount}건`,
-      sub: "확인 필요",
+      label: t.dashboard.shortage,
+      value: `${data.shortageCount}${t.dashboard.countUnit}`,
+      sub: t.dashboard.checkNeeded,
       icon: AlertTriangle,
       color: "text-amber-600",
       bg: "bg-amber-50",
       onClick: () => onNavigate?.("status", null),
     },
     {
-      label: "총 품목",
-      value: `${data.totalItems}종`,
-      sub: "등록된 전체 품목",
+      label: t.dashboard.totalItems,
+      value: `${data.totalItems}${t.dashboard.typeUnit}`,
+      sub: t.dashboard.totalItemsDesc,
       icon: Boxes,
       color: "text-emerald-600",
       bg: "bg-emerald-50",
@@ -91,7 +93,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 size={24} className="animate-spin text-blue-500" />
-        <span className="ml-2 text-sm text-gray-500">로딩 중...</span>
+        <span className="ml-2 text-sm text-gray-500">{t.common.loading}</span>
       </div>
     );
   }
@@ -100,8 +102,8 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-3">
         <AlertTriangle size={32} className="text-amber-500" />
-        <p className="text-sm text-gray-500">대시보드 데이터를 불러오지 못했습니다.</p>
-        <p className="text-xs text-gray-400">서버 연결을 확인하세요.</p>
+        <p className="text-sm text-gray-500">{t.dashboard.loadFail}</p>
+        <p className="text-xs text-gray-400">{t.dashboard.checkServer}</p>
       </div>
     );
   }
@@ -134,12 +136,12 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
               </div>
               <div className="divide-y divide-gray-100 text-sm">
                 {[
-                  { label: "날짜",  value: selectedRecent.date },
-                  { label: "품목명", value: selectedRecent.name },
-                  { label: "품목군", value: selectedRecent.category },
-                  { label: "수량",  value: `${selectedRecent.type === "입고" ? "+" : "-"}${selectedRecent.qty}개` },
-                  { label: "금액",  value: formatPrice(selectedRecent.amount) },
-                  { label: "거래처", value: selectedRecent.partner || "-" },
+                  { label: t.dashboard.detailDate,     value: selectedRecent.date },
+                  { label: t.dashboard.detailItem,     value: selectedRecent.name },
+                  { label: t.dashboard.detailCategory, value: selectedRecent.category },
+                  { label: t.dashboard.detailQty,      value: `${selectedRecent.type === "입고" ? "+" : "-"}${selectedRecent.qty}${t.dashboard.qtyUnit}` },
+                  { label: t.dashboard.detailAmount,   value: formatPrice(selectedRecent.amount) },
+                  { label: t.dashboard.detailPartner,  value: selectedRecent.partner || "-" },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex items-center py-2.5 gap-3">
                     <span className="w-16 text-xs text-gray-400 shrink-0">{label}</span>
@@ -153,8 +155,8 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
       })()}
 
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">대시보드</h1>
-        <p className="text-sm text-gray-500 mt-1">재고 현황을 한눈에 확인하세요</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t.nav.dashboard}</h1>
+        <p className="text-sm text-gray-500 mt-1">{t.dashboard.subtitle}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -183,7 +185,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
         <div>
           <div className="flex items-center gap-2 mb-3">
             <MapPin size={16} className="text-gray-400" />
-            <h2 className="font-bold text-gray-900">위치별 재고 현황</h2>
+            <h2 className="font-bold text-gray-900">{t.dashboard.locationTitle}</h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             {/* 전체 카드 */}
@@ -193,14 +195,14 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
             >
               <div className="flex items-start justify-between mb-2">
                 <span className="text-sm font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
-                  전체
+                  {t.dashboard.locationAll}
                 </span>
               </div>
               <p className="text-xl font-bold text-gray-900">
                 {data.inStockItems}
-                <span className="text-sm font-normal text-gray-400 ml-1">종</span>
+                <span className="text-sm font-normal text-gray-400 ml-1">{t.dashboard.typeUnit}</span>
               </p>
-              <p className="text-xs mt-1 font-medium text-emerald-600">현재 보유 중</p>
+              <p className="text-xs mt-1 font-medium text-emerald-600">{t.dashboard.inStockNow}</p>
             </button>
 
             {/* 본사/공덕 카드 */}
@@ -218,9 +220,11 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
                     <AlertTriangle size={14} className="text-amber-500 shrink-0 mt-0.5" />
                   )}
                 </div>
-                <p className="text-xl font-bold text-gray-900">{loc.totalItems}<span className="text-sm font-normal text-gray-400 ml-1">종</span></p>
+                <p className="text-xl font-bold text-gray-900">{loc.totalItems}<span className="text-sm font-normal text-gray-400 ml-1">{t.dashboard.typeUnit}</span></p>
                 <p className={`text-xs mt-1 font-medium ${loc.shortageCount > 0 ? "text-amber-600" : "text-emerald-600"}`}>
-                  {loc.shortageCount > 0 ? `⚠ 부족 ${loc.shortageCount}건` : "정상"}
+                  {loc.shortageCount > 0
+                    ? `${t.dashboard.shortagePrefix} ${loc.shortageCount}${t.dashboard.shortageSuffix}`
+                    : t.dashboard.normal}
                 </p>
               </button>
             ))}
@@ -230,11 +234,11 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
 
       <div className="bg-white rounded-2xl border border-gray-100">
         <div className="px-5 py-4 border-b border-gray-100">
-          <h2 className="font-bold text-gray-900">최근 입출고 내역</h2>
+          <h2 className="font-bold text-gray-900">{t.dashboard.recentTitle}</h2>
         </div>
         <div className="divide-y divide-gray-50">
           {data.recent.length === 0 ? (
-            <div className="px-5 py-8 text-center text-sm text-gray-400">최근 내역이 없습니다</div>
+            <div className="px-5 py-8 text-center text-sm text-gray-400">{t.dashboard.noRecent}</div>
           ) : (
             data.recent.map((item) => {
               const tc = TYPE_COLORS[item.type as keyof typeof TYPE_COLORS];
@@ -257,7 +261,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
                   </div>
                   <div className="text-right">
                     <span className={`text-sm font-bold ${tc?.text || "text-gray-700"}`}>
-                      {item.type === "입고" ? "+" : "-"}{item.qty}개
+                      {item.type === "입고" ? "+" : "-"}{item.qty}{t.dashboard.qtyUnit}
                     </span>
                     <p className="text-xs text-gray-400">{formatPrice(item.amount)}</p>
                   </div>

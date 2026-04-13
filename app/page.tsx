@@ -216,7 +216,7 @@ export default function Home() {
                   <p className="text-sm font-bold text-gray-900">{t.header.alerts}</p>
                   {shortageCount > 0 && (
                     <span className="text-xs font-semibold text-rose-500">
-                      재고 부족 {shortageCount}{t.header.shortageSuffix}
+                      {t.header.shortageLabel} {shortageCount}{t.header.shortageSuffix}
                     </span>
                   )}
                 </div>
