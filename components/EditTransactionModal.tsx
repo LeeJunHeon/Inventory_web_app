@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { InventoryItem, TYPE_COLORS } from "@/lib/data";
+import { useT } from "@/lib/i18n";
 
 interface LocationOption { id: number; name: string; }
 
@@ -12,6 +13,8 @@ interface Props {
 }
 
 export default function EditTransactionModal({ item, onClose, onSuccess }: Props) {
+  const { t } = useT();
+
   const [date, setDate]           = useState(item.date.replace(/\./g, "-"));
   const [type, setType]           = useState(item.type);
   const [quantity, setQuantity]   = useState(String(item.qty));
@@ -40,7 +43,7 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
 
   const handleSave = async () => {
     if (!quantity || Number(quantity) <= 0) {
-      setError("수량을 입력해주세요."); return;
+      setError(t.tx.enterQty); return;
     }
     setSaving(true); setError("");
     try {
@@ -61,12 +64,12 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
       });
       if (!res.ok) {
         const d = await res.json();
-        setError(d.error || "수정 실패"); return;
+        setError(d.error || t.tx.editFailed); return;
       }
       onSuccess();
       onClose();
     } catch {
-      setError("네트워크 오류");
+      setError(t.common.networkError);
     } finally {
       setSaving(false);
     }
@@ -78,10 +81,10 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">기록 수정</h2>
+            <h2 className="text-lg font-bold text-gray-900">{t.tx.editRecord}</h2>
             {item.createdAt && (
               <p className="text-xs text-gray-400 mt-0.5">
-                등록 시각: {new Date(item.createdAt).toLocaleString("ko-KR")}
+                {t.tx.createdAt}: {new Date(item.createdAt).toLocaleString("ko-KR")}
               </p>
             )}
           </div>
@@ -93,29 +96,29 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
         <div className="p-6 space-y-4">
           {/* 품목명 (읽기 전용) */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">품목</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">{t.tx.itemLabel}</label>
             <input readOnly value={`${item.name} (${item.code})`}
               className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
           </div>
 
           {/* 구분 */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">구분</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tx.typeLabel}</label>
             <div className="flex gap-2">
-              {(["입고", "출고", "불출"] as const).map((t) => (
-                <button key={t} onClick={() => setType(t)}
+              {(["입고", "출고", "불출"] as const).map((tp) => (
+                <button key={tp} onClick={() => setType(tp)}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                    type === t
-                      ? `${TYPE_COLORS[t].bg} ${TYPE_COLORS[t].text} ${TYPE_COLORS[t].border} border-2`
+                    type === tp
+                      ? `${TYPE_COLORS[tp].bg} ${TYPE_COLORS[tp].text} ${TYPE_COLORS[tp].border} border-2`
                       : "bg-gray-50 text-gray-500 border-2 border-transparent"
-                  }`}>{t}</button>
+                  }`}>{tp}</button>
               ))}
             </div>
           </div>
 
           {/* 날짜 */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">날짜</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">{t.tx.dateLabel}</label>
             <input type="date" value={date} onChange={e => setDate(e.target.value)}
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
           </div>
@@ -123,12 +126,12 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
           {/* 수량 / 단가 / 금액 */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">수량</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">{t.tx.qtyLabel}</label>
               <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)}
                 className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">단가</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">{t.tx.unitPriceLabel}</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
                   {currency === "USD" ? "$" : "₩"}
@@ -138,7 +141,7 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
               </div>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">금액</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">{t.tx.amountLabel}</label>
               <input readOnly
                 value={currency === "USD"
                   ? (amount ? `$${amount.toLocaleString()}` : "")
@@ -148,7 +151,7 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
           </div>
           {currency === "USD" && exchangeRateAtEntry && (
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">등록 당시 환율</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">{t.tx.entryRate}</label>
               <input readOnly value={`₩${exchangeRateAtEntry.toLocaleString()}`}
                 className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
             </div>
@@ -156,7 +159,7 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
 
           {/* 위치 */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">위치</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">{t.tx.locationLabel}</label>
             <select
               value={locationId}
               onChange={e => setLocationId(Number(e.target.value))}
@@ -169,7 +172,7 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
 
           {/* 메모 */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">비고</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">{t.items.noteLabel}</label>
             <textarea value={memo} onChange={e => setMemo(e.target.value)} rows={2}
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm resize-none focus:ring-2 focus:ring-blue-500 outline-none" />
           </div>
@@ -180,11 +183,11 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
           <button onClick={onClose}
             className="px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50">
-            취소
+            {t.common.cancel}
           </button>
           <button onClick={handleSave} disabled={saving}
             className="px-5 py-2.5 text-sm font-bold text-white bg-blue-500 rounded-xl hover:bg-blue-600 disabled:opacity-60">
-            {saving ? "저장 중..." : "수정 저장"}
+            {saving ? t.common.saving : t.tx.editSave}
           </button>
         </div>
       </div>
