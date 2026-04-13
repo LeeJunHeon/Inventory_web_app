@@ -38,7 +38,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
   const [toast, setToast]     = useState("");
-  const [showAdd, setShowAdd] = useState(false);
+  const [showAdd, setShowAdd]         = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
   // 새 사용자 폼
   const [newName, setNewName]   = useState("");
   const [newEmail, setNewEmail] = useState("");
@@ -203,6 +204,18 @@ export default function AdminPage() {
 
       {/* 데스크탑 테이블 */}
       <div className="hidden lg:block bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="flex justify-end px-5 pt-3">
+          <button
+            onClick={() => setShowInactive(v => !v)}
+            className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+              showInactive
+                ? "bg-gray-200 text-gray-700 border-gray-300"
+                : "bg-white text-gray-400 border-gray-200 hover:border-gray-300"
+            }`}
+          >
+            {showInactive ? "비활성 숨기기" : "비활성 포함"}
+          </button>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -218,9 +231,9 @@ export default function AdminPage() {
               </tr>
             </thead>
             <tbody>
-              {users.length === 0 ? (
+              {(() => { const visibleUsers = showInactive ? users : users.filter(u => u.isActive); return visibleUsers.length === 0 ? (
                 <tr><td colSpan={5 + PERM_LABELS.length} className="px-5 py-12 text-center text-sm text-gray-400">등록된 사용자가 없습니다</td></tr>
-              ) : users.map((user) => (
+              ) : visibleUsers.map((user) => (
                 <tr key={user.id} className={`border-b border-gray-50 ${!user.isActive ? "opacity-50" : ""}`}>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
@@ -257,7 +270,7 @@ export default function AdminPage() {
                     </button>
                   </td>
                 </tr>
-              ))}
+              )); })()}
             </tbody>
           </table>
         </div>
@@ -265,7 +278,19 @@ export default function AdminPage() {
 
       {/* 모바일 카드 */}
       <div className="lg:hidden space-y-3">
-        {users.map((user) => (
+        <div className="flex justify-end">
+          <button
+            onClick={() => setShowInactive(v => !v)}
+            className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+              showInactive
+                ? "bg-gray-200 text-gray-700 border-gray-300"
+                : "bg-white text-gray-400 border-gray-200 hover:border-gray-300"
+            }`}
+          >
+            {showInactive ? "비활성 숨기기" : "비활성 포함"}
+          </button>
+        </div>
+        {(showInactive ? users : users.filter(u => u.isActive)).map((user) => (
           <div key={user.id} className={`bg-white rounded-2xl border border-gray-100 p-4 space-y-3 ${!user.isActive ? "opacity-50" : ""}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
