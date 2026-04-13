@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
 import { Home, Package, BarChart3, Clock, Target, QrCode, Users, LogOut, Boxes, X, Layers, Building2, Search, FileText } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 export type PageId =
   | "dashboard" | "inventory" | "status" | "period"
@@ -19,28 +20,11 @@ interface Perms {
   canViewUserPerm: boolean;
 }
 
-const ALL_NAV_ITEMS: {
-  id: PageId; label: string; icon: React.ElementType;
-  group?: string; always?: boolean;
-}[] = [
-  { id: "dashboard", label: "대시보드",    icon: Home,      always: true },
-  { id: "inventory", label: "재고 관리",   icon: Package,   always: true },
-  { id: "status",    label: "보유 현황",   icon: BarChart3 },
-  { id: "period",    label: "기간별 조회", icon: Clock },
-  { id: "target",    label: "타겟 사용현황", icon: Target },
-  { id: "barcode",   label: "바코드",      icon: QrCode },
-  { id: "tracing",   label: "재고 추적",   icon: Search },
-  { id: "items",     label: "품목 관리",   icon: Layers },
-  { id: "partners",  label: "거래처 관리", icon: Building2, group: "마스터" },
-  { id: "admin",     label: "관리자 설정", icon: Users,     group: "마스터" },
-  { id: "logs",      label: "활동 로그",   icon: FileText,  group: "마스터" },
-];
-
 function isVisible(id: PageId, perms: Perms | null): boolean {
   if (!perms) return false;
   switch (id) {
     case "dashboard":  return perms.canViewMain;
-    case "inventory":  return true;               // 전용 권한 없음 → 항상 표시
+    case "inventory":  return true;
     case "status":     return perms.canViewStatus;
     case "period":     return perms.canViewPeriod;
     case "target":     return perms.canViewTargetUsage;
@@ -69,6 +53,21 @@ export default function Sidebar({
   const [perms, setPerms]               = useState<Perms | null>(null);
   const [permsLoading, setPermsLoading] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const { t } = useT();
+
+  const NAV_ITEMS: { id: PageId; label: string; icon: React.ElementType; group?: string }[] = [
+    { id: "dashboard",  label: t.nav.dashboard, icon: Home },
+    { id: "inventory",  label: t.nav.inventory,  icon: Package },
+    { id: "status",     label: t.nav.status,     icon: BarChart3 },
+    { id: "period",     label: t.nav.period,     icon: Clock },
+    { id: "target",     label: t.nav.target,     icon: Target },
+    { id: "barcode",    label: t.nav.barcode,    icon: QrCode },
+    { id: "tracing",    label: t.nav.tracing,    icon: Search },
+    { id: "items",      label: t.nav.items,      icon: Layers },
+    { id: "partners",   label: t.nav.partners,   icon: Building2, group: t.nav.master },
+    { id: "admin",      label: t.nav.admin,      icon: Users,     group: t.nav.master },
+    { id: "logs",       label: t.nav.logs,       icon: FileText,  group: t.nav.master },
+  ];
 
   // userName이 확정될 때마다 최신 권한 재조회 (로그인 직후, 사용자 전환 시 반영)
   useEffect(() => {
@@ -88,7 +87,7 @@ export default function Sidebar({
 
   // 표시할 메뉴 항목 필터링
   const visibleItems = perms
-    ? ALL_NAV_ITEMS.filter(item => isVisible(item.id, perms))
+    ? NAV_ITEMS.filter(item => isVisible(item.id, perms))
     : [];
 
   const renderNavItems = () => {
@@ -151,8 +150,8 @@ export default function Sidebar({
                 <Boxes size={18} className="text-white" />
               </div>
               <div>
-                <h1 className="text-sm font-bold text-gray-900">재고관리</h1>
-                <p className="text-[10px] text-gray-400">Inventory System</p>
+                <h1 className="text-sm font-bold text-gray-900">{t.nav.inventorySystem}</h1>
+                <p className="text-[10px] text-gray-400">{t.nav.inventorySystemSub}</p>
               </div>
             </div>
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 lg:hidden">
@@ -179,7 +178,7 @@ export default function Sidebar({
             <button
               onClick={() => setShowLogoutConfirm(true)}
               className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
-              title="로그아웃"
+              title={t.header.logout}
             >
               <LogOut size={16} />
             </button>
@@ -191,16 +190,16 @@ export default function Sidebar({
       {showLogoutConfirm && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.4)" }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
-            <h3 className="text-lg font-bold text-gray-900">로그아웃</h3>
-            <p className="text-sm text-gray-500">로그아웃 하시겠습니까?</p>
+            <h3 className="text-lg font-bold text-gray-900">{t.header.logout}</h3>
+            <p className="text-sm text-gray-500">{t.header.logoutConfirm}</p>
             <div className="flex justify-end gap-2">
               <button onClick={() => setShowLogoutConfirm(false)}
                 className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200">
-                취소
+                {t.common.cancel}
               </button>
               <button onClick={() => signOut({ callbackUrl: "/login" })}
                 className="px-4 py-2 text-sm font-bold text-white bg-rose-500 rounded-xl hover:bg-rose-600 transition-colors">
-                로그아웃
+                {t.header.logout}
               </button>
             </div>
           </div>

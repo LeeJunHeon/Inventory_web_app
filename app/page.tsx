@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { Menu, Bell, Lock } from "lucide-react";
+import { Menu, Bell, Lock, Globe } from "lucide-react";
 import Sidebar, { PageId } from "@/components/Sidebar";
 import DashboardPage    from "@/components/DashboardPage";
 import InventoryPage    from "@/components/InventoryPage";
@@ -15,6 +15,7 @@ import PartnersPage     from "@/components/PartnersPage";
 import AdminPage        from "@/components/AdminPage";
 import StockTracingPage from "@/components/StockTracingPage";
 import LogPage          from "@/components/LogPage";
+import { useT } from "@/lib/i18n";
 
 interface Perms {
   role: string;
@@ -28,15 +29,16 @@ interface Perms {
 }
 
 function NoAccess({ pageName }: { pageName: string }) {
+  const { t } = useT();
   return (
     <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
       <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
         <Lock size={22} className="text-gray-400" />
       </div>
-      <p className="text-base font-semibold text-gray-700">접근 권한이 없습니다</p>
+      <p className="text-base font-semibold text-gray-700">{t.header.noAccess}</p>
       <p className="text-sm text-gray-400">
-        <span className="font-medium text-gray-500">{pageName}</span> 페이지에 대한 접근 권한이 없습니다.<br />
-        관리자에게 권한을 요청하세요.
+        <span className="font-medium text-gray-500">{pageName}</span> {t.header.noAccessDesc}<br />
+        {t.header.contactAdmin}
       </p>
     </div>
   );
@@ -44,6 +46,7 @@ function NoAccess({ pageName }: { pageName: string }) {
 
 export default function Home() {
   const { data: session } = useSession();
+  const { lang, setLang, t } = useT();
   const [page, setPage]               = useState<PageId>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -87,17 +90,17 @@ export default function Home() {
   }, [page]);
 
   const PAGE_TITLES: Record<PageId, string> = {
-    dashboard: "대시보드",
-    inventory: "재고 관리",
-    status:    "보유 현황",
-    period:    "기간별 조회",
-    target:    "타겟 사용현황",
-    barcode:   "바코드",
-    tracing:   "재고 추적",
-    items:     "품목 관리",
-    partners:  "거래처 관리",
-    admin:     "관리자 설정",
-    logs:      "활동 로그",
+    dashboard: t.nav.dashboard,
+    inventory: t.nav.inventory,
+    status:    t.nav.status,
+    period:    t.nav.period,
+    target:    t.nav.target,
+    barcode:   t.nav.barcode,
+    tracing:   t.nav.tracing,
+    items:     t.nav.items,
+    partners:  t.nav.partners,
+    admin:     t.nav.admin,
+    logs:      t.nav.logs,
   };
 
   // 현재 페이지 접근 권한 확인
@@ -184,7 +187,16 @@ export default function Home() {
               {PAGE_TITLES[page]}
             </span>
           </div>
-          <div className="flex items-center gap-3 relative">
+          <div className="flex items-center gap-2 relative">
+            {/* 언어 전환 버튼 */}
+            <button
+              onClick={() => setLang(lang === "ko" ? "en" : "ko")}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-500"
+            >
+              <Globe size={16} />
+              <span className="text-xs font-semibold">{lang === "ko" ? "EN" : "KO"}</span>
+            </button>
+
             <button
               onClick={() => setShowNotif(!showNotif)}
               className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
@@ -201,9 +213,11 @@ export default function Home() {
             {showNotif && (
               <div className="absolute top-full right-0 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-50">
                 <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                  <p className="text-sm font-bold text-gray-900">알림</p>
+                  <p className="text-sm font-bold text-gray-900">{t.header.alerts}</p>
                   {shortageCount > 0 && (
-                    <span className="text-xs font-semibold text-rose-500">재고 부족 {shortageCount}건</span>
+                    <span className="text-xs font-semibold text-rose-500">
+                      재고 부족 {shortageCount}{t.header.shortageSuffix}
+                    </span>
                   )}
                 </div>
                 {shortageCount > 0 ? (
@@ -216,8 +230,8 @@ export default function Home() {
                             <p className="text-xs text-gray-400">{item.itemCode}</p>
                           </div>
                           <div className="ml-3 shrink-0 text-right">
-                            <p className="text-sm font-bold text-rose-500">{item.currentQty}개</p>
-                            <p className="text-xs text-gray-400">최소 {item.minQty}개</p>
+                            <p className="text-sm font-bold text-rose-500">{item.currentQty}{lang === "ko" ? "개" : ""}</p>
+                            <p className="text-xs text-gray-400">{t.header.minStock} {item.minQty}{lang === "ko" ? "개" : ""}</p>
                           </div>
                         </li>
                       ))}
@@ -227,13 +241,13 @@ export default function Home() {
                         onClick={() => { setPage("status"); setShowNotif(false); }}
                         className="w-full text-xs font-semibold text-blue-500 hover:text-blue-600 text-center py-1"
                       >
-                        보유 현황에서 전체 확인 →
+                        {t.header.viewAll}
                       </button>
                     </div>
                   </>
                 ) : (
                   <div className="px-4 py-4">
-                    <p className="text-sm text-gray-400 text-center">새로운 알림이 없습니다</p>
+                    <p className="text-sm text-gray-400 text-center">{t.header.noAlerts}</p>
                   </div>
                 )}
               </div>
