@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useT } from "@/lib/i18n";
 import { Save, Shield, UserPlus, Loader2, X, Trash2 } from "lucide-react";
 
 interface UserPerm {
@@ -13,15 +14,6 @@ interface UserPerm {
   };
 }
 
-const PERM_LABELS: { key: keyof UserPerm["perms"]; label: string }[] = [
-  { key: "main",               label: "대시보드" },
-  { key: "status",             label: "보유현황" },
-  { key: "period",             label: "기간별조회" },
-  { key: "targetUsage",        label: "타겟현황" },
-  { key: "barcode",            label: "바코드" },
-  { key: "barcodeCreatePrint", label: "바코드생성" },
-  { key: "userPerm",           label: "관리자" },
-];
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -34,6 +26,16 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 
 export default function AdminPage() {
   const { data: session } = useSession();
+  const { t } = useT();
+  const PERM_LABELS: { key: keyof UserPerm["perms"]; label: string }[] = [
+    { key: "main",               label: t.admin.permDashboard },
+    { key: "status",             label: t.admin.permStatus },
+    { key: "period",             label: t.admin.permPeriod },
+    { key: "targetUsage",        label: t.admin.permTarget },
+    { key: "barcode",            label: t.admin.permBarcode },
+    { key: "barcodeCreatePrint", label: t.admin.permBarcodeCreate },
+    { key: "userPerm",           label: t.admin.permAdmin },
+  ];
   const [users, setUsers]     = useState<UserPerm[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
@@ -80,23 +82,23 @@ export default function AdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ users }),
       });
-      if (res.ok) showToast("✅ 저장되었습니다.");
-      else        showToast("❌ 저장 실패");
-    } catch { showToast("❌ 네트워크 오류"); }
+      if (res.ok) showToast("✅ " + t.admin.saveSuccess);
+      else        showToast("❌ " + t.admin.saveFailed);
+    } catch { showToast("❌ " + t.common.networkError); }
     finally { setSaving(false); }
   };
 
   // 사용자 삭제
   const handleDelete = async (user: UserPerm) => {
     if (user.email && user.email === session?.user?.email) {
-      showToast("❌ 본인 계정은 삭제할 수 없습니다."); return;
+      showToast("❌ " + t.admin.cantDeleteSelf); return;
     }
-    if (!confirm(`"${user.name}" 사용자를 삭제하시겠습니까?\n(연결된 데이터가 있으면 비활성 처리됩니다)`)) return;
+    if (!confirm(t.admin.deleteConfirm(user.name))) return;
 
     try {
       const res  = await fetch(`/api/admin/users?userId=${user.id}`, { method: "DELETE" });
       const data = await res.json();
-      if (!res.ok) { showToast(`❌ ${data.error || "삭제 실패"}`); return; }
+      if (!res.ok) { showToast("❌ " + (data.error || t.admin.saveFailed)); return; }
 
       if (data.deactivated) {
         // 비활성 처리된 경우 목록 내 상태 업데이트
@@ -105,15 +107,15 @@ export default function AdminPage() {
       } else {
         // 실제 삭제된 경우 목록에서 제거
         setUsers(prev => prev.filter(u => u.id !== user.id));
-        showToast("✅ 사용자가 삭제되었습니다.");
+        showToast("✅ " + t.admin.deleteSuccess);
       }
-    } catch { showToast("❌ 네트워크 오류"); }
+    } catch { showToast("❌ " + t.common.networkError); }
   };
 
   // 사용자 추가
   const [adding, setAdding] = useState(false);
   const handleAddUser = async () => {
-    if (!newName.trim() || !newEmail.trim()) { setAddError("이름과 이메일을 입력해주세요."); return; }
+    if (!newName.trim() || !newEmail.trim()) { setAddError(t.admin.nameEmailRequired); return; }
     setAddError(""); setAdding(true);
     try {
       const res = await fetch("/api/admin/users", {
@@ -122,21 +124,21 @@ export default function AdminPage() {
         body: JSON.stringify({ name: newName, email: newEmail, role: newRole }),
       });
       const data = await res.json();
-      if (!res.ok) { setAddError(data.error || "추가 실패"); return; }
+      if (!res.ok) { setAddError(data.error || t.common.saveFail); return; }
       // 목록 새로고침
       const listRes = await fetch("/api/admin/users");
       if (listRes.ok) setUsers(await listRes.json());
       setNewName(""); setNewEmail(""); setNewRole("employee");
       setShowAdd(false);
-      showToast("✅ 사용자가 추가되었습니다.");
-    } catch { setAddError("네트워크 오류"); }
+      showToast("✅ " + t.admin.addSuccess);
+    } catch { setAddError(t.common.networkError); }
     finally { setAdding(false); }
   };
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
       <Loader2 size={24} className="animate-spin text-blue-500" />
-      <span className="ml-2 text-sm text-gray-500">로딩 중...</span>
+      <span className="ml-2 text-sm text-gray-500">{t.common.loading}</span>
     </div>
   );
 
@@ -152,8 +154,8 @@ export default function AdminPage() {
       {/* 헤더 */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">관리자 설정</h1>
-          <p className="text-sm text-gray-500 mt-0.5">사용자 권한 및 시스템 설정을 관리합니다</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t.nav.admin}</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{t.admin.subtitle}</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -164,15 +166,15 @@ export default function AdminPage() {
                 : "bg-white text-gray-400 border-gray-200 hover:bg-gray-50 hover:border-gray-300"
             }`}
           >
-            {showInactive ? "비활성 숨기기" : "비활성 포함"}
+            {showInactive ? t.common.inactiveHide : t.common.inactiveInclude}
           </button>
           <button onClick={() => { setShowAdd(!showAdd); setAddError(""); }}
             className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50">
-            <UserPlus size={16} />사용자 추가
+            <UserPlus size={16} />{t.admin.addUser}
           </button>
           <button onClick={handleSaveAll} disabled={saving}
             className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-blue-500 rounded-xl hover:bg-blue-600 shadow-sm disabled:opacity-60">
-            <Save size={16} />{saving ? "저장 중..." : "변경사항 저장"}
+            <Save size={16} />{saving ? t.common.saving : t.admin.saveAll}
           </button>
         </div>
       </div>
@@ -181,33 +183,33 @@ export default function AdminPage() {
       {showAdd && (
         <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-bold text-blue-900">새 사용자 추가</h2>
+            <h2 className="font-bold text-blue-900">{t.admin.addUserTitle}</h2>
             <button onClick={() => setShowAdd(false)} className="text-blue-400 hover:text-blue-700"><X size={18} /></button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-blue-700 mb-1">이름</label>
-              <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="예: 홍길동"
+              <label className="block text-xs font-semibold text-blue-700 mb-1">{t.admin.nameLabel}</label>
+              <input value={newName} onChange={e => setNewName(e.target.value)} placeholder={t.admin.namePlaceholder}
                 className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-blue-700 mb-1">이메일</label>
-              <input value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="예: hong@company.com"
+              <label className="block text-xs font-semibold text-blue-700 mb-1">{t.admin.emailLabel}</label>
+              <input value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder={t.admin.emailPlaceholder}
                 className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-blue-700 mb-1">권한</label>
+              <label className="block text-xs font-semibold text-blue-700 mb-1">{t.admin.roleLabel}</label>
               <select value={newRole} onChange={e => setNewRole(e.target.value as "admin" | "employee")}
                 className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none">
-                <option value="employee">직원</option>
-                <option value="admin">관리자</option>
+                <option value="employee">{t.admin.roleEmployee}</option>
+                <option value="admin">{t.admin.roleAdmin}</option>
               </select>
             </div>
           </div>
           {addError && <p className="text-sm text-red-500">{addError}</p>}
           <button onClick={handleAddUser} disabled={adding}
             className="px-5 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 disabled:opacity-60">
-            {adding ? "추가 중..." : "추가"}
+            {adding ? t.admin.adding : t.admin.addBtn}
           </button>
         </div>
       )}
@@ -218,19 +220,19 @@ export default function AdminPage() {
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">이름</th>
-                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">이메일</th>
-                <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">권한</th>
-                <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">활성</th>
+                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.admin.colName}</th>
+                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.admin.colEmail}</th>
+                <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">{t.admin.colRole}</th>
+                <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">{t.admin.colActive}</th>
                 {PERM_LABELS.map((p) => (
                   <th key={p.key} className="text-center text-xs font-semibold text-gray-500 px-3 py-3">{p.label}</th>
                 ))}
-                <th className="text-center text-xs font-semibold text-gray-500 px-3 py-3">삭제</th>
+                <th className="text-center text-xs font-semibold text-gray-500 px-3 py-3">{t.common.delete}</th>
               </tr>
             </thead>
             <tbody>
               {(() => { const visibleUsers = showInactive ? users : users.filter(u => u.isActive); return visibleUsers.length === 0 ? (
-                <tr><td colSpan={5 + PERM_LABELS.length} className="px-5 py-12 text-center text-sm text-gray-400">등록된 사용자가 없습니다</td></tr>
+                <tr><td colSpan={5 + PERM_LABELS.length} className="px-5 py-12 text-center text-sm text-gray-400">{t.admin.noData}</td></tr>
               ) : visibleUsers.map((user) => (
                 <tr key={user.id} className={`border-b border-gray-50 ${!user.isActive ? "opacity-50" : ""}`}>
                   <td className="px-5 py-3">
@@ -245,8 +247,8 @@ export default function AdminPage() {
                   <td className="px-5 py-3 text-center">
                     <select value={user.role} onChange={(e) => updateRole(user.id, e.target.value as "admin" | "employee")}
                       className={`text-xs font-semibold px-3 py-1 rounded-full border-0 outline-none cursor-pointer ${user.role === "admin" ? "bg-violet-100 text-violet-700" : "bg-gray-100 text-gray-600"}`}>
-                      <option value="admin">관리자</option>
-                      <option value="employee">직원</option>
+                      <option value="admin">{t.admin.roleAdmin}</option>
+                      <option value="employee">{t.admin.roleEmployee}</option>
                     </select>
                   </td>
                   <td className="px-5 py-3 text-center">
@@ -262,7 +264,7 @@ export default function AdminPage() {
                       onClick={() => handleDelete(user)}
                       disabled={user.email === session?.user?.email}
                       className="p-1.5 rounded-lg hover:bg-rose-100 text-gray-300 hover:text-rose-500 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                      title={user.email === session?.user?.email ? "본인 계정은 삭제 불가" : "삭제"}
+                      title={user.email === session?.user?.email ? t.admin.cantDeleteSelfTitle : t.common.delete}
                     >
                       <Trash2 size={15} />
                     </button>
@@ -290,7 +292,7 @@ export default function AdminPage() {
               </div>
               <div className="flex items-center gap-2">
                 <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${user.role === "admin" ? "bg-violet-100 text-violet-700" : "bg-gray-100 text-gray-600"}`}>
-                  {user.role === "admin" ? "관리자" : "직원"}
+                  {user.role === "admin" ? t.admin.roleAdmin : t.admin.roleEmployee}
                 </span>
                 <Toggle checked={user.isActive} onChange={() => toggleActive(user.id)} />
                 <button
