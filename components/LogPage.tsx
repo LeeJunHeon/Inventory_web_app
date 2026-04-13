@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 interface LogEntry {
   id: number;
@@ -41,6 +42,19 @@ const TABLE_COLORS: Record<string, string> = {
 const PAGE_LIMIT = 50;
 
 export default function LogPage() {
+  const { t } = useT();
+
+  const TABLE_LABELS: { key: string; label: string }[] = [
+    { key: "inventory_tx", label: t.logs.tblInventory },
+    { key: "target_log",   label: t.logs.tblTarget },
+    { key: "partner",      label: t.logs.tblPartner },
+    { key: "item",         label: t.logs.tblItem },
+    { key: "barcode",      label: t.logs.tblBarcode },
+    { key: "chamber_slot", label: t.logs.tblChamber },
+    { key: "user",         label: t.logs.tblUser },
+    { key: "target_unit",  label: t.logs.tblTargetUnit },
+  ];
+
   const [logs, setLogs]           = useState<LogEntry[]>([]);
   const [total, setTotal]         = useState(0);
   const [page, setPage]           = useState(1);
@@ -100,7 +114,7 @@ export default function LogPage() {
   // CSV 내보내기
   const handleExport = () => {
     if (logs.length === 0) return;
-    const header = ["시각", "작업자", "테이블", "액션", "레코드ID", "상세"];
+    const header = t.logs.csvHeaders;
     const rows = logs.map(l => [
       new Date(l.createdAt).toLocaleString("ko-KR"),
       l.userName,
@@ -129,8 +143,8 @@ export default function LogPage() {
       {/* 헤더 */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">활동 로그</h2>
-          <p className="text-sm text-gray-500 mt-0.5">데이터 변경 이력을 확인합니다</p>
+          <h2 className="text-xl font-bold text-gray-900">{t.nav.logs}</h2>
+          <p className="text-sm text-gray-500 mt-0.5">{t.logs.subtitle}</p>
         </div>
         <button
           onClick={handleExport}
@@ -147,7 +161,7 @@ export default function LogPage() {
         {/* 날짜 + 작업자 */}
         <div className="flex flex-wrap gap-3 items-end">
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1">시작일</label>
+            <label className="block text-xs font-semibold text-gray-500 mb-1">{t.logs.startDate}</label>
             <input
               type="date" value={startDate}
               onChange={e => setStartDate(e.target.value)}
@@ -155,7 +169,7 @@ export default function LogPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1">종료일</label>
+            <label className="block text-xs font-semibold text-gray-500 mb-1">{t.logs.endDate}</label>
             <input
               type="date" value={endDate}
               onChange={e => setEndDate(e.target.value)}
@@ -163,13 +177,13 @@ export default function LogPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1">작업자</label>
+            <label className="block text-xs font-semibold text-gray-500 mb-1">{t.logs.workerLabel}</label>
             <select
               value={userId}
               onChange={e => setUserId(e.target.value)}
               className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white min-w-[120px]"
             >
-              <option value="">전체</option>
+              <option value="">{t.logs.allWorkers}</option>
               {users.map(u => (
                 <option key={u.id} value={String(u.id)}>{u.name}</option>
               ))}
@@ -179,13 +193,13 @@ export default function LogPage() {
             onClick={handleSearch}
             className="px-5 py-2 text-sm font-semibold text-white bg-blue-500 rounded-xl hover:bg-blue-600 transition-colors"
           >
-            조회
+            {t.logs.searchBtn}
           </button>
         </div>
 
         {/* 액션 필터 */}
         <div className="flex flex-wrap gap-2">
-          <span className="text-xs font-semibold text-gray-400 self-center mr-1">액션</span>
+          <span className="text-xs font-semibold text-gray-400 self-center mr-1">{t.logs.actionFilterLabel}</span>
           {(["CREATE", "UPDATE", "DELETE"] as const).map(a => (
             <button
               key={a}
@@ -196,26 +210,17 @@ export default function LogPage() {
                   : "bg-gray-100 text-gray-500 hover:bg-gray-200"
               }`}
             >
-              {a === "CREATE" ? "등록" : a === "UPDATE" ? "수정" : "삭제"}
+              {a === "CREATE" ? t.logs.actionCreate : a === "UPDATE" ? t.logs.actionUpdate : t.logs.actionDelete}
             </button>
           ))}
           <span className="text-xs font-semibold text-gray-400 self-center mx-1">|</span>
-          <span className="text-xs font-semibold text-gray-400 self-center mr-1">테이블</span>
-          {([
-            { key: "inventory_tx", label: "재고 관리" },
-            { key: "target_log",   label: "타겟 사용현황" },
-            { key: "partner",      label: "거래처 관리" },
-            { key: "item",         label: "품목 관리" },
-            { key: "barcode",      label: "바코드" },
-            { key: "chamber_slot", label: "챔버별 타겟 현황" },
-            { key: "user",         label: "관리자 설정" },
-            { key: "target_unit",  label: "타겟 관리" },
-          ]).map(t => (
-            <button key={t.key} onClick={() => toggleTable(t.key)}
+          <span className="text-xs font-semibold text-gray-400 self-center mr-1">{t.logs.tableFilterLabel}</span>
+          {TABLE_LABELS.map(tbl => (
+            <button key={tbl.key} onClick={() => toggleTable(tbl.key)}
               className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors ${
-                tableName === t.key ? TABLE_COLORS[t.key] : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                tableName === tbl.key ? TABLE_COLORS[tbl.key] : "bg-gray-100 text-gray-500 hover:bg-gray-200"
               }`}>
-              {t.label}
+              {tbl.label}
             </button>
           ))}
         </div>
@@ -223,9 +228,9 @@ export default function LogPage() {
 
       {/* 결과 수 */}
       <div className="flex items-center justify-between text-sm text-gray-500 px-1">
-        <span>총 <span className="font-semibold text-gray-800">{total.toLocaleString()}</span>건</span>
+        <span>{t.logs.totalCount(total)}</span>
         {totalPages > 1 && (
-          <span>{page} / {totalPages} 페이지</span>
+          <span>{t.logs.pageInfo(page, totalPages)}</span>
         )}
       </div>
 
@@ -239,7 +244,7 @@ export default function LogPage() {
           </div>
         ) : logs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-            <p className="text-sm">조회된 활동 로그가 없습니다.</p>
+            <p className="text-sm">{t.logs.noData}</p>
           </div>
         ) : (
           <>
@@ -248,11 +253,11 @@ export default function LogPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">시각</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">작업자</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">테이블</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">액션</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">상세</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">{t.logs.colTime}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">{t.logs.colWorker}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">{t.logs.colTable}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">{t.logs.colAction}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">{t.logs.colDetail}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
