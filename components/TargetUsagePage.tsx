@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Search, Save, AlertTriangle, Weight, MapPin, FileText, ArrowDown, ArrowUp, ArrowUpDown, Loader2, Camera } from "lucide-react";
 import { TARGET_STATUS_LABELS, formatWeight } from "@/lib/data";
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
+import { useT } from "@/lib/i18n";
 
 interface TargetInfo { id: number; barcodeCode: string; itemCode: string; itemName: string; materialName: string; status: string; memo: string; }
 interface LogItem { id: number; targetId: number; timestamp: string; type: string; weight: number | null; location: string; locationId: number | null; reason: string; userName: string; barcodeCode: string; itemName: string; }
@@ -63,6 +64,12 @@ export default function TargetUsagePage() {
   useEffect(() => {
     setIsMobile(typeof navigator !== "undefined" && (navigator.maxTouchPoints > 0 || /Mobi|Android/i.test(navigator.userAgent)));
   }, []);
+  const { t } = useT();
+  const SEARCH_TYPE_MAP: Record<string, string> = {
+    "바코드":  t.target.searchTypeBarcode,
+    "품목코드": t.target.searchTypeItemCode,
+    "품목명":  t.target.searchTypeItemName,
+  };
   const [searchType, setSearchType]         = useState<"바코드" | "품목코드" | "품목명">("바코드");
   const [targetList, setTargetList]         = useState<TargetListItem[]>([]);
   const [barcodeInput, setBarcodeInput]     = useState("");
@@ -153,7 +160,7 @@ export default function TargetUsagePage() {
       const res = await fetch(`/api/targets?${params}`);
       if (!res.ok) {
         const err = await res.json();
-        setSearchError(err.error || "조회 실패");
+        setSearchError(err.error || t.target.searchFailed);
         setSelectedTarget(null);
         return;
       }
@@ -163,7 +170,7 @@ export default function TargetUsagePage() {
       setPage(data.page ?? 1);
       if (barcode) setSelectedTarget(data.target);
       setSearchError("");
-    } catch { setSearchError("조회 중 오류가 발생했습니다."); }
+    } catch { setSearchError(t.target.searchError); }
     finally { setLoading(false); }
   };
 
@@ -193,7 +200,7 @@ export default function TargetUsagePage() {
         const res = await fetch(`/api/targets?${params}`);
         const data = await res.json();
         if (!data.targetList?.length) {
-          setSearchError("검색 결과가 없습니다.");
+          setSearchError(t.target.noResults);
         } else {
           setTargetList(data.targetList);
           setSearchError("");
@@ -225,7 +232,7 @@ export default function TargetUsagePage() {
     const weightRequired = !isStorageToChamber;
 
     if (weightRequired && !weight) {
-      showToast("무게를 입력하세요.");
+      showToast(t.target.enterWeight);
       return;
     }
 
@@ -234,7 +241,7 @@ export default function TargetUsagePage() {
     const newWeight = weight ? Number(weight) : null;
 
     if (newWeight !== null && latestWeight !== null && newWeight > latestWeight) {
-      setWeightError("이전 기록보다 큰 값입니다. 다시 확인해주세요.");
+      setWeightError(t.target.weightTooHigh);
       return;
     }
     setWeightError("");
@@ -245,11 +252,11 @@ export default function TargetUsagePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ targetUnitId: selectedTarget.id, type: "측정", weight: weight ? parseFloat(weight) : null, locationId: locationId || null, reason }),
       });
-      if (!res.ok) { const e = await res.json(); showToast(e.error || "저장 실패"); return; }
-      showToast("측정값이 저장되었습니다.");
+      if (!res.ok) { const e = await res.json(); showToast(e.error || t.common.saveFail); return; }
+      showToast(t.target.weightSaved);
       setWeight(""); setLocationId(""); setReason("");
       fetchLogs(1, selectedTarget.barcodeCode);
-    } catch { showToast("저장에 실패했습니다."); }
+    } catch { showToast(t.target.saveFailed); }
     finally { setSaving(false); }
   };
 
@@ -263,9 +270,9 @@ export default function TargetUsagePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ materialName: selectedTarget.materialName }),
       });
-      if (!res.ok) { const e = await res.json(); showToast(e.error || "저장 실패"); return; }
-      showToast("정보가 저장되었습니다.");
-    } catch { showToast("저장에 실패했습니다."); }
+      if (!res.ok) { const e = await res.json(); showToast(e.error || t.common.saveFail); return; }
+      showToast(t.target.infoSaved);
+    } catch { showToast(t.target.saveFailed); }
     finally { setSaving(false); }
   };
 
@@ -280,7 +287,7 @@ export default function TargetUsagePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "disposed" }),
       });
-      if (!res.ok) { const e = await res.json(); showToast(e.error || "폐기 처리 실패"); return; }
+      if (!res.ok) { const e = await res.json(); showToast(e.error || t.target.disposeFailed); return; }
       // 폐기 로그도 함께 기록
       await fetch("/api/targets", {
         method: "POST",
@@ -289,7 +296,7 @@ export default function TargetUsagePage() {
       });
       setDisposeConfirm(false);
       fetchLogs(1, selectedTarget.barcodeCode);
-    } catch { showToast("처리에 실패했습니다."); }
+    } catch { showToast(t.target.processFailed); }
     finally { setSaving(false); }
   };
 
@@ -307,13 +314,13 @@ export default function TargetUsagePage() {
           note: editNote || null,
         }),
       });
-      if (!res.ok) { showToast("저장 실패"); return; }
+      if (!res.ok) { showToast(t.common.saveFail); return; }
       const updated = await fetch("/api/chamber-slots").then(r => r.json());
       setChamberSlots(Array.isArray(updated) ? updated : []);
       setEditingSlot(null);
-      showToast("저장되었습니다.");
+      showToast(t.target.slotSaved);
     } catch {
-      showToast("오류가 발생했습니다.");
+      showToast(t.target.slotError);
     } finally {
       setSlotSaving(false);
     }
