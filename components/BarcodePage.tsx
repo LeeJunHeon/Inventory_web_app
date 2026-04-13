@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Search, Plus, Trash2, Copy, QrCode, Check, X, Loader2, Printer, ImageDown, Pencil } from "lucide-react";
 import { QRCodeSVG, QRCodeCanvas } from "qrcode.react";
 import { CATEGORY_COLORS } from "@/lib/data";
+import { useT } from "@/lib/i18n";
 
 interface BarcodeItem {
   id: number; code: string; itemCode: string; itemName: string;
@@ -15,6 +16,16 @@ interface ItemOption { id: number; code: string; name: string; }
 const CATS = ["전체", "타겟", "웨이퍼", "가스", "기자재/소모품"];
 
 export default function BarcodePage() {
+  const { t } = useT();
+  const SEARCH_TYPE_LABEL: Record<string, string> = {
+    "전체": t.barcode.sfAll, "바코드": t.barcode.sfBarcode,
+    "품목코드": t.barcode.sfItemCode, "품목명": t.barcode.sfItemName,
+  };
+  const CAT_LABEL: Record<string, string> = {
+    "전체": t.barcode.catAll, "타겟": t.barcode.catTarget,
+    "웨이퍼": t.barcode.catWafer, "가스": t.barcode.catGas,
+    "기자재/소모품": t.barcode.catEquip,
+  };
   const [barcodes, setBarcodes]         = useState<BarcodeItem[]>([]);
   const [loading, setLoading]           = useState(true);
   const [search, setSearch]             = useState("");
@@ -55,7 +66,7 @@ export default function BarcodePage() {
       if (categoryFilter !== "전체") params.set("category", categoryFilter);
       const res = await fetch(`/api/barcodes?${params}`);
       if (res.ok) setBarcodes(await res.json());
-    } catch { setToast("바코드 목록 조회 실패"); setTimeout(() => setToast(""), 3000); }
+    } catch { setToast(t.barcode.fetchFailed); setTimeout(() => setToast(""), 3000); }
     finally { setLoading(false); }
   }, [search, categoryFilter, searchType]);
 
@@ -68,7 +79,7 @@ export default function BarcodePage() {
   useEffect(() => {
     fetch(`/api/items?category=${encodeURIComponent(createCategory)}`)
       .then(r => r.json()).then(setItemOptions)
-      .catch(() => setCreateError("품목 목록을 불러오지 못했습니다. 페이지를 새로고침 해주세요."));
+      .catch(() => setCreateError(t.barcode.itemLoadFailed));
     setCreateItemId(null); setCreateItemCode(""); setCreateItemName("");
   }, [createCategory]);
 
@@ -84,7 +95,7 @@ export default function BarcodePage() {
 
   // 바코드 생성+저장
   const handleCreate = async () => {
-    if (!createItemId) { setCreateError("품목을 선택해주세요."); return; }
+    if (!createItemId) { setCreateError(t.barcode.selectItemError); return; }
     setCreateError(""); setCreating(true);
     try {
       const res = await fetch("/api/barcodes", {
@@ -96,26 +107,26 @@ export default function BarcodePage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) { setCreateError(data.error || "생성 실패"); return; }
+      if (!res.ok) { setCreateError(data.error || t.barcode.createFailed); return; }
 
-      setCreateSuccess(`바코드 ${data.code} 생성 완료!`);
+      setCreateSuccess(t.barcode.createSuccess(data.code));
       setTimeout(() => setCreateSuccess(""), 3000);
       // 폼 초기화
       setCreateItemId(null); setCreateItemCode(""); setCreateItemName(""); setCreateMemo("");
       fetchData();
-    } catch { setCreateError("네트워크 오류"); }
+    } catch { setCreateError(t.common.networkError); }
     finally { setCreating(false); }
   };
 
   // 바코드 삭제
   const handleDelete = async (b: BarcodeItem) => {
-    if (!confirm(`바코드 "${b.code}" 를 삭제하시겠습니까?`)) return;
+    if (!confirm(t.barcode.deleteConfirm(b.code))) return;
     try {
       const res = await fetch(`/api/barcodes?id=${b.id}`, { method: "DELETE" });
       const data = await res.json();
-      if (!res.ok) { alert(data.error || "삭제 실패"); return; }
+      if (!res.ok) { alert(data.error || t.barcode.deleteFailed); return; }
       fetchData();
-    } catch { alert("네트워크 오류"); }
+    } catch { alert(t.common.networkError); }
   };
 
   // 이미지 저장: 400px 고해상도 QRCodeCanvas를 1:1로 복사해 텍스트 합성
@@ -212,7 +223,7 @@ export default function BarcodePage() {
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-gray-900">바코드 정보 수정</h3>
+              <h3 className="font-bold text-gray-900">{t.barcode.editTitle}</h3>
               <button onClick={() => setEditTarget(null)} className="p-1 rounded hover:bg-gray-100">
                 <X size={18} />
               </button>
@@ -221,7 +232,7 @@ export default function BarcodePage() {
               {editTarget.itemCode} · {editTarget.itemName}
             </div>
             <div className="mb-3">
-              <label className="block text-sm font-medium text-gray-700 mb-1">바코드 코드</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t.barcode.barcodeCodeLabel}</label>
               <input
                 type="text"
                 value={editCode}
@@ -230,8 +241,8 @@ export default function BarcodePage() {
               />
             </div>
             <div className="mb-3">
-              <label className="block text-sm font-medium text-gray-700 mb-1">메모</label>
-              <p className="text-xs text-gray-400 mt-0.5">타겟 소재명 (예: VO2, ITO, Ta₂O₅). 바코드 출력물에 표시됩니다.</p>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t.barcode.memoLabel}</label>
+              <p className="text-xs text-gray-400 mt-0.5">{t.barcode.memoHint}</p>
               <input
                 type="text"
                 value={editMemo}
@@ -240,7 +251,7 @@ export default function BarcodePage() {
               />
             </div>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">상태</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t.barcode.statusLabel}</label>
               <div className="flex gap-2">
                 <button
                   onClick={() => setEditIsActive("Y")}
@@ -248,7 +259,7 @@ export default function BarcodePage() {
                     editIsActive === "Y" ? "bg-green-600 text-white border-green-600" : "bg-white text-gray-600 border-gray-300 hover:border-green-400"
                   }`}
                 >
-                  활성 (Y)
+                  {t.barcode.activeY}
                 </button>
                 <button
                   onClick={() => setEditIsActive("N")}
@@ -256,7 +267,7 @@ export default function BarcodePage() {
                     editIsActive === "N" ? "bg-red-600 text-white border-red-600" : "bg-white text-gray-600 border-gray-300 hover:border-red-400"
                   }`}
                 >
-                  비활성 (N)
+                  {t.barcode.inactiveN}
                 </button>
               </div>
             </div>
@@ -274,11 +285,11 @@ export default function BarcodePage() {
                       isActive: editIsActive,
                     }),
                   });
-                  if (!res.ok) throw new Error("저장 실패");
+                  if (!res.ok) throw new Error(t.common.saveFail);
                   setEditTarget(null);
                   fetchData();
                 } catch {
-                  alert("저장에 실패했습니다.");
+                  alert(t.barcode.editSaveFailed);
                 } finally {
                   setEditSaving(false);
                 }
@@ -286,7 +297,7 @@ export default function BarcodePage() {
               disabled={editSaving}
               className="w-full py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
             >
-              {editSaving ? "저장 중..." : "저장"}
+              {editSaving ? t.common.saving : t.common.save}
             </button>
           </div>
         </div>
@@ -297,7 +308,7 @@ export default function BarcodePage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xs p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-gray-900">라벨 미리보기</h3>
+              <h3 className="text-base font-bold text-gray-900">{t.barcode.printTitle}</h3>
               <button onClick={() => setPrintItem(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
                 <X size={18} />
               </button>
@@ -329,15 +340,15 @@ export default function BarcodePage() {
             <div className="flex gap-2 justify-end">
               <button onClick={() => setPrintItem(null)}
                 className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200">
-                취소
+                {t.common.cancel}
               </button>
               <button onClick={handleSaveImage}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-emerald-700 bg-emerald-50 rounded-xl hover:bg-emerald-100">
-                <ImageDown size={15} />이미지 저장
+                <ImageDown size={15} />{t.barcode.saveImage}
               </button>
               <button onClick={handlePrint}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-blue-500 rounded-xl hover:bg-blue-600">
-                <Printer size={15} />인쇄
+                <Printer size={15} />{t.barcode.print}
               </button>
             </div>
           </div>
@@ -353,8 +364,8 @@ export default function BarcodePage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">바코드 관리</h1>
-          <p className="text-sm text-gray-500 mt-0.5">바코드 조회, 생성, 출력을 관리합니다</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t.barcode.pageTitle}</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{t.barcode.subtitle}</p>
         </div>
         <button onClick={() => {
             if (showCreate) {
@@ -364,43 +375,43 @@ export default function BarcodePage() {
             setShowCreate(!showCreate); setCreateError(""); setCreateSuccess("");
           }}
           className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-blue-500 rounded-xl hover:bg-blue-600 shadow-sm">
-          <Plus size={16} />새 바코드 생성
+          <Plus size={16} />{t.barcode.newBarcode}
         </button>
       </div>
 
       {/* ── 바코드 생성 폼 ── */}
       {showCreate && (
         <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 space-y-4">
-          <h2 className="font-bold text-blue-900">새 바코드 생성</h2>
+          <h2 className="font-bold text-blue-900">{t.barcode.createTitle}</h2>
 
           <div className="flex flex-wrap gap-3">
             {/* 품목군 */}
             <div className="flex-1 min-w-[150px]">
-              <label className="block text-xs font-semibold text-blue-700 mb-1">품목군</label>
+              <label className="block text-xs font-semibold text-blue-700 mb-1">{t.barcode.catLabel}</label>
               <select value={createCategory} onChange={e => setCreateCategory(e.target.value)}
                 className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none">
                 {["타겟", "웨이퍼", "가스", "기자재/소모품"].map(c => (
-                  <option key={c} value={c}>{c}</option>
+                  <option key={c} value={c}>{CAT_LABEL[c] || c}</option>
                 ))}
               </select>
             </div>
 
             {/* 품목코드 + 선택 */}
             <div className="flex-1 min-w-[160px]">
-              <label className="block text-xs font-semibold text-blue-700 mb-1">품목코드</label>
+              <label className="block text-xs font-semibold text-blue-700 mb-1">{t.barcode.itemCodeLabel}</label>
               <div className="relative" ref={itemDropRef}>
                 <div className="flex gap-1">
-                  <input value={createItemCode} readOnly placeholder="자동 입력"
+                  <input value={createItemCode} readOnly placeholder={t.barcode.autoFill}
                     className="flex-1 px-3 py-2.5 bg-white border border-blue-200 rounded-xl text-sm" />
                   <button onClick={() => setShowItemDrop(v => !v)}
                     className="px-3 py-2.5 bg-blue-500 text-white rounded-xl text-xs font-semibold hover:bg-blue-600">
-                    선택
+                    {t.barcode.selectBtn}
                   </button>
                 </div>
                 {showItemDrop && (
                   <div className="absolute left-0 right-0 z-20 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
                     {itemOptions.length === 0 ? (
-                      <p className="px-3 py-2.5 text-sm text-gray-400">등록된 품목 없음</p>
+                      <p className="px-3 py-2.5 text-sm text-gray-400">{t.barcode.noItems}</p>
                     ) : itemOptions.map(opt => (
                       <button key={opt.id} onClick={() => {
                         setCreateItemId(opt.id); setCreateItemCode(opt.code); setCreateItemName(opt.name);
@@ -418,8 +429,8 @@ export default function BarcodePage() {
             {/* 품목명 자동 입력 (타겟 외에만 표시) */}
             {createCategory !== "타겟" && (
               <div className="flex-1 min-w-[150px]">
-                <label className="block text-xs font-semibold text-blue-700 mb-1">품목명</label>
-                <input value={createItemName} readOnly placeholder="자동 입력"
+                <label className="block text-xs font-semibold text-blue-700 mb-1">{t.barcode.itemNameLabel}</label>
+                <input value={createItemName} readOnly placeholder={t.barcode.autoFill}
                   className="w-full px-3 py-2.5 bg-white border border-blue-200 rounded-xl text-sm" />
               </div>
             )}
@@ -427,10 +438,10 @@ export default function BarcodePage() {
             {/* 메모 (모든 카테고리) */}
             <div className="flex-1 min-w-[160px]">
               <label className="block text-xs font-semibold text-blue-700 mb-1">
-                메모 {createCategory !== "타겟" && <span className="text-blue-400 font-normal">(선택)</span>}
+                {t.barcode.memoLabel} {createCategory !== "타겟" && <span className="text-blue-400 font-normal">{t.barcode.memoOptional}</span>}
               </label>
               <input type="text" value={createMemo} onChange={e => setCreateMemo(e.target.value)}
-                placeholder={createCategory === "타겟" ? '예: Au 2" 0.125t' : "추가 설명 입력"}
+                placeholder={createCategory === "타겟" ? t.barcode.memoTargetPlaceholder : t.barcode.memoOtherPlaceholder}
                 className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm outline-none bg-white" />
             </div>
 
@@ -438,7 +449,7 @@ export default function BarcodePage() {
             <div className="flex items-end">
               <button onClick={handleCreate} disabled={creating}
                 className="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:opacity-60 whitespace-nowrap">
-                <QrCode size={16} />{creating ? "생성 중..." : "생성+저장"}
+                <QrCode size={16} />{creating ? t.barcode.creating : t.barcode.createSave}
               </button>
             </div>
           </div>
@@ -456,14 +467,14 @@ export default function BarcodePage() {
             onChange={e => setSearchType(e.target.value as any)}
             className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none bg-white shrink-0"
           >
-            <option value="전체">전체</option>
-            <option value="바코드">바코드</option>
-            <option value="품목코드">품목코드</option>
-            <option value="품목명">품목명</option>
+            <option value="전체">{t.barcode.sfAll}</option>
+            <option value="바코드">{t.barcode.sfBarcode}</option>
+            <option value="품목코드">{t.barcode.sfItemCode}</option>
+            <option value="품목명">{t.barcode.sfItemName}</option>
           </select>
           <div className="relative flex-1 min-w-[200px]">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input type="text" placeholder="바코드, 품목코드, 품목명 검색..." value={search}
+            <input type="text" placeholder={t.barcode.searchPlaceholder} value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && fetchData()}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
@@ -471,7 +482,7 @@ export default function BarcodePage() {
           <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1 overflow-x-auto">
             {CATS.map((c) => (
               <button key={c} onClick={() => setCategoryFilter(c)}
-                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${categoryFilter === c ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}>{c}</button>
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${categoryFilter === c ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}>{CAT_LABEL[c] || c}</button>
             ))}
           </div>
         </div>
@@ -509,20 +520,20 @@ export default function BarcodePage() {
                   <div className="flex items-center gap-1">ID <SortIcon field="id" /></div>
                 </th>
                 <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("code")}>
-                  <div className="flex items-center gap-1">바코드 <SortIcon field="code" /></div>
+                  <div className="flex items-center gap-1">{t.barcode.sfBarcode} <SortIcon field="code" /></div>
                 </th>
-                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">품목코드</th>
-                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">품목명</th>
+                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.barcode.itemCodeLabel}</th>
+                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.barcode.itemNameLabel}</th>
                 <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("category")}>
-                  <div className="flex items-center gap-1">품목군 <SortIcon field="category" /></div>
+                  <div className="flex items-center gap-1">{t.barcode.catLabel} <SortIcon field="category" /></div>
                 </th>
-                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">타겟ID</th>
-                <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">활성</th>
-                <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">작업</th>
+                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.barcode.colTargetId}</th>
+                <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">{t.barcode.colActive}</th>
+                <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colAction}</th>
               </tr></thead>
               <tbody>
                 {sortedBarcodes.length === 0 ? (
-                  <tr><td colSpan={8} className="px-5 py-12 text-center text-sm text-gray-400">등록된 바코드가 없습니다</td></tr>
+                  <tr><td colSpan={8} className="px-5 py-12 text-center text-sm text-gray-400">{t.barcode.noData}</td></tr>
                 ) : sortedBarcodes.map((b) => (
                   <tr key={b.id} className="border-b border-gray-50 hover:bg-blue-50/30 group">
                     <td className="px-5 py-3 text-sm text-gray-400">{b.id}</td>
@@ -537,25 +548,25 @@ export default function BarcodePage() {
                     </td>
                     <td className="px-5 py-3 text-center">
                       {b.isActive === "Y"
-                        ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full"><Check size={12} />활성</span>
-                        : <span className="inline-flex items-center gap-1 text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full"><X size={12} />비활성</span>}
+                        ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full"><Check size={12} />{t.barcode.active}</span>
+                        : <span className="inline-flex items-center gap-1 text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full"><X size={12} />{t.barcode.inactive}</span>}
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => { navigator.clipboard.writeText(b.code); setToast(`${b.code} 복사됨`); setTimeout(() => setToast(""), 2000); }}
-                          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600" title="바코드 복사">
+                        <button onClick={() => { navigator.clipboard.writeText(b.code); setToast(t.barcode.copied(b.code)); setTimeout(() => setToast(""), 2000); }}
+                          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600" title={t.barcode.sfBarcode}>
                           <Copy size={15} />
                         </button>
                         <button onClick={() => setPrintItem(b)}
-                          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600" title="라벨 인쇄">
+                          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600" title={t.barcode.print}>
                           <Printer size={15} />
                         </button>
                         <button onClick={() => { setEditTarget(b); setEditCode(b.code); setEditMemo(b.memo ?? ""); setEditIsActive(b.isActive === "Y" || b.isActive === "true" ? "Y" : "N"); }}
-                          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600" title="수정">
+                          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600" title={t.common.edit}>
                           <Pencil size={15} />
                         </button>
                         <button onClick={() => handleDelete(b)}
-                          className="p-1.5 rounded-lg hover:bg-rose-100 text-gray-400 hover:text-rose-600" title="삭제">
+                          className="p-1.5 rounded-lg hover:bg-rose-100 text-gray-400 hover:text-rose-600" title={t.common.delete}>
                           <Trash2 size={15} />
                         </button>
                       </div>
@@ -574,8 +585,8 @@ export default function BarcodePage() {
                   <span className="text-sm font-mono font-bold text-gray-900">{b.code}</span>
                   <div className="flex items-center gap-2">
                     {b.isActive === "Y"
-                      ? <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">활성</span>
-                      : <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">비활성</span>}
+                      ? <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">{t.barcode.active}</span>
+                      : <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{t.barcode.inactive}</span>}
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[b.category] || ""}`}>{b.category}</span>
                   </div>
                 </div>
@@ -604,7 +615,7 @@ export default function BarcodePage() {
           </div>
 
           <div className="px-5 py-3 border-t border-gray-100 bg-gray-50">
-            <p className="text-xs text-gray-500">총 <span className="font-semibold text-gray-700">{sortedBarcodes.length}건</span></p>
+            <p className="text-xs text-gray-500 font-semibold text-gray-700">{t.barcode.totalCount(sortedBarcodes.length)}</p>
           </div>
         </div>
         );
