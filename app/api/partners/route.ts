@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-helpers";
+import { auth } from "@/auth";
 
 // GET /api/partners
 export async function GET(request: NextRequest) {
@@ -58,6 +59,14 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    const session = await auth();
+    if (session?.user?.email) {
+      const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
+      if (actor) await prisma.activityLog.create({
+        data: { userId: actor.id, action: "CREATE", tableName: "partner", recordId: partner.id },
+      });
+    }
+
     return NextResponse.json({
       id: partner.id, name: partner.name,
       managerName: partner.managerName, contact: partner.contact, email: partner.email,
@@ -93,6 +102,14 @@ export async function PUT(request: NextRequest) {
       },
     });
 
+    const session = await auth();
+    if (session?.user?.email) {
+      const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
+      if (actor) await prisma.activityLog.create({
+        data: { userId: actor.id, action: "UPDATE", tableName: "partner", recordId: Number(id) },
+      });
+    }
+
     return NextResponse.json({
       id: partner.id, name: partner.name,
       managerName: partner.managerName, contact: partner.contact, email: partner.email,
@@ -121,6 +138,15 @@ export async function DELETE(request: NextRequest) {
     }
 
     await prisma.partner.delete({ where: { id: Number(id) } });
+
+    const session = await auth();
+    if (session?.user?.email) {
+      const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
+      if (actor) await prisma.activityLog.create({
+        data: { userId: actor.id, action: "DELETE", tableName: "partner", recordId: Number(id) },
+      });
+    }
+
     return NextResponse.json({ message: "거래처가 삭제되었습니다." });
   } catch (error) {
     console.error("DELETE /api/partners error:", error);

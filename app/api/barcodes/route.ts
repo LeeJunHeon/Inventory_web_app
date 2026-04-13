@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-helpers";
+import { auth } from "@/auth";
 
 // GET /api/barcodes — 바코드 목록 조회
 export async function GET(request: NextRequest) {
@@ -155,6 +156,14 @@ export async function POST(request: NextRequest) {
         return barcode;
       });
 
+      const session = await auth();
+      if (session?.user?.email) {
+        const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
+        if (actor) await prisma.activityLog.create({
+          data: { userId: actor.id, action: "CREATE", tableName: "barcode", recordId: result.id },
+        });
+      }
+
       return NextResponse.json({
         id:       result.id,
         code:     result.code,
@@ -176,6 +185,14 @@ export async function POST(request: NextRequest) {
       },
       include: { item: { include: { category: true } }, targetUnit: true },
     });
+
+    const session2 = await auth();
+    if (session2?.user?.email) {
+      const actor = await prisma.user.findUnique({ where: { email: session2.user.email }, select: { id: true } });
+      if (actor) await prisma.activityLog.create({
+        data: { userId: actor.id, action: "CREATE", tableName: "barcode", recordId: barcode.id },
+      });
+    }
 
     return NextResponse.json({
       id:       barcode.id,
@@ -210,6 +227,15 @@ export async function PATCH(request: NextRequest) {
         ...(body.memo        !== undefined ? { memo: body.memo }                : {}),
       },
     });
+
+    const session = await auth();
+    if (session?.user?.email) {
+      const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
+      if (actor) await prisma.activityLog.create({
+        data: { userId: actor.id, action: "UPDATE", tableName: "barcode", recordId: barcode.id },
+      });
+    }
+
     return NextResponse.json(barcode);
   } catch (error) {
     console.error("PATCH /api/barcodes error:", error);
@@ -237,6 +263,14 @@ export async function DELETE(request: NextRequest) {
       data:  { barcodeId: null },
     });
     await prisma.barcode.delete({ where: { id: Number(id) } });
+
+    const session = await auth();
+    if (session?.user?.email) {
+      const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
+      if (actor) await prisma.activityLog.create({
+        data: { userId: actor.id, action: "DELETE", tableName: "barcode", recordId: Number(id) },
+      });
+    }
 
     return NextResponse.json({ message: "바코드가 삭제되었습니다." });
   } catch (error) {

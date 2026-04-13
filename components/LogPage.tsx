@@ -30,6 +30,12 @@ const ACTION_COLORS: Record<string, string> = {
 const TABLE_COLORS: Record<string, string> = {
   inventory_tx: "bg-violet-100 text-violet-700",
   target_log:   "bg-amber-100 text-amber-700",
+  partner:      "bg-sky-100 text-sky-700",
+  item:         "bg-teal-100 text-teal-700",
+  barcode:      "bg-orange-100 text-orange-700",
+  chamber_slot: "bg-pink-100 text-pink-700",
+  user:         "bg-indigo-100 text-indigo-700",
+  target_unit:  "bg-yellow-100 text-yellow-700",
 };
 
 const PAGE_LIMIT = 50;
@@ -124,7 +130,7 @@ export default function LogPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-gray-900">활동 로그</h2>
-          <p className="text-sm text-gray-500 mt-0.5">재고 거래 및 타겟 로그의 등록·수정·삭제 이력</p>
+          <p className="text-sm text-gray-500 mt-0.5">데이터 변경 이력을 확인합니다</p>
         </div>
         <button
           onClick={handleExport}
@@ -196,18 +202,19 @@ export default function LogPage() {
           <span className="text-xs font-semibold text-gray-400 self-center mx-1">|</span>
           <span className="text-xs font-semibold text-gray-400 self-center mr-1">테이블</span>
           {([
-            { key: "inventory_tx", label: "재고 거래" },
-            { key: "target_log",   label: "타겟 로그" },
+            { key: "inventory_tx", label: "재고 관리" },
+            { key: "target_log",   label: "타겟 사용현황" },
+            { key: "partner",      label: "거래처 관리" },
+            { key: "item",         label: "품목 관리" },
+            { key: "barcode",      label: "바코드" },
+            { key: "chamber_slot", label: "챔버별 타겟 현황" },
+            { key: "user",         label: "관리자 설정" },
+            { key: "target_unit",  label: "타겟 관리" },
           ]).map(t => (
-            <button
-              key={t.key}
-              onClick={() => toggleTable(t.key)}
+            <button key={t.key} onClick={() => toggleTable(t.key)}
               className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors ${
-                tableName === t.key
-                  ? TABLE_COLORS[t.key]
-                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-              }`}
-            >
+                tableName === t.key ? TABLE_COLORS[t.key] : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+              }`}>
               {t.label}
             </button>
           ))}

@@ -58,6 +58,13 @@ export async function PUT(request: NextRequest) {
 
     const toYN = (v: boolean | undefined, def: boolean) => ((v ?? def) ? "Y" : "N");
 
+    const session = await auth();
+    let actorId: number | null = null;
+    if (session?.user?.email) {
+      const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
+      actorId = actor?.id ?? null;
+    }
+
     for (const u of users) {
       await prisma.user.update({
         where: { id: u.id },
@@ -78,6 +85,10 @@ export async function PUT(request: NextRequest) {
         where:  { userId: u.id },
         update: perms,
         create: { userId: u.id, ...perms },
+      });
+
+      if (actorId) await prisma.activityLog.create({
+        data: { userId: actorId, action: "UPDATE", tableName: "user", recordId: u.id },
       });
     }
 
@@ -116,6 +127,14 @@ export async function POST(request: NextRequest) {
     await prisma.userTabPermission.create({
       data: { userId: user.id },
     });
+
+    const session = await auth();
+    if (session?.user?.email) {
+      const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
+      if (actor) await prisma.activityLog.create({
+        data: { userId: actor.id, action: "CREATE", tableName: "user", recordId: user.id },
+      });
+    }
 
     return NextResponse.json({
       id: user.id, name: user.name, email: user.email, role: user.role, isActive: user.isActive,
@@ -166,12 +185,25 @@ export async function DELETE(request: NextRequest) {
         where: { id: targetId },
         data:  { isActive: "N" },
       });
+      if (session?.user?.email) {
+        const me = await prisma.user.findUnique({ where: { email: session.user.email! }, select: { id: true } });
+        if (me) await prisma.activityLog.create({
+          data: { userId: me.id, action: "DELETE", tableName: "user", recordId: targetId },
+        });
+      }
       return NextResponse.json({ deactivated: true, message: "연결된 거래/로그 데이터가 있어 비활성 처리되었습니다." });
     }
 
     // 연결 데이터 없음: permission 먼저 삭제 후 user 삭제
     await prisma.userTabPermission.deleteMany({ where: { userId: targetId } });
     await prisma.user.delete({ where: { id: targetId } });
+
+    if (session?.user?.email) {
+      const me = await prisma.user.findUnique({ where: { email: session.user.email! }, select: { id: true } });
+      if (me) await prisma.activityLog.create({
+        data: { userId: me.id, action: "DELETE", tableName: "user", recordId: targetId },
+      });
+    }
 
     return NextResponse.json({ message: "사용자가 삭제되었습니다." });
   } catch (error) {

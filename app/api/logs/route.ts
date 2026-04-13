@@ -4,8 +4,14 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 const TABLE_LABEL: Record<string, string> = {
-  inventory_tx: "재고 거래",
-  target_log:   "타겟 로그",
+  inventory_tx: "재고 관리",
+  target_log:   "타겟 사용현황",
+  partner:      "거래처 관리",
+  item:         "품목 관리",
+  barcode:      "바코드",
+  chamber_slot: "챔버별 타겟 현황",
+  user:         "관리자 설정",
+  target_unit:  "타겟 관리",
 };
 
 const ACTION_LABEL: Record<string, string> = {
@@ -87,6 +93,73 @@ export async function GET(request: NextRequest) {
               const wt   = tl.weight ? ` ${Number(tl.weight).toFixed(3)}g` : "";
               detail = `[${tl.logType}] ${bc} ${name}${wt}`.trim();
             }
+          } else if (log.tableName === "partner") {
+            try {
+              const p = await prisma.partner.findUnique({ where: { id: log.recordId } });
+              detail = p ? p.name : `ID: ${log.recordId}`;
+            } catch { detail = `ID: ${log.recordId}`; }
+
+          } else if (log.tableName === "item") {
+            try {
+              const it = await prisma.item.findUnique({ where: { id: log.recordId } });
+              detail = it ? `${it.code} ${it.name}` : `ID: ${log.recordId}`;
+            } catch { detail = `ID: ${log.recordId}`; }
+
+          } else if (log.tableName === "barcode") {
+            try {
+              const bc = await prisma.barcode.findUnique({
+                where: { id: log.recordId },
+                include: { item: true },
+              });
+              detail = bc ? `${bc.code} (${bc.item?.name ?? "-"})` : `ID: ${log.recordId}`;
+            } catch { detail = `ID: ${log.recordId}`; }
+
+          } else if (log.tableName === "user") {
+            try {
+              const u = await prisma.user.findUnique({ where: { id: log.recordId } });
+              detail = u ? `${u.name} (${u.email ?? "-"})` : `ID: ${log.recordId}`;
+            } catch { detail = `ID: ${log.recordId}`; }
+
+          } else if (log.tableName === "target_unit") {
+            try {
+              const tu = await prisma.targetUnit.findUnique({
+                where: { id: log.recordId },
+                include: {
+                  barcodes: { where: { isActive: "Y" }, take: 1 },
+                  item: true,
+                },
+              });
+              if (tu) {
+                const bc = tu.barcodes[0]?.code ?? "";
+                detail = `${bc ? bc + " " : ""}${tu.item?.name ?? ""} → ${tu.status}`;
+              } else {
+                detail = `ID: ${log.recordId}`;
+              }
+            } catch { detail = `ID: ${log.recordId}`; }
+
+          } else if (log.tableName === "chamber_slot") {
+            try {
+              const cs = await prisma.chamberSlot.findUnique({
+                where: { id: log.recordId },
+                include: {
+                  location: true,
+                  targetUnit: {
+                    include: {
+                      barcodes: { where: { isActive: "Y" }, take: 1 },
+                      item: true,
+                    },
+                  },
+                },
+              });
+              if (cs) {
+                const loc  = cs.location?.name ?? "";
+                const bc   = cs.targetUnit?.barcodes[0]?.code ?? "";
+                const name = cs.targetUnit?.item?.name ?? "비어있음";
+                detail = `${loc} → ${bc ? bc + " " : ""}${name}`;
+              } else {
+                detail = `ID: ${log.recordId}`;
+              }
+            } catch { detail = `ID: ${log.recordId}`; }
           }
         } catch { /* 삭제된 레코드 등은 무시 */ }
 

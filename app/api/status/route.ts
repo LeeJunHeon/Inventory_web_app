@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -112,6 +113,10 @@ export async function GET(request: NextRequest) {
 
 // PUT /api/status — 최소 재고 수량 저장 (item.minStockQty)
 export async function PUT(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
+  }
   try {
     const body = await request.json();
     const { itemId, quantity } = body;
@@ -130,6 +135,13 @@ export async function PUT(request: NextRequest) {
       data:   { minStockQty: qty },
       select: { id: true, minStockQty: true },
     });
+
+    if (session.user.email) {
+      const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
+      if (actor) await prisma.activityLog.create({
+        data: { userId: actor.id, action: "UPDATE", tableName: "item", recordId: Number(itemId) },
+      });
+    }
 
     return NextResponse.json(item);
   } catch (error) {

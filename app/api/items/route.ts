@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-helpers";
+import { auth } from "@/auth";
 
 // GET /api/items
 export async function GET(request: NextRequest) {
@@ -80,6 +81,14 @@ export async function POST(request: NextRequest) {
       include: { category: true },
     });
 
+    const session = await auth();
+    if (session?.user?.email) {
+      const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
+      if (actor) await prisma.activityLog.create({
+        data: { userId: actor.id, action: "CREATE", tableName: "item", recordId: item.id },
+      });
+    }
+
     return NextResponse.json({
       id: item.id, code: item.code, name: item.name,
       category: item.category.name, categoryId: item.categoryId,
@@ -118,6 +127,14 @@ export async function PUT(request: NextRequest) {
       include: { category: true },
     });
 
+    const session = await auth();
+    if (session?.user?.email) {
+      const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
+      if (actor) await prisma.activityLog.create({
+        data: { userId: actor.id, action: "UPDATE", tableName: "item", recordId: Number(id) },
+      });
+    }
+
     return NextResponse.json({
       id: item.id, code: item.code, name: item.name,
       category: item.category.name, categoryId: item.categoryId,
@@ -147,6 +164,15 @@ export async function DELETE(request: NextRequest) {
     }
 
     await prisma.item.delete({ where: { id: Number(id) } });
+
+    const session = await auth();
+    if (session?.user?.email) {
+      const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
+      if (actor) await prisma.activityLog.create({
+        data: { userId: actor.id, action: "DELETE", tableName: "item", recordId: Number(id) },
+      });
+    }
+
     return NextResponse.json({ message: "품목이 삭제되었습니다." });
   } catch (error) {
     console.error("DELETE /api/items error:", error);
