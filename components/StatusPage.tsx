@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { Search, AlertTriangle, CheckCircle, AlertCircle, Loader2, Check, X, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { CATEGORY_COLORS } from "@/lib/data";
+import { useT } from "@/lib/i18n";
+import type { Messages } from "@/messages/ko";
 
 interface LocationOption { id: number; name: string; }
 
@@ -14,12 +16,12 @@ interface StockItem {
   locationQty?: Record<number, number>;
 }
 
-function getSupplyLevel(current: number, required: number) {
-  if (required === 0) return { label: "기준없음", color: "text-gray-400 bg-gray-50", icon: CheckCircle };
+function getSupplyLevel(current: number, required: number, t: Messages) {
+  if (required === 0) return { label: t.status.levelNone,     color: "text-gray-400 bg-gray-50",       icon: CheckCircle };
   const ratio = current / required;
-  if (ratio >= 1.2) return { label: "안정",  color: "text-emerald-700 bg-emerald-50", icon: CheckCircle };
-  if (ratio >= 1.0) return { label: "주의",  color: "text-amber-700 bg-amber-50",    icon: AlertCircle };
-  return               { label: "부족",  color: "text-rose-700 bg-rose-50",      icon: AlertTriangle };
+  if (ratio >= 1.2) return { label: t.status.levelStable,   color: "text-emerald-700 bg-emerald-50", icon: CheckCircle };
+  if (ratio >= 1.0) return { label: t.status.levelCaution,  color: "text-amber-700 bg-amber-50",     icon: AlertCircle };
+  return               { label: t.status.levelShortage, color: "text-rose-700 bg-rose-50",      icon: AlertTriangle };
 }
 
 const CATS = ["웨이퍼", "타겟", "가스", "기자재/소모품"];
@@ -36,7 +38,6 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
   const [selectedCategory, setSelectedCategory] = useState("전체");
   const [locationOptions, setLocationOptions]   = useState<LocationOption[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState<number | null>(initialLocationId ?? null);
-  // 인라인 필요수량 편집 상태
   const [editingId, setEditingId]           = useState<number | null>(null);
   const [editValue, setEditValue]           = useState("");
   const [savingId, setSavingId]             = useState<number | null>(null);
@@ -45,6 +46,21 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
   const [sortField, setSortField]           = useState<"name" | "code" | "category" | "currentQty" | "requiredQty">("name");
   const [sortDir, setSortDir]               = useState<"asc" | "desc">("asc");
 
+  const { t } = useT();
+
+  const STOCK_FILTER_LABEL: Record<string, string> = {
+    "전체": t.status.sfAll,
+    "보유중": t.status.sfInStock,
+    "미보유": t.status.sfOutStock,
+  };
+  const CAT_LABEL_MAP: Record<string, string> = {
+    "전체": t.status.catAll,
+    "웨이퍼": t.status.catWafer,
+    "타겟": t.status.catTarget,
+    "가스": t.status.catGas,
+    "기자재/소모품": t.status.catEquip,
+  };
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -52,11 +68,10 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
       if (selectedLocationId !== null) params.set("locationId", String(selectedLocationId));
       const res = await fetch(`/api/status?${params}`);
       if (res.ok) setItems(await res.json());
-    } catch { setToast("데이터 조회에 실패했습니다."); setTimeout(() => setToast(""), 3000); }
+    } catch { setToast(t.common.loadFail); setTimeout(() => setToast(""), 3000); }
     finally { setLoading(false); }
-  }, [selectedLocationId]);
+  }, [selectedLocationId, t]);
 
-  // 위치 목록 로드 (최초 1회) — 본사(1), 공덕(2)만 표시
   useEffect(() => {
     fetch("/api/locations")
       .then(r => r.json())
@@ -65,19 +80,17 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
         setLocationOptions(filtered.length > 0 ? filtered : locs);
       })
       .catch(() => {
-        setToast("위치 목록을 불러오지 못했습니다. 페이지를 새로고침 해주세요.");
+        setToast(t.status.locLoadFail);
         setTimeout(() => setToast(""), 4000);
       });
-  }, []);
+  }, [t]);
 
-  // 위치 바뀔 때마다 재고 재조회
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // 필요수량 저장
   const handleSaveRequired = async (item: StockItem) => {
     const qty = Number(editValue);
     if (isNaN(qty) || qty < 0) {
-      setToast("0 이상의 숫자를 입력해주세요.");
+      setToast(t.status.invalidQty);
       setTimeout(() => setToast(""), 3000);
       return;
     }
@@ -91,7 +104,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
       if (res.ok) {
         setItems(prev => prev.map(i => i.id === item.id ? { ...i, requiredQty: qty } : i));
       }
-    } catch { setToast("필요수량 저장에 실패했습니다."); setTimeout(() => setToast(""), 3000); }
+    } catch { setToast(t.status.saveRequiredFail); setTimeout(() => setToast(""), 3000); }
     finally { setSavingId(null); setEditingId(null); }
   };
 
@@ -132,7 +145,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
   if (loading) return (
     <div className="flex items-center justify-center h-64">
       <Loader2 size={24} className="animate-spin text-blue-500" />
-      <span className="ml-2 text-sm text-gray-500">로딩 중...</span>
+      <span className="ml-2 text-sm text-gray-500">{t.common.loading}</span>
     </div>
   );
 
@@ -147,17 +160,17 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">보유 현황</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t.nav.status}</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {selectedLocationId === null
-              ? "전체 위치 · 품목별 현재 재고와 수급 상태를 확인합니다"
-              : `${locationOptions.find(l => l.id === selectedLocationId)?.name ?? ""} 위치 기준`}
+              ? t.status.subtitle
+              : `${locationOptions.find(l => l.id === selectedLocationId)?.name ?? ""} ${t.status.locationBasis}`}
           </p>
         </div>
         {shortageCount > 0 && (
           <div className="flex items-center gap-2 px-4 py-2 bg-rose-50 border border-rose-200 rounded-xl">
             <AlertTriangle size={16} className="text-rose-500" />
-            <span className="text-sm font-semibold text-rose-700">부족 품목 {shortageCount}건</span>
+            <span className="text-sm font-semibold text-rose-700">{t.status.shortageAlert(shortageCount)}</span>
           </div>
         )}
       </div>
@@ -173,7 +186,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
                   ? "bg-blue-500 text-white shadow-sm"
                   : "bg-gray-50 text-gray-500 hover:bg-gray-100"
               }`}>
-              전체
+              {t.status.locationAll}
             </button>
             {locationOptions.map(loc => (
               <button
@@ -203,7 +216,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
                 : "bg-white text-gray-600 border-gray-300 hover:border-blue-400"
             }`}
           >
-            {f}
+            {STOCK_FILTER_LABEL[f]}
             {f === "보유중" && <span className="ml-1 text-xs opacity-75">({items.filter(i=>i.currentQty>0).length})</span>}
             {f === "미보유" && <span className="ml-1 text-xs opacity-75">({items.filter(i=>i.currentQty===0).length})</span>}
           </button>
@@ -215,13 +228,15 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
         <div className="flex flex-wrap gap-3 items-center">
           <div className="relative flex-1 min-w-[200px]">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input type="text" placeholder="품목코드, 품목명 검색..." value={search} onChange={(e) => setSearch(e.target.value)}
+            <input type="text" placeholder={t.status.searchPlaceholder} value={search} onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
           </div>
           <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1">
-            {["전체", ...CATS].map((c) => (
-              <button key={c} onClick={() => setSelectedCategory(c)}
-                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${selectedCategory === c ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}>{c}</button>
+            {["전체", ...CATS].map((cat) => (
+              <button key={cat} onClick={() => setSelectedCategory(cat)}
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${selectedCategory === cat ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}>
+                {CAT_LABEL_MAP[cat] || cat}
+              </button>
             ))}
           </div>
         </div>
@@ -235,39 +250,41 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
             <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${CATEGORY_COLORS[cat] || ""}`}>{cat}</span>
-                <span className="text-xs text-gray-400">{catItems.length}종</span>
+                <span className="text-xs text-gray-400">{catItems.length}{t.status.countSuffix}</span>
               </div>
-              <p className="text-xs text-gray-400">필요수량 셀을 클릭해 직접 수정하세요</p>
+              <p className="text-xs text-gray-400">{t.status.editHint}</p>
             </div>
 
             {catItems.length === 0 ? (
-              <div className="px-5 py-8 text-center text-sm text-gray-400">{search ? "검색 결과가 없습니다" : "등록된 품목이 없습니다"}</div>
+              <div className="px-5 py-8 text-center text-sm text-gray-400">
+                {search ? t.status.noSearchResult : t.status.noItems}
+              </div>
             ) : (
               <>
                 {/* 데스크탑 테이블 */}
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full">
                     <thead><tr className="bg-gray-50/50">
-                      <th onClick={() => handleSort("code")} className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5 cursor-pointer select-none hover:text-blue-600">품목코드<SortIcon field="code" /></th>
-                      <th onClick={() => handleSort("name")} className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5 cursor-pointer select-none hover:text-blue-600">품목명<SortIcon field="name" /></th>
-                      <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">바코드</th>
-                      {cat === "웨이퍼" && <><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">저항</th><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">두께</th></>}
-                      {cat === "타겟"   && <><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">순도</th><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">Copper</th></>}
+                      <th onClick={() => handleSort("code")} className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5 cursor-pointer select-none hover:text-blue-600">{t.status.colCode}<SortIcon field="code" /></th>
+                      <th onClick={() => handleSort("name")} className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5 cursor-pointer select-none hover:text-blue-600">{t.status.colName}<SortIcon field="name" /></th>
+                      <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.status.colBarcode}</th>
+                      {cat === "웨이퍼" && <><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">{t.status.colResistivity}</th><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">{t.status.colThickness}</th></>}
+                      {cat === "타겟"   && <><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">{t.status.colPurity}</th><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">Copper</th></>}
                       {selectedLocationId === null ? (
                         <>
-                          <th className="text-right text-xs font-semibold text-gray-500 px-3 py-2.5 whitespace-nowrap">본사</th>
-                          <th className="text-right text-xs font-semibold text-gray-500 px-3 py-2.5 whitespace-nowrap">공덕</th>
-                          <th onClick={() => handleSort("currentQty")} className="text-right text-xs font-semibold text-gray-500 px-5 py-2.5 cursor-pointer select-none hover:text-blue-600 whitespace-nowrap">합계<SortIcon field="currentQty" /></th>
+                          <th className="text-right text-xs font-semibold text-gray-500 px-3 py-2.5 whitespace-nowrap">{t.status.locationMain}</th>
+                          <th className="text-right text-xs font-semibold text-gray-500 px-3 py-2.5 whitespace-nowrap">{t.status.locationGongdeok}</th>
+                          <th onClick={() => handleSort("currentQty")} className="text-right text-xs font-semibold text-gray-500 px-5 py-2.5 cursor-pointer select-none hover:text-blue-600 whitespace-nowrap">{t.status.colTotal}<SortIcon field="currentQty" /></th>
                         </>
                       ) : (
-                        <th onClick={() => handleSort("currentQty")} className="text-right text-xs font-semibold text-gray-500 px-5 py-2.5 cursor-pointer select-none hover:text-blue-600">보유수량<SortIcon field="currentQty" /></th>
+                        <th onClick={() => handleSort("currentQty")} className="text-right text-xs font-semibold text-gray-500 px-5 py-2.5 cursor-pointer select-none hover:text-blue-600">{t.status.colStock}<SortIcon field="currentQty" /></th>
                       )}
-                      <th onClick={() => handleSort("requiredQty")} className="text-right text-xs font-semibold text-gray-500 px-5 py-2.5 cursor-pointer select-none hover:text-blue-600">필요수량 ✏️<SortIcon field="requiredQty" /></th>
-                      <th className="text-center text-xs font-semibold text-gray-500 px-5 py-2.5">수급상태</th>
+                      <th onClick={() => handleSort("requiredQty")} className="text-right text-xs font-semibold text-gray-500 px-5 py-2.5 cursor-pointer select-none hover:text-blue-600">{t.status.colRequired} ✏️<SortIcon field="requiredQty" /></th>
+                      <th className="text-center text-xs font-semibold text-gray-500 px-5 py-2.5">{t.status.colSupplyStatus}</th>
                     </tr></thead>
                     <tbody>
                       {catItems.map((item) => {
-                        const level   = getSupplyLevel(item.currentQty, item.requiredQty);
+                        const level   = getSupplyLevel(item.currentQty, item.requiredQty, t);
                         const editing = editingId === item.id;
                         return (
                           <tr key={item.code} className="border-t border-gray-50 hover:bg-blue-50/30">
@@ -286,7 +303,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
                               <td className="px-5 py-3 text-sm text-right font-semibold text-gray-900">{item.currentQty}</td>
                             )}
 
-                            {/* ✅ 필요수량 인라인 편집 */}
+                            {/* 필요수량 인라인 편집 */}
                             <td className="px-5 py-3 text-sm text-right">
                               {editing ? (
                                 <div className="flex items-center justify-end gap-1">
@@ -326,7 +343,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
                 {/* 모바일 카드 */}
                 <div className="md:hidden divide-y divide-gray-50">
                   {catItems.map((item) => {
-                    const level   = getSupplyLevel(item.currentQty, item.requiredQty);
+                    const level   = getSupplyLevel(item.currentQty, item.requiredQty, t);
                     const editing = editingId === item.id;
                     return (
                       <div key={item.code} className="px-4 py-3 space-y-2">
@@ -343,16 +360,16 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
                         <div className="flex items-center gap-4 text-sm">
                           {selectedLocationId === null && item.locationQty ? (
                             <span className="text-gray-500">
-                              본사 <span className="font-bold text-gray-900">{item.locationQty[1] ?? 0}</span>
+                              {t.status.locationMain} <span className="font-bold text-gray-900">{item.locationQty[1] ?? 0}</span>
                               <span className="mx-1 text-gray-300">|</span>
-                              공덕 <span className="font-bold text-gray-900">{item.locationQty[2] ?? 0}</span>
+                              {t.status.locationGongdeok} <span className="font-bold text-gray-900">{item.locationQty[2] ?? 0}</span>
                               <span className="mx-1 text-gray-300">|</span>
-                              합계 <span className="font-bold text-gray-900">{item.currentQty}</span>
+                              {t.status.colTotal} <span className="font-bold text-gray-900">{item.currentQty}</span>
                             </span>
                           ) : (
-                            <span className="text-gray-500">보유 <span className="font-bold text-gray-900">{item.currentQty}</span></span>
+                            <span className="text-gray-500">{t.status.stockLabel} <span className="font-bold text-gray-900">{item.currentQty}</span></span>
                           )}
-                          <span className="text-gray-400">/ 필요{" "}
+                          <span className="text-gray-400">/ {t.status.requiredLabel}{" "}
                             {editing ? (
                               <span className="inline-flex items-center gap-1">
                                 <input type="number" min="0" value={editValue} onChange={e => setEditValue(e.target.value)}
