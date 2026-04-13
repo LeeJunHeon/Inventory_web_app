@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Search, ArrowDownCircle, ArrowUpCircle, Share2, ChevronRight, Loader2, Tag, X } from "lucide-react";
 import { CATEGORY_COLORS } from "@/lib/data";
+import { useT } from "@/lib/i18n";
 
 interface BarcodeInfo  { id: number; code: string; isActive: string; }
 interface TxCount      { inbound: number; outbound: number; disburse: number; }
@@ -31,6 +32,15 @@ const TYPE_DOT: Record<string, string> = {
 };
 
 export default function StockTracingPage() {
+  const { t } = useT();
+
+  const SEARCH_TYPE_MAP: Record<string, string> = {
+    "전체":   t.tracing.sfAll,
+    "품목코드": t.tracing.sfItemCode,
+    "품목명":  t.tracing.sfItemName,
+    "바코드":  t.tracing.sfBarcode,
+  };
+
   const [query, setQuery]                   = useState("");
   const [searchType, setSearchType]         = useState("전체");
   const [results, setResults]               = useState<SearchResult[]>([]);
@@ -84,8 +94,8 @@ export default function StockTracingPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">재고 추적</h1>
-        <p className="text-sm text-gray-500 mt-1">품목코드, 품목명, 바코드로 입출고 전체 이력을 추적합니다</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t.nav.tracing}</h1>
+        <p className="text-sm text-gray-500 mt-1">{t.tracing.subtitle}</p>
       </div>
 
       {/* 검색창 */}
@@ -96,10 +106,10 @@ export default function StockTracingPage() {
             onChange={e => setSearchType(e.target.value)}
             className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none bg-white shrink-0"
           >
-            <option value="전체">전체</option>
-            <option value="품목코드">품목코드</option>
-            <option value="품목명">품목명</option>
-            <option value="바코드">바코드</option>
+            <option value="전체">{t.tracing.sfAll}</option>
+            <option value="품목코드">{t.tracing.sfItemCode}</option>
+            <option value="품목명">{t.tracing.sfItemName}</option>
+            <option value="바코드">{t.tracing.sfBarcode}</option>
           </select>
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -108,7 +118,7 @@ export default function StockTracingPage() {
               value={query}
               onChange={e => setQuery(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleSearch()}
-              placeholder="품목코드, 품목명, 바코드 입력 (예: T-1, VO2, Vanadium)"
+              placeholder={t.tracing.searchPlaceholder}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             />
           </div>
@@ -118,7 +128,7 @@ export default function StockTracingPage() {
             className="px-5 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 disabled:opacity-60 flex items-center gap-2"
           >
             {loading ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />}
-            검색
+            {t.tracing.searchBtn}
           </button>
         </div>
       </div>
@@ -133,13 +143,13 @@ export default function StockTracingPage() {
           ) : !searched ? (
             <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-gray-100 space-y-2">
               <Search size={28} className="text-gray-200" />
-              <p className="text-sm text-gray-400">검색어를 입력하고 검색하세요</p>
+              <p className="text-sm text-gray-400">{t.tracing.enterSearch}</p>
             </div>
           ) : results.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-gray-100 space-y-2">
               <Search size={28} className="text-gray-200" />
-              <p className="text-sm text-gray-500 font-medium">검색 결과 없음</p>
-              <p className="text-xs text-gray-400">다른 검색어 또는 검색 기준을 사용해보세요</p>
+              <p className="text-sm text-gray-500 font-medium">{t.tracing.noResults}</p>
+              <p className="text-xs text-gray-400">{t.tracing.noResultsHint}</p>
             </div>
           ) : results.map(item => (
             <button
@@ -169,16 +179,16 @@ export default function StockTracingPage() {
 
               <div className="flex items-center gap-3 text-xs">
                 <span className="flex items-center gap-1 text-blue-600">
-                  <ArrowDownCircle size={12} />입고 {item.txCount.inbound}건
+                  <ArrowDownCircle size={12} />{t.tracing.inboundLabel} {item.txCount.inbound}{t.tracing.countUnit}
                 </span>
                 <span className="flex items-center gap-1 text-rose-500">
-                  <ArrowUpCircle size={12} />출고 {item.txCount.outbound}건
+                  <ArrowUpCircle size={12} />{t.tracing.outboundLabel} {item.txCount.outbound}{t.tracing.countUnit}
                 </span>
                 <span className="flex items-center gap-1 text-amber-600">
-                  <Share2 size={12} />불출 {item.txCount.disburse}건
+                  <Share2 size={12} />{t.tracing.disburseLabel} {item.txCount.disburse}{t.tracing.countUnit}
                 </span>
                 <span className="ml-auto font-semibold text-emerald-700">
-                  재고 {item.currentQty}개
+                  {t.tracing.stockLabel} {item.currentQty}{t.tracing.qtyUnit}
                 </span>
               </div>
 
@@ -190,7 +200,7 @@ export default function StockTracingPage() {
                     </span>
                   ))}
                   {item.barcodes.length > 5 && (
-                    <span className="text-[10px] text-gray-400 px-1.5 py-0.5">+{item.barcodes.length - 5}개</span>
+                    <span className="text-[10px] text-gray-400 px-1.5 py-0.5">{t.tracing.moreLabel(item.barcodes.length - 5)}</span>
                   )}
                 </div>
               )}
@@ -204,7 +214,7 @@ export default function StockTracingPage() {
             <div className="flex items-center justify-center py-24 bg-white rounded-2xl border border-gray-100">
               <div className="text-center space-y-2">
                 <Search size={28} className="text-gray-200 mx-auto" />
-                <p className="text-sm text-gray-400">품목을 검색하고 선택하면<br />입출고 이력이 표시됩니다</p>
+                <p className="text-sm text-gray-400">{t.tracing.selectItem}</p>
               </div>
             </div>
           ) : (
@@ -226,7 +236,7 @@ export default function StockTracingPage() {
                           : "bg-white text-gray-600 border-gray-300 hover:border-blue-400"
                       }`}
                     >
-                      전체
+                      {t.tracing.barcodeAll}
                     </button>
                     {selectedItem.barcodes.map(b => (
                       <button
@@ -252,20 +262,20 @@ export default function StockTracingPage() {
                 </div>
               ) : txHistory.length === 0 ? (
                 <div className="flex items-center justify-center py-16">
-                  <p className="text-sm text-gray-400">거래 이력이 없습니다</p>
+                  <p className="text-sm text-gray-400">{t.tracing.noHistory}</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-gray-50 border-b border-gray-100">
-                        <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">날짜</th>
-                        <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">구분</th>
-                        <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">전표번호</th>
-                        <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">거래처/사유</th>
-                        <th className="text-right text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">수량</th>
-                        <th className="text-right text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">단가</th>
-                        <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">바코드</th>
+                        <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">{t.tracing.colDate}</th>
+                        <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">{t.tracing.colType}</th>
+                        <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">{t.tracing.colTxNo}</th>
+                        <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">{t.tracing.colPartnerReason}</th>
+                        <th className="text-right text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">{t.tracing.colQty}</th>
+                        <th className="text-right text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">{t.tracing.colUnitPrice}</th>
+                        <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">{t.tracing.colBarcode}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -310,10 +320,10 @@ export default function StockTracingPage() {
               {/* 요약 */}
               {txHistory.length > 0 && (
                 <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/50 flex items-center gap-4 text-xs text-gray-500">
-                  <span>전체 {txHistory.length}건</span>
-                  <span className="text-blue-600">입고 {txHistory.filter(t => t.txType === "입고").reduce((s, t) => s + t.qty, 0).toLocaleString()}</span>
-                  <span className="text-rose-500">출고 {txHistory.filter(t => t.txType === "출고").reduce((s, t) => s + t.qty, 0).toLocaleString()}</span>
-                  <span className="text-amber-600">불출 {txHistory.filter(t => t.txType === "불출").reduce((s, t) => s + t.qty, 0).toLocaleString()}</span>
+                  <span>{t.tracing.summaryTotal} {txHistory.length}{t.tracing.countUnit}</span>
+                  <span className="text-blue-600">{t.tracing.inboundLabel} {txHistory.filter(tx => tx.txType === "입고").reduce((s, tx) => s + tx.qty, 0).toLocaleString()}</span>
+                  <span className="text-rose-500">{t.tracing.outboundLabel} {txHistory.filter(tx => tx.txType === "출고").reduce((s, tx) => s + tx.qty, 0).toLocaleString()}</span>
+                  <span className="text-amber-600">{t.tracing.disburseLabel} {txHistory.filter(tx => tx.txType === "불출").reduce((s, tx) => s + tx.qty, 0).toLocaleString()}</span>
                 </div>
               )}
             </div>
@@ -338,16 +348,16 @@ export default function StockTracingPage() {
             </div>
             <div className="divide-y divide-gray-100 text-sm">
               {[
-                { label: "전표번호", value: selectedTx.txNo ? `#${selectedTx.txNo}` : "-" },
-                { label: "참조전표", value: selectedTx.refTxNo || "-" },
-                { label: "수량",     value: `${selectedTx.txType === "입고" ? "+" : "-"}${selectedTx.qty.toLocaleString()}` },
-                { label: "단가",     value: selectedTx.unitPrice != null ? (selectedTx.currency === "USD" ? `$${selectedTx.unitPrice.toLocaleString()}` : `₩${selectedTx.unitPrice.toLocaleString()}`) : "-" },
-                { label: "거래처",   value: selectedTx.partnerName || "-" },
-                { label: "사유",     value: selectedTx.reasonName || "-" },
-                { label: "위치",     value: selectedTx.locationName || "-" },
-                { label: "바코드",   value: selectedTx.barcodeCode || "-" },
-                { label: "담당자",   value: selectedTx.userName || "-" },
-                { label: "메모",     value: selectedTx.memo || "-" },
+                { label: t.tracing.detailTxNo,      value: selectedTx.txNo ? `#${selectedTx.txNo}` : "-" },
+                { label: t.tracing.detailRefTxNo,   value: selectedTx.refTxNo || "-" },
+                { label: t.tracing.detailQty,        value: `${selectedTx.txType === "입고" ? "+" : "-"}${selectedTx.qty.toLocaleString()}` },
+                { label: t.tracing.detailUnitPrice,   value: selectedTx.unitPrice != null ? (selectedTx.currency === "USD" ? `$${selectedTx.unitPrice.toLocaleString()}` : `₩${selectedTx.unitPrice.toLocaleString()}`) : "-" },
+                { label: t.tracing.detailPartner,    value: selectedTx.partnerName || "-" },
+                { label: t.tracing.detailReason,     value: selectedTx.reasonName || "-" },
+                { label: t.tracing.detailLocation,   value: selectedTx.locationName || "-" },
+                { label: t.tracing.detailBarcode,    value: selectedTx.barcodeCode || "-" },
+                { label: t.tracing.detailManager,    value: selectedTx.userName || "-" },
+                { label: t.tracing.detailMemo,       value: selectedTx.memo || "-" },
               ].map(({ label, value }) => (
                 <div key={label} className="flex items-start py-2 gap-3">
                   <span className="w-20 text-xs text-gray-400 shrink-0 pt-0.5">{label}</span>
