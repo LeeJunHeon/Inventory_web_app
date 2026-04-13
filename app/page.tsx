@@ -111,7 +111,7 @@ export default function Home() {
       case "target":     return perms.canViewTargetUsage;
       case "barcode":    return perms.canViewBarcode;
       case "tracing":    return true;
-      case "items":
+      case "items":      return true;
       case "partners":   return perms.role === "admin";
       case "admin":      return perms.canViewUserPerm;
       case "logs":       return perms.role === "admin";
