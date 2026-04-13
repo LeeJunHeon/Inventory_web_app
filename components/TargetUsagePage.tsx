@@ -375,11 +375,11 @@ export default function TargetUsagePage() {
             <div className="space-y-3">
               {/* 현재 장착 타겟 표시 */}
               <div className="px-3 py-2 bg-gray-50 rounded-xl text-sm">
-                <span className="text-xs text-gray-400">현재: </span>
+                <span className="text-xs text-gray-400">{t.target.currentLabel}: </span>
                 <span className="font-semibold text-gray-800">
                   {slotSelectedTarget
                     ? `${slotSelectedTarget.barcodeCode} · ${slotSelectedTarget.itemName}`
-                    : "비어있음"}
+                    : t.target.empty}
                 </span>
               </div>
 
@@ -394,9 +394,9 @@ export default function TargetUsagePage() {
                   }}
                   className="px-2 py-2 border border-gray-200 rounded-xl text-xs bg-white outline-none shrink-0"
                 >
-                  <option value="바코드">바코드</option>
-                  <option value="품목코드">품목코드</option>
-                  <option value="품목명">품목명</option>
+                  <option value="바코드">{t.target.searchTypeBarcode}</option>
+                  <option value="품목코드">{t.target.searchTypeItemCode}</option>
+                  <option value="품목명">{t.target.searchTypeItemName}</option>
                 </select>
                 <div className="relative flex-1">
                   <input
@@ -408,8 +408,8 @@ export default function TargetUsagePage() {
                         : e.target.value
                     )}
                     placeholder={
-                      slotSearchType === "바코드"   ? "바코드 입력 또는 스캔" :
-                      slotSearchType === "품목코드" ? "품목코드 입력" : "품목명 입력"
+                      slotSearchType === "바코드"   ? t.target.slotBarcodePlaceholder :
+                      slotSearchType === "품목코드" ? t.target.slotItemCodePlaceholder : t.target.slotItemNamePlaceholder
                     }
                     className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 pr-8"
                   />
@@ -450,12 +450,12 @@ export default function TargetUsagePage() {
 
               {/* 메모 */}
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">메모 (선택)</label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">{t.target.memoLabel}</label>
                 <input
                   type="text"
                   value={editNote}
                   onChange={e => setEditNote(e.target.value)}
-                  placeholder="추가 메모"
+                  placeholder={t.target.memoPlaceholder}
                   className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -468,24 +468,24 @@ export default function TargetUsagePage() {
                   setSlotSearchQuery("");
                 }}
                 className="px-3 py-2.5 border border-rose-200 text-rose-500 rounded-xl text-sm hover:bg-rose-50"
-              >비우기</button>
+              >{t.target.clearSlot}</button>
               <button
                 onClick={() => setEditingSlot(null)}
                 className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50"
-              >취소</button>
+              >{t.common.cancel}</button>
               <button
                 onClick={handleSlotSave}
                 disabled={slotSaving}
                 className="flex-1 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 disabled:opacity-60"
-              >{slotSaving ? "저장 중..." : "저장"}</button>
+              >{slotSaving ? t.common.saving : t.common.save}</button>
             </div>
           </div>
         </div>
       )}
 
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">타겟 사용현황</h1>
-        <p className="text-sm text-gray-500 mt-1">바코드로 타겟을 조회하고, 무게 측정 / 상태 / 폐기를 관리합니다</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t.nav.target}</h1>
+        <p className="text-sm text-gray-500 mt-1">{t.target.subtitle}</p>
       </div>
 
       {/* 챔버별 타겟 현황 */}
@@ -495,7 +495,7 @@ export default function TargetUsagePage() {
             onClick={() => setShowChamberStatus(v => !v)}
             className="flex items-center gap-2 text-sm font-bold text-gray-900 hover:text-blue-600 transition-colors"
           >
-            <span>챔버별 타겟 현황</span>
+            <span>{t.target.chamberTitle}</span>
             <span className="text-xs text-gray-400 font-normal">
               ({chamberSlots.filter(s => s.targetUnitId).length}/{chamberSlots.length})
             </span>
@@ -531,7 +531,7 @@ export default function TargetUsagePage() {
                     }}
                     className="text-xs text-blue-500 hover:text-blue-600 font-medium"
                   >
-                    수정
+                    {t.common.edit}
                   </button>
                 </div>
                 {slot.targetUnitId ? (
@@ -547,7 +547,7 @@ export default function TargetUsagePage() {
                     </div>
                     <div className="flex items-center justify-between pt-1 border-t border-gray-50">
                       <div>
-                        <p className="text-xs text-gray-400">현재 무게</p>
+                        <p className="text-xs text-gray-400">{t.target.currentWeight}</p>
                         <p className="text-sm font-semibold text-gray-900">
                           {slot.latestWeight != null
                             ? `${slot.latestWeight.toFixed(3)}g`
@@ -562,7 +562,7 @@ export default function TargetUsagePage() {
                     </div>
                   </>
                 ) : (
-                  <p className="text-sm text-gray-400 py-2 text-center">비어있음</p>
+                  <p className="text-sm text-gray-400 py-2 text-center">{t.target.empty}</p>
                 )}
               </div>
             ))}
@@ -573,7 +573,7 @@ export default function TargetUsagePage() {
 
       {/* 바코드 조회 */}
       <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-2">
-        <label className="block text-sm font-semibold text-gray-700 mb-2">타겟 조회</label>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">{t.target.searchLabel}</label>
         <div className="flex gap-2">
           <select
             value={searchType}
@@ -586,9 +586,9 @@ export default function TargetUsagePage() {
             }}
             className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 shrink-0"
           >
-            <option value="바코드">바코드</option>
-            <option value="품목코드">품목코드</option>
-            <option value="품목명">품목명</option>
+            <option value="바코드">{t.target.searchTypeBarcode}</option>
+            <option value="품목코드">{t.target.searchTypeItemCode}</option>
+            <option value="품목명">{t.target.searchTypeItemName}</option>
           </select>
           <div className="relative flex-1 max-w-md">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -596,9 +596,9 @@ export default function TargetUsagePage() {
               ref={barcodeInputRef}
               type="text"
               placeholder={
-                searchType === "바코드"   ? "타겟 바코드를 스캔하거나 입력 (예: T-0187)" :
-                searchType === "품목코드" ? "품목코드 입력 (예: T-4-VO2-0250)" :
-                "품목명 입력 (예: Vanadium Dioxide)"
+                searchType === "바코드"   ? t.target.barcodePlaceholder :
+                searchType === "품목코드" ? t.target.itemCodePlaceholder :
+                t.target.itemNamePlaceholder
               }
               value={barcodeInput}
               onChange={e => {
@@ -643,14 +643,14 @@ export default function TargetUsagePage() {
               <Camera size={18} />
             </button>
           )}
-          <button onClick={handleSearch} className="px-5 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600">조회</button>
+          <button onClick={handleSearch} className="px-5 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600">{t.target.searchBtn}</button>
         </div>
         {searchError && <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-xl">{searchError}</p>}
 
         {targetList.length > 0 && (
           <div className="mt-3 space-y-2">
             <p className="text-xs text-gray-500 font-medium">
-              검색 결과 {targetList.length}건 — 타겟을 선택하세요
+              {t.target.searchResult(targetList.length)}
             </p>
             <div className="space-y-1.5 max-h-64 overflow-y-auto">
               {targetList.map(tu => (
@@ -676,8 +676,8 @@ export default function TargetUsagePage() {
                       tu.status === "using"     ? "bg-blue-100 text-blue-700" :
                       "bg-gray-100 text-gray-500"
                     }`}>
-                      {tu.status === "available" ? "사용가능" :
-                       tu.status === "using"     ? "사용중" : "폐기"}
+                      {tu.status === "available" ? t.target.statusAvailable :
+                       tu.status === "using"     ? t.target.statusUsing : t.target.statusDisposed}
                     </span>
                   </div>
                 </button>
@@ -695,20 +695,20 @@ export default function TargetUsagePage() {
           <div className="bg-white rounded-2xl border border-gray-100 p-5 flex flex-col">
             {/* 헤더 */}
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-gray-900">타겟 정보</h2>
+              <h2 className="font-bold text-gray-900">{t.target.infoTitle}</h2>
               {statusInfo && <span className={`text-xs font-semibold px-3 py-1 rounded-full ${statusInfo.color}`}>{statusInfo.label}</span>}
             </div>
 
             {/* 정보 필드 — flex-1로 남은 공간 채움 */}
             <div className="flex-1 space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <div><p className="text-xs text-gray-400 mb-1">타겟 ID</p><p className="text-sm font-semibold text-gray-900">{selectedTarget.id}</p></div>
-                <div><p className="text-xs text-gray-400 mb-1">바코드</p><p className="text-sm font-mono font-semibold text-gray-900 truncate">{selectedTarget.barcodeCode}</p></div>
-                <div><p className="text-xs text-gray-400 mb-1">품목코드</p><p className="text-sm text-gray-700 truncate">{selectedTarget.itemCode || "-"}</p></div>
-                <div><p className="text-xs text-gray-400 mb-1">품목명</p><p className="text-sm text-gray-700 truncate">{selectedTarget.itemName || "-"}</p></div>
+                <div><p className="text-xs text-gray-400 mb-1">{t.target.targetIdLabel}</p><p className="text-sm font-semibold text-gray-900">{selectedTarget.id}</p></div>
+                <div><p className="text-xs text-gray-400 mb-1">{t.target.barcodeLabel}</p><p className="text-sm font-mono font-semibold text-gray-900 truncate">{selectedTarget.barcodeCode}</p></div>
+                <div><p className="text-xs text-gray-400 mb-1">{t.target.itemCodeLabel}</p><p className="text-sm text-gray-700 truncate">{selectedTarget.itemCode || "-"}</p></div>
+                <div><p className="text-xs text-gray-400 mb-1">{t.target.itemNameLabel}</p><p className="text-sm text-gray-700 truncate">{selectedTarget.itemName || "-"}</p></div>
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-1">물질명</p>
+                <p className="text-xs text-gray-400 mb-1">{t.target.materialNameLabel}</p>
                 <input type="text" value={selectedTarget.materialName}
                   onChange={e => setSelectedTarget({ ...selectedTarget, materialName: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
@@ -720,7 +720,7 @@ export default function TargetUsagePage() {
               <div className="flex gap-2">
                 <button onClick={handleSaveInfo} disabled={saving}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 disabled:opacity-60">
-                  <Save size={16} />{saving ? "저장 중..." : "정보 저장"}
+                  <Save size={16} />{saving ? t.common.saving : t.target.saveInfo}
                 </button>
                 {selectedTarget.status !== "disposed" && (
                   <button onClick={handleDispose} disabled={saving}
@@ -729,24 +729,24 @@ export default function TargetUsagePage() {
                         ? "bg-rose-600 text-white hover:bg-rose-700 animate-pulse"
                         : "bg-rose-500 text-white hover:bg-rose-600"
                     }`}>
-                    <AlertTriangle size={16} />{disposeConfirm ? "확인 (재클릭)" : "폐기 처리"}
+                    <AlertTriangle size={16} />{disposeConfirm ? t.target.disposeConfirm : t.target.dispose}
                   </button>
                 )}
               </div>
               {disposeConfirm && (
-                <p className="text-xs text-rose-500 text-center">한 번 더 클릭하면 폐기 처리됩니다. <button onClick={() => setDisposeConfirm(false)} className="underline">취소</button></p>
+                <p className="text-xs text-rose-500 text-center">{t.target.disposeHint} <button onClick={() => setDisposeConfirm(false)} className="underline">{t.common.cancel}</button></p>
               )}
             </div>
           </div>
 
           {/* 오른쪽: 무게 측정 입력 카드 */}
           <div className="bg-white rounded-2xl border border-gray-100 p-5 flex flex-col">
-            <h2 className="font-bold text-gray-900 mb-4">무게 측정 기록</h2>
+            <h2 className="font-bold text-gray-900 mb-4">{t.target.weightTitle}</h2>
 
             {/* 입력 필드 — flex-1로 남은 공간 채움 */}
             <div className="flex-1 space-y-3">
               <div>
-                <label className="block text-xs text-gray-400 mb-1"><span className="inline-flex items-center gap-1"><Weight size={12} />무게 (g)</span></label>
+                <label className="block text-xs text-gray-400 mb-1"><span className="inline-flex items-center gap-1"><Weight size={12} />{t.target.weightLabel}</span></label>
                 <input type="text" placeholder={(() => {
                     const STORAGE_IDS = [3, 4];
                     const CHAMBER_IDS = [5, 6, 7, 8, 9, 10];
@@ -755,7 +755,7 @@ export default function TargetUsagePage() {
                     const isStorageToChamber =
                       prevLocId !== null && currLocId !== null &&
                       STORAGE_IDS.includes(prevLocId) && CHAMBER_IDS.includes(currLocId);
-                    return isStorageToChamber ? "선택 입력 (보관함→Chamber)" : "필수 입력 (예: 182.450)";
+                    return isStorageToChamber ? t.target.weightOptionalPlaceholder : t.target.weightRequiredPlaceholder;
                   })()} value={weight} onChange={(e) => { setWeight(e.target.value); setWeightError(""); }}
                   className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
                 {weightError && (
@@ -766,18 +766,18 @@ export default function TargetUsagePage() {
                 )}
               </div>
               <div>
-                <label className="block text-xs text-gray-400 mb-1"><span className="inline-flex items-center gap-1"><MapPin size={12} />사용/보관처</span></label>
+                <label className="block text-xs text-gray-400 mb-1"><span className="inline-flex items-center gap-1"><MapPin size={12} />{t.target.locationLabel}</span></label>
                 <select value={locationId} onChange={(e) => setLocationId(e.target.value ? Number(e.target.value) : "")}
                   className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none">
-                  <option value="">선택하세요</option>
+                  <option value="">{t.target.locationPlaceholder}</option>
                   {locationOptions.map(loc => (
                     <option key={loc.id} value={loc.id}>{loc.name}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-gray-400 mb-1"><span className="inline-flex items-center gap-1"><FileText size={12} />사유</span></label>
-                <input type="text" placeholder="예: 공정 후 측정" value={reason} onChange={(e) => setReason(e.target.value)}
+                <label className="block text-xs text-gray-400 mb-1"><span className="inline-flex items-center gap-1"><FileText size={12} />{t.target.reasonLabel}</span></label>
+                <input type="text" placeholder={t.target.reasonPlaceholder} value={reason} onChange={(e) => setReason(e.target.value)}
                   className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
             </div>
@@ -785,7 +785,7 @@ export default function TargetUsagePage() {
             {/* 버튼 — mt-auto로 하단 고정 */}
             <button onClick={handleSaveWeight} disabled={saving}
               className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:opacity-60">
-              <Save size={16} />{saving ? "저장 중..." : "측정값 저장"}
+              <Save size={16} />{saving ? t.common.saving : t.target.saveWeight}
             </button>
           </div>
 
@@ -795,8 +795,8 @@ export default function TargetUsagePage() {
       {/* 로그 테이블 */}
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="font-bold text-gray-900">{selectedTarget ? `${selectedTarget.barcodeCode} 측정 기록` : "전체 타겟 측정 기록"}</h2>
-          <span className="text-xs text-gray-400">전체 {total.toLocaleString()}건</span>
+          <h2 className="font-bold text-gray-900">{selectedTarget ? t.target.logTitle(selectedTarget.barcodeCode) : t.target.allLogsTitle}</h2>
+          <span className="text-xs text-gray-400">{t.target.totalCount} {total.toLocaleString()}{t.target.countUnit}</span>
         </div>
         {loading ? (
           <div className="flex items-center justify-center py-12"><Loader2 size={24} className="animate-spin text-blue-500" /></div>
@@ -805,14 +805,14 @@ export default function TargetUsagePage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead><tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("timestamp")}><div className="flex items-center gap-1">시간 <SortIcon field="timestamp" /></div></th>
-                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">구분</th>
-                  <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("weight")}><div className="flex items-center justify-end gap-1">무게(g) <SortIcon field="weight" /></div></th>
-                  {!selectedTarget && <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">품목명</th>}
-                  {!selectedTarget && <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">바코드</th>}
-                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">보관처</th>
-                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">사유</th>
-                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">작성자</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("timestamp")}><div className="flex items-center gap-1">{t.target.colTime} <SortIcon field="timestamp" /></div></th>
+                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colType}</th>
+                  <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("weight")}><div className="flex items-center justify-end gap-1">{t.target.colWeight} <SortIcon field="weight" /></div></th>
+                  {!selectedTarget && <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colItem}</th>}
+                  {!selectedTarget && <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.target.barcodeLabel}</th>}
+                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.target.colStorage}</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.target.colReason}</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.target.colAuthor}</th>
                 </tr></thead>
                 <tbody>
                   {sorted.map((log) => (
@@ -827,7 +827,7 @@ export default function TargetUsagePage() {
                       <td className="px-5 py-3 text-sm text-gray-500">{log.userName}</td>
                     </tr>
                   ))}
-                  {sorted.length === 0 && <tr><td colSpan={8} className="px-5 py-12 text-center text-sm text-gray-400">측정 기록이 없습니다</td></tr>}
+                  {sorted.length === 0 && <tr><td colSpan={8} className="px-5 py-12 text-center text-sm text-gray-400">{t.target.noLogs}</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -836,7 +836,7 @@ export default function TargetUsagePage() {
             {total > PAGE_LIMIT && (
               <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
                 <span className="text-xs text-gray-400">
-                  {((page - 1) * PAGE_LIMIT + 1).toLocaleString()}–{Math.min(page * PAGE_LIMIT, total).toLocaleString()} / {total.toLocaleString()}건
+                  {((page - 1) * PAGE_LIMIT + 1).toLocaleString()}–{Math.min(page * PAGE_LIMIT, total).toLocaleString()} / {total.toLocaleString()}{t.target.countUnit}
                 </span>
                 <div className="flex items-center gap-2">
                   <button
@@ -844,7 +844,7 @@ export default function TargetUsagePage() {
                     disabled={page <= 1}
                     className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    이전
+                    {t.common.prev}
                   </button>
                   <span className="text-xs text-gray-500 min-w-[60px] text-center">
                     {page} / {Math.ceil(total / PAGE_LIMIT)}
@@ -854,7 +854,7 @@ export default function TargetUsagePage() {
                     disabled={page >= Math.ceil(total / PAGE_LIMIT)}
                     className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    다음
+                    {t.common.next}
                   </button>
                 </div>
               </div>
