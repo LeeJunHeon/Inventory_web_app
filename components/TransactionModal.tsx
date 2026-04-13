@@ -6,6 +6,7 @@ import { X, List, Loader2, Plus, Camera } from "lucide-react";
 import { TYPE_COLORS, CATEGORY_COLORS } from "@/lib/data";
 import InboundSelectModal, { type InboundTx } from "./InboundSelectModal";
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
+import { useT } from "@/lib/i18n";
 import DatePicker           from "./DatePicker";
 
 interface TransactionModalProps {
@@ -59,6 +60,13 @@ function normalizeBarcodeInput(str: string): string {
 export default function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModalProps) {
   const { data: session } = useSession();
   const isEmployee = (session?.user as any)?.role === "employee";
+  const { t } = useT();
+  const CAT_LABEL: Record<string, string> = {
+    "웨이퍼": t.inventory.catWafer,
+    "타겟": t.inventory.catTarget,
+    "가스": t.inventory.catGas,
+    "기자재/소모품": t.inventory.catEquip,
+  };
   const isMobile = typeof navigator !== "undefined" &&
     (navigator.maxTouchPoints > 0 || /Mobi|Android/i.test(navigator.userAgent));
 
@@ -145,7 +153,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
     if (!isOpen) return;
     fetch("/api/partners")
       .then(r => r.json()).then(setPartnerOptions)
-      .catch(() => setError("거래처 목록을 불러오지 못했습니다. 페이지를 새로고침 해주세요."));
+      .catch(() => setError(t.tx.partnerLoadFailed));
     fetch("/api/tx-reasons")
       .then(r => r.json()).then(setTxReasonOptions)
       .catch(() => {});
@@ -163,7 +171,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           setLocationId(filtered[0].id);
         }
       })
-      .catch(() => setError("위치 목록을 불러오지 못했습니다. 페이지를 새로고침 해주세요."));
+      .catch(() => setError(t.tx.locationLoadFailed));
   }, [isOpen]);
 
   // 모달 닫힐 때 전체 폼 초기화
@@ -214,7 +222,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
     fetch(`/api/items?category=${encodeURIComponent(category)}`)
       .then(r => r.json())
       .then(setItemOptions)
-      .catch(() => setError("품목 목록을 불러오지 못했습니다."));
+      .catch(() => setError(t.tx.itemLoadFailed));
     setItemId(null); setItemCode(""); setItemName("");
     setShowItemSelector(false);
     setWaferSpec(null);
@@ -276,7 +284,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       if (type === "출고" || type === "불출") {
         const res = await fetch(`/api/barcodes/lookup?code=${encodeURIComponent(lookupCode)}`);
         const bc = await res.json();
-        if (!res.ok) { setError(bc.error || "바코드 조회 실패"); barcodeInputRef.current?.focus(); return; }
+        if (!res.ok) { setError(bc.error || t.tx.barcodeLookupFailed); barcodeInputRef.current?.focus(); return; }
         setBarcodeId(bc.barcodeId);
         setTargetUnitId(bc.targetUnitId ?? null);
         setRefTxNo(bc.refTxNo ?? null);
@@ -321,7 +329,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         // 입고: 정확한 바코드 조회 (출고/불출과 동일한 lookup API 사용)
         const res = await fetch(`/api/barcodes/lookup?code=${encodeURIComponent(lookupCode)}`);
         const bc = await res.json();
-        if (!res.ok) { setError(bc.error ?? "바코드 조회 실패"); barcodeInputRef.current?.focus(); return; }
+        if (!res.ok) { setError(bc.error ?? t.tx.barcodeLookupFailed); barcodeInputRef.current?.focus(); return; }
         setBarcodeId(bc.barcodeId);
         setTargetUnitId(bc.targetUnitId ?? null);
         if (bc.category && bc.category !== category) {
@@ -340,7 +348,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         setItemCode(bc.itemCode);
         setItemName(bc.itemName);
       }
-    } catch { setError("바코드 조회 실패"); barcodeInputRef.current?.focus(); }
+    } catch { setError(t.tx.barcodeLookupFailed); barcodeInputRef.current?.focus(); }
     finally { setIsBarcodeLooking(false); }
   };
 
@@ -363,7 +371,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
 
   // 인라인 바코드 생성
   const handleBarcodeCreate = async () => {
-    if (!itemId) { setBarcodeCreateError("먼저 품목을 선택해주세요."); return; }
+    if (!itemId) { setBarcodeCreateError(t.tx.selectItemFirst); return; }
     setBarcodeCreating(true);
     setBarcodeCreateError("");
     try {
@@ -373,14 +381,14 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         body: JSON.stringify({ itemId, materialName: barcodeCreateMaterial || null }),
       });
       const data = await res.json();
-      if (!res.ok) { setBarcodeCreateError((data.error || "생성 실패") + (data.detail ? `\n${data.detail}` : "")); return; }
+      if (!res.ok) { setBarcodeCreateError((data.error || t.common.saveFail) + (data.detail ? `\n${data.detail}` : "")); return; }
       // 생성된 바코드를 자동으로 입력란에 채우고 조회
       setBarcodeInput(data.code);
       justCreatedBarcodeId.current = data.id;
       setShowBarcodeCreate(false);
       setBarcodeCreateMaterial("");
       await handleBarcodeLookup(data.code);
-    } catch { setBarcodeCreateError("네트워크 오류"); }
+    } catch { setBarcodeCreateError(t.common.networkError); }
     finally { setBarcodeCreating(false); }
   };
 
@@ -389,12 +397,12 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
 
   // 저장
   const handleSave = async () => {
-    if (!itemId)                            { setError("품목을 선택해주세요.");  barcodeInputRef.current?.focus(); return; }
-    if (!quantity || Number(quantity) <= 0) { setError("수량을 입력해주세요.");  barcodeInputRef.current?.focus(); return; }
+    if (!itemId)                            { setError(t.tx.selectItem);  barcodeInputRef.current?.focus(); return; }
+    if (!quantity || Number(quantity) <= 0) { setError(t.tx.enterQty);   barcodeInputRef.current?.focus(); return; }
     // 수량 초과 시 저장 차단
     if ((type === "출고" || type === "불출") && selectedInbound) {
       if (Number(quantity) > selectedInbound.remainQty) {
-        setError(`수량 초과: 선택한 입고건의 잔여수량은 ${selectedInbound.remainQty.toLocaleString()}개입니다.`);
+        setError(t.tx.qtyExceeded(selectedInbound.remainQty));
         barcodeInputRef.current?.focus(); return;
       }
     }
@@ -404,7 +412,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         const res = await fetch(`/api/barcodes?itemId=${itemId}&activeOnly=true`);
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
-          setError("해당 품목은 바코드 스캔이 필요합니다.");
+          setError(t.tx.barcodeRequired);
           barcodeInputRef.current?.focus(); return;
         }
       } catch {
@@ -437,13 +445,13 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       });
       if (!res.ok) {
         const d = await res.json();
-        setError(d.error || "저장 실패"); barcodeInputRef.current?.focus(); return;
+        setError(d.error || t.common.saveFail); barcodeInputRef.current?.focus(); return;
       }
       onSuccess?.();
       justCreatedBarcodeId.current = null;
       onClose();
     } catch {
-      setError("네트워크 오류"); barcodeInputRef.current?.focus();
+      setError(t.common.networkError); barcodeInputRef.current?.focus();
     } finally {
       setSaving(false);
     }
@@ -476,7 +484,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[70vh] flex flex-col">
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-            <h3 className="font-bold text-gray-900 text-sm">바코드 선택 — {category}</h3>
+            <h3 className="font-bold text-gray-900 text-sm">{t.tx.barcodeSelectorTitle(category)}</h3>
             <button onClick={() => setShowBarcodeSelector(false)} className="p-1.5 rounded-lg hover:bg-gray-100">
               <X size={18} className="text-gray-400" />
             </button>
@@ -484,7 +492,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           <div className="px-4 py-3 border-b border-gray-100">
             <input
               type="text"
-              placeholder="바코드코드, 품목코드, 품목명 검색..."
+              placeholder={t.tx.barcodeSelectorSearch}
               value={barcodeSelectorSearch}
               onChange={e => setBarcodeSelectorSearch(e.target.value)}
               autoFocus
@@ -497,7 +505,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 <Loader2 size={20} className="animate-spin text-blue-500" />
               </div>
             ) : filteredBarcodes.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-10">해당 바코드가 없습니다</p>
+              <p className="text-sm text-gray-400 text-center py-10">{t.tx.noBarcodes}</p>
             ) : filteredBarcodes.map(b => (
               <button key={b.id}
                 onClick={() => {
@@ -523,7 +531,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
             ))}
           </div>
           <div className="px-4 py-2 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
-            <p className="text-xs text-gray-400">{filteredBarcodes.length}개</p>
+            <p className="text-xs text-gray-400">{filteredBarcodes.length}{t.target.countUnit}</p>
           </div>
         </div>
       </div>
@@ -533,7 +541,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
 
         {/* 헤더 */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900">새 기록 작성</h2>
+          <h2 className="text-lg font-bold text-gray-900">{t.tx.newRecord}</h2>
           <button onClick={() => { cancelCreatedBarcode(); onClose(); }} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
             <X size={20} className="text-gray-400" />
           </button>
@@ -543,12 +551,12 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
 
           {/* 구분 */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">구분</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tx.typeLabel}</label>
             <div className="flex gap-2">
-              {(["입고", "출고", "불출"] as const).map((t) => (
-                <button key={t} onClick={() => {
+              {(["입고", "출고", "불출"] as const).map((tp) => (
+                <button key={tp} onClick={() => {
                   cancelCreatedBarcode();
-                  setType(t);
+                  setType(tp);
                   setItemId(null); setItemCode(""); setItemName("");
                   setBarcodeInput(""); setBarcodeId(null); setTargetUnitId(null);
                   setRefTxNo(null); setSelectedInbound(null);
@@ -562,17 +570,17 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                   setShowCameraScanner(false);
                 }}
                   className={`flex-1 py-2 sm:py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                    type === t
-                      ? `${TYPE_COLORS[t].bg} ${TYPE_COLORS[t].text} ${TYPE_COLORS[t].border} border-2 shadow-sm`
+                    type === tp
+                      ? `${TYPE_COLORS[tp].bg} ${TYPE_COLORS[tp].text} ${TYPE_COLORS[tp].border} border-2 shadow-sm`
                       : "bg-gray-50 text-gray-500 border-2 border-transparent hover:bg-gray-100"
-                  }`}>{t}</button>
+                  }`}>{tp}</button>
               ))}
             </div>
           </div>
 
           {/* 날짜 */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">날짜</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tx.dateLabel}</label>
             <DatePicker
               value={date}
               onChange={val => setDate(val)}
@@ -584,9 +592,9 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           {/* 바코드 — 입고/출고/불출 모두 표시 */}
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <label className="text-sm font-semibold text-gray-700">바코드</label>
+              <label className="text-sm font-semibold text-gray-700">{t.tx.barcodeLabel}</label>
               <span className="text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
-                USB 스캐너 또는 직접 입력
+                {t.tx.scannerBadge}
               </span>
             </div>
             <div className="flex gap-2">
@@ -606,30 +614,30 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                   setBarcodeInput(normalizeBarcodeInput((e.target as HTMLInputElement).value));
                 }}
                 onKeyDown={e => e.key === "Enter" && handleBarcodeLookup()}
-                placeholder="바코드를 스캔하거나 입력하세요"
+                placeholder={t.tx.barcodePlaceholder}
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
               />
               {isBarcodeLooking && (
                 <div className="absolute right-10 top-1/2 -translate-y-1/2 flex items-center gap-1 pointer-events-none">
                   <Loader2 size={14} className="animate-spin text-blue-500" />
-                  <span className="text-xs text-blue-500 whitespace-nowrap">조회 중...</span>
+                  <span className="text-xs text-blue-500 whitespace-nowrap">{t.tx.lookingUp}</span>
                 </div>
               )}
               </div>
               <button onClick={() => handleBarcodeLookup()}
                 className="shrink-0 px-3 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap">
-                조회
+                {t.tx.lookupBtn}
               </button>
               <button onClick={openBarcodeSelector}
                 className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap"
                 title="바코드 목록에서 선택">
-                <List size={15} />목록
+                <List size={15} />{t.tx.listBtn}
               </button>
               {type === "입고" && !showCameraScanner && (
                 <button onClick={() => { setShowBarcodeCreate(v => !v); setBarcodeCreateError(""); }}
                   className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap"
                   title="새 바코드 생성">
-                  <Plus size={15} />생성
+                  <Plus size={15} />{t.tx.createBtn}
                 </button>
               )}
             </div>
@@ -642,7 +650,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                       ? "bg-blue-100 text-blue-700"
                       : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                   }`}>
-                  <Camera size={12} />카메라 스캔
+                  <Camera size={12} />{t.tx.cameraBtn}
                 </button>
               </div>
             )}
@@ -656,7 +664,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 onClose={() => setShowCameraScanner(false)}
               />
             )}
-            <p className="mt-1.5 text-xs text-gray-400">바코드를 스캔하거나 품목을 직접 선택하세요</p>
+            <p className="mt-1.5 text-xs text-gray-400">{t.tx.barcodeHint}</p>
             {error && (
               <div className="flex items-center gap-2 mt-1.5 px-3 py-2 bg-red-50 border border-red-200 rounded-xl">
                 <span className="text-xs text-red-500 font-medium">⚠️ {error}</span>
@@ -668,17 +676,17 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
             {/* 타겟 ID 연결 안내 */}
             {targetUnitId && (
               <span className="inline-flex items-center mt-1.5 gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700">
-                타겟 ID: TU-{String(targetUnitId).padStart(3, "0")} 연결됨
+                {t.tx.targetLinked(String(targetUnitId).padStart(3, "0"))}
               </span>
             )}
             {/* 입고: 인라인 바코드 생성 폼 */}
             {type === "입고" && showBarcodeCreate && (
               <div className="mt-2 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 space-y-2">
-                <p className="text-xs font-semibold text-blue-700">새 바코드 생성</p>
+                <p className="text-xs font-semibold text-blue-700">{t.tx.createBarcodeTitle}</p>
                 {category === "타겟" && (
                   <input type="text" value={barcodeCreateMaterial}
                     onChange={e => setBarcodeCreateMaterial(e.target.value)}
-                    placeholder='물질명 (예: Au 2" 0.125t)'
+                    placeholder={t.tx.materialPlaceholder}
                     className="w-full px-3 py-2 border border-blue-200 rounded-xl text-sm outline-none bg-white focus:ring-2 focus:ring-blue-400" />
                 )}
                 {barcodeCreateError && (
@@ -686,17 +694,17 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 )}
                 {!itemId && (
                   <p className="text-xs text-amber-600 mt-1">
-                    ※ 먼저 품목코드를 선택해야 바코드를 생성할 수 있습니다.
+                    {t.tx.selectItemHint}
                   </p>
                 )}
                 <div className="flex gap-2">
                   <button onClick={handleBarcodeCreate} disabled={barcodeCreating || !itemId}
                     className="flex-1 px-4 py-2 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:opacity-60">
-                    {barcodeCreating ? "생성 중..." : "생성 + 자동 연결"}
+                    {barcodeCreating ? t.barcode.creating : t.tx.createAndLink}
                   </button>
                   <button onClick={() => { setShowBarcodeCreate(false); setBarcodeCreateError(""); }}
                     className="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200">
-                    취소
+                    {t.common.cancel}
                   </button>
                 </div>
               </div>
@@ -719,19 +727,19 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                           <span className="text-emerald-500">· {selectedInbound.partnerName}</span>
                         )}
                       </div>
-                      <p className="text-emerald-400">잔여 {selectedInbound.remainQty.toLocaleString()}개</p>
+                      <p className="text-emerald-400">{t.tx.remainQty(selectedInbound.remainQty)}</p>
                     </div>
                     <button onClick={() => { inboundModalBarcodeId.current = barcodeId; setShowInboundSelect(true); }}
                       className="text-xs px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition-colors">
-                      변경
+                      {t.tx.changeBtn}
                     </button>
                   </div>
                 ) : refTxNo ? (
-                  <p className="text-xs text-blue-600 font-medium">입고 참조: {refTxNo}</p>
+                  <p className="text-xs text-blue-600 font-medium">{t.tx.inboundRef(refTxNo!)}</p>
                 ) : itemId ? (
                   <button onClick={() => { inboundModalBarcodeId.current = barcodeId; setShowInboundSelect(true); }}
                     className="mt-1 text-xs px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl hover:bg-amber-100 transition-colors">
-                    입고 참조 선택 (필수)
+                    {t.tx.selectInbound}
                   </button>
                 ) : null}
               </div>
@@ -740,7 +748,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
 
           {/* 품목군 */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">품목군</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">{t.items.catLabel}</label>
             <div className="flex gap-2 flex-wrap">
               {["웨이퍼", "타겟", "가스", "기자재/소모품"].map((c) => (
                 <button key={c} onClick={() => setCategory(c)}
@@ -748,7 +756,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                     category === c
                       ? `${CATEGORY_COLORS[c]} shadow-sm ring-1 ring-gray-200`
                       : "bg-gray-50 text-gray-500 hover:bg-gray-100"
-                  }`}>{c}</button>
+                  }`}>{CAT_LABEL[c] || c}</button>
               ))}
             </div>
           </div>
@@ -756,21 +764,21 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           {/* 품목코드 / 품목명 */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">품목코드</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">{t.items.itemCodeLabel}</label>
               <div className="relative" ref={selectorRef}>
                 <div className="flex gap-2">
-                  <input value={itemCode} readOnly placeholder="자동 입력"
+                  <input value={itemCode} readOnly placeholder={t.barcode.autoFill}
                     className="flex-1 min-w-0 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
                   <button
                     onClick={() => setShowItemSelector(v => !v)}
                     className="px-3 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-medium hover:bg-blue-600 transition-colors whitespace-nowrap">
-                    선택
+                    {t.barcode.selectBtn}
                   </button>
                 </div>
                 {showItemSelector && (
                   <div className="absolute left-0 right-0 z-20 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-52 overflow-y-auto">
                     {itemOptions.length === 0 ? (
-                      <p className="px-4 py-3 text-sm text-gray-400">해당 품목군에 등록된 품목이 없습니다</p>
+                      <p className="px-4 py-3 text-sm text-gray-400">{t.tx.noItemsInCat}</p>
                     ) : (
                       itemOptions.map(opt => (
                         <button key={opt.id}
@@ -808,8 +816,8 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
               </div>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">품목명</label>
-              <input value={itemName} readOnly placeholder="자동 입력"
+              <label className="block text-sm font-semibold text-gray-700 mb-2">{t.items.itemNameLabel}</label>
+              <input value={itemName} readOnly placeholder={t.barcode.autoFill}
                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
             </div>
           </div>
@@ -817,18 +825,18 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           {/* 웨이퍼 스펙 정보 (웨이퍼 품목 선택 시만 표시) */}
           {category === "웨이퍼" && itemId && (
             <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
-              <p className="text-xs font-semibold text-blue-700 mb-2">웨이퍼 스펙 정보</p>
+              <p className="text-xs font-semibold text-blue-700 mb-2">{t.tx.waferSpecTitle}</p>
               {waferSpec ? (
                 <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-blue-800">
-                  <span><span className="text-blue-400">직경: </span>{waferSpec.diameterInch ? `${waferSpec.diameterInch}"` : "-"}</span>
-                  <span><span className="text-blue-400">타입: </span>{waferSpec.waferType || "-"}</span>
-                  <span><span className="text-blue-400">저항: </span>{waferSpec.resistivity || "-"}</span>
-                  <span><span className="text-blue-400">두께: </span>{waferSpec.thicknessNote || "-"}</span>
-                  <span><span className="text-blue-400">방향: </span>{waferSpec.orientation || "-"}</span>
-                  <span><span className="text-blue-400">표면: </span>{waferSpec.surface || "-"}</span>
+                  <span><span className="text-blue-400">{t.tx.waferDiam}: </span>{waferSpec.diameterInch ? `${waferSpec.diameterInch}"` : "-"}</span>
+                  <span><span className="text-blue-400">{t.tx.waferType}: </span>{waferSpec.waferType || "-"}</span>
+                  <span><span className="text-blue-400">{t.tx.waferResist}: </span>{waferSpec.resistivity || "-"}</span>
+                  <span><span className="text-blue-400">{t.tx.waferThick}: </span>{waferSpec.thicknessNote || "-"}</span>
+                  <span><span className="text-blue-400">{t.tx.waferOrient}: </span>{waferSpec.orientation || "-"}</span>
+                  <span><span className="text-blue-400">{t.tx.waferSurface}: </span>{waferSpec.surface || "-"}</span>
                 </div>
               ) : (
-                <p className="text-xs text-blue-400">스펙 정보 없음</p>
+                <p className="text-xs text-blue-400">{t.tx.noSpec}</p>
               )}
             </div>
           )}
@@ -856,26 +864,26 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
               : "grid-cols-2 sm:grid-cols-3"
           }`}>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">수량 <span className="text-rose-500">*</span></label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tx.qtyLabel} <span className="text-rose-500">*</span></label>
               <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} placeholder="0"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
             </div>
             {!(isEmployee && (type === "출고" || type === "불출")) ? (
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">단가</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tx.unitPriceLabel}</label>
                 <input type="text" value={unitPrice} onChange={e => setUnitPrice(e.target.value)}
                   placeholder={currency === "USD" ? "$0.00" : "₩0"}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
               </div>
             ) : (
               <div className="bg-gray-50 rounded-xl px-4 py-3">
-                <p className="text-xs text-gray-400">단가는 참조 입고 기준으로 자동 입력됩니다</p>
+                <p className="text-xs text-gray-400">{t.tx.unitPriceAutoHint}</p>
               </div>
             )}
             {!(isEmployee && (type === "출고" || type === "불출")) && (
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">금액</label>
-                <input type="text" value={amount ? (currency === "USD" ? `$${amount.toLocaleString()}` : `₩${amount.toLocaleString()}`) : ""} readOnly placeholder="자동 계산"
+                <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tx.amountLabel}</label>
+                <input type="text" value={amount ? (currency === "USD" ? `$${amount.toLocaleString()}` : `₩${amount.toLocaleString()}`) : ""} readOnly placeholder={t.tx.autoCalc}
                   className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
               </div>
             )}
@@ -883,29 +891,29 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
 
           {currency === "USD" && !(isEmployee && (type === "출고" || type === "불출")) && (
             <div className="flex items-center gap-2 -mt-2">
-              <p className="text-xs text-gray-400 shrink-0">적용 환율</p>
+              <p className="text-xs text-gray-400 shrink-0">{t.tx.rateLabel}</p>
               <input
                 type="number"
                 value={exchangeRateAtEntry ?? ""}
                 onChange={e => setExchangeRateAtEntry(Number(e.target.value) || null)}
-                placeholder="환율 입력"
+                placeholder={t.period.exchangeRatePlaceholder}
                 className="w-28 px-2 py-1 border border-gray-200 rounded-lg text-xs text-gray-700 outline-none focus:ring-1 focus:ring-blue-400"
               />
-              <p className="text-xs text-gray-400 shrink-0">원/USD (이 건에만 적용)</p>
+              <p className="text-xs text-gray-400 shrink-0">{t.tx.rateUnit}</p>
             </div>
           )}
 
           {/* 잔여수량 초과 경고 */}
           {(type === "출고" || type === "불출") && selectedInbound && quantity && Number(quantity) > selectedInbound.remainQty && (
             <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl">
-              수량({quantity})이 잔여수량({selectedInbound.remainQty.toLocaleString()})을 초과합니다.
+              {t.tx.qtyWarning(quantity, selectedInbound.remainQty)}
             </p>
           )}
 
           {/* 거래처 — 입고/출고만 표시 */}
           {type !== "불출" && (
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">거래처</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tx.partnerLabel}</label>
               <select value={partnerId ?? ""} onChange={e => {
                 const id = Number(e.target.value);
                 setPartnerId(id || null);
@@ -917,7 +925,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                   managerName: found.managerName ?? null,
                 } : null);
               }} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
-                <option value="">선택하세요</option>
+                <option value="">{t.items.selectPlaceholder}</option>
                 {partnerOptions.map(p => (
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
@@ -925,19 +933,19 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
               {selectedPartnerContact && partnerId && (
                 <div className="mt-1.5 rounded-lg bg-gray-50 border border-gray-200 px-3 py-2 text-xs text-gray-600 space-y-0.5">
                   {selectedPartnerContact.managerName && (
-                    <div>담당자: <span className="font-medium text-gray-800">{selectedPartnerContact.managerName}</span></div>
+                    <div>{t.tx.managerInfo}: <span className="font-medium text-gray-800">{selectedPartnerContact.managerName}</span></div>
                   )}
                   {selectedPartnerContact.contact && (
-                    <div>연락처: <span className="font-medium text-gray-800">{selectedPartnerContact.contact}</span></div>
+                    <div>{t.tx.contactInfo}: <span className="font-medium text-gray-800">{selectedPartnerContact.contact}</span></div>
                   )}
                   {selectedPartnerContact.email && (
-                    <div>이메일: <span className="font-medium text-gray-800">{selectedPartnerContact.email}</span></div>
+                    <div>{t.tx.emailInfo}: <span className="font-medium text-gray-800">{selectedPartnerContact.email}</span></div>
                   )}
                   {!selectedPartnerContact.managerName && !selectedPartnerContact.contact && !selectedPartnerContact.email && (
-                    <div className="text-gray-400">등록된 연락처 정보가 없습니다.</div>
+                    <div className="text-gray-400">{t.tx.noContactInfo}</div>
                   )}
                   <div className="pt-0.5 text-gray-400">
-                    연락처 수정은 <span className="font-medium text-blue-500">거래처 관리</span> 탭에서 해주세요.
+                    {t.tx.contactEditHint}
                   </div>
                 </div>
               )}
@@ -948,20 +956,20 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           {type === "불출" && (
             <>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">불출처 <span className="text-rose-500">*</span></label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tx.disburseeLabel} <span className="text-rose-500">*</span></label>
                 <select value={disburseeId ?? ""} onChange={e => setDisburseeId(Number(e.target.value) || null)}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
-                  <option value="">사용자 선택</option>
+                  <option value="">{t.tx.selectUser}</option>
                   {userOptions.map(u => (
                     <option key={u.id} value={u.id}>{u.name}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">불출유형</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tx.disburseTypeLabel}</label>
                 <select value={txReasonId ?? ""} onChange={e => setTxReasonId(Number(e.target.value) || null)}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
-                  <option value="">선택하세요</option>
+                  <option value="">{t.items.selectPlaceholder}</option>
                   {txReasonOptions.map(r => (
                     <option key={r.id} value={r.id}>{r.name}</option>
                   ))}
@@ -973,7 +981,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           {/* 위치 */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              위치 <span className="text-rose-500">*</span>
+              {t.tx.locationLabel} <span className="text-rose-500">*</span>
             </label>
             <select
               value={locationId}
@@ -987,9 +995,9 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
 
           {/* 비고 */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">비고</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">{t.items.noteLabel}</label>
             <textarea value={memo} onChange={e => setMemo(e.target.value)}
-              placeholder="메모 입력 (선택사항)" rows={2}
+              placeholder={t.tx.memoPlaceholder} rows={2}
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none" />
           </div>
 
@@ -999,11 +1007,11 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
           <button onClick={onClose}
             className="px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
-            취소
+            {t.common.cancel}
           </button>
           <button onClick={handleSave} disabled={saving}
             className="px-5 py-2.5 text-sm font-bold text-white bg-blue-500 rounded-xl hover:bg-blue-600 transition-colors shadow-sm disabled:opacity-60">
-            {saving ? "저장 중..." : "저장"}
+            {saving ? t.common.saving : t.common.save}
           </button>
         </div>
       </div>
