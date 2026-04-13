@@ -6,10 +6,10 @@ import { CATEGORIES, TYPES, TYPE_COLORS, CATEGORY_COLORS, formatPrice, formatQty
 import TransactionModal     from "./TransactionModal";
 import EditTransactionModal from "./EditTransactionModal";
 import DatePicker           from "./DatePicker";
+import { useT } from "@/lib/i18n";
 
 // ── CSV 다운로드 헬퍼 ──────────────────────────────────
-function downloadCSV(data: InventoryItem[], filename: string) {
-  const headers = ["전표번호", "ID", "날짜", "구분", "품목군", "품목코드", "품목명", "수량", "단가", "금액", "거래처", "등록자", "바코드", "메모"];
+function downloadCSV(data: InventoryItem[], filename: string, headers: string[]) {
   const rows = data.map(i => [
     i.txNo || "", i.id, i.date, i.type, i.category, i.code, i.name,
     i.qty, i.price, i.amount, i.partner, i.userName ?? "", i.barcode, i.memo,
@@ -28,7 +28,7 @@ function downloadCSV(data: InventoryItem[], filename: string) {
 
 interface LocationOption { id: number; name: string; }
 
-const SEARCH_FIELDS = ["전체", "품목명", "품목코드", "바코드", "거래처"];
+const SEARCH_FIELDS_KO = ["전체", "품목명", "품목코드", "바코드", "거래처"];
 
 interface InventoryPageProps {
   initialTypeFilter?: string;
@@ -64,6 +64,34 @@ export default function InventoryPage({
   const [limit, setLimit]               = useState(50);
   const [total, setTotal]               = useState(0);
 
+  const { t, lang } = useT();
+
+  // 검색 필드: value는 API용 한국어 유지, 표시 레이블만 번역
+  const SEARCH_FIELD_MAP: Record<string, string> = {
+    "전체": t.inventory.sfAll,
+    "품목명": t.inventory.sfItemName,
+    "품목코드": t.inventory.sfItemCode,
+    "바코드": t.inventory.sfBarcode,
+    "거래처": t.inventory.sfPartner,
+  };
+
+  // 구분 필터 표시 레이블 맵 (value는 한국어 유지)
+  const TYPE_LABEL_MAP: Record<string, string> = {
+    "전체": t.inventory.typeAll,
+    "입고": t.inventory.typeIn,
+    "출고": t.inventory.typeOut,
+    "불출": t.inventory.typeDis,
+  };
+
+  // 품목군 필터 표시 레이블 맵 (value는 한국어 유지)
+  const CAT_LABEL_MAP: Record<string, string> = {
+    "전체": t.inventory.catAll,
+    "웨이퍼": t.inventory.catWafer,
+    "타겟": t.inventory.catTarget,
+    "가스": t.inventory.catGas,
+    "기자재/소모품": t.inventory.catEquip,
+  };
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -84,9 +112,9 @@ export default function InventoryPage({
       const json = await res.json();
       setItems(json.data);
       setTotal(json.total);
-    } catch { setToast("데이터 조회에 실패했습니다."); setTimeout(() => setToast(""), 3000); }
+    } catch { setToast(t.common.loadFail); setTimeout(() => setToast(""), 3000); }
     finally { setLoading(false); }
-  }, [search, searchField, typeFilter, categoryFilter, startDate, endDate, locationFilter, page, limit, sortField, sortDir]);
+  }, [search, searchField, typeFilter, categoryFilter, startDate, endDate, locationFilter, page, limit, sortField, sortDir, t]);
 
   useEffect(() => {
     const timer = setTimeout(fetchData, 300);
@@ -123,21 +151,21 @@ export default function InventoryPage({
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("정말 삭제하시겠습니까?")) return;
+    if (!confirm(t.inventory.deleteConfirm)) return;
     try {
       const res = await fetch(`/api/inventory?id=${id}`, { method: "DELETE" });
-      if (res.ok) { fetchData(); setToast("삭제되었습니다."); setTimeout(() => setToast(""), 3000); }
-      else { const d = await res.json(); setToast(d.error || "삭제 실패"); setTimeout(() => setToast(""), 3000); }
-    } catch { setToast("네트워크 오류"); setTimeout(() => setToast(""), 3000); }
+      if (res.ok) { fetchData(); setToast(t.inventory.deleted); setTimeout(() => setToast(""), 3000); }
+      else { const d = await res.json(); setToast(d.error || t.common.saveFail); setTimeout(() => setToast(""), 3000); }
+    } catch { setToast(t.common.networkError); setTimeout(() => setToast(""), 3000); }
   };
 
   // ── CSV 내보내기 ──────────────────────────────────────
   const handleExport = () => {
-    if (items.length === 0) { setToast("내보낼 데이터가 없습니다."); setTimeout(() => setToast(""), 3000); return; }
+    if (items.length === 0) { setToast(t.inventory.noExportData); setTimeout(() => setToast(""), 3000); return; }
     const now      = new Date();
     const dateStr  = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}`;
-    const filename = `재고내역_${dateStr}.csv`;
-    downloadCSV(items, filename);
+    const filename = `${t.inventory.csvFilename}_${dateStr}.csv`;
+    downloadCSV(items, filename, t.inventory.csvHeaders);
   };
 
   const SortIcon = ({ field }: { field: string }) => {
@@ -157,19 +185,18 @@ export default function InventoryPage({
       {/* 헤더 */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">재고 관리</h1>
-          <p className="text-sm text-gray-500 mt-0.5">입고 / 출고 / 불출 기록을 관리합니다</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t.nav.inventory}</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{t.inventory.subtitle}</p>
         </div>
         <div className="flex gap-2">
-          {/* ✅ 내보내기 버튼 — CSV 다운로드 */}
           <button
             onClick={handleExport}
             className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50">
-            <Download size={16} /><span className="hidden sm:inline">내보내기</span>
+            <Download size={16} /><span className="hidden sm:inline">{t.common.exporting}</span>
           </button>
           <button onClick={() => setModalOpen(true)}
             className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-bold text-white bg-blue-500 rounded-xl hover:bg-blue-600 shadow-sm">
-            <Plus size={16} />새 기록
+            <Plus size={16} />{t.inventory.newRecord}
           </button>
         </div>
       </div>
@@ -180,43 +207,47 @@ export default function InventoryPage({
           <div className="relative flex-1 flex gap-2">
             <select value={searchField} onChange={e => { setSearchField(e.target.value); setSearch(""); setPage(1); }}
               className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 shrink-0 text-gray-600">
-              {SEARCH_FIELDS.map(f => <option key={f} value={f}>{f}</option>)}
+              {SEARCH_FIELDS_KO.map(f => (
+                <option key={f} value={f}>{SEARCH_FIELD_MAP[f] || f}</option>
+              ))}
             </select>
             <div className="relative flex-1">
               <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <input type="text"
-                placeholder={searchField === "전체" ? "품목명, 품목코드, 바코드, 거래처 검색..." :
-                  searchField === "바코드" ? "바코드 정확히 입력 (예: T-3)" :
-                  `${searchField} 검색...`}
+                placeholder={
+                  searchField === "전체" ? t.inventory.searchAll :
+                  searchField === "바코드" ? t.inventory.searchBarcode :
+                  `${SEARCH_FIELD_MAP[searchField] || searchField}${t.inventory.searchSuffix}`
+                }
                 value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
             </div>
           </div>
           <button onClick={() => setShowFilters(!showFilters)}
             className="sm:hidden flex items-center gap-1 px-3 py-2.5 bg-gray-50 text-gray-600 rounded-xl text-sm font-medium">
-            필터 <ChevronDown size={14} className={`transition-transform ${showFilters ? "rotate-180" : ""}`} />
+            {t.inventory.filter} <ChevronDown size={14} className={`transition-transform ${showFilters ? "rotate-180" : ""}`} />
           </button>
         </div>
         <div className={`flex-wrap gap-2 ${showFilters ? "flex" : "hidden"} sm:flex`}>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-gray-500 font-medium shrink-0">날짜</span>
+            <span className="text-xs text-gray-500 font-medium shrink-0">{t.inventory.dateLabel}</span>
             <DatePicker
               value={startDate}
               onChange={val => { setStartDate(val); setPage(1); }}
-              placeholder="시작일"
+              placeholder={t.inventory.startDate}
             />
             <span className="text-xs text-gray-400">~</span>
             <DatePicker
               value={endDate}
               onChange={val => { setEndDate(val); setPage(1); }}
-              placeholder="종료일"
+              placeholder={t.inventory.endDate}
             />
             {(startDate || endDate) && (
               <button
                 onClick={() => { setStartDate(""); setEndDate(""); setPage(1); }}
                 className="text-xs text-gray-400 hover:text-gray-600 underline"
               >
-                초기화
+                {t.common.reset}
               </button>
             )}
             <select
@@ -224,22 +255,26 @@ export default function InventoryPage({
               onChange={e => { setLocationFilter(e.target.value === "" ? "" : Number(e.target.value)); setPage(1); }}
               className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
             >
-              <option value="">전체 위치</option>
+              <option value="">{t.inventory.allLocations}</option>
               {locationOptions.map(loc => (
                 <option key={loc.id} value={loc.id}>{loc.name}</option>
               ))}
             </select>
           </div>
           <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1">
-            {TYPES.map((t) => (
-              <button key={t} onClick={() => { setTypeFilter(t); setPage(1); }}
-                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${typeFilter === t ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}>{t}</button>
+            {TYPES.map((type) => (
+              <button key={type} onClick={() => { setTypeFilter(type); setPage(1); }}
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${typeFilter === type ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}>
+                {TYPE_LABEL_MAP[type] || type}
+              </button>
             ))}
           </div>
           <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1 overflow-x-auto">
-            {CATEGORIES.map((c) => (
-              <button key={c} onClick={() => { setCategoryFilter(c); setPage(1); }}
-                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${categoryFilter === c ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}>{c}</button>
+            {CATEGORIES.map((cat) => (
+              <button key={cat} onClick={() => { setCategoryFilter(cat); setPage(1); }}
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${categoryFilter === cat ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}>
+                {CAT_LABEL_MAP[cat] || cat}
+              </button>
             ))}
           </div>
         </div>
@@ -248,7 +283,7 @@ export default function InventoryPage({
       {loading ? (
         <div className="flex items-center justify-center h-32">
           <Loader2 size={24} className="animate-spin text-blue-500" />
-          <span className="ml-2 text-sm text-gray-500">로딩 중...</span>
+          <span className="ml-2 text-sm text-gray-500">{t.common.loading}</span>
         </div>
       ) : (
         <>
@@ -258,23 +293,23 @@ export default function InventoryPage({
               <table className="w-full">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">전표번호</th>
+                    <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">{t.inventory.colTxNo}</th>
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("id")}><div className="flex items-center gap-1">ID <SortIcon field="id" /></div></th>
-                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("date")}><div className="flex items-center gap-1">날짜 <SortIcon field="date" /></div></th>
-                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">구분</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">품목군</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">바코드</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">품목</th>
-                    <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("qty")}><div className="flex items-center justify-end gap-1">수량 <SortIcon field="qty" /></div></th>
-                    <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("amount")}><div className="flex items-center justify-end gap-1">금액 <SortIcon field="amount" /></div></th>
-                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">거래처</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">등록자</th>
-                    <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">작업</th>
+                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("date")}><div className="flex items-center gap-1">{t.inventory.colDate} <SortIcon field="date" /></div></th>
+                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colType}</th>
+                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colCategory}</th>
+                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colBarcode}</th>
+                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colItem}</th>
+                    <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("qty")}><div className="flex items-center justify-end gap-1">{t.inventory.colQty} <SortIcon field="qty" /></div></th>
+                    <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("amount")}><div className="flex items-center justify-end gap-1">{t.inventory.colAmount} <SortIcon field="amount" /></div></th>
+                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colPartner}</th>
+                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colRegistrant}</th>
+                    <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colAction}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.length === 0 ? (
-                    <tr><td colSpan={12} className="px-5 py-12 text-center text-sm text-gray-400">데이터가 없습니다</td></tr>
+                    <tr><td colSpan={12} className="px-5 py-12 text-center text-sm text-gray-400">{t.common.noData}</td></tr>
                   ) : items.map((item) => (
                     <tr key={item.id} className="border-b border-gray-50 hover:bg-blue-50/30 transition-colors group">
                       <td className="px-4 py-3.5 text-sm font-mono font-semibold text-gray-700">{item.txNo || "-"}</td>
@@ -303,12 +338,12 @@ export default function InventoryPage({
                             </p>
                             {item.exchangeRateAtEntry && item.amount != null && (
                               <p className="text-xs text-gray-400 mt-0.5 whitespace-nowrap">
-                                등록시 ₩{Math.round(item.amount * item.exchangeRateAtEntry).toLocaleString()} ({item.exchangeRateAtEntry.toLocaleString()}원)
+                                {t.inventory.rateAtEntry} ₩{Math.round(item.amount * item.exchangeRateAtEntry).toLocaleString()} ({item.exchangeRateAtEntry.toLocaleString()}{t.inventory.wonUnit})
                               </p>
                             )}
                             {exchangeRate && item.amount != null && (
                               <p className="text-xs text-gray-400 mt-0.5 whitespace-nowrap">
-                                현재 ₩{Math.round(item.amount * exchangeRate).toLocaleString()} ({exchangeRate.toLocaleString()}원)
+                                {t.inventory.rateCurrent} ₩{Math.round(item.amount * exchangeRate).toLocaleString()} ({exchangeRate.toLocaleString()}{t.inventory.wonUnit})
                               </p>
                             )}
                           </div>
@@ -331,16 +366,16 @@ export default function InventoryPage({
             </div>
             <div className="px-5 py-3 border-t border-gray-100 bg-gray-50 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <p className="text-xs text-gray-500">총 <span className="font-semibold text-gray-700">{total}건</span></p>
+                <p className="text-xs text-gray-500">{t.inventory.totalCount} <span className="font-semibold text-gray-700">{total}{t.inventory.countUnit}</span></p>
                 <select
                   value={limit}
                   onChange={e => { setLimit(Number(e.target.value)); setPage(1); }}
                   className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white outline-none"
                 >
-                  <option value={20}>20개씩</option>
-                  <option value={50}>50개씩</option>
-                  <option value={100}>100개씩</option>
-                  <option value={200}>200개씩</option>
+                  <option value={20}>{t.inventory.perPage(20)}</option>
+                  <option value={50}>{t.inventory.perPage(50)}</option>
+                  <option value={100}>{t.inventory.perPage(100)}</option>
+                  <option value={200}>{t.inventory.perPage(200)}</option>
                 </select>
               </div>
               <div className="flex items-center gap-2">
@@ -348,7 +383,7 @@ export default function InventoryPage({
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page <= 1}
                   className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
-                >이전</button>
+                >{t.common.prev}</button>
                 <span className="text-xs text-gray-500 min-w-[80px] text-center">
                   {page} / {Math.ceil(total / limit) || 1}
                 </span>
@@ -356,9 +391,9 @@ export default function InventoryPage({
                   onClick={() => setPage(p => Math.min(Math.ceil(total / limit), p + 1))}
                   disabled={page >= Math.ceil(total / limit)}
                   className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
-                >다음</button>
+                >{t.common.next}</button>
               </div>
-              <p className="text-xs text-gray-400">합계: <span className="font-semibold text-gray-600">{formatPrice(items.filter(i => i.currency !== "USD").reduce((s, i) => s + (i.amount ?? 0), 0))}</span></p>
+              <p className="text-xs text-gray-400">{t.inventory.sum}: <span className="font-semibold text-gray-600">{formatPrice(items.filter(i => i.currency !== "USD").reduce((s, i) => s + (i.amount ?? 0), 0))}</span></p>
             </div>
           </div>
 
@@ -366,26 +401,26 @@ export default function InventoryPage({
           <div className="lg:hidden space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-3">
-                <p className="text-xs text-gray-500">총 <span className="font-semibold">{total}건</span></p>
+                <p className="text-xs text-gray-500">{t.inventory.totalCount} <span className="font-semibold">{total}{t.inventory.countUnit}</span></p>
                 <select
                   value={limit}
                   onChange={e => { setLimit(Number(e.target.value)); setPage(1); }}
                   className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white outline-none"
                 >
-                  <option value={20}>20개씩</option>
-                  <option value={50}>50개씩</option>
-                  <option value={100}>100개씩</option>
-                  <option value={200}>200개씩</option>
+                  <option value={20}>{t.inventory.perPage(20)}</option>
+                  <option value={50}>{t.inventory.perPage(50)}</option>
+                  <option value={100}>{t.inventory.perPage(100)}</option>
+                  <option value={200}>{t.inventory.perPage(200)}</option>
                 </select>
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
-                  className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">이전</button>
+                  className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">{t.common.prev}</button>
                 <span className="text-xs text-gray-500 min-w-[60px] text-center">{page} / {Math.ceil(total / limit) || 1}</span>
                 <button onClick={() => setPage(p => Math.min(Math.ceil(total / limit), p + 1))} disabled={page >= Math.ceil(total / limit)}
-                  className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">다음</button>
+                  className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">{t.common.next}</button>
               </div>
-              <p className="text-xs text-gray-400">합계: <span className="font-semibold">{formatPrice(items.filter(i => i.currency !== "USD").reduce((s, i) => s + (i.amount ?? 0), 0))}</span></p>
+              <p className="text-xs text-gray-400">{t.inventory.sum}: <span className="font-semibold">{formatPrice(items.filter(i => i.currency !== "USD").reduce((s, i) => s + (i.amount ?? 0), 0))}</span></p>
             </div>
             {items.map((item) => (
               <div key={item.id} className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
@@ -411,10 +446,10 @@ export default function InventoryPage({
                 {item.currency !== "USD" ? (
                   <div className="flex items-center justify-between pt-2 border-t border-gray-50">
                     <div className="flex items-center gap-4">
-                      <div><p className="text-[10px] text-gray-400">수량</p><p className="text-sm font-bold text-gray-900">{formatQty(item.qty)}</p></div>
-                      <div><p className="text-[10px] text-gray-400">금액</p><p className="text-sm text-gray-600">{formatPrice(item.amount)}</p></div>
-                      <div><p className="text-[10px] text-gray-400">거래처</p><p className="text-sm text-gray-600 max-w-[120px] truncate">{item.partner || "-"}</p></div>
-                      {item.userName && <div><p className="text-[10px] text-gray-400">등록자</p><p className="text-sm text-gray-500 max-w-[80px] truncate">{item.userName}</p></div>}
+                      <div><p className="text-[10px] text-gray-400">{t.inventory.colQty}</p><p className="text-sm font-bold text-gray-900">{formatQty(item.qty)}</p></div>
+                      <div><p className="text-[10px] text-gray-400">{t.inventory.colAmount}</p><p className="text-sm text-gray-600">{formatPrice(item.amount)}</p></div>
+                      <div><p className="text-[10px] text-gray-400">{t.inventory.colPartner}</p><p className="text-sm text-gray-600 max-w-[120px] truncate">{item.partner || "-"}</p></div>
+                      {item.userName && <div><p className="text-[10px] text-gray-400">{t.inventory.colRegistrant}</p><p className="text-sm text-gray-500 max-w-[80px] truncate">{item.userName}</p></div>}
                     </div>
                     <div className="flex gap-1">
                       <button onClick={() => setEditItem(item)} className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600"><Edit size={16} /></button>
@@ -425,9 +460,9 @@ export default function InventoryPage({
                   <div className="pt-2 border-t border-gray-50 space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div><p className="text-[10px] text-gray-400">수량</p><p className="text-sm font-bold text-gray-900">{formatQty(item.qty)}</p></div>
-                        <div><p className="text-[10px] text-gray-400">거래처</p><p className="text-sm text-gray-600 max-w-[120px] truncate">{item.partner || "-"}</p></div>
-                        {item.userName && <div><p className="text-[10px] text-gray-400">등록자</p><p className="text-sm text-gray-500 max-w-[80px] truncate">{item.userName}</p></div>}
+                        <div><p className="text-[10px] text-gray-400">{t.inventory.colQty}</p><p className="text-sm font-bold text-gray-900">{formatQty(item.qty)}</p></div>
+                        <div><p className="text-[10px] text-gray-400">{t.inventory.colPartner}</p><p className="text-sm text-gray-600 max-w-[120px] truncate">{item.partner || "-"}</p></div>
+                        {item.userName && <div><p className="text-[10px] text-gray-400">{t.inventory.colRegistrant}</p><p className="text-sm text-gray-500 max-w-[80px] truncate">{item.userName}</p></div>}
                       </div>
                       <div className="flex gap-1">
                         <button onClick={() => setEditItem(item)} className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600"><Edit size={16} /></button>
@@ -437,10 +472,10 @@ export default function InventoryPage({
                     <div className="bg-gray-50 rounded-xl px-3 py-2 space-y-1">
                       <p className="text-sm font-semibold text-gray-700">{item.amount != null ? `$${item.amount.toLocaleString()}` : "-"}</p>
                       {item.exchangeRateAtEntry && item.amount != null && (
-                        <p className="text-xs text-gray-400">등록시 ₩{Math.round(item.amount * item.exchangeRateAtEntry).toLocaleString()} ({item.exchangeRateAtEntry.toLocaleString()}원)</p>
+                        <p className="text-xs text-gray-400">{t.inventory.rateAtEntry} ₩{Math.round(item.amount * item.exchangeRateAtEntry).toLocaleString()} ({item.exchangeRateAtEntry.toLocaleString()}{t.inventory.wonUnit})</p>
                       )}
                       {exchangeRate && item.amount != null && (
-                        <p className="text-xs text-gray-400">현재 ₩{Math.round(item.amount * exchangeRate).toLocaleString()} ({exchangeRate.toLocaleString()}원)</p>
+                        <p className="text-xs text-gray-400">{t.inventory.rateCurrent} ₩{Math.round(item.amount * exchangeRate).toLocaleString()} ({exchangeRate.toLocaleString()}{t.inventory.wonUnit})</p>
                       )}
                     </div>
                   </div>
