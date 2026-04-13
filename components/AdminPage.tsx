@@ -156,6 +156,16 @@ export default function AdminPage() {
           <p className="text-sm text-gray-500 mt-0.5">사용자 권한 및 시스템 설정을 관리합니다</p>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={() => setShowInactive(v => !v)}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl border transition-colors ${
+              showInactive
+                ? "bg-gray-100 text-gray-700 border-gray-300"
+                : "bg-white text-gray-400 border-gray-200 hover:bg-gray-50 hover:border-gray-300"
+            }`}
+          >
+            {showInactive ? "비활성 숨기기" : "비활성 포함"}
+          </button>
           <button onClick={() => { setShowAdd(!showAdd); setAddError(""); }}
             className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50">
             <UserPlus size={16} />사용자 추가
@@ -204,18 +214,6 @@ export default function AdminPage() {
 
       {/* 데스크탑 테이블 */}
       <div className="hidden lg:block bg-white rounded-2xl border border-gray-100 overflow-hidden">
-        <div className="flex justify-end px-5 pt-3">
-          <button
-            onClick={() => setShowInactive(v => !v)}
-            className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-              showInactive
-                ? "bg-gray-200 text-gray-700 border-gray-300"
-                : "bg-white text-gray-400 border-gray-200 hover:border-gray-300"
-            }`}
-          >
-            {showInactive ? "비활성 숨기기" : "비활성 포함"}
-          </button>
-        </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -278,18 +276,6 @@ export default function AdminPage() {
 
       {/* 모바일 카드 */}
       <div className="lg:hidden space-y-3">
-        <div className="flex justify-end">
-          <button
-            onClick={() => setShowInactive(v => !v)}
-            className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-              showInactive
-                ? "bg-gray-200 text-gray-700 border-gray-300"
-                : "bg-white text-gray-400 border-gray-200 hover:border-gray-300"
-            }`}
-          >
-            {showInactive ? "비활성 숨기기" : "비활성 포함"}
-          </button>
-        </div>
         {(showInactive ? users : users.filter(u => u.isActive)).map((user) => (
           <div key={user.id} className={`bg-white rounded-2xl border border-gray-100 p-4 space-y-3 ${!user.isActive ? "opacity-50" : ""}`}>
             <div className="flex items-center justify-between">

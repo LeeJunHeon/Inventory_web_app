@@ -30,7 +30,7 @@ const ALL_NAV_ITEMS: {
   { id: "target",    label: "타겟 사용현황", icon: Target },
   { id: "barcode",   label: "바코드",      icon: QrCode },
   { id: "tracing",   label: "재고 추적",   icon: Search },
-  { id: "items",     label: "품목 관리",   icon: Layers,    group: "마스터" },
+  { id: "items",     label: "품목 관리",   icon: Layers },
   { id: "partners",  label: "거래처 관리", icon: Building2, group: "마스터" },
   { id: "admin",     label: "관리자 설정", icon: Users,     group: "마스터" },
   { id: "logs",      label: "활동 로그",   icon: FileText,  group: "마스터" },
