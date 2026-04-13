@@ -4,10 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import { Download, Loader2 } from "lucide-react";
 import DatePicker from "./DatePicker";
 import { TYPE_COLORS, CATEGORY_COLORS, formatPrice, formatQty, InventoryItem } from "@/lib/data";
+import { useT } from "@/lib/i18n";
 
 // ── CSV 다운로드 헬퍼 ──────────────────────────────
-function downloadCSV(data: InventoryItem[], startDate: string, endDate: string) {
-  const headers = ["날짜", "구분", "품목군", "품목코드", "품목명", "수량", "단가", "금액", "거래처", "담당자", "바코드", "메모"];
+function downloadCSV(data: InventoryItem[], startDate: string, endDate: string, headers: string[], filename: string) {
   const rows = data.map(i => [
     i.date, i.type, i.category, i.code, i.name,
     i.qty, i.price, i.amount, i.partner, i.handler, i.barcode, i.memo,
@@ -19,7 +19,7 @@ function downloadCSV(data: InventoryItem[], startDate: string, endDate: string) 
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement("a");
   a.href     = url;
-  a.download = `재고내역_${startDate}_${endDate}.csv`;
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -45,6 +45,22 @@ export default function PeriodPage() {
   const [items, setItems]               = useState<InventoryItem[]>([]);
   const [loading, setLoading]           = useState(false);
   const [searched, setSearched]         = useState(false);
+
+  const { t } = useT();
+
+  const CAT_LABEL_MAP: Record<string, string> = {
+    "전체": t.inventory.catAll,
+    "웨이퍼": t.inventory.catWafer,
+    "타겟": t.inventory.catTarget,
+    "가스": t.inventory.catGas,
+    "기자재/소모품": t.inventory.catEquip,
+  };
+  const TYPE_LABEL_MAP: Record<string, string> = {
+    "전체": t.inventory.typeAll,
+    "입고": t.inventory.typeIn,
+    "출고": t.inventory.typeOut,
+    "불출": t.inventory.typeDis,
+  };
 
   useEffect(() => {
     fetch("/api/exchange-rate")
@@ -80,15 +96,14 @@ export default function PeriodPage() {
     finally { setLoading(false); }
   }, [startDate, endDate, categoryFilter, typeFilter, manualRate, currentRate]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 환율 로드 후 최초 실행 포함, 필터 변경 시 자동 조회
   useEffect(() => {
     if (currentRate === null) return;
     handleSearch();
   }, [startDate, endDate, categoryFilter, typeFilter, manualRate, currentRate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCSV = () => {
-    if (items.length === 0) { alert("내보낼 데이터가 없습니다."); return; }
-    downloadCSV(items, startDate, endDate);
+    if (items.length === 0) { alert(t.inventory.noExportData); return; }
+    downloadCSV(items, startDate, endDate, t.period.csvHeaders, `${t.period.csvFilename}_${startDate}_${endDate}.csv`);
   };
 
   const summary = {
@@ -133,14 +148,14 @@ export default function PeriodPage() {
     s.amount += krwAmount;
   });
   const activeCats = CATEGORY_LIST.filter(cat =>
-    TYPE_LIST.some(t => categoryBreakdown[cat][t].count > 0)
+    TYPE_LIST.some(type => categoryBreakdown[cat][type].count > 0)
   );
 
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">기간별 조회</h1>
-        <p className="text-sm text-gray-500 mt-0.5">기간을 지정하여 입출고 내역을 조회합니다</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t.nav.period}</h1>
+        <p className="text-sm text-gray-500 mt-0.5">{t.period.subtitle}</p>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
@@ -148,40 +163,44 @@ export default function PeriodPage() {
           {/* 첫 번째 줄: 날짜 + 품목군 + 구분 필터 */}
           <div className="flex flex-wrap gap-3 items-end">
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">시작일</label>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">{t.inventory.startDate}</label>
               <DatePicker
                 value={startDate}
                 onChange={val => setStartDate(val)}
-                placeholder="시작일"
+                placeholder={t.inventory.startDate}
               />
             </div>
             <span className="text-gray-300 pb-2.5">~</span>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">종료일</label>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">{t.inventory.endDate}</label>
               <DatePicker
                 value={endDate}
                 onChange={val => setEndDate(val)}
-                placeholder="종료일"
+                placeholder={t.inventory.endDate}
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">품목군</label>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">{t.period.catLabel}</label>
               <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}
                 className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                <option>전체</option><option>웨이퍼</option><option>타겟</option><option>가스</option><option>기자재/소모품</option>
+                {["전체", "웨이퍼", "타겟", "가스", "기자재/소모품"].map(cat => (
+                  <option key={cat} value={cat}>{CAT_LABEL_MAP[cat] || cat}</option>
+                ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">구분</label>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">{t.period.typeLabel}</label>
               <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1">
-                {["전체", "입고", "출고", "불출"].map(t => (
+                {["전체", "입고", "출고", "불출"].map(type => (
                   <button
-                    key={t}
-                    onClick={() => setTypeFilter(t)}
+                    key={type}
+                    onClick={() => setTypeFilter(type)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-                      typeFilter === t ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"
+                      typeFilter === type ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"
                     }`}
-                  >{t}</button>
+                  >
+                    {TYPE_LABEL_MAP[type] || type}
+                  </button>
                 ))}
               </div>
             </div>
@@ -190,19 +209,18 @@ export default function PeriodPage() {
           {/* 두 번째 줄: 환율 + CSV */}
           <div className="flex flex-wrap gap-3 items-end justify-between">
             <div>
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">환율 적용</label>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">{t.period.exchangeRateLabel}</label>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
-                  placeholder="등록 시 환율 자동 적용"
+                  placeholder={t.period.exchangeRatePlaceholder}
                   value={manualRate}
                   onChange={e => setManualRate(e.target.value)}
                   className="pl-3 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none w-52"
                 />
-                <span className="text-xs text-gray-400 whitespace-nowrap">원/USD</span>
+                <span className="text-xs text-gray-400 whitespace-nowrap">{t.period.wonPerUsd}</span>
               </div>
             </div>
-            {/* CSV 버튼 */}
             <button
               onClick={handleCSV}
               disabled={items.length === 0}
@@ -216,11 +234,7 @@ export default function PeriodPage() {
       {searched && usingCurrentRate && currentRate && (
         <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
           <span>⚠</span>
-          <span>
-            등록시 환율이 없는 USD 거래가 있어 현재 환율
-            <span className="font-bold mx-1">₩{currentRate.toLocaleString()}</span>
-            을 기준으로 계산되었습니다.
-          </span>
+          <span>{t.period.rateWarning(currentRate)}</span>
         </div>
       )}
 
@@ -235,11 +249,13 @@ export default function PeriodPage() {
               }`}>
                 <div className="flex items-center gap-2 mb-2">
                   <span className={`w-2 h-2 rounded-full ${TYPE_COLORS[type].dot}`} />
-                  <span className={`text-sm font-semibold ${TYPE_COLORS[type].text}`}>{type}</span>
+                  <span className={`text-sm font-semibold ${TYPE_COLORS[type].text}`}>
+                    {TYPE_LABEL_MAP[type] || type}
+                  </span>
                 </div>
                 <div className="flex items-baseline gap-3">
-                  <span className="text-2xl font-bold text-gray-900">{summary[type].count}건</span>
-                  <span className="text-sm text-gray-500">{formatQty(summary[type].qty)}개</span>
+                  <span className="text-2xl font-bold text-gray-900">{summary[type].count}{t.period.countUnit}</span>
+                  <span className="text-sm text-gray-500">{formatQty(summary[type].qty)}{t.period.qtyUnit}</span>
                 </div>
                 <div className="mt-2 space-y-0.5">
                   <p className="text-xs text-gray-500">
@@ -263,16 +279,16 @@ export default function PeriodPage() {
           {activeCats.length > 0 && (
             <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
               <div className="px-5 py-3.5 border-b border-gray-100">
-                <h2 className="font-bold text-gray-900">품목군별 상세 현황</h2>
+                <h2 className="font-bold text-gray-900">{t.period.catBreakdownTitle}</h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-100">
-                      <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">품목군</th>
-                      {TYPE_LIST.map(t => (
-                        <th key={t} className={`text-center text-xs font-semibold px-5 py-3 ${TYPE_COLORS[t]?.text ?? "text-gray-500"}`}>
-                          {t}
+                      <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.period.catCol}</th>
+                      {TYPE_LIST.map(type => (
+                        <th key={type} className={`text-center text-xs font-semibold px-5 py-3 ${TYPE_COLORS[type]?.text ?? "text-gray-500"}`}>
+                          {TYPE_LABEL_MAP[type] || type}
                         </th>
                       ))}
                     </tr>
@@ -285,13 +301,13 @@ export default function PeriodPage() {
                             {cat}
                           </span>
                         </td>
-                        {TYPE_LIST.map(t => {
-                          const s = categoryBreakdown[cat][t];
+                        {TYPE_LIST.map(type => {
+                          const s = categoryBreakdown[cat][type];
                           return (
-                            <td key={t} className="px-5 py-3 text-center">
+                            <td key={type} className="px-5 py-3 text-center">
                               {s.count > 0 ? (
                                 <div>
-                                  <p className="text-sm font-semibold text-gray-900">{s.count}건 / {s.qty.toLocaleString()}개</p>
+                                  <p className="text-sm font-semibold text-gray-900">{s.count}{t.period.countUnit} / {s.qty.toLocaleString()}{t.period.qtyUnit}</p>
                                   <p className="text-xs text-gray-400 mt-0.5">
                                     {s.amount > 0 ? `₩${Math.round(s.amount).toLocaleString()}` : "-"}
                                   </p>
@@ -312,26 +328,26 @@ export default function PeriodPage() {
 
           <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
             <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="font-bold text-gray-900">상세 내역</h2>
-              <span className="text-xs text-gray-400">{items.length}건</span>
+              <h2 className="font-bold text-gray-900">{t.period.detailTitle}</h2>
+              <span className="text-xs text-gray-400">{items.length}{t.period.countUnit}</span>
             </div>
 
             {loading ? (
               <div className="flex items-center justify-center py-12"><Loader2 size={24} className="animate-spin text-blue-500" /></div>
             ) : items.length === 0 ? (
-              <div className="px-5 py-12 text-center text-sm text-gray-400">조회된 데이터가 없습니다</div>
+              <div className="px-5 py-12 text-center text-sm text-gray-400">{t.period.noData}</div>
             ) : (
               <>
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full">
                     <thead><tr className="bg-gray-50 border-b border-gray-100">
-                      <th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">날짜</th>
-                      <th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">구분</th>
-                      <th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">품목군</th>
-                      <th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">품목</th>
-                      <th className="text-right text-xs font-semibold text-gray-500 px-5 py-2.5">수량</th>
-                      <th className="text-right text-xs font-semibold text-gray-500 px-5 py-2.5">금액</th>
-                      <th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">거래처</th>
+                      <th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">{t.inventory.colDate}</th>
+                      <th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">{t.inventory.colType}</th>
+                      <th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">{t.inventory.colCategory}</th>
+                      <th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">{t.inventory.colItem}</th>
+                      <th className="text-right text-xs font-semibold text-gray-500 px-5 py-2.5">{t.inventory.colQty}</th>
+                      <th className="text-right text-xs font-semibold text-gray-500 px-5 py-2.5">{t.inventory.colAmount}</th>
+                      <th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">{t.inventory.colPartner}</th>
                     </tr></thead>
                     <tbody>
                       {items.map((item) => (
@@ -371,7 +387,7 @@ export default function PeriodPage() {
                       </div>
                       <p className="text-sm font-semibold text-gray-900">{item.name}</p>
                       <div className="flex items-center gap-4 text-sm">
-                        <span>수량 <span className="font-bold">{item.qty}</span></span>
+                        <span>{t.inventory.colQty} <span className="font-bold">{item.qty}</span></span>
                         <span className="text-gray-400">
                           {item.currency === "USD" ? (
                             <span>
