@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Search, Plus, Edit, Trash2, Loader2, X, Check } from "lucide-react";
 import { CATEGORY_COLORS } from "@/lib/data";
+import { useT } from "@/lib/i18n";
 
 interface ItemOption {
   id: number; code: string; name: string;
@@ -16,6 +17,14 @@ const CATS = ["전체", "웨이퍼", "타겟", "가스", "기자재/소모품"];
 const EMPTY_FORM = { code: "", name: "", categoryId: "", unit: "", note: "" };
 
 export default function ItemsPage() {
+  const { t } = useT();
+  const CAT_LABEL: Record<string, string> = {
+    "전체": t.barcode.catAll,
+    "웨이퍼": t.inventory.catWafer,
+    "타겟": t.inventory.catTarget,
+    "가스": t.inventory.catGas,
+    "기자재/소모품": t.inventory.catEquip,
+  };
   const [items, setItems]                   = useState<ItemOption[]>([]);
   const [categories, setCategories]         = useState<CategoryOption[]>([]);
   const [loading, setLoading]               = useState(true);
@@ -42,7 +51,7 @@ export default function ItemsPage() {
           { id: 3, name: "가스",        codePrefix: "G" },
           { id: 4, name: "기자재/소모품", codePrefix: "E" },
         ]);
-        showToast("품목군 목록을 불러오지 못했습니다. 페이지를 새로고침 해주세요.");
+        showToast(t.items.catLoadFailed);
       });
   }, []);
 
@@ -87,7 +96,7 @@ export default function ItemsPage() {
   // 저장 (등록 or 수정)
   const handleSave = async () => {
     if (!form.code.trim() || !form.name.trim() || !form.categoryId) {
-      setFormError("품목코드, 품목명, 품목군은 필수입니다."); return;
+      setFormError(t.items.formRequired); return;
     }
     setFormError(""); setSaving(true);
     try {
@@ -105,24 +114,24 @@ export default function ItemsPage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) { setFormError(data.error || "저장 실패"); return; }
-      showToast(editTarget ? "✅ 품목이 수정되었습니다." : "✅ 품목이 등록되었습니다.");
+      if (!res.ok) { setFormError(data.error || t.common.saveFail); return; }
+      showToast("✅ " + (editTarget ? t.items.editSuccess : t.items.createSuccess));
       setShowForm(false);
       fetchItems();
-    } catch { setFormError("네트워크 오류"); }
+    } catch { setFormError(t.common.networkError); }
     finally { setSaving(false); }
   };
 
   // 삭제 / 비활성화
   const handleDelete = async (item: ItemOption) => {
-    if (!confirm(`"${item.name}" 품목을 삭제하시겠습니까?\n(거래 내역이 있으면 비활성화 처리됩니다)`)) return;
+    if (!confirm(t.items.deleteConfirm(item.name))) return;
     try {
       const res  = await fetch(`/api/items?id=${item.id}`, { method: "DELETE" });
       const data = await res.json();
-      if (!res.ok) { alert(data.error || "삭제 실패"); return; }
-      showToast(`✅ ${data.message}`);
+      if (!res.ok) { alert(data.error || t.common.saveFail); return; }
+      showToast("✅ " + t.items.deleteSuccess);
       fetchItems();
-    } catch { alert("네트워크 오류"); }
+    } catch { alert(t.common.networkError); }
   };
 
   return (
@@ -137,12 +146,12 @@ export default function ItemsPage() {
       {/* 헤더 */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">품목 관리</h1>
-          <p className="text-sm text-gray-500 mt-0.5">재고 품목을 등록·수정·삭제합니다</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t.nav.items}</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{t.items.subtitle}</p>
         </div>
         <button onClick={openCreate}
           className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-blue-500 rounded-xl hover:bg-blue-600 shadow-sm">
-          <Plus size={16} />신규 품목 등록
+          <Plus size={16} />{t.items.newItem}
         </button>
       </div>
 
@@ -150,47 +159,47 @@ export default function ItemsPage() {
       {showForm && (
         <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="font-bold text-blue-900">{editTarget ? "품목 수정" : "신규 품목 등록"}</h2>
+            <h2 className="font-bold text-blue-900">{editTarget ? t.items.editTitle : t.items.createTitle}</h2>
             <button onClick={() => setShowForm(false)} className="text-blue-400 hover:text-blue-700"><X size={18} /></button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {/* 품목군 */}
             <div>
-              <label className="block text-xs font-semibold text-blue-700 mb-1">품목군 <span className="text-rose-500">*</span></label>
+              <label className="block text-xs font-semibold text-blue-700 mb-1">{t.items.catLabel} <span className="text-rose-500">*</span></label>
               <select value={form.categoryId} onChange={e => setForm(f => ({ ...f, categoryId: e.target.value }))}
                 disabled={!!editTarget}
                 className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none disabled:opacity-60">
-                <option value="">선택하세요</option>
+                <option value="">{t.items.selectPlaceholder}</option>
                 {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             {/* 품목코드 */}
             <div>
-              <label className="block text-xs font-semibold text-blue-700 mb-1">품목코드 <span className="text-rose-500">*</span></label>
+              <label className="block text-xs font-semibold text-blue-700 mb-1">{t.items.itemCodeLabel} <span className="text-rose-500">*</span></label>
               <input value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))}
                 readOnly={!!editTarget}
-                placeholder="예: W4P0BT-89"
+                placeholder={t.items.itemCodePlaceholder}
                 className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400 read-only:opacity-60" />
             </div>
             {/* 품목명 */}
             <div>
-              <label className="block text-xs font-semibold text-blue-700 mb-1">품목명 <span className="text-rose-500">*</span></label>
+              <label className="block text-xs font-semibold text-blue-700 mb-1">{t.items.itemNameLabel} <span className="text-rose-500">*</span></label>
               <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                placeholder='예: 4" P-type Boron 웨이퍼'
+                placeholder={t.items.itemNamePlaceholder}
                 className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400" />
             </div>
             {/* 단위 */}
             <div>
-              <label className="block text-xs font-semibold text-blue-700 mb-1">단위</label>
+              <label className="block text-xs font-semibold text-blue-700 mb-1">{t.items.unitLabel}</label>
               <input value={form.unit} onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}
-                placeholder="예: 장, 개, 병, kg"
+                placeholder={t.items.unitPlaceholder}
                 className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400" />
             </div>
             {/* 비고 */}
             <div>
-              <label className="block text-xs font-semibold text-blue-700 mb-1">비고</label>
+              <label className="block text-xs font-semibold text-blue-700 mb-1">{t.items.noteLabel}</label>
               <input value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
-                placeholder="추가 설명"
+                placeholder={t.items.notePlaceholder}
                 className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400" />
             </div>
           </div>
@@ -198,11 +207,11 @@ export default function ItemsPage() {
           <div className="flex gap-2">
             <button onClick={handleSave} disabled={saving}
               className="px-5 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 disabled:opacity-60">
-              {saving ? "저장 중..." : editTarget ? "수정 저장" : "등록"}
+              {saving ? t.common.saving : editTarget ? t.items.editSave : t.items.createSave}
             </button>
             <button onClick={() => setShowForm(false)}
               className="px-5 py-2.5 bg-white border border-blue-200 text-blue-700 rounded-xl text-sm font-medium hover:bg-blue-50">
-              취소
+              {t.common.cancel}
             </button>
           </div>
         </div>
@@ -213,14 +222,14 @@ export default function ItemsPage() {
         <div className="flex flex-wrap gap-3 items-center">
           <div className="relative flex-1 min-w-[200px]">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input type="text" placeholder="품목코드, 품목명 검색..." value={search}
+            <input type="text" placeholder={t.items.searchPlaceholder} value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
           </div>
           <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1 overflow-x-auto">
             {CATS.map(c => (
               <button key={c} onClick={() => setCatFilter(c)}
-                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${catFilter === c ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}>{c}</button>
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${catFilter === c ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}>{CAT_LABEL[c] || c}</button>
             ))}
           </div>
         </div>
@@ -230,7 +239,7 @@ export default function ItemsPage() {
       {loading ? (
         <div className="flex items-center justify-center h-32">
           <Loader2 size={24} className="animate-spin text-blue-500" />
-          <span className="ml-2 text-sm text-gray-500">로딩 중...</span>
+          <span className="ml-2 text-sm text-gray-500">{t.common.loading}</span>
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
@@ -238,17 +247,17 @@ export default function ItemsPage() {
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead><tr className="bg-gray-50 border-b border-gray-100">
-                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">품목코드</th>
-                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">품목명</th>
-                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">품목군</th>
-                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">단위</th>
-                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">비고</th>
-                <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">상태</th>
-                <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">작업</th>
+                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.items.itemCodeLabel}</th>
+                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.items.itemNameLabel}</th>
+                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.items.catLabel}</th>
+                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.items.unitLabel}</th>
+                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.items.noteLabel}</th>
+                <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">{t.items.statusLabel}</th>
+                <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colAction}</th>
               </tr></thead>
               <tbody>
                 {items.length === 0 ? (
-                  <tr><td colSpan={7} className="px-5 py-12 text-center text-sm text-gray-400">등록된 품목이 없습니다</td></tr>
+                  <tr><td colSpan={7} className="px-5 py-12 text-center text-sm text-gray-400">{t.items.noData}</td></tr>
                 ) : items.map(item => (
                   <tr key={item.id} className={`border-b border-gray-50 hover:bg-blue-50/30 group ${!item.isActive ? "opacity-40" : ""}`}>
                     <td className="px-5 py-3 text-sm font-mono font-semibold text-gray-900">{item.code}</td>
@@ -260,17 +269,17 @@ export default function ItemsPage() {
                     <td className="px-5 py-3 text-sm text-gray-400">{item.note || "-"}</td>
                     <td className="px-5 py-3 text-center">
                       {item.isActive
-                        ? <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">활성</span>
-                        : <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">비활성</span>}
+                        ? <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">{t.barcode.active}</span>
+                        : <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{t.barcode.inactive}</span>}
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onClick={() => openEdit(item)}
-                          className="p-1.5 rounded-lg hover:bg-blue-100 text-gray-400 hover:text-blue-600" title="수정">
+                          className="p-1.5 rounded-lg hover:bg-blue-100 text-gray-400 hover:text-blue-600" title={t.common.edit}>
                           <Edit size={15} />
                         </button>
                         <button onClick={() => handleDelete(item)}
-                          className="p-1.5 rounded-lg hover:bg-rose-100 text-gray-400 hover:text-rose-600" title="삭제">
+                          className="p-1.5 rounded-lg hover:bg-rose-100 text-gray-400 hover:text-rose-600" title={t.common.delete}>
                           <Trash2 size={15} />
                         </button>
                       </div>
@@ -300,7 +309,7 @@ export default function ItemsPage() {
           </div>
 
           <div className="px-5 py-3 border-t border-gray-100 bg-gray-50">
-            <p className="text-xs text-gray-500">총 <span className="font-semibold text-gray-700">{items.length}종</span></p>
+            <p className="text-xs font-semibold text-gray-700">{t.items.totalCount(items.length)}</p>
           </div>
         </div>
       )}
