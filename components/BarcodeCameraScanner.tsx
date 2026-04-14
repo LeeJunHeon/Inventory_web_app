@@ -75,7 +75,9 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
         setStarted(true);
       } catch (err: any) {
         if (!mountedRef.current) return;
-        const msg = String(err);
+        const msg = err?.message ?? String(err);
+        // AbortError는 video play 타이밍 이슈로 기능에 영향 없음 — 무시
+        if (msg.includes("AbortError") || msg.includes("interrupted by a new load")) return;
         if (msg.includes("NotAllowedError") || msg.includes("Permission")) {
           setError("카메라 권한이 거부되었습니다.\n브라우저 주소창 옆 카메라 아이콘을 클릭해 권한을 허용해주세요.");
         } else if (msg.includes("NotFoundError")) {
