@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Download, ChevronLeft, ChevronRight } from "lucide-react";
+import DatePicker from "./DatePicker";
 import { useT } from "@/lib/i18n";
 
 interface LogEntry {
@@ -94,17 +95,11 @@ export default function LogPage() {
     }
   }, [startDate, endDate, userId, action, tableName]);
 
-  // 초기 로드
+  // 필터 변경 시 자동 로드 (초기 진입 포함)
   useEffect(() => {
-    fetchLogs(1);
-    setPage(1);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleSearch = () => {
     setPage(1);
     fetchLogs(1);
-  };
+  }, [fetchLogs]);
 
   const handlePageChange = (p: number) => {
     setPage(p);
@@ -162,18 +157,20 @@ export default function LogPage() {
         <div className="flex flex-wrap gap-3 items-end">
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1">{t.logs.startDate}</label>
-            <input
-              type="date" value={startDate}
-              onChange={e => setStartDate(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+            <DatePicker
+              value={startDate}
+              onChange={val => setStartDate(val)}
+              placeholder="시작일"
+              className="w-40"
             />
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1">{t.logs.endDate}</label>
-            <input
-              type="date" value={endDate}
-              onChange={e => setEndDate(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+            <DatePicker
+              value={endDate}
+              onChange={val => setEndDate(val)}
+              placeholder="종료일"
+              className="w-40"
             />
           </div>
           <div>
@@ -189,12 +186,6 @@ export default function LogPage() {
               ))}
             </select>
           </div>
-          <button
-            onClick={handleSearch}
-            className="px-5 py-2 text-sm font-semibold text-white bg-blue-500 rounded-xl hover:bg-blue-600 transition-colors"
-          >
-            {t.logs.searchBtn}
-          </button>
         </div>
 
         {/* 액션 필터 */}
