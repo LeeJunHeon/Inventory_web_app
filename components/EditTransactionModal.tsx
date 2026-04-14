@@ -123,6 +123,25 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
           </div>
 
+          {/* 통화 선택 */}
+          <div className="flex justify-end">
+            <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+              {(["KRW", "USD"] as const).map(c => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setCurrency(c)}
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                    currency === c
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
+                >
+                  {c === "KRW" ? "₩ KRW" : "$ USD"}
+                </button>
+              ))}
+            </div>
+          </div>
           {/* 수량 / 단가 / 금액 */}
           <div className="grid grid-cols-3 gap-3">
             <div>
