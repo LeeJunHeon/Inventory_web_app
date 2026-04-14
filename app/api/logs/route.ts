@@ -66,6 +66,8 @@ export async function GET(request: NextRequest) {
           if (log.tableName === "inventory_tx") {
             if (log.action === "DELETE") {
               detail = `전표 ID: ${log.recordId}`;
+            } else if (log.action === "UPDATE" && log.detail) {
+              detail = log.detail;
             } else {
               const tx = await prisma.inventoryTx.findUnique({
                 where:   { id: log.recordId },
@@ -76,49 +78,69 @@ export async function GET(request: NextRequest) {
               }
             }
           } else if (log.tableName === "target_log") {
-            const tl = await prisma.targetLog.findUnique({
-              where:   { id: log.recordId },
-              include: {
-                targetUnit: {
-                  include: {
-                    barcodes: { where: { isActive: "Y" }, take: 1 },
-                    item:     true,
+            if (log.action === "UPDATE" && log.detail) {
+              detail = log.detail;
+            } else {
+              const tl = await prisma.targetLog.findUnique({
+                where:   { id: log.recordId },
+                include: {
+                  targetUnit: {
+                    include: {
+                      barcodes: { where: { isActive: "Y" }, take: 1 },
+                      item:     true,
+                    },
                   },
                 },
-              },
-            });
-            if (tl) {
-              const bc   = tl.targetUnit?.barcodes[0]?.code || "";
-              const name = tl.targetUnit?.item?.name        || "";
-              const wt   = tl.weight ? ` ${Number(tl.weight).toFixed(3)}g` : "";
-              detail = `[${tl.logType}] ${bc} ${name}${wt}`.trim();
+              });
+              if (tl) {
+                const bc   = tl.targetUnit?.barcodes[0]?.code || "";
+                const name = tl.targetUnit?.item?.name        || "";
+                const wt   = tl.weight ? ` ${Number(tl.weight).toFixed(3)}g` : "";
+                detail = `[${tl.logType}] ${bc} ${name}${wt}`.trim();
+              }
             }
           } else if (log.tableName === "partner") {
-            try {
-              const p = await prisma.partner.findUnique({ where: { id: log.recordId } });
-              detail = p ? p.name : `ID: ${log.recordId}`;
-            } catch { detail = `ID: ${log.recordId}`; }
+            if (log.action === "UPDATE" && log.detail) {
+              detail = log.detail;
+            } else {
+              try {
+                const p = await prisma.partner.findUnique({ where: { id: log.recordId } });
+                detail = p ? p.name : `ID: ${log.recordId}`;
+              } catch { detail = `ID: ${log.recordId}`; }
+            }
 
           } else if (log.tableName === "item") {
-            try {
-              const it = await prisma.item.findUnique({ where: { id: log.recordId } });
-              detail = it ? `${it.code} ${it.name}` : `ID: ${log.recordId}`;
-            } catch { detail = `ID: ${log.recordId}`; }
+            if (log.action === "UPDATE" && log.detail) {
+              detail = log.detail;
+            } else {
+              try {
+                const it = await prisma.item.findUnique({ where: { id: log.recordId } });
+                detail = it ? `${it.code} ${it.name}` : `ID: ${log.recordId}`;
+              } catch { detail = `ID: ${log.recordId}`; }
+            }
 
           } else if (log.tableName === "barcode") {
-            try {
-              const bc = await prisma.barcode.findUnique({
-                where: { id: log.recordId },
-                include: { item: true },
-              });
-              detail = bc ? `${bc.code} (${bc.item?.name ?? "-"})` : `ID: ${log.recordId}`;
-            } catch { detail = `ID: ${log.recordId}`; }
+            if (log.action === "UPDATE" && log.detail) {
+              detail = log.detail;
+            } else {
+              try {
+                const bc = await prisma.barcode.findUnique({
+                  where: { id: log.recordId },
+                  include: { item: true },
+                });
+                detail = bc ? `${bc.code} (${bc.item?.name ?? "-"})` : `ID: ${log.recordId}`;
+              } catch { detail = `ID: ${log.recordId}`; }
+            }
 
           } else if (log.tableName === "user") {
-            try {
-              const u = await prisma.user.findUnique({ where: { id: log.recordId } });
-              detail = u ? `${u.name} (${u.email ?? "-"})` : `ID: ${log.recordId}`;
-            } catch { detail = `ID: ${log.recordId}`; }
+            if (log.action === "UPDATE" && log.detail) {
+              detail = log.detail;
+            } else {
+              try {
+                const u = await prisma.user.findUnique({ where: { id: log.recordId } });
+                detail = u ? `${u.name} (${u.email ?? "-"})` : `ID: ${log.recordId}`;
+              } catch { detail = `ID: ${log.recordId}`; }
+            }
 
           } else if (log.tableName === "target_unit") {
             try {
@@ -132,6 +154,8 @@ export async function GET(request: NextRequest) {
               if (tu) {
                 const bc = tu.barcodes[0]?.code ?? "";
                 detail = `${bc ? bc + " " : ""}${tu.item?.name ?? ""} → ${tu.status}`;
+              } else if (log.action === "UPDATE" && log.detail) {
+                detail = log.detail;
               } else {
                 detail = `ID: ${log.recordId}`;
               }
@@ -156,6 +180,8 @@ export async function GET(request: NextRequest) {
                 const bc   = cs.targetUnit?.barcodes[0]?.code ?? "";
                 const name = cs.targetUnit?.item?.name ?? "비어있음";
                 detail = `${loc} → ${bc ? bc + " " : ""}${name}`;
+              } else if (log.action === "UPDATE" && log.detail) {
+                detail = log.detail;
               } else {
                 detail = `ID: ${log.recordId}`;
               }

@@ -282,6 +282,7 @@ model ActivityLog {
   action    String   // CREATE, UPDATE, DELETE
   tableName String   @map("table_name")
   recordId  Int      @map("record_id")
+  detail    String?
   createdAt DateTime @default(now()) @map("created_at")
 
   user User? @relation(fields: [userId], references: [id])
