@@ -92,46 +92,40 @@ export default function InboundSelectModal({ isOpen, itemId, barcodeId, onSelect
             <button key={tx.txNo}
               onClick={() => { onSelect(tx); onClose(); }}
               className="w-full text-left bg-white border border-gray-200 rounded-xl px-4 py-3.5 hover:border-blue-400 hover:bg-blue-50/50 transition-all group">
-              <div className="flex items-start justify-between gap-3">
-                {/* 왼쪽: 전표번호 + 날짜 + 거래처 + 위치 */}
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg group-hover:bg-blue-100">
+              <div className="flex items-center justify-between gap-3">
+                {/* 왼쪽 */}
+                <div className="space-y-0.5 min-w-0">
+                  {/* 1행: 전표번호 + 날짜 + 위치 */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg group-hover:bg-blue-100 shrink-0">
                       #{tx.txNo}
                     </span>
-                    {tx.itemCode && (
-                      <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
-                        {tx.itemCode}
-                      </span>
-                    )}
-                    <span className="text-sm text-gray-500">{tx.txDate}</span>
-                    <span className="text-xs text-emerald-700 font-medium bg-emerald-50 px-1.5 py-0.5 rounded">
-                      잔여 {tx.remainQty}개
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {tx.itemName && (
-                      <span className="text-sm font-semibold text-gray-800">{tx.itemName}</span>
-                    )}
-                    {tx.partnerName && (
-                      <span className="text-sm text-gray-700 font-medium">{tx.partnerName}</span>
-                    )}
+                    <span className="text-xs text-gray-500 shrink-0">{tx.txDate}</span>
                     {tx.locationName && (
-                      <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                      <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full shrink-0">
                         {tx.locationName}
                       </span>
+                    )}
+                  </div>
+                  {/* 2행: 품목명 + 거래처 */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {tx.itemName && (
+                      <span className="text-sm font-semibold text-gray-800 truncate">{tx.itemName}</span>
+                    )}
+                    {tx.partnerName && (
+                      <span className="text-xs text-gray-500">{tx.partnerName}</span>
                     )}
                   </div>
                   {tx.memo && (
                     <p className="text-xs text-gray-400">📝 {tx.memo}</p>
                   )}
                 </div>
-                {/* 오른쪽: 단가 + 수량 + 잔여 */}
-                <div className="flex items-center gap-2 shrink-0">
+                {/* 오른쪽: 단가 + 입고/잔여 */}
+                <div className="flex items-center gap-3 shrink-0">
                   {tx.unitPrice != null && (
                     <div className="text-right">
                       <p className="text-[10px] text-gray-400">단가</p>
-                      <p className="text-sm font-semibold text-gray-700">
+                      <p className="text-xs font-semibold text-gray-700 whitespace-nowrap">
                         {tx.currency === "USD"
                           ? `$${tx.unitPrice.toLocaleString()}`
                           : `₩${tx.unitPrice.toLocaleString()}`}
@@ -142,9 +136,9 @@ export default function InboundSelectModal({ isOpen, itemId, barcodeId, onSelect
                     <p className="text-[10px] text-gray-400">입고</p>
                     <p className="text-xs text-gray-600 whitespace-nowrap">{tx.qty.toLocaleString()}개</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-[10px] text-gray-400">잔여</p>
-                    <p className="text-xs font-bold text-emerald-600 whitespace-nowrap">{tx.remainQty.toLocaleString()}개</p>
+                  <div className="text-right bg-emerald-50 rounded-lg px-2 py-1">
+                    <p className="text-[10px] text-emerald-600">잔여</p>
+                    <p className="text-sm font-bold text-emerald-600 whitespace-nowrap">{tx.remainQty.toLocaleString()}개</p>
                   </div>
                 </div>
               </div>
