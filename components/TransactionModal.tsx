@@ -842,54 +842,40 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           )}
 
           {/* 수량 / 단가 / 금액 */}
-          {!(isEmployee && (type === "출고" || type === "불출")) && (
-            <div className="flex justify-end">
-              <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
-                {(["KRW", "USD"] as const).map(c => (
-                  <button key={c} type="button" onClick={() => setCurrency(c)}
-                    className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
-                      currency === c
-                        ? "bg-white text-gray-900 shadow-sm"
-                        : "text-gray-400 hover:text-gray-600"
-                    }`}>
-                    {c === "KRW" ? "₩ KRW" : "$ USD"}
-                  </button>
-                ))}
-              </div>
+          <div className="flex justify-end">
+            <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+              {(["KRW", "USD"] as const).map(c => (
+                <button key={c} type="button" onClick={() => setCurrency(c)}
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                    currency === c
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}>
+                  {c === "KRW" ? "₩ KRW" : "$ USD"}
+                </button>
+              ))}
             </div>
-          )}
-          <div className={`grid gap-4 ${
-            isEmployee && (type === "출고" || type === "불출")
-              ? "grid-cols-1 sm:grid-cols-2"
-              : "grid-cols-2 sm:grid-cols-3"
-          }`}>
+          </div>
+          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tx.qtyLabel} <span className="text-rose-500">*</span></label>
               <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} placeholder="0"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
             </div>
-            {!(isEmployee && (type === "출고" || type === "불출")) ? (
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tx.unitPriceLabel}</label>
-                <input type="text" value={unitPrice} onChange={e => setUnitPrice(e.target.value)}
-                  placeholder={currency === "USD" ? "$0.00" : "₩0"}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
-              </div>
-            ) : (
-              <div className="bg-gray-50 rounded-xl px-4 py-3">
-                <p className="text-xs text-gray-400">{t.tx.unitPriceAutoHint}</p>
-              </div>
-            )}
-            {!(isEmployee && (type === "출고" || type === "불출")) && (
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tx.amountLabel}</label>
-                <input type="text" value={amount ? (currency === "USD" ? `$${amount.toLocaleString()}` : `₩${amount.toLocaleString()}`) : ""} readOnly placeholder={t.tx.autoCalc}
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
-              </div>
-            )}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tx.unitPriceLabel}</label>
+              <input type="text" value={unitPrice} onChange={e => setUnitPrice(e.target.value)}
+                placeholder={currency === "USD" ? "$0.00" : "₩0"}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tx.amountLabel}</label>
+              <input type="text" value={amount ? (currency === "USD" ? `$${amount.toLocaleString()}` : `₩${amount.toLocaleString()}`) : ""} readOnly placeholder={t.tx.autoCalc}
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
+            </div>
           </div>
 
-          {currency === "USD" && !(isEmployee && (type === "출고" || type === "불출")) && (
+          {currency === "USD" && (
             <div className="flex items-center gap-2 -mt-2">
               <p className="text-xs text-gray-400 shrink-0">{t.tx.rateLabel}</p>
               <input
