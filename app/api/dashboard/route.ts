@@ -34,7 +34,7 @@ export async function GET() {
       select: { id: true, name: true, code: true, minStockQty: true },
     });
 
-    let shortageCount = 0;
+    let shortageCount = 0;  // locationSummary 계산 후 allShortageItemIds.size로 교체
     const shortageItems: {
       itemId: number;
       itemName: string;
@@ -105,6 +105,7 @@ export async function GET() {
       select: { id: true, name: true },
     });
 
+    const allShortageItemIds = new Set<number>();
     const locationSummary = await Promise.all(locations.map(async (loc) => {
       const [locIn, locOut] = await Promise.all([
         prisma.inventoryTx.groupBy({
@@ -139,11 +140,17 @@ export async function GET() {
         const current = (inMap.get(itemId) || 0) - (outMap.get(itemId) || 0);
         if (current > 0) locTotal++;
         const min = minMap.get(itemId);
-        if (min && min > 0 && current < min) locShortage++;
+        if (min && min > 0 && current < min) {
+          locShortage++;
+          allShortageItemIds.add(itemId);
+        }
       }
 
       return { locationId: loc.id, locationName: loc.name, totalItems: locTotal, shortageCount: locShortage };
     }));
+
+    // 위치별 부족 품목 합집합으로 shortageCount 재설정
+    shortageCount = allShortageItemIds.size;
 
     // 최근 5건
     const recent = await prisma.inventoryTx.findMany({
