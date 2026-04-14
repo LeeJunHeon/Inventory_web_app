@@ -21,7 +21,7 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
 
     const init = async () => {
       try {
-        const { Html5Qrcode } = await import("html5-qrcode");
+        const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import("html5-qrcode");
 
         // 이전 인스턴스 완전 정리
         const existingEl = document.getElementById(divId);
@@ -41,7 +41,14 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
             fps: 10,
             qrbox: { width: 220, height: 220 },
             videoConstraints: { facingMode: "environment" },
-          },
+            formatsToSupport: [
+              Html5QrcodeSupportedFormats.QR_CODE,
+              Html5QrcodeSupportedFormats.CODE_128,
+              Html5QrcodeSupportedFormats.CODE_39,
+              Html5QrcodeSupportedFormats.EAN_13,
+              Html5QrcodeSupportedFormats.DATA_MATRIX,
+            ],
+          } as any,
           (decodedText: string) => {
             if (mountedRef.current) onDetected(decodedText);
           },
