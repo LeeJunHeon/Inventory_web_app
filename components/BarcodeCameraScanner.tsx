@@ -35,12 +35,30 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
         const scanner = new Html5Qrcode(divId, { verbose: false } as any);
         scannerRef.current = scanner;
 
+        // 광각 제외 카메라 선택
+        let cameraConstraint: object = { facingMode: "environment" };
+        try {
+          const cameras = await Html5Qrcode.getCameras();
+          if (cameras.length > 0) {
+            const nonWide = cameras.filter(c =>
+              !c.label.toLowerCase().includes("wide") &&
+              !c.label.toLowerCase().includes("ultra")
+            );
+            const target = nonWide.length > 0
+              ? nonWide[nonWide.length - 1]
+              : cameras[cameras.length - 1];
+            cameraConstraint = { deviceId: { exact: target.id } };
+          }
+        } catch {
+          // getCameras 실패 시 facingMode 폴백 유지
+        }
+
         await scanner.start(
-          { facingMode: "environment" },
+          cameraConstraint,
           {
             fps: 10,
             qrbox: { width: 220, height: 220 },
-            videoConstraints: { facingMode: "environment" },
+            videoConstraints: {},
             formatsToSupport: [
               Html5QrcodeSupportedFormats.QR_CODE,
               Html5QrcodeSupportedFormats.CODE_128,
