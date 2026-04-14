@@ -431,8 +431,10 @@ export async function PUT(request: NextRequest) {
           _changes.push(`수량: ${before.qty} → ${body.qty}`);
         if (body.txType !== undefined && before.txType !== body.txType)
           _changes.push(`구분: ${before.txType} → ${body.txType}`);
-        if (body.locationId !== undefined && String(before.locationId ?? "") !== String(body.locationId))
-          _changes.push(`위치: ${before.location?.name ?? "-"} → (ID:${body.locationId})`);
+        if (body.locationId !== undefined && String(before.locationId ?? "") !== String(body.locationId)) {
+          const afterLoc = await prisma.location.findUnique({ where: { id: Number(body.locationId) } });
+          _changes.push(`위치: ${before.location?.name ?? "-"} → ${afterLoc?.name ?? String(body.locationId)}`);
+        }
         if (body.memo !== undefined && (before.memo ?? "") !== (body.memo ?? ""))
           _changes.push(`비고: ${before.memo || "-"} → ${body.memo || "-"}`);
         if (body.unitPrice !== undefined && String(before.unitPrice ?? "") !== String(body.unitPrice ?? ""))
