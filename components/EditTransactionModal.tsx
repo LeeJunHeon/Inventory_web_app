@@ -58,6 +58,9 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
     if (!quantity || Number(quantity) <= 0) {
       setError(t.tx.enterQty); return;
     }
+    if ((type === '출고' || type === '불출') && !refTxNo) {
+      setError('참조 입고건을 선택해주세요.'); return;
+    }
     setSaving(true); setError("");
     try {
       const res = await fetch(`/api/inventory?id=${item.id}`, {
