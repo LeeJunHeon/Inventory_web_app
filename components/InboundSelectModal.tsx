@@ -32,11 +32,10 @@ interface InboundSelectModalProps {
 export default function InboundSelectModal({ isOpen, itemId, barcodeId, defaultLocationId, onSelect, onClose }: InboundSelectModalProps) {
   const [list, setList] = useState<InboundTx[]>([]);
   const [loading, setLoading] = useState(false);
-  const [filterLocationId, setFilterLocationId] = useState<number | null>(null);
+  const [locationWarning, setLocationWarning] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isOpen) { setFilterLocationId(null); return; }
-    if (defaultLocationId !== undefined) setFilterLocationId(defaultLocationId ?? null);
+    if (!isOpen) return;
     if (!itemId) return;
     setLoading(true);
     fetch(`/api/inventory/inbound?itemId=${itemId}${barcodeId ? `&barcodeId=${barcodeId}` : ""}`)
@@ -57,25 +56,6 @@ export default function InboundSelectModal({ isOpen, itemId, barcodeId, defaultL
             <X size={18} className="text-gray-400" />
           </button>
         </div>
-        <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-gray-100 bg-gray-50/50">
-          {([
-            { id: null, label: "전체" },
-            { id: 1,    label: "본사" },
-            { id: 2,    label: "공덕" },
-          ] as { id: number | null; label: string }[]).map(loc => (
-            <button
-              key={String(loc.id)}
-              onClick={() => setFilterLocationId(loc.id)}
-              className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors ${
-                filterLocationId === loc.id
-                  ? "bg-blue-500 text-white"
-                  : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-100"
-              }`}
-            >
-              {loc.label}
-            </button>
-          ))}
-        </div>
         <div className="flex-1 overflow-auto p-4 space-y-2">
           {loading ? (
             <div className="flex items-center justify-center py-12">
@@ -84,25 +64,26 @@ export default function InboundSelectModal({ isOpen, itemId, barcodeId, defaultL
           ) : list.length === 0 ? (
             <div className="text-center py-8 space-y-2">
               <p className="text-sm text-gray-400">선택 가능한 입고 건이 없습니다</p>
-              {filterLocationId && (
-                <p className="text-xs text-amber-600 bg-amber-50 mx-4 px-3 py-2 rounded-xl">
-                  {filterLocationId === 1 ? "본사" : "공덕"} 위치의 입고 건만 표시됩니다
-                </p>
-              )}
             </div>
-          ) : list.map(tx => (
+          ) : (
+            <>
+              {locationWarning && (
+                <div className="mx-4 mb-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
+                  ⚠️ {locationWarning}
+                </div>
+              )}
+              {list.map(tx => (
             <button key={tx.txNo}
               onClick={() => {
-                const isWrongLoc = !!(defaultLocationId && tx.locationName && tx.locationName !== (defaultLocationId === 1 ? '본사' : '공덕'));
-                if (isWrongLoc) return;
+                const currentLocName = defaultLocationId === 1 ? '본사' : defaultLocationId === 2 ? '공덕' : null;
+                if (currentLocName && tx.locationName && tx.locationName !== currentLocName) {
+                  setLocationWarning(`현재 위치(${currentLocName})와 다른 입고건입니다. 선택할 수 없습니다.`);
+                  return;
+                }
+                setLocationWarning(null);
                 onSelect(tx); onClose();
               }}
-              disabled={!!(defaultLocationId && tx.locationName && tx.locationName !== (defaultLocationId === 1 ? '본사' : '공덕'))}
-              className={`w-full text-left bg-white border rounded-xl px-4 py-3.5 transition-all ${
-                defaultLocationId && tx.locationName && tx.locationName !== (defaultLocationId === 1 ? '본사' : '공덕')
-                  ? 'border-gray-100 opacity-40 cursor-not-allowed'
-                  : 'border-gray-200 hover:border-blue-400 hover:bg-blue-50/50'
-              }`}>
+              className="w-full text-left bg-white border border-gray-200 rounded-xl px-4 py-3.5 hover:border-blue-400 hover:bg-blue-50/50 transition-all group">
               <div className="flex items-center justify-between gap-3">
                 {/* 왼쪽 */}
                 <div className="space-y-0.5 min-w-0">
@@ -155,6 +136,8 @@ export default function InboundSelectModal({ isOpen, itemId, barcodeId, defaultL
               </div>
             </button>
           ))}
+            </>
+          )}
         </div>
         <div className="px-4 py-2 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
           <p className="text-xs text-gray-400">{list.length}건 · 잔여수량이 있는 입고 건만 표시됩니다</p>
