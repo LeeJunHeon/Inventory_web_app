@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { InventoryItem, TYPE_COLORS } from "@/lib/data";
 import { useT } from "@/lib/i18n";
+import InboundSelectModal, { InboundTx } from "@/components/InboundSelectModal";
 
 interface LocationOption { id: number; name: string; }
 
@@ -24,6 +25,9 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
   const [memo, setMemo]           = useState(item.memo);
   const [locationId, setLocationId]           = useState<number>(item.locationId ?? 1);
   const [locationOptions, setLocationOptions] = useState<LocationOption[]>([]);
+  const [refTxNo, setRefTxNo]                 = useState<string | null>(item.refTxNo ?? null);
+  const [selectedInbound, setSelectedInbound] = useState<InboundTx | null>(null);
+  const [showInboundSelect, setShowInboundSelect] = useState(false);
   const [saving, setSaving]       = useState(false);
   const [error, setError]         = useState("");
 
@@ -36,6 +40,15 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
         setLocationOptions(txLocs.length > 0 ? txLocs : locs);
       }).catch(console.error);
   }, []);
+
+  // 위치 변경 시 참조입고건 초기화
+  const handleLocationChange = (newLocId: number) => {
+    setLocationId(newLocId);
+    if (newLocId !== locationId) {
+      setRefTxNo(null);
+      setSelectedInbound(null);
+    }
+  };
 
   const amount = currency === "USD"
     ? Number(unitPrice || 0)
@@ -58,6 +71,7 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
           amount,
           memo,
           locationId,
+          refTxNo:    refTxNo ?? null,
           currency,
           exchangeRateAtEntry: exchangeRateAtEntry ?? null,
         }),
@@ -181,13 +195,59 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
             <label className="block text-sm font-semibold text-gray-700 mb-1">{t.tx.locationLabel}</label>
             <select
               value={locationId}
-              onChange={e => setLocationId(Number(e.target.value))}
+              onChange={e => handleLocationChange(Number(e.target.value))}
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
               {locationOptions.map(loc => (
                 <option key={loc.id} value={loc.id}>{loc.name}</option>
               ))}
             </select>
           </div>
+
+          {/* 참조 입고건 — 출고/불출일 때만 표시 */}
+          {(type === "출고" || type === "불출") && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                {t.tx.inboundRefLabel ?? "참조 입고건"}
+              </label>
+              {selectedInbound ? (
+                <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2">
+                  <div className="flex-1 text-xs space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-emerald-700">#{selectedInbound.txNo}</span>
+                      <span className="text-emerald-500">{selectedInbound.txDate}</span>
+                      {selectedInbound.partnerName && (
+                        <span className="text-emerald-500">· {selectedInbound.partnerName}</span>
+                      )}
+                    </div>
+                    <p className="text-emerald-400">{t.tx.remainQty(selectedInbound.remainQty)}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowInboundSelect(true)}
+                    className="text-xs px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition-colors">
+                    {t.tx.changeBtn ?? "변경"}
+                  </button>
+                </div>
+              ) : refTxNo ? (
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-blue-600 font-medium">참조: #{refTxNo}</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowInboundSelect(true)}
+                    className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
+                    {t.tx.changeBtn ?? "변경"}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowInboundSelect(true)}
+                  className="text-xs px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl hover:bg-amber-100 transition-colors">
+                  {t.tx.selectInbound ?? "참조 입고건 선택"}
+                </button>
+              )}
+            </div>
+          )}
 
           {/* 메모 */}
           <div>
@@ -210,6 +270,19 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
           </button>
         </div>
       </div>
+      {showInboundSelect && (
+        <InboundSelectModal
+          isOpen={showInboundSelect}
+          itemId={item.itemId}
+          defaultLocationId={locationId || null}
+          onSelect={(inbound: InboundTx) => {
+            setSelectedInbound(inbound);
+            setRefTxNo(inbound.txNo);
+            setShowInboundSelect(false);
+          }}
+          onClose={() => setShowInboundSelect(false)}
+        />
+      )}
     </div>
   );
 }

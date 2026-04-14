@@ -155,6 +155,7 @@ export const en: Messages = {
     createAndLink: "Create + Auto Link",
     selectInbound: "Select Inbound Ref (Required)",
     inboundRef: (txNo: string) => `Inbound ref: ${txNo}`,
+    inboundRefLabel: "Inbound Ref",
     remainQty: (n: number) => `Remaining: ${n.toLocaleString()}`,
     changeBtn: "Change",
     qtyLabel: "Qty",

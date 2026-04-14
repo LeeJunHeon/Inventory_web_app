@@ -153,6 +153,7 @@ export const ko = {
     createAndLink: "생성 + 자동 연결",
     selectInbound: "입고 참조 선택 (필수)",
     inboundRef: (txNo: string) => `입고 참조: ${txNo}`,
+    inboundRefLabel: "참조 입고건",
     remainQty: (n: number) => `잔여 ${n.toLocaleString()}개`,
     changeBtn: "변경",
     qtyLabel: "수량",
