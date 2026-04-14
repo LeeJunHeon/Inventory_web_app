@@ -22,6 +22,8 @@ export async function PUT(
       return NextResponse.json({ error: "타겟을 찾을 수 없습니다." }, { status: 404 });
     }
 
+    const beforeTu = await prisma.targetUnit.findUnique({ where: { id } });
+
     const updated = await prisma.targetUnit.update({
       where: { id },
       data: {
@@ -42,7 +44,16 @@ export async function PUT(
     if (session.user.email) {
       const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
       if (actor) await prisma.activityLog.create({
-        data: { userId: actor.id, action: "UPDATE", tableName: "target_unit", recordId: id },
+        data: { userId: actor.id, action: "UPDATE", tableName: "target_unit", recordId: id,
+          detail: (() => {
+            const ch: string[] = [];
+            if (beforeTu) {
+              if (status !== undefined && beforeTu.status !== status) ch.push(`상태: ${beforeTu.status} → ${status}`);
+              if (note !== undefined && (beforeTu.note ?? "") !== (note ?? "")) ch.push(`메모: ${beforeTu.note || "-"} → ${note || "-"}`);
+            }
+            return ch.length > 0 ? ch.join(" | ") : undefined;
+          })() || undefined,
+        },
       });
     }
 

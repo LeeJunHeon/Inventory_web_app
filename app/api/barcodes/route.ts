@@ -219,6 +219,8 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     if (!body.id) return NextResponse.json({ error: "id가 필요합니다." }, { status: 400 });
 
+    const beforeBc = await prisma.barcode.findUnique({ where: { id: body.id } });
+
     const barcode = await prisma.barcode.update({
       where: { id: body.id },
       data: {
@@ -232,7 +234,17 @@ export async function PATCH(request: NextRequest) {
     if (session?.user?.email) {
       const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
       if (actor) await prisma.activityLog.create({
-        data: { userId: actor.id, action: "UPDATE", tableName: "barcode", recordId: barcode.id },
+        data: { userId: actor.id, action: "UPDATE", tableName: "barcode", recordId: barcode.id,
+          detail: (() => {
+            const ch: string[] = [];
+            if (beforeBc) {
+              if (body.code !== undefined && beforeBc.code !== body.code) ch.push(`코드: ${beforeBc.code} → ${body.code}`);
+              if (body.isActive !== undefined && beforeBc.isActive !== body.isActive) ch.push(`활성: ${beforeBc.isActive} → ${body.isActive}`);
+              if (body.memo !== undefined && (beforeBc.memo ?? "") !== (body.memo ?? "")) ch.push(`메모: ${beforeBc.memo || "-"} → ${body.memo || "-"}`);
+            }
+            return ch.length > 0 ? ch.join(" | ") : undefined;
+          })() || undefined,
+        },
       });
     }
 
