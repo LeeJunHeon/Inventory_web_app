@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
     const itemIdParam     = searchParams.get("itemId");
     const locationIdParam = searchParams.get("locationId");
     const barcodeIdParam  = searchParams.get("barcodeId");
+    const txNoParam       = searchParams.get("txNo");
 
     if (!itemIdParam || isNaN(Number(itemIdParam))) {
       return NextResponse.json({ error: "itemId가 필요합니다." }, { status: 400 });
@@ -18,12 +19,13 @@ export async function GET(request: NextRequest) {
 
     // 입고 트랜잭션 조회 (txNo 있는 것만)
     const inbounds = await prisma.inventoryTx.findMany({
-      where: {
-        txType: "입고", itemId, txNo: { not: null },
-        // locationId가 있으면 해당 위치 입고건만 조회
-        ...(locationIdParam ? { locationId: Number(locationIdParam) } : {}),
-        ...(barcodeIdParam   ? { barcodeId:  Number(barcodeIdParam)  } : {}),
-      },
+      where: txNoParam
+        ? { txType: "입고", itemId, txNo: txNoParam }
+        : {
+            txType: "입고", itemId, txNo: { not: null },
+            ...(locationIdParam ? { locationId: Number(locationIdParam) } : {}),
+            ...(barcodeIdParam  ? { barcodeId:  Number(barcodeIdParam)  } : {}),
+          },
       include: { partner: true, location: true, item: true, barcode: true },
       orderBy: { id: "desc" },
     });

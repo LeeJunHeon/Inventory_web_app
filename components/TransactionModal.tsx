@@ -311,20 +311,20 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         // refTxNo가 있으면 inbound API 호출해서 selectedInbound 자동 채우기
         if (bc.refTxNo) {
           const itemIdToUse = bc.itemId ?? itemId;
-          fetch(`/api/inventory/inbound?itemId=${itemIdToUse}&locationId=${locationId}&barcodeId=${bc.barcodeId}`)
+          fetch(`/api/inventory/inbound?itemId=${itemIdToUse}&txNo=${encodeURIComponent(bc.refTxNo)}`)
             .then(r => r.json())
             .then((list: InboundTx[]) => {
-              const found = list.find(tx => tx.txNo === bc.refTxNo);
+              const found = list[0] ?? null;
               if (found) {
                 setSelectedInbound({
-                  txNo: found.txNo,
-                  txDate: found.txDate,
-                  remainQty: found.remainQty,
-                  barcodeId: found.barcodeId,
+                  txNo:         found.txNo,
+                  txDate:       found.txDate,
+                  remainQty:    found.remainQty,
+                  barcodeId:    found.barcodeId,
                   targetUnitId: found.targetUnitId,
-                  partnerName: found.partnerName,
-                  itemCode:    found.itemCode    ?? "",
-                  barcodeCode: found.barcodeCode ?? "",
+                  partnerName:  found.partnerName,
+                  itemCode:     found.itemCode     ?? "",
+                  barcodeCode:  found.barcodeCode  ?? "",
                 });
               }
             })
