@@ -404,6 +404,11 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const handleSave = async () => {
     if (!itemId)                            { setError(t.tx.selectItem);  barcodeInputRef.current?.focus(); return; }
     if (!quantity || Number(quantity) <= 0) { setError(t.tx.enterQty);   barcodeInputRef.current?.focus(); return; }
+    // 출고/불출 시 참조 입고건 필수
+    if ((type === "출고" || type === "불출") && !refTxNo) {
+      setError(t.tx.selectInbound);
+      return;
+    }
     // 수량 초과 시 저장 차단
     if ((type === "출고" || type === "불출") && selectedInbound) {
       if (Number(quantity) > selectedInbound.remainQty) {
