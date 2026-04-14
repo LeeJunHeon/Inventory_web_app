@@ -18,6 +18,9 @@ export interface InventoryItem {
   barcode: string;
   location: string;
   locationId: number;
+  refTxNo: string | null;
+  itemId: number;
+  barcodeId: number | null;
   userName: string | null;
   itemSpec: string | null;
   createdAt: string | null;
