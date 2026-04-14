@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Search, Plus, Download, Edit, Trash2, ArrowUpDown, ArrowDown, ArrowUp, ChevronDown, Loader2 } from "lucide-react";
 import { CATEGORIES, TYPES, TYPE_COLORS, CATEGORY_COLORS, formatPrice, formatQty, InventoryItem } from "@/lib/data";
+import { useSession } from "next-auth/react";
 import TransactionModal     from "./TransactionModal";
 import EditTransactionModal from "./EditTransactionModal";
 import DatePicker           from "./DatePicker";
@@ -43,6 +44,9 @@ export default function InventoryPage({
   initialEndDate,
   onFilterApplied,
 }: InventoryPageProps = {}) {
+  const { data: session } = useSession();
+  const isEmployee = (session?.user as any)?.role === "employee";
+
   const [items, setItems]               = useState<InventoryItem[]>([]);
   const [loading, setLoading]           = useState(true);
   const [search, setSearch]             = useState("");
@@ -301,7 +305,7 @@ export default function InventoryPage({
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colBarcode}</th>
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colItem}</th>
                     <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("qty")}><div className="flex items-center justify-end gap-1">{t.inventory.colQty} <SortIcon field="qty" /></div></th>
-                    <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("amount")}><div className="flex items-center justify-end gap-1">{t.inventory.colAmount} <SortIcon field="amount" /></div></th>
+                    {!isEmployee && <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("amount")}><div className="flex items-center justify-end gap-1">{t.inventory.colAmount} <SortIcon field="amount" /></div></th>}
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colPartner}</th>
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colRegistrant}</th>
                     <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colAction}</th>
@@ -330,7 +334,7 @@ export default function InventoryPage({
                         <p className="text-xs text-gray-400">{item.code}</p>
                       </td>
                       <td className="px-5 py-3.5 text-sm text-right font-semibold text-gray-900">{formatQty(item.qty)}</td>
-                      <td className="px-5 py-3.5 text-sm text-right text-gray-600">
+                      {!isEmployee && <td className="px-5 py-3.5 text-sm text-right text-gray-600">
                         {item.currency === "USD" ? (
                           <div>
                             <p className="text-gray-600">
@@ -350,7 +354,7 @@ export default function InventoryPage({
                         ) : (
                           formatPrice(item.amount)
                         )}
-                      </td>
+                      </td>}
                       <td className="px-5 py-3.5 text-sm text-gray-600">{item.partner}</td>
                       <td className="px-5 py-3.5 text-sm text-gray-500">{item.userName ?? "-"}</td>
                       <td className="px-5 py-3.5">
@@ -393,7 +397,7 @@ export default function InventoryPage({
                   className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
                 >{t.common.next}</button>
               </div>
-              <p className="text-xs text-gray-400">{t.inventory.sum}: <span className="font-semibold text-gray-600">{formatPrice(items.filter(i => i.currency !== "USD").reduce((s, i) => s + (i.amount ?? 0), 0))}</span></p>
+              {!isEmployee && <p className="text-xs text-gray-400">{t.inventory.sum}: <span className="font-semibold text-gray-600">{formatPrice(items.filter(i => i.currency !== "USD").reduce((s, i) => s + (i.amount ?? 0), 0))}</span></p>}
             </div>
           </div>
 
@@ -420,7 +424,7 @@ export default function InventoryPage({
                 <button onClick={() => setPage(p => Math.min(Math.ceil(total / limit), p + 1))} disabled={page >= Math.ceil(total / limit)}
                   className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">{t.common.next}</button>
               </div>
-              <p className="text-xs text-gray-400">{t.inventory.sum}: <span className="font-semibold">{formatPrice(items.filter(i => i.currency !== "USD").reduce((s, i) => s + (i.amount ?? 0), 0))}</span></p>
+              {!isEmployee && <p className="text-xs text-gray-400">{t.inventory.sum}: <span className="font-semibold">{formatPrice(items.filter(i => i.currency !== "USD").reduce((s, i) => s + (i.amount ?? 0), 0))}</span></p>}
             </div>
             {items.map((item) => (
               <div key={item.id} className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3">
@@ -447,7 +451,7 @@ export default function InventoryPage({
                   <div className="flex items-center justify-between pt-2 border-t border-gray-50">
                     <div className="flex items-center gap-4">
                       <div><p className="text-[10px] text-gray-400">{t.inventory.colQty}</p><p className="text-sm font-bold text-gray-900">{formatQty(item.qty)}</p></div>
-                      <div><p className="text-[10px] text-gray-400">{t.inventory.colAmount}</p><p className="text-sm text-gray-600">{formatPrice(item.amount)}</p></div>
+                      {!isEmployee && <div><p className="text-[10px] text-gray-400">{t.inventory.colAmount}</p><p className="text-sm text-gray-600">{formatPrice(item.amount)}</p></div>}
                       <div><p className="text-[10px] text-gray-400">{t.inventory.colPartner}</p><p className="text-sm text-gray-600 max-w-[120px] truncate">{item.partner || "-"}</p></div>
                       {item.userName && <div><p className="text-[10px] text-gray-400">{t.inventory.colRegistrant}</p><p className="text-sm text-gray-500 max-w-[80px] truncate">{item.userName}</p></div>}
                     </div>
@@ -469,15 +473,17 @@ export default function InventoryPage({
                         <button onClick={() => handleDelete(item.id)} className="p-2 rounded-lg hover:bg-rose-50 text-gray-400 hover:text-rose-600"><Trash2 size={16} /></button>
                       </div>
                     </div>
-                    <div className="bg-gray-50 rounded-xl px-3 py-2 space-y-1">
-                      <p className="text-sm font-semibold text-gray-700">{item.amount != null ? `$${item.amount.toLocaleString()}` : "-"}</p>
-                      {item.exchangeRateAtEntry && item.amount != null && (
-                        <p className="text-xs text-gray-400">{t.inventory.rateAtEntry} ₩{Math.round(item.amount * item.exchangeRateAtEntry).toLocaleString()} ({item.exchangeRateAtEntry.toLocaleString()}{t.inventory.wonUnit})</p>
-                      )}
-                      {exchangeRate && item.amount != null && (
-                        <p className="text-xs text-gray-400">{t.inventory.rateCurrent} ₩{Math.round(item.amount * exchangeRate).toLocaleString()} ({exchangeRate.toLocaleString()}{t.inventory.wonUnit})</p>
-                      )}
-                    </div>
+                    {!isEmployee && (
+                      <div className="bg-gray-50 rounded-xl px-3 py-2 space-y-1">
+                        <p className="text-sm font-semibold text-gray-700">{item.amount != null ? `$${item.amount.toLocaleString()}` : "-"}</p>
+                        {item.exchangeRateAtEntry && item.amount != null && (
+                          <p className="text-xs text-gray-400">{t.inventory.rateAtEntry} ₩{Math.round(item.amount * item.exchangeRateAtEntry).toLocaleString()} ({item.exchangeRateAtEntry.toLocaleString()}{t.inventory.wonUnit})</p>
+                        )}
+                        {exchangeRate && item.amount != null && (
+                          <p className="text-xs text-gray-400">{t.inventory.rateCurrent} ₩{Math.round(item.amount * exchangeRate).toLocaleString()} ({exchangeRate.toLocaleString()}{t.inventory.wonUnit})</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
