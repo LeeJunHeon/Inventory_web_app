@@ -735,7 +735,15 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                     </button>
                   </div>
                 ) : refTxNo ? (
-                  <p className="text-xs text-blue-600 font-medium">{t.tx.inboundRef(refTxNo!)}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-blue-600 font-medium">{t.tx.inboundRef(refTxNo!)}</p>
+                    <button
+                      onClick={() => { inboundModalBarcodeId.current = barcodeId; setShowInboundSelect(true); }}
+                      className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                    >
+                      {t.tx.changeBtn}
+                    </button>
+                  </div>
                 ) : itemId ? (
                   <button onClick={() => { inboundModalBarcodeId.current = barcodeId; setShowInboundSelect(true); }}
                     className="mt-1 text-xs px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl hover:bg-amber-100 transition-colors">
