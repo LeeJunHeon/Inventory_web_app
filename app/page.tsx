@@ -60,6 +60,7 @@ export default function Home() {
   const [shortageItems, setShortageItems] = useState<{
     itemId: number; itemName: string; itemCode: string; currentQty: number; minQty: number;
   }[]>([]);
+  const [showLang, setShowLang]       = useState(false);
   const [showNotif, setShowNotif]     = useState(false);
   const [perms, setPerms]             = useState<Perms | null>(null);
   const [statusLocationId, setStatusLocationId] = useState<number | null>(null);
@@ -188,14 +189,37 @@ export default function Home() {
             </span>
           </div>
           <div className="flex items-center gap-2 relative">
-            {/* 언어 전환 버튼 */}
-            <button
-              onClick={() => setLang(lang === "ko" ? "en" : "ko")}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-500"
-            >
-              <Globe size={16} />
-              <span className="text-xs font-semibold">{lang === "ko" ? "EN" : "KO"}</span>
-            </button>
+            {/* 언어 선택 드롭다운 */}
+            <div className="relative">
+              <button
+                onClick={() => setShowLang(v => !v)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-500"
+              >
+                <Globe size={16} />
+                <span className="text-xs font-semibold">{lang === "ko" ? "한국어" : "English"}</span>
+              </button>
+              {showLang && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowLang(false)} />
+                  <div className="absolute right-0 mt-1 w-32 bg-white border border-gray-200 rounded-xl shadow-lg z-20 overflow-hidden">
+                    <button
+                      onClick={() => { setLang("ko"); setShowLang(false); }}
+                      className={`w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-gray-50 transition-colors ${lang === "ko" ? "text-blue-600 font-semibold bg-blue-50" : "text-gray-700"}`}
+                    >
+                      <span className="text-base">🇰🇷</span> 한국어
+                      {lang === "ko" && <span className="ml-auto text-blue-500 text-xs">✓</span>}
+                    </button>
+                    <button
+                      onClick={() => { setLang("en"); setShowLang(false); }}
+                      className={`w-full flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-gray-50 transition-colors ${lang === "en" ? "text-blue-600 font-semibold bg-blue-50" : "text-gray-700"}`}
+                    >
+                      <span className="text-base">🇺🇸</span> English
+                      {lang === "en" && <span className="ml-auto text-blue-500 text-xs">✓</span>}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
 
             <button
               onClick={() => setShowNotif(!showNotif)}
