@@ -5,6 +5,7 @@ import { Search, Plus, Trash2, Copy, QrCode, Check, X, Loader2, Printer, ImageDo
 import { QRCodeSVG, QRCodeCanvas } from "qrcode.react";
 import { CATEGORY_COLORS } from "@/lib/data";
 import { useT } from "@/lib/i18n";
+import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
 
 interface BarcodeItem {
   id: number; code: string; itemCode: string; itemName: string;
@@ -476,7 +477,7 @@ export default function BarcodePage() {
           <div className="relative flex-1 min-w-[200px]">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input type="text" placeholder={t.barcode.searchPlaceholder} value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => setSearch(searchType === '바코드' ? normalizeBarcodeInput(e.target.value) : e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && fetchData()}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
           </div>

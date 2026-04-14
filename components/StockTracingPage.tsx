@@ -5,6 +5,7 @@ import { Search, ArrowDownCircle, ArrowUpCircle, Share2, ChevronRight, Loader2, 
 import { CATEGORY_COLORS } from "@/lib/data";
 import { useSession } from "next-auth/react";
 import { useT } from "@/lib/i18n";
+import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
 
 interface BarcodeInfo  { id: number; code: string; isActive: string; }
 interface TxCount      { inbound: number; outbound: number; disburse: number; }
@@ -119,7 +120,7 @@ export default function StockTracingPage() {
             <input
               type="text"
               value={query}
-              onChange={e => setQuery(e.target.value)}
+              onChange={e => setQuery(searchType === '바코드' ? normalizeBarcodeInput(e.target.value) : e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleSearch()}
               placeholder={t.tracing.searchPlaceholder}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
