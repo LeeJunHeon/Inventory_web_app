@@ -53,8 +53,12 @@ const HANGUL_TO_ENG: Record<string, string> = {
 };
 
 function normalizeBarcodeInput(str: string): string {
-  // 한글 자모 → 영문 역변환 후 전체 대문자로
-  return str.split('').map(ch => HANGUL_TO_ENG[ch] ?? ch).join('').toUpperCase();
+  return str
+    .split('')
+    .map(ch => HANGUL_TO_ENG[ch] ?? ch)
+    .filter(ch => !/[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/.test(ch))
+    .join('')
+    .toUpperCase();
 }
 
 export default function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModalProps) {
@@ -106,6 +110,8 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const barcodeInputRef = useRef<HTMLInputElement>(null);
   const inboundModalBarcodeId = useRef<number | null>(null);
   const isFromLookupRef = useRef(false);
+  const isComposingRef = useRef(false);
+  const justEndedCompositionRef = useRef(false);
   const justCreatedBarcodeId = useRef<number | null>(null);
   const cancelCreatedBarcode = () => {
     if (justCreatedBarcodeId.current !== null) {
@@ -604,14 +610,21 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 type="text"
                 value={barcodeInput}
                 disabled={isBarcodeLooking}
-                onChange={e => {
-                  // IME 조합 중(한글 타이핑 중)에는 무시 — 조합 완료 후 onCompositionEnd에서 처리
-                  if ((e.nativeEvent as any).isComposing) return;
-                  setBarcodeInput(normalizeBarcodeInput(e.target.value));
+                onCompositionStart={() => {
+                  isComposingRef.current = true;
                 }}
                 onCompositionEnd={e => {
-                  // 한글 조합 완료 시 변환 (ㅆ → T 등)
+                  isComposingRef.current = false;
+                  justEndedCompositionRef.current = true;
                   setBarcodeInput(normalizeBarcodeInput((e.target as HTMLInputElement).value));
+                }}
+                onChange={e => {
+                  if (isComposingRef.current) return;
+                  if (justEndedCompositionRef.current) {
+                    justEndedCompositionRef.current = false;
+                    return;
+                  }
+                  setBarcodeInput(normalizeBarcodeInput(e.target.value));
                 }}
                 onKeyDown={e => e.key === "Enter" && handleBarcodeLookup()}
                 placeholder={t.tx.barcodePlaceholder}
