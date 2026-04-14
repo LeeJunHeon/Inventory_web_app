@@ -111,7 +111,6 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const inboundModalBarcodeId = useRef<number | null>(null);
   const isFromLookupRef = useRef(false);
   const isComposingRef = useRef(false);
-  const justEndedCompositionRef = useRef(false);
   const justCreatedBarcodeId = useRef<number | null>(null);
   const cancelCreatedBarcode = () => {
     if (justCreatedBarcodeId.current !== null) {
@@ -615,15 +614,10 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 }}
                 onCompositionEnd={e => {
                   isComposingRef.current = false;
-                  justEndedCompositionRef.current = true;
                   setBarcodeInput(normalizeBarcodeInput((e.target as HTMLInputElement).value));
                 }}
                 onChange={e => {
-                  if (isComposingRef.current) return;
-                  if (justEndedCompositionRef.current) {
-                    justEndedCompositionRef.current = false;
-                    return;
-                  }
+                  if ((e.nativeEvent as any).isComposing || isComposingRef.current) return;
                   setBarcodeInput(normalizeBarcodeInput(e.target.value));
                 }}
                 onKeyDown={e => e.key === "Enter" && handleBarcodeLookup()}
