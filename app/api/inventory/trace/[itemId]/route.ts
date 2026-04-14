@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSessionUser } from "@/lib/auth-helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,9 @@ export async function GET(
 
     const { searchParams } = new URL(request.url);
     const barcodeIdParam = searchParams.get("barcodeId");
+
+    const sessionUser = await getSessionUser();
+    const isEmployee = !("error" in sessionUser) && sessionUser.role === "employee";
 
     const txs = await prisma.inventoryTx.findMany({
       where: {
@@ -40,7 +44,7 @@ export async function GET(
       refTxNo:      tx.refTxNo     ?? null,
       txDate:       tx.txDate.toISOString().split("T")[0].replace(/-/g, "."),
       qty:          tx.qty,
-      unitPrice:    tx.unitPrice != null ? Number(tx.unitPrice) : null,
+      unitPrice:    isEmployee ? null : (tx.unitPrice != null ? Number(tx.unitPrice) : null),
       currency:     tx.currency    ?? "KRW",
       memo:         tx.memo        ?? "",
       partnerName:  tx.partner?.name   ?? "",
