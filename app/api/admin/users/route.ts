@@ -66,6 +66,11 @@ export async function PUT(request: NextRequest) {
     }
 
     for (const u of users) {
+      const beforeUser = await prisma.user.findUnique({
+        where: { id: u.id },
+        select: { role: true, isActive: true },
+      });
+
       await prisma.user.update({
         where: { id: u.id },
         data:  { role: u.role, isActive: toYN(u.isActive, true) },
@@ -88,7 +93,18 @@ export async function PUT(request: NextRequest) {
       });
 
       if (actorId) await prisma.activityLog.create({
-        data: { userId: actorId, action: "UPDATE", tableName: "user", recordId: u.id },
+        data: { userId: actorId, action: "UPDATE", tableName: "user", recordId: u.id,
+          detail: (() => {
+            const ch: string[] = [];
+            if (beforeUser) {
+              if (beforeUser.role !== u.role) ch.push(`권한: ${beforeUser.role} → ${u.role}`);
+              const beforeActive = beforeUser.isActive;
+              const afterActive = toYN(u.isActive, true);
+              if (beforeActive !== afterActive) ch.push(`활성: ${beforeActive} → ${afterActive}`);
+            }
+            return ch.length > 0 ? ch.join(" | ") : undefined;
+          })() || undefined,
+        },
       });
     }
 
