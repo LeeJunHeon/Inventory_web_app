@@ -135,19 +135,25 @@ export async function PUT(request: NextRequest) {
     const session = await auth();
     if (session?.user?.email) {
       const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
-      if (actor) await prisma.activityLog.create({
-        data: { userId: actor.id, action: "UPDATE", tableName: "item", recordId: Number(id),
-          detail: (() => {
-            const ch: string[] = [];
-            if (beforeItem) {
-              if (name !== undefined && beforeItem.name !== name) ch.push(`품목명: ${beforeItem.name} → ${name}`);
-              if (unit !== undefined && (beforeItem.unit ?? "") !== (unit ?? "")) ch.push(`단위: ${beforeItem.unit || "-"} → ${unit || "-"}`);
-              if (note !== undefined && (beforeItem.note ?? "") !== (note ?? "")) ch.push(`비고: ${beforeItem.note || "-"} → ${note || "-"}`);
-            }
-            return ch.length > 0 ? ch.join(" | ") : undefined;
-          })() || undefined,
-        },
-      });
+      if (actor) {
+        const _itemDetail = (() => {
+          const ch: string[] = [];
+          if (beforeItem) {
+            if (name !== undefined && beforeItem.name !== name) ch.push(`품목명: ${beforeItem.name} → ${name}`);
+            if (unit !== undefined && (beforeItem.unit ?? "") !== (unit ?? "")) ch.push(`단위: ${beforeItem.unit || "-"} → ${unit || "-"}`);
+            if (note !== undefined && (beforeItem.note ?? "") !== (note ?? "")) ch.push(`비고: ${beforeItem.note || "-"} → ${note || "-"}`);
+          }
+          return ch.length > 0 ? ch.join(" | ") : undefined;
+        })() || undefined;
+        if (_itemDetail) {
+          await prisma.activityLog.create({
+            data: {
+              userId: actor.id, action: "UPDATE", tableName: "item", recordId: Number(id),
+              detail: _itemDetail,
+            },
+          });
+        }
+      }
     }
 
     return NextResponse.json({

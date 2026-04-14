@@ -442,15 +442,17 @@ export async function PUT(request: NextRequest) {
       }
       const _detail = _changes.length > 0 ? _changes.join(" | ") : undefined;
 
-      await prisma.activityLog.create({
-        data: {
-          userId:    sessionUserId,
-          action:    "UPDATE",
-          tableName: "inventory_tx",
-          recordId:  Number(id),
-          ...(_detail && { detail: _detail }),
-        },
-      });
+      if (_detail) {
+        await prisma.activityLog.create({
+          data: {
+            userId:    sessionUserId,
+            action:    "UPDATE",
+            tableName: "inventory_tx",
+            recordId:  Number(id),
+            detail:    _detail,
+          },
+        });
+      }
     }
 
     return NextResponse.json(tx);

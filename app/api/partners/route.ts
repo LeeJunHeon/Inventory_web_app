@@ -107,20 +107,26 @@ export async function PUT(request: NextRequest) {
     const session = await auth();
     if (session?.user?.email) {
       const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
-      if (actor) await prisma.activityLog.create({
-        data: { userId: actor.id, action: "UPDATE", tableName: "partner", recordId: Number(id),
-          detail: (() => {
-            const ch: string[] = [];
-            if (beforeP) {
-              if (name !== undefined && beforeP.name !== name) ch.push(`거래처명: ${beforeP.name} → ${name}`);
-              if (managerName !== undefined && (beforeP.managerName ?? "") !== (managerName ?? "")) ch.push(`담당자: ${beforeP.managerName || "-"} → ${managerName || "-"}`);
-              if (contact !== undefined && (beforeP.contact ?? "") !== (contact ?? "")) ch.push(`연락처: ${beforeP.contact || "-"} → ${contact || "-"}`);
-              if (email !== undefined && (beforeP.email ?? "") !== (email ?? "")) ch.push(`이메일: ${beforeP.email || "-"} → ${email || "-"}`);
-            }
-            return ch.length > 0 ? ch.join(" | ") : undefined;
-          })() || undefined,
-        },
-      });
+      if (actor) {
+        const _partnerDetail = (() => {
+          const ch: string[] = [];
+          if (beforeP) {
+            if (name !== undefined && beforeP.name !== name) ch.push(`거래처명: ${beforeP.name} → ${name}`);
+            if (managerName !== undefined && (beforeP.managerName ?? "") !== (managerName ?? "")) ch.push(`담당자: ${beforeP.managerName || "-"} → ${managerName || "-"}`);
+            if (contact !== undefined && (beforeP.contact ?? "") !== (contact ?? "")) ch.push(`연락처: ${beforeP.contact || "-"} → ${contact || "-"}`);
+            if (email !== undefined && (beforeP.email ?? "") !== (email ?? "")) ch.push(`이메일: ${beforeP.email || "-"} → ${email || "-"}`);
+          }
+          return ch.length > 0 ? ch.join(" | ") : undefined;
+        })() || undefined;
+        if (_partnerDetail) {
+          await prisma.activityLog.create({
+            data: {
+              userId: actor.id, action: "UPDATE", tableName: "partner", recordId: Number(id),
+              detail: _partnerDetail,
+            },
+          });
+        }
+      }
     }
 
     return NextResponse.json({
