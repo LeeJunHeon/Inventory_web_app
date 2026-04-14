@@ -613,15 +613,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 type="text"
                 value={barcodeInput}
                 disabled={isBarcodeLooking}
-                onCompositionStart={() => {
-                  isComposingRef.current = true;
-                }}
-                onCompositionEnd={e => {
-                  isComposingRef.current = false;
-                  setBarcodeInput(normalizeBarcodeInput((e.target as HTMLInputElement).value));
-                }}
                 onChange={e => {
-                  if (isComposingRef.current) return;
                   setBarcodeInput(normalizeBarcodeInput(e.target.value));
                 }}
                 onKeyDown={e => e.key === "Enter" && handleBarcodeLookup()}
