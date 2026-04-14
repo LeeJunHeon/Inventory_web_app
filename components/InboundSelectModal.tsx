@@ -39,12 +39,12 @@ export default function InboundSelectModal({ isOpen, itemId, barcodeId, defaultL
     if (defaultLocationId !== undefined) setFilterLocationId(defaultLocationId ?? null);
     if (!itemId) return;
     setLoading(true);
-    fetch(`/api/inventory/inbound?itemId=${itemId}${filterLocationId ? `&locationId=${filterLocationId}` : ""}${barcodeId ? `&barcodeId=${barcodeId}` : ""}`)
+    fetch(`/api/inventory/inbound?itemId=${itemId}${barcodeId ? `&barcodeId=${barcodeId}` : ""}`)
       .then(r => r.json())
       .then(data => setList(Array.isArray(data) ? data : []))
       .catch(() => setList([]))
       .finally(() => setLoading(false));
-  }, [isOpen, itemId, filterLocationId]);
+  }, [isOpen, itemId]);
 
   if (!isOpen) return null;
 
@@ -92,8 +92,17 @@ export default function InboundSelectModal({ isOpen, itemId, barcodeId, defaultL
             </div>
           ) : list.map(tx => (
             <button key={tx.txNo}
-              onClick={() => { onSelect(tx); onClose(); }}
-              className="w-full text-left bg-white border border-gray-200 rounded-xl px-4 py-3.5 hover:border-blue-400 hover:bg-blue-50/50 transition-all group">
+              onClick={() => {
+                const isWrongLoc = !!(defaultLocationId && tx.locationName && tx.locationName !== (defaultLocationId === 1 ? '본사' : '공덕'));
+                if (isWrongLoc) return;
+                onSelect(tx); onClose();
+              }}
+              disabled={!!(defaultLocationId && tx.locationName && tx.locationName !== (defaultLocationId === 1 ? '본사' : '공덕'))}
+              className={`w-full text-left bg-white border rounded-xl px-4 py-3.5 transition-all ${
+                defaultLocationId && tx.locationName && tx.locationName !== (defaultLocationId === 1 ? '본사' : '공덕')
+                  ? 'border-gray-100 opacity-40 cursor-not-allowed'
+                  : 'border-gray-200 hover:border-blue-400 hover:bg-blue-50/50'
+              }`}>
               <div className="flex items-center justify-between gap-3">
                 {/* 왼쪽 */}
                 <div className="space-y-0.5 min-w-0">
