@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Search, ArrowDownCircle, ArrowUpCircle, Share2, ChevronRight, Loader2, Tag, X } from "lucide-react";
 import { CATEGORY_COLORS } from "@/lib/data";
+import { useSession } from "next-auth/react";
 import { useT } from "@/lib/i18n";
 
 interface BarcodeInfo  { id: number; code: string; isActive: string; }
@@ -33,6 +34,8 @@ const TYPE_DOT: Record<string, string> = {
 
 export default function StockTracingPage() {
   const { t } = useT();
+  const { data: session } = useSession();
+  const isEmployee = (session?.user as any)?.role === "employee";
 
   const SEARCH_TYPE_MAP: Record<string, string> = {
     "전체":   t.tracing.sfAll,
@@ -274,7 +277,7 @@ export default function StockTracingPage() {
                         <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">{t.tracing.colTxNo}</th>
                         <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">{t.tracing.colPartnerReason}</th>
                         <th className="text-right text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">{t.tracing.colQty}</th>
-                        <th className="text-right text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">{t.tracing.colUnitPrice}</th>
+                        {!isEmployee && <th className="text-right text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">{t.tracing.colUnitPrice}</th>}
                         <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">{t.tracing.colBarcode}</th>
                       </tr>
                     </thead>
@@ -300,6 +303,7 @@ export default function StockTracingPage() {
                               {tx.txType === "입고" ? "+" : "-"}{tx.qty.toLocaleString()}
                             </span>
                           </td>
+                          {!isEmployee && (
                           <td className="px-4 py-3 text-xs text-right text-gray-600 whitespace-nowrap">
                             {tx.unitPrice != null
                               ? tx.currency === "USD"
@@ -307,6 +311,7 @@ export default function StockTracingPage() {
                                 : `₩${tx.unitPrice.toLocaleString()}`
                               : "-"}
                           </td>
+                          )}
                           <td className="px-4 py-3 text-xs font-mono text-gray-400 whitespace-nowrap">
                             {tx.barcodeCode || "-"}
                           </td>
@@ -351,7 +356,7 @@ export default function StockTracingPage() {
                 { label: t.tracing.detailTxNo,      value: selectedTx.txNo ? `#${selectedTx.txNo}` : "-" },
                 { label: t.tracing.detailRefTxNo,   value: selectedTx.refTxNo || "-" },
                 { label: t.tracing.detailQty,        value: `${selectedTx.txType === "입고" ? "+" : "-"}${selectedTx.qty.toLocaleString()}` },
-                { label: t.tracing.detailUnitPrice,   value: selectedTx.unitPrice != null ? (selectedTx.currency === "USD" ? `$${selectedTx.unitPrice.toLocaleString()}` : `₩${selectedTx.unitPrice.toLocaleString()}`) : "-" },
+                ...(isEmployee ? [] : [{ label: t.tracing.detailUnitPrice, value: selectedTx.unitPrice != null ? (selectedTx.currency === "USD" ? `$${selectedTx.unitPrice.toLocaleString()}` : `₩${selectedTx.unitPrice.toLocaleString()}`) : "-" }]),
                 { label: t.tracing.detailPartner,    value: selectedTx.partnerName || "-" },
                 { label: t.tracing.detailReason,     value: selectedTx.reasonName || "-" },
                 { label: t.tracing.detailLocation,   value: selectedTx.locationName || "-" },
