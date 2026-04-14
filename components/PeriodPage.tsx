@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Download, Loader2 } from "lucide-react";
+import { useSession } from "next-auth/react";
 import DatePicker from "./DatePicker";
 import { TYPE_COLORS, CATEGORY_COLORS, formatPrice, formatQty, InventoryItem } from "@/lib/data";
 import { useT } from "@/lib/i18n";
@@ -34,6 +35,9 @@ function getDefaultDates() {
 }
 
 export default function PeriodPage() {
+  const { data: session } = useSession();
+  const isEmployee = (session?.user as any)?.role === "employee";
+
   const defaults = getDefaultDates();
   const [startDate, setStartDate]       = useState(defaults.start);
   const [endDate, setEndDate]           = useState(defaults.end);
@@ -308,9 +312,11 @@ export default function PeriodPage() {
                               {s.count > 0 ? (
                                 <div>
                                   <p className="text-sm font-semibold text-gray-900">{s.count}{t.period.countUnit} / {s.qty.toLocaleString()}{t.period.qtyUnit}</p>
+                                  {!isEmployee && (
                                   <p className="text-xs text-gray-400 mt-0.5">
                                     {s.amount > 0 ? `₩${Math.round(s.amount).toLocaleString()}` : "-"}
                                   </p>
+                                  )}
                                 </div>
                               ) : (
                                 <span className="text-xs text-gray-300">-</span>
@@ -346,7 +352,7 @@ export default function PeriodPage() {
                       <th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">{t.inventory.colCategory}</th>
                       <th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">{t.inventory.colItem}</th>
                       <th className="text-right text-xs font-semibold text-gray-500 px-5 py-2.5">{t.inventory.colQty}</th>
-                      <th className="text-right text-xs font-semibold text-gray-500 px-5 py-2.5">{t.inventory.colAmount}</th>
+                      {!isEmployee && <th className="text-right text-xs font-semibold text-gray-500 px-5 py-2.5">{t.inventory.colAmount}</th>}
                       <th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">{t.inventory.colPartner}</th>
                     </tr></thead>
                     <tbody>
@@ -357,7 +363,7 @@ export default function PeriodPage() {
                           <td className="px-5 py-3"><span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[item.category] || ""}`}>{item.category}</span></td>
                           <td className="px-5 py-3"><p className="text-sm font-medium text-gray-900">{item.name}</p><p className="text-xs text-gray-400">{item.code}</p></td>
                           <td className="px-5 py-3 text-sm text-right font-semibold">{formatQty(item.qty)}</td>
-                          <td className="px-5 py-3 text-sm text-right text-gray-600">
+                          {!isEmployee && <td className="px-5 py-3 text-sm text-right text-gray-600">
                             {item.currency === "USD" ? (
                               <div>
                                 <p className="text-sm font-semibold text-gray-700">
@@ -368,7 +374,7 @@ export default function PeriodPage() {
                                 </p>
                               </div>
                             ) : formatPrice(item.amount)}
-                          </td>
+                          </td>}
                           <td className="px-5 py-3 text-sm text-gray-600">{item.partner}</td>
                         </tr>
                       ))}
@@ -388,13 +394,13 @@ export default function PeriodPage() {
                       <p className="text-sm font-semibold text-gray-900">{item.name}</p>
                       <div className="flex items-center gap-4 text-sm">
                         <span>{t.inventory.colQty} <span className="font-bold">{item.qty}</span></span>
-                        <span className="text-gray-400">
+                        {!isEmployee && <span className="text-gray-400">
                           {item.currency === "USD" ? (
                             <span>
                               ${(item.amount ?? 0).toLocaleString()} × {getRate(item).toLocaleString()} ≈ ₩{Math.round((item.amount ?? 0) * getRate(item)).toLocaleString()}
                             </span>
                           ) : formatPrice(item.amount)}
-                        </span>
+                        </span>}
                         <span className="text-gray-400 truncate">{item.partner}</span>
                       </div>
                     </div>
