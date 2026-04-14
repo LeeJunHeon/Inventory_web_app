@@ -52,6 +52,7 @@ export default function BarcodePage() {
   const [editSaving, setEditSaving]         = useState(false);
   const [sortField, setSortField]           = useState<"id" | "code" | "category">("id");
   const [sortDir, setSortDir]               = useState<"asc" | "desc">("desc");
+  const [hoveredId, setHoveredId]           = useState<number | null>(null);
   const [searchType, setSearchType]         = useState<"전체" | "바코드" | "품목코드" | "품목명">("전체");
   const itemDropRef = useRef<HTMLDivElement>(null);
 
@@ -535,7 +536,10 @@ export default function BarcodePage() {
                 {sortedBarcodes.length === 0 ? (
                   <tr><td colSpan={8} className="px-5 py-12 text-center text-sm text-gray-400">{t.barcode.noData}</td></tr>
                 ) : sortedBarcodes.map((b) => (
-                  <tr key={b.id} className="border-b border-gray-50 hover:bg-blue-50/30 group">
+                  <tr key={b.id}
+                    className="border-b border-gray-50 hover:bg-blue-50/30"
+                    onMouseEnter={() => setHoveredId(b.id)}
+                    onMouseLeave={() => setHoveredId(null)}>
                     <td className="px-5 py-3 text-sm text-gray-400">{b.id}</td>
                     <td className="px-5 py-3 text-sm font-mono font-semibold text-gray-900">{b.code}</td>
                     <td className="px-5 py-3 text-sm text-gray-600">{b.itemCode}</td>
@@ -552,7 +556,7 @@ export default function BarcodePage() {
                         : <span className="inline-flex items-center gap-1 text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full"><X size={12} />{t.barcode.inactive}</span>}
                     </td>
                     <td className="px-5 py-3">
-                      <div className="flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className={`flex justify-center gap-1 transition-opacity ${hoveredId === b.id ? 'opacity-100' : 'opacity-0'}`}>
                         <button onClick={() => { navigator.clipboard.writeText(b.code); setToast(t.barcode.copied(b.code)); setTimeout(() => setToast(""), 2000); }}
                           className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600" title={t.barcode.sfBarcode}>
                           <Copy size={15} />

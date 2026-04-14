@@ -67,6 +67,7 @@ export default function InventoryPage({
   const [page, setPage]                 = useState(1);
   const [limit, setLimit]               = useState(50);
   const [total, setTotal]               = useState(0);
+  const [hoveredId, setHoveredId]       = useState<number | null>(null);
 
   const { t, lang } = useT();
 
@@ -315,7 +316,10 @@ export default function InventoryPage({
                   {items.length === 0 ? (
                     <tr><td colSpan={12} className="px-5 py-12 text-center text-sm text-gray-400">{t.common.noData}</td></tr>
                   ) : items.map((item) => (
-                    <tr key={item.id} className="border-b border-gray-50 hover:bg-blue-50/30 transition-colors group">
+                    <tr key={item.id}
+                      className="border-b border-gray-50 hover:bg-blue-50/30 transition-colors"
+                      onMouseEnter={() => setHoveredId(item.id)}
+                      onMouseLeave={() => setHoveredId(null)}>
                       <td className="px-4 py-3.5 text-sm font-mono font-semibold text-gray-700">{item.txNo || "-"}</td>
                       <td className="px-5 py-3.5 text-sm text-gray-500 font-mono">{item.id}</td>
                       <td className="px-5 py-3.5 text-sm text-gray-600">{item.date}</td>
@@ -358,7 +362,7 @@ export default function InventoryPage({
                       <td className="px-5 py-3.5 text-sm text-gray-600">{item.partner}</td>
                       <td className="px-5 py-3.5 text-sm text-gray-500">{item.userName ?? "-"}</td>
                       <td className="px-5 py-3.5">
-                        <div className="flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className={`flex justify-center gap-1 transition-opacity ${hoveredId === item.id ? 'opacity-100' : 'opacity-0'}`}>
                           <button onClick={() => setEditItem(item)} className="p-1.5 rounded-lg hover:bg-blue-100 text-gray-400 hover:text-blue-600" title="수정"><Edit size={15} /></button>
                           <button onClick={() => handleDelete(item.id)} className="p-1.5 rounded-lg hover:bg-rose-100 text-gray-400 hover:text-rose-600" title="삭제"><Trash2 size={15} /></button>
                         </div>
