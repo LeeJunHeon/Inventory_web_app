@@ -479,7 +479,6 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
     <InboundSelectModal
       isOpen={showInboundSelect}
       itemId={itemId}
-      locationId={locationId}
       barcodeId={inboundModalBarcodeId.current}
       onSelect={handleInboundSelect}
       onClose={() => setShowInboundSelect(false)}

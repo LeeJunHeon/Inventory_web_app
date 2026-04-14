@@ -23,25 +23,25 @@ export interface InboundTx {
 interface InboundSelectModalProps {
   isOpen: boolean;
   itemId: number | null;
-  locationId?: number | null;
   barcodeId?: number | null;
   onSelect: (inbound: InboundTx) => void;
   onClose: () => void;
 }
 
-export default function InboundSelectModal({ isOpen, itemId, locationId, barcodeId, onSelect, onClose }: InboundSelectModalProps) {
+export default function InboundSelectModal({ isOpen, itemId, barcodeId, onSelect, onClose }: InboundSelectModalProps) {
   const [list, setList] = useState<InboundTx[]>([]);
   const [loading, setLoading] = useState(false);
+  const [filterLocationId, setFilterLocationId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!isOpen || !itemId) return;
     setLoading(true);
-    fetch(`/api/inventory/inbound?itemId=${itemId}${locationId ? `&locationId=${locationId}` : ""}${barcodeId ? `&barcodeId=${barcodeId}` : ""}`)
+    fetch(`/api/inventory/inbound?itemId=${itemId}${filterLocationId ? `&locationId=${filterLocationId}` : ""}${barcodeId ? `&barcodeId=${barcodeId}` : ""}`)
       .then(r => r.json())
       .then(data => setList(Array.isArray(data) ? data : []))
       .catch(() => setList([]))
       .finally(() => setLoading(false));
-  }, [isOpen, itemId]);
+  }, [isOpen, itemId, filterLocationId]);
 
   if (!isOpen) return null;
 
@@ -54,6 +54,25 @@ export default function InboundSelectModal({ isOpen, itemId, locationId, barcode
             <X size={18} className="text-gray-400" />
           </button>
         </div>
+        <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-gray-100 bg-gray-50/50">
+          {([
+            { id: null, label: "전체" },
+            { id: 1,    label: "본사" },
+            { id: 2,    label: "공덕" },
+          ] as { id: number | null; label: string }[]).map(loc => (
+            <button
+              key={String(loc.id)}
+              onClick={() => setFilterLocationId(loc.id)}
+              className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors ${
+                filterLocationId === loc.id
+                  ? "bg-blue-500 text-white"
+                  : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-100"
+              }`}
+            >
+              {loc.label}
+            </button>
+          ))}
+        </div>
         <div className="flex-1 overflow-auto p-4 space-y-2">
           {loading ? (
             <div className="flex items-center justify-center py-12">
@@ -62,9 +81,9 @@ export default function InboundSelectModal({ isOpen, itemId, locationId, barcode
           ) : list.length === 0 ? (
             <div className="text-center py-8 space-y-2">
               <p className="text-sm text-gray-400">선택 가능한 입고 건이 없습니다</p>
-              {locationId && (
+              {filterLocationId && (
                 <p className="text-xs text-amber-600 bg-amber-50 mx-4 px-3 py-2 rounded-xl">
-                  현재 선택된 위치({locationId === 1 ? "본사" : "공덕"})의 입고 건만 표시됩니다
+                  {filterLocationId === 1 ? "본사" : "공덕"} 위치의 입고 건만 표시됩니다
                 </p>
               )}
             </div>
@@ -107,7 +126,7 @@ export default function InboundSelectModal({ isOpen, itemId, locationId, barcode
                   )}
                 </div>
                 {/* 오른쪽: 단가 + 수량 + 잔여 */}
-                <div className="flex items-center gap-4 shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                   {tx.unitPrice != null && (
                     <div className="text-right">
                       <p className="text-[10px] text-gray-400">단가</p>
@@ -120,11 +139,11 @@ export default function InboundSelectModal({ isOpen, itemId, locationId, barcode
                   )}
                   <div className="text-right">
                     <p className="text-[10px] text-gray-400">입고</p>
-                    <p className="text-sm text-gray-600">{tx.qty.toLocaleString()}개</p>
+                    <p className="text-xs text-gray-600 whitespace-nowrap">{tx.qty.toLocaleString()}개</p>
                   </div>
                   <div className="text-right">
                     <p className="text-[10px] text-gray-400">잔여</p>
-                    <p className="text-sm font-bold text-emerald-600">{tx.remainQty.toLocaleString()}개</p>
+                    <p className="text-xs font-bold text-emerald-600 whitespace-nowrap">{tx.remainQty.toLocaleString()}개</p>
                   </div>
                 </div>
               </div>
