@@ -122,7 +122,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
 
   const filtered = items.filter((item) => {
     const q = search.toLowerCase();
-    const matchSearch = !search || item.name.toLowerCase().includes(q) || item.code.toLowerCase().includes(q);
+    const matchSearch = !search || item.name.toLowerCase().includes(q) || item.code.toLowerCase().includes(q) || (item.barcodes?.some(b => b.toLowerCase().includes(q)) ?? false);
     const matchCat    = selectedCategory === "전체" || item.category === selectedCategory;
     return matchSearch && matchCat;
   });
