@@ -390,6 +390,11 @@ export async function PUT(request: NextRequest) {
       sessionUserId = user?.id ?? null;
     }
 
+    const before = await prisma.inventoryTx.findUnique({
+      where: { id: Number(id) },
+      include: { item: true, partner: true, location: true },
+    });
+
     const tx = await prisma.inventoryTx.update({
       where: { id: Number(id) },
       data: {
@@ -411,12 +416,33 @@ export async function PUT(request: NextRequest) {
 
     // activity_log 기록
     if (sessionUserId) {
+      const _changes: string[] = [];
+      if (before) {
+        if (body.txDate !== undefined) {
+          const bd = before.txDate.toISOString().split("T")[0];
+          const ad = body.txDate;
+          if (bd !== ad) _changes.push(`날짜: ${bd} → ${ad}`);
+        }
+        if (body.qty !== undefined && String(before.qty) !== String(body.qty))
+          _changes.push(`수량: ${before.qty} → ${body.qty}`);
+        if (body.txType !== undefined && before.txType !== body.txType)
+          _changes.push(`구분: ${before.txType} → ${body.txType}`);
+        if (body.locationId !== undefined && String(before.locationId ?? "") !== String(body.locationId))
+          _changes.push(`위치: ${before.location?.name ?? "-"} → (ID:${body.locationId})`);
+        if (body.memo !== undefined && (before.memo ?? "") !== (body.memo ?? ""))
+          _changes.push(`비고: ${before.memo || "-"} → ${body.memo || "-"}`);
+        if (body.unitPrice !== undefined && String(before.unitPrice ?? "") !== String(body.unitPrice ?? ""))
+          _changes.push(`단가: ${before.unitPrice ?? "-"} → ${body.unitPrice ?? "-"}`);
+      }
+      const _detail = _changes.length > 0 ? _changes.join(" | ") : undefined;
+
       await prisma.activityLog.create({
         data: {
           userId:    sessionUserId,
           action:    "UPDATE",
           tableName: "inventory_tx",
           recordId:  Number(id),
+          ...(_detail && { detail: _detail }),
         },
       });
     }
