@@ -88,9 +88,21 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
       }
     };
 
+    // html5-qrcode 라이브러리 내부의 video.play() AbortError는
+    // unhandled promise rejection으로 발생해 try/catch로 잡을 수 없음
+    // 전역 핸들러로 suppress
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const msg = event.reason?.message ?? String(event.reason ?? "");
+      if (msg.includes("AbortError") || msg.includes("interrupted by a new load")) {
+        event.preventDefault();
+      }
+    };
+    window.addEventListener("unhandledrejection", handleUnhandledRejection);
+
     init();
 
     return () => {
+      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
       mountedRef.current = false;
       const el = document.getElementById(divId);
       if (scannerRef.current && isRunningRef.current) {
