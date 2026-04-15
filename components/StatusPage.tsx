@@ -187,16 +187,18 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
               : `${locationOptions.find(l => l.id === selectedLocationId)?.name ?? ""} ${t.status.locationBasis}`}
           </p>
         </div>
-        <button onClick={handleExportCSV} disabled={!filtered || filtered.length === 0}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-          <Download size={15} />CSV
-        </button>
-        {shortageCount > 0 && (
-          <div className="flex items-center gap-2 px-4 py-2 bg-rose-50 border border-rose-200 rounded-xl">
-            <AlertTriangle size={16} className="text-rose-500" />
-            <span className="text-sm font-semibold text-rose-700">{t.status.shortageAlert(shortageCount)}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {shortageCount > 0 && (
+            <div className="flex items-center gap-2 px-4 py-2 bg-rose-50 border border-rose-200 rounded-xl">
+              <AlertTriangle size={16} className="text-rose-500" />
+              <span className="text-sm font-semibold text-rose-700">{t.status.shortageAlert(shortageCount)}</span>
+            </div>
+          )}
+          <button onClick={handleExportCSV} disabled={!filtered || filtered.length === 0}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            <Download size={15} />CSV
+          </button>
+        </div>
       </div>
 
       {/* 위치 탭 */}
