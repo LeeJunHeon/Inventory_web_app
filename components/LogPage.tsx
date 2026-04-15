@@ -145,10 +145,9 @@ export default function LogPage() {
         <button
           onClick={handleExport}
           disabled={logs.length === 0}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-white border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-40 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
-          <Download size={15} />
-          CSV
+          <Download size={15} />CSV
         </button>
       </div>
 

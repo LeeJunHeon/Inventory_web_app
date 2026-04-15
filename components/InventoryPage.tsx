@@ -196,8 +196,8 @@ export default function InventoryPage({
         <div className="flex gap-2">
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50">
-            <Download size={16} /><span className="hidden sm:inline">{t.common.exporting}</span>
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            <Download size={15} />CSV
           </button>
           <button onClick={() => setModalOpen(true)}
             className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-bold text-white bg-blue-500 rounded-xl hover:bg-blue-600 shadow-sm">
