@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth-helpers";
-import { auth } from "@/auth";
+import { requireAuth, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 
 // GET /api/barcodes — 바코드 목록 조회
 export async function GET(request: NextRequest) {
@@ -165,13 +164,8 @@ export async function POST(request: NextRequest) {
         return barcode;
       });
 
-      const session = await auth();
-      if (session?.user?.email) {
-        const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
-        if (actor) await prisma.activityLog.create({
-          data: { userId: actor.id, action: "CREATE", tableName: "barcode", recordId: result.id },
-        });
-      }
+      const sessionUserId = await getSessionUserId();
+      await logActivity(sessionUserId, "CREATE", "barcode", result.id);
 
       return NextResponse.json({
         id:       result.id,
@@ -195,13 +189,8 @@ export async function POST(request: NextRequest) {
       include: { item: { include: { category: true } }, targetUnit: true },
     });
 
-    const session2 = await auth();
-    if (session2?.user?.email) {
-      const actor = await prisma.user.findUnique({ where: { email: session2.user.email }, select: { id: true } });
-      if (actor) await prisma.activityLog.create({
-        data: { userId: actor.id, action: "CREATE", tableName: "barcode", recordId: barcode.id },
-      });
-    }
+    const sessionUserId = await getSessionUserId();
+    await logActivity(sessionUserId, "CREATE", "barcode", barcode.id);
 
     return NextResponse.json({
       id:       barcode.id,
@@ -239,23 +228,14 @@ export async function PATCH(request: NextRequest) {
       },
     });
 
-    const session = await auth();
-    if (session?.user?.email) {
-      const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
-      if (actor) await prisma.activityLog.create({
-        data: { userId: actor.id, action: "UPDATE", tableName: "barcode", recordId: barcode.id,
-          detail: (() => {
-            const ch: string[] = [];
-            if (beforeBc) {
-              if (body.code !== undefined && beforeBc.code !== body.code) ch.push(`코드: ${beforeBc.code} → ${body.code}`);
-              if (body.isActive !== undefined && beforeBc.isActive !== body.isActive) ch.push(`활성: ${beforeBc.isActive} → ${body.isActive}`);
-              if (body.memo !== undefined && (beforeBc.memo ?? "") !== (body.memo ?? "")) ch.push(`메모: ${beforeBc.memo || "-"} → ${body.memo || "-"}`);
-            }
-            return ch.length > 0 ? ch.join(" | ") : undefined;
-          })() || undefined,
-        },
-      });
+    const ch: string[] = [];
+    if (beforeBc) {
+      if (body.code !== undefined && beforeBc.code !== body.code) ch.push(`코드: ${beforeBc.code} → ${body.code}`);
+      if (body.isActive !== undefined && beforeBc.isActive !== body.isActive) ch.push(`활성: ${beforeBc.isActive} → ${body.isActive}`);
+      if (body.memo !== undefined && (beforeBc.memo ?? "") !== (body.memo ?? "")) ch.push(`메모: ${beforeBc.memo || "-"} → ${body.memo || "-"}`);
     }
+    const sessionUserId = await getSessionUserId();
+    await logActivity(sessionUserId, "UPDATE", "barcode", barcode.id, ch.length > 0 ? ch.join(" | ") : undefined);
 
     return NextResponse.json(barcode);
   } catch (error) {
@@ -285,13 +265,8 @@ export async function DELETE(request: NextRequest) {
     });
     await prisma.barcode.delete({ where: { id: Number(id) } });
 
-    const session = await auth();
-    if (session?.user?.email) {
-      const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
-      if (actor) await prisma.activityLog.create({
-        data: { userId: actor.id, action: "DELETE", tableName: "barcode", recordId: Number(id) },
-      });
-    }
+    const sessionUserId = await getSessionUserId();
+    await logActivity(sessionUserId, "DELETE", "barcode", Number(id));
 
     return NextResponse.json({ message: "바코드가 삭제되었습니다." });
   } catch (error) {

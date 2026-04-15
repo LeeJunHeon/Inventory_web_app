@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { getSessionUserId, logActivity } from "@/lib/auth-helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -136,12 +137,8 @@ export async function PUT(request: NextRequest) {
       select: { id: true, minStockQty: true },
     });
 
-    if (session.user.email) {
-      const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
-      if (actor) await prisma.activityLog.create({
-        data: { userId: actor.id, action: "UPDATE", tableName: "item", recordId: Number(itemId) },
-      });
-    }
+    const sessionUserId = await getSessionUserId();
+    await logActivity(sessionUserId, "UPDATE", "item", Number(itemId));
 
     return NextResponse.json(item);
   } catch (error) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/auth";
+import { getSessionUserId, logActivity } from "@/lib/auth-helpers";
 
 // GET /api/targets?barcode=T-0187&page=1&limit=50
 export async function GET(request: NextRequest) {
@@ -146,16 +146,7 @@ export async function GET(request: NextRequest) {
 // POST /api/targets — 측정값 저장
 export async function POST(request: NextRequest) {
   try {
-    // 세션 사용자 id 조회
-    const session = await auth();
-    let sessionUserId: number | null = null;
-    if (session?.user?.email) {
-      const u = await prisma.user.findUnique({
-        where:  { email: session.user.email },
-        select: { id: true },
-      });
-      sessionUserId = u?.id ?? null;
-    }
+    const sessionUserId = await getSessionUserId();
 
     const body = await request.json();
 
@@ -266,16 +257,7 @@ export async function POST(request: NextRequest) {
 
     // activity_log 기록
     const logUserId = sessionUserId ?? (body.userId ? Number(body.userId) : null);
-    if (logUserId) {
-      await prisma.activityLog.create({
-        data: {
-          userId:    logUserId,
-          action:    "CREATE",
-          tableName: "target_log",
-          recordId:  log.id,
-        },
-      });
-    }
+    await logActivity(logUserId, "CREATE", "target_log", log.id);
 
     return NextResponse.json(log, { status: 201 });
   } catch (error) {

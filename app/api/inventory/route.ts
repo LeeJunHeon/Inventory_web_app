@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/auth";
-import { requireAuth, getSessionUser } from "@/lib/auth-helpers";
+import { requireAuth, getSessionUser, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 
 function buildItemSpec(ws: {
   waferType?: string | null; diameterInch?: number | null;
@@ -159,16 +158,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: authResult.error }, { status: authResult.status });
   }
   try {
-    // 세션에서 로그인 사용자 id 조회
-    const session = await auth();
-    let sessionUserId: number | null = null;
-    if (session?.user?.email) {
-      const user = await prisma.user.findUnique({
-        where:  { email: session.user.email },
-        select: { id: true },
-      });
-      sessionUserId = user?.id ?? null;
-    }
+    const sessionUserId = await getSessionUserId();
 
     const body = await request.json();
 
@@ -339,16 +329,7 @@ export async function POST(request: NextRequest) {
     });
 
     // activity_log 기록
-    if (sessionUserId) {
-      await prisma.activityLog.create({
-        data: {
-          userId:    sessionUserId,
-          action:    "CREATE",
-          tableName: "inventory_tx",
-          recordId:  tx.id,
-        },
-      });
-    }
+    await logActivity(sessionUserId, "CREATE", "inventory_tx", tx.id);
 
     return NextResponse.json(tx, { status: 201 });
   } catch (error) {
@@ -382,16 +363,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "유효한 날짜를 입력해주세요." }, { status: 400 });
     }
 
-    // 세션 사용자 id 조회
-    const session = await auth();
-    let sessionUserId: number | null = null;
-    if (session?.user?.email) {
-      const user = await prisma.user.findUnique({
-        where:  { email: session.user.email },
-        select: { id: true },
-      });
-      sessionUserId = user?.id ?? null;
-    }
+    const sessionUserId = await getSessionUserId();
 
     const before = await prisma.inventoryTx.findUnique({
       where: { id: Number(id) },
@@ -419,52 +391,41 @@ export async function PUT(request: NextRequest) {
     });
 
     // activity_log 기록
-    if (sessionUserId) {
-      const _changes: string[] = [];
-      if (before) {
-        if (body.txDate !== undefined) {
-          const bd = before.txDate.toISOString().split("T")[0];
-          const ad = body.txDate;
-          if (bd !== ad) _changes.push(`날짜: ${bd} → ${ad}`);
-        }
-        if (body.qty !== undefined && String(before.qty) !== String(body.qty))
-          _changes.push(`수량: ${before.qty} → ${body.qty}`);
-        if (body.txType !== undefined && before.txType !== body.txType)
-          _changes.push(`구분: ${before.txType} → ${body.txType}`);
-        if (body.locationId !== undefined && String(before.locationId ?? "") !== String(body.locationId)) {
-          const afterLoc = await prisma.location.findUnique({ where: { id: Number(body.locationId) } });
-          _changes.push(`위치: ${before.location?.name ?? "-"} → ${afterLoc?.name ?? String(body.locationId)}`);
-        }
-        if (body.memo !== undefined && (before.memo ?? "") !== (body.memo ?? ""))
-          _changes.push(`비고: ${before.memo || "-"} → ${body.memo || "-"}`);
-        if (body.unitPrice !== undefined && String(before.unitPrice ?? "") !== String(body.unitPrice ?? ""))
-          _changes.push(`단가: ${before.unitPrice ?? "-"} → ${body.unitPrice ?? "-"}`);
-        if (body.currency !== undefined && (before.currency ?? "") !== (body.currency ?? ""))
-          _changes.push(`통화: ${before.currency ?? "-"} → ${body.currency ?? "-"}`);
-        if (body.refTxNo !== undefined && (before.refTxNo ?? "") !== (body.refTxNo ?? ""))
-          _changes.push(`참조입고: ${before.refTxNo ?? "-"} → ${body.refTxNo ?? "-"}`);
-        if (body.partnerId !== undefined && String(before.partnerId ?? "") !== String(body.partnerId)) {
-          const afterPartner = await prisma.partner.findUnique({ where: { id: Number(body.partnerId) } });
-          _changes.push(`거래처: ${before.partner?.name ?? "-"} → ${afterPartner?.name ?? String(body.partnerId)}`);
-        }
-        if (body.barcodeId !== undefined && String(before.barcodeId ?? "") !== String(body.barcodeId)) {
-          const afterBarcode = await prisma.barcode.findUnique({ where: { id: Number(body.barcodeId) } });
-          _changes.push(`바코드: ${before.barcode?.code ?? "-"} → ${afterBarcode?.code ?? String(body.barcodeId)}`);
-        }
+    const _changes: string[] = [];
+    if (before) {
+      if (body.txDate !== undefined) {
+        const bd = before.txDate.toISOString().split("T")[0];
+        const ad = body.txDate;
+        if (bd !== ad) _changes.push(`날짜: ${bd} → ${ad}`);
       }
-      const _detail = _changes.length > 0 ? _changes.join(" | ") : undefined;
-
-      if (_detail) {
-        await prisma.activityLog.create({
-          data: {
-            userId:    sessionUserId,
-            action:    "UPDATE",
-            tableName: "inventory_tx",
-            recordId:  Number(id),
-            detail:    _detail,
-          },
-        });
+      if (body.qty !== undefined && String(before.qty) !== String(body.qty))
+        _changes.push(`수량: ${before.qty} → ${body.qty}`);
+      if (body.txType !== undefined && before.txType !== body.txType)
+        _changes.push(`구분: ${before.txType} → ${body.txType}`);
+      if (body.locationId !== undefined && String(before.locationId ?? "") !== String(body.locationId)) {
+        const afterLoc = await prisma.location.findUnique({ where: { id: Number(body.locationId) } });
+        _changes.push(`위치: ${before.location?.name ?? "-"} → ${afterLoc?.name ?? String(body.locationId)}`);
       }
+      if (body.memo !== undefined && (before.memo ?? "") !== (body.memo ?? ""))
+        _changes.push(`비고: ${before.memo || "-"} → ${body.memo || "-"}`);
+      if (body.unitPrice !== undefined && String(before.unitPrice ?? "") !== String(body.unitPrice ?? ""))
+        _changes.push(`단가: ${before.unitPrice ?? "-"} → ${body.unitPrice ?? "-"}`);
+      if (body.currency !== undefined && (before.currency ?? "") !== (body.currency ?? ""))
+        _changes.push(`통화: ${before.currency ?? "-"} → ${body.currency ?? "-"}`);
+      if (body.refTxNo !== undefined && (before.refTxNo ?? "") !== (body.refTxNo ?? ""))
+        _changes.push(`참조입고: ${before.refTxNo ?? "-"} → ${body.refTxNo ?? "-"}`);
+      if (body.partnerId !== undefined && String(before.partnerId ?? "") !== String(body.partnerId)) {
+        const afterPartner = await prisma.partner.findUnique({ where: { id: Number(body.partnerId) } });
+        _changes.push(`거래처: ${before.partner?.name ?? "-"} → ${afterPartner?.name ?? String(body.partnerId)}`);
+      }
+      if (body.barcodeId !== undefined && String(before.barcodeId ?? "") !== String(body.barcodeId)) {
+        const afterBarcode = await prisma.barcode.findUnique({ where: { id: Number(body.barcodeId) } });
+        _changes.push(`바코드: ${before.barcode?.code ?? "-"} → ${afterBarcode?.code ?? String(body.barcodeId)}`);
+      }
+    }
+    const _detail = _changes.length > 0 ? _changes.join(" | ") : undefined;
+    if (_detail) {
+      await logActivity(sessionUserId, "UPDATE", "inventory_tx", Number(id), _detail);
     }
 
     return NextResponse.json(tx);
@@ -487,30 +448,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "유효한 id 파라미터가 필요합니다." }, { status: 400 });
     }
 
-    // 세션 사용자 id 조회
-    const session = await auth();
-    let sessionUserId: number | null = null;
-    if (session?.user?.email) {
-      const user = await prisma.user.findUnique({
-        where:  { email: session.user.email },
-        select: { id: true },
-      });
-      sessionUserId = user?.id ?? null;
-    }
+    const sessionUserId = await getSessionUserId();
 
     await prisma.inventoryTx.delete({ where: { id: Number(id) } });
 
     // activity_log 기록
-    if (sessionUserId) {
-      await prisma.activityLog.create({
-        data: {
-          userId:    sessionUserId,
-          action:    "DELETE",
-          tableName: "inventory_tx",
-          recordId:  Number(id),
-        },
-      });
-    }
+    await logActivity(sessionUserId, "DELETE", "inventory_tx", Number(id));
 
     return NextResponse.json({ message: "삭제 완료" });
   } catch (error) {

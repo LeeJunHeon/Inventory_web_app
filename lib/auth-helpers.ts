@@ -46,3 +46,28 @@ export async function getSessionUser(): Promise<{ email: string; role: string } 
   }
   return { email: session.user.email, role: user.role ?? "" };
 }
+
+/** 현재 세션 사용자의 DB id 반환. 미로그인이거나 없으면 null */
+export async function getSessionUserId(): Promise<number | null> {
+  const session = await auth();
+  if (!session?.user?.email) return null;
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    select: { id: true },
+  });
+  return user?.id ?? null;
+}
+
+/** 활동 로그 기록 헬퍼. userId가 null이면 아무것도 하지 않음 */
+export async function logActivity(
+  userId: number | null,
+  action: "CREATE" | "UPDATE" | "DELETE",
+  tableName: string,
+  recordId: number,
+  detail?: string
+): Promise<void> {
+  if (!userId) return;
+  await prisma.activityLog.create({
+    data: { userId, action, tableName, recordId, detail: detail ?? null },
+  });
+}

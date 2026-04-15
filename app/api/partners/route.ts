@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/auth-helpers";
-import { auth } from "@/auth";
+import { requireAdmin, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 
 // GET /api/partners
 export async function GET(request: NextRequest) {
@@ -59,13 +58,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const session = await auth();
-    if (session?.user?.email) {
-      const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
-      if (actor) await prisma.activityLog.create({
-        data: { userId: actor.id, action: "CREATE", tableName: "partner", recordId: partner.id },
-      });
-    }
+    const sessionUserId = await getSessionUserId();
+    await logActivity(sessionUserId, "CREATE", "partner", partner.id);
 
     return NextResponse.json({
       id: partner.id, name: partner.name,
@@ -104,29 +98,16 @@ export async function PUT(request: NextRequest) {
       },
     });
 
-    const session = await auth();
-    if (session?.user?.email) {
-      const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
-      if (actor) {
-        const _partnerDetail = (() => {
-          const ch: string[] = [];
-          if (beforeP) {
-            if (name !== undefined && beforeP.name !== name) ch.push(`거래처명: ${beforeP.name} → ${name}`);
-            if (managerName !== undefined && (beforeP.managerName ?? "") !== (managerName ?? "")) ch.push(`담당자: ${beforeP.managerName || "-"} → ${managerName || "-"}`);
-            if (contact !== undefined && (beforeP.contact ?? "") !== (contact ?? "")) ch.push(`연락처: ${beforeP.contact || "-"} → ${contact || "-"}`);
-            if (email !== undefined && (beforeP.email ?? "") !== (email ?? "")) ch.push(`이메일: ${beforeP.email || "-"} → ${email || "-"}`);
-          }
-          return ch.length > 0 ? ch.join(" | ") : undefined;
-        })() || undefined;
-        if (_partnerDetail) {
-          await prisma.activityLog.create({
-            data: {
-              userId: actor.id, action: "UPDATE", tableName: "partner", recordId: Number(id),
-              detail: _partnerDetail,
-            },
-          });
-        }
-      }
+    const ch: string[] = [];
+    if (beforeP) {
+      if (name !== undefined && beforeP.name !== name) ch.push(`거래처명: ${beforeP.name} → ${name}`);
+      if (managerName !== undefined && (beforeP.managerName ?? "") !== (managerName ?? "")) ch.push(`담당자: ${beforeP.managerName || "-"} → ${managerName || "-"}`);
+      if (contact !== undefined && (beforeP.contact ?? "") !== (contact ?? "")) ch.push(`연락처: ${beforeP.contact || "-"} → ${contact || "-"}`);
+      if (email !== undefined && (beforeP.email ?? "") !== (email ?? "")) ch.push(`이메일: ${beforeP.email || "-"} → ${email || "-"}`);
+    }
+    if (ch.length > 0) {
+      const sessionUserId = await getSessionUserId();
+      await logActivity(sessionUserId, "UPDATE", "partner", Number(id), ch.join(" | "));
     }
 
     return NextResponse.json({
@@ -158,13 +139,8 @@ export async function DELETE(request: NextRequest) {
 
     await prisma.partner.delete({ where: { id: Number(id) } });
 
-    const session = await auth();
-    if (session?.user?.email) {
-      const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
-      if (actor) await prisma.activityLog.create({
-        data: { userId: actor.id, action: "DELETE", tableName: "partner", recordId: Number(id) },
-      });
-    }
+    const sessionUserId = await getSessionUserId();
+    await logActivity(sessionUserId, "DELETE", "partner", Number(id));
 
     return NextResponse.json({ message: "거래처가 삭제되었습니다." });
   } catch (error) {

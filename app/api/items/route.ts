@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/auth-helpers";
-import { auth } from "@/auth";
+import { requireAdmin, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 
 // GET /api/items
 export async function GET(request: NextRequest) {
@@ -81,13 +80,8 @@ export async function POST(request: NextRequest) {
       include: { category: true },
     });
 
-    const session = await auth();
-    if (session?.user?.email) {
-      const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
-      if (actor) await prisma.activityLog.create({
-        data: { userId: actor.id, action: "CREATE", tableName: "item", recordId: item.id },
-      });
-    }
+    const sessionUserId = await getSessionUserId();
+    await logActivity(sessionUserId, "CREATE", "item", item.id);
 
     return NextResponse.json({
       id: item.id, code: item.code, name: item.name,
@@ -132,28 +126,15 @@ export async function PUT(request: NextRequest) {
       include: { category: true },
     });
 
-    const session = await auth();
-    if (session?.user?.email) {
-      const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
-      if (actor) {
-        const _itemDetail = (() => {
-          const ch: string[] = [];
-          if (beforeItem) {
-            if (name !== undefined && beforeItem.name !== name) ch.push(`품목명: ${beforeItem.name} → ${name}`);
-            if (unit !== undefined && (beforeItem.unit ?? "") !== (unit ?? "")) ch.push(`단위: ${beforeItem.unit || "-"} → ${unit || "-"}`);
-            if (note !== undefined && (beforeItem.note ?? "") !== (note ?? "")) ch.push(`비고: ${beforeItem.note || "-"} → ${note || "-"}`);
-          }
-          return ch.length > 0 ? ch.join(" | ") : undefined;
-        })() || undefined;
-        if (_itemDetail) {
-          await prisma.activityLog.create({
-            data: {
-              userId: actor.id, action: "UPDATE", tableName: "item", recordId: Number(id),
-              detail: _itemDetail,
-            },
-          });
-        }
-      }
+    const ch: string[] = [];
+    if (beforeItem) {
+      if (name !== undefined && beforeItem.name !== name) ch.push(`품목명: ${beforeItem.name} → ${name}`);
+      if (unit !== undefined && (beforeItem.unit ?? "") !== (unit ?? "")) ch.push(`단위: ${beforeItem.unit || "-"} → ${unit || "-"}`);
+      if (note !== undefined && (beforeItem.note ?? "") !== (note ?? "")) ch.push(`비고: ${beforeItem.note || "-"} → ${note || "-"}`);
+    }
+    if (ch.length > 0) {
+      const sessionUserId = await getSessionUserId();
+      await logActivity(sessionUserId, "UPDATE", "item", Number(id), ch.join(" | "));
     }
 
     return NextResponse.json({
@@ -186,13 +167,8 @@ export async function DELETE(request: NextRequest) {
 
     await prisma.item.delete({ where: { id: Number(id) } });
 
-    const session = await auth();
-    if (session?.user?.email) {
-      const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
-      if (actor) await prisma.activityLog.create({
-        data: { userId: actor.id, action: "DELETE", tableName: "item", recordId: Number(id) },
-      });
-    }
+    const sessionUserId = await getSessionUserId();
+    await logActivity(sessionUserId, "DELETE", "item", Number(id));
 
     return NextResponse.json({ message: "품목이 삭제되었습니다." });
   } catch (error) {
