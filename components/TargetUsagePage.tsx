@@ -6,6 +6,17 @@ import { TARGET_STATUS_LABELS, formatWeight } from "@/lib/data";
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
 import { useT } from "@/lib/i18n";
 
+function exportCSV(headers: string[], rows: (string | number | null | undefined)[][], filename: string) {
+  const BOM = "\uFEFF";
+  const csv = BOM + [headers, ...rows]
+    .map(row => row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
 interface TargetInfo { id: number; barcodeCode: string; itemCode: string; itemName: string; materialName: string; status: string; memo: string; }
 interface LogItem { id: number; targetId: number; timestamp: string; type: string; weight: number | null; location: string; locationId: number | null; reason: string; userName: string; barcodeCode: string; itemName: string; }
 
@@ -79,6 +90,21 @@ export default function TargetUsagePage() {
   const [selectedTarget, setSelectedTarget] = useState<TargetInfo | null>(null);
   const [logs, setLogs]                     = useState<LogItem[]>([]);
   const [total, setTotal]                   = useState(0);
+
+  const handleExportCSV = () => {
+    if (!logs || logs.length === 0) return;
+    exportCSV(
+      ["타임스탬프", "구분", "무게(g)", "품목명", "바코드", "위치", "사유", "작업자"],
+      logs.map((log: any) => [
+        log.timestamp, log.type, log.weight ?? "",
+        log.itemName, log.barcodeCode, log.location,
+        log.reason, log.userName,
+      ]),
+      selectedTarget
+        ? `타겟사용현황_${selectedTarget.barcodeCode}_${new Date().toISOString().split("T")[0]}.csv`
+        : `타겟사용현황_전체_${new Date().toISOString().split("T")[0]}.csv`
+    );
+  };
 
   const handleDownloadCSV = () => {
     if (!logs || logs.length === 0) return;
@@ -825,13 +851,9 @@ export default function TargetUsagePage() {
           <h2 className="font-bold text-gray-900">{selectedTarget ? t.target.logTitle(selectedTarget.barcodeCode) : t.target.allLogsTitle}</h2>
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-400">{t.target.totalCount} {total.toLocaleString()}{t.target.countUnit}</span>
-            <button
-              onClick={handleDownloadCSV}
-              disabled={logs.length === 0}
-              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <Download size={13} />
-              CSV
+            <button onClick={handleExportCSV} disabled={!logs || logs.length === 0}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+              <Download size={15} />CSV
             </button>
           </div>
         </div>

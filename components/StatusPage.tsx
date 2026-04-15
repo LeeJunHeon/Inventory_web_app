@@ -1,10 +1,21 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Search, AlertTriangle, CheckCircle, AlertCircle, Loader2, Check, X, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import { Search, AlertTriangle, CheckCircle, AlertCircle, Loader2, Check, X, ChevronUp, ChevronDown, ChevronsUpDown, Download } from "lucide-react";
 import { CATEGORY_COLORS } from "@/lib/data";
 import { useT } from "@/lib/i18n";
 import type { Messages } from "@/messages/ko";
+
+function exportCSV(headers: string[], rows: (string | number | null | undefined)[][], filename: string) {
+  const BOM = "\uFEFF";
+  const csv = BOM + [headers, ...rows]
+    .map(row => row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
 
 interface LocationOption { id: number; name: string; }
 
@@ -127,6 +138,23 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
     return matchSearch && matchCat;
   });
 
+  const handleExportCSV = () => {
+    if (!filtered || filtered.length === 0) return;
+    exportCSV(
+      ["품목코드", "품목명", "품목군", "바코드", "본사", "공덕", "합계", "최소수량", "수급상태"],
+      filtered.map(item => [
+        item.code, item.name, item.category,
+        (item.barcodes ?? []).join(" / "),
+        item.locationQty?.[1] ?? 0,
+        item.locationQty?.[2] ?? 0,
+        item.currentQty,
+        item.requiredQty,
+        getSupplyLevel(item.currentQty, item.requiredQty, t).label,
+      ]),
+      `보유현황_${new Date().toISOString().split("T")[0]}.csv`
+    );
+  };
+
   const filteredItems = filtered.filter(item => {
     if (stockFilter === "보유중") return item.currentQty > 0;
     if (stockFilter === "미보유") return item.currentQty === 0;
@@ -167,6 +195,10 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
               : `${locationOptions.find(l => l.id === selectedLocationId)?.name ?? ""} ${t.status.locationBasis}`}
           </p>
         </div>
+        <button onClick={handleExportCSV} disabled={!filtered || filtered.length === 0}
+          className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <Download size={15} />CSV
+        </button>
         {shortageCount > 0 && (
           <div className="flex items-center gap-2 px-4 py-2 bg-rose-50 border border-rose-200 rounded-xl">
             <AlertTriangle size={16} className="text-rose-500" />

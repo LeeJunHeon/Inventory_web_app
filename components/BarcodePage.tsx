@@ -1,11 +1,22 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Search, Plus, Trash2, Copy, QrCode, Check, X, Loader2, Printer, ImageDown, Pencil } from "lucide-react";
+import { Search, Plus, Trash2, Copy, QrCode, Check, X, Loader2, Printer, ImageDown, Pencil, Download } from "lucide-react";
 import { QRCodeSVG, QRCodeCanvas } from "qrcode.react";
 import { CATEGORY_COLORS } from "@/lib/data";
 import { useT } from "@/lib/i18n";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
+
+function exportCSV(headers: string[], rows: (string | number | null | undefined)[][], filename: string) {
+  const BOM = "\uFEFF";
+  const csv = BOM + [headers, ...rows]
+    .map(row => row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
 
 interface BarcodeItem {
   id: number; code: string; itemCode: string; itemName: string;
@@ -28,6 +39,17 @@ export default function BarcodePage() {
     "기자재/소모품": t.barcode.catEquip,
   };
   const [barcodes, setBarcodes]         = useState<BarcodeItem[]>([]);
+  const handleExportCSV = () => {
+    if (!barcodes || barcodes.length === 0) return;
+    exportCSV(
+      ["ID", "바코드", "품목코드", "품목명", "품목군", "타겟ID", "활성여부", "메모"],
+      barcodes.map(b => [
+        b.id, b.code, b.itemCode, b.itemName, b.category,
+        b.targetUnitId ?? "", b.isActive, b.memo ?? "",
+      ]),
+      `바코드_${new Date().toISOString().split("T")[0]}.csv`
+    );
+  };
   const [loading, setLoading]           = useState(true);
   const [search, setSearch]             = useState("");
   const [categoryFilter, setCategoryFilter] = useState("전체");
@@ -488,6 +510,10 @@ export default function BarcodePage() {
                 className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${categoryFilter === c ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}>{CAT_LABEL[c] || c}</button>
             ))}
           </div>
+          <button onClick={handleExportCSV} disabled={!barcodes || barcodes.length === 0}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            <Download size={15} />CSV
+          </button>
         </div>
       </div>
 

@@ -1,9 +1,20 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Search, Plus, Edit, Trash2, Loader2, X, Check } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Loader2, X, Check, Download } from "lucide-react";
 import { CATEGORY_COLORS } from "@/lib/data";
 import { useT } from "@/lib/i18n";
+
+function exportCSV(headers: string[], rows: (string | number | null | undefined)[][], filename: string) {
+  const BOM = "\uFEFF";
+  const csv = BOM + [headers, ...rows]
+    .map(row => row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
 
 interface ItemOption {
   id: number; code: string; name: string;
@@ -26,6 +37,17 @@ export default function ItemsPage() {
     "기자재/소모품": t.inventory.catEquip,
   };
   const [items, setItems]                   = useState<ItemOption[]>([]);
+  const handleExportCSV = () => {
+    if (!items || items.length === 0) return;
+    exportCSV(
+      ["품목코드", "품목명", "품목군", "단위", "최소수량", "비고"],
+      items.map((item: any) => [
+        item.code, item.name, item.category?.name ?? item.category ?? "",
+        item.unit ?? "", item.minQty ?? 0, item.note ?? "",
+      ]),
+      `품목관리_${new Date().toISOString().split("T")[0]}.csv`
+    );
+  };
   const [categories, setCategories]         = useState<CategoryOption[]>([]);
   const [loading, setLoading]               = useState(true);
   const [search, setSearch]                 = useState("");
@@ -149,6 +171,10 @@ export default function ItemsPage() {
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t.nav.items}</h1>
           <p className="text-sm text-gray-500 mt-0.5">{t.items.subtitle}</p>
         </div>
+        <button onClick={handleExportCSV} disabled={!items || items.length === 0}
+          className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <Download size={15} />CSV
+        </button>
         <button onClick={openCreate}
           className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-blue-500 rounded-xl hover:bg-blue-600 shadow-sm">
           <Plus size={16} />{t.items.newItem}
