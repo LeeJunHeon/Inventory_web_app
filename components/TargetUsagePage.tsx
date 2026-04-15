@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, Save, AlertTriangle, Weight, MapPin, FileText, ArrowDown, ArrowUp, ArrowUpDown, Loader2, Camera } from "lucide-react";
+import { Search, Save, AlertTriangle, Weight, MapPin, FileText, ArrowDown, ArrowUp, ArrowUpDown, Loader2, Camera, Download } from "lucide-react";
 import { TARGET_STATUS_LABELS, formatWeight } from "@/lib/data";
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
 import { useT } from "@/lib/i18n";
@@ -79,6 +79,33 @@ export default function TargetUsagePage() {
   const [selectedTarget, setSelectedTarget] = useState<TargetInfo | null>(null);
   const [logs, setLogs]                     = useState<LogItem[]>([]);
   const [total, setTotal]                   = useState(0);
+
+  const handleDownloadCSV = () => {
+    if (!logs || logs.length === 0) return;
+    const BOM = "\uFEFF";
+    const headers = ["타임스탬프", "구분", "무게(g)", "품목명", "바코드", "위치", "사유", "작업자"];
+    const rows = logs.map((log) => [
+      log.timestamp   ?? "",
+      log.type        ?? "",
+      log.weight      ?? "",
+      log.itemName    ?? "",
+      log.barcodeCode ?? "",
+      log.location    ?? "",
+      log.reason      ?? "",
+      log.userName    ?? "",
+    ].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","));
+    const csv = BOM + [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const filename = selectedTarget
+      ? `타겟사용현황_${selectedTarget.barcodeCode}_${new Date().toISOString().split("T")[0]}.csv`
+      : `타겟사용현황_전체_${new Date().toISOString().split("T")[0]}.csv`;
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
   const [page, setPage]                     = useState(1);
   const [loading, setLoading]               = useState(true);
   const [weight, setWeight]                 = useState("");
@@ -796,7 +823,17 @@ export default function TargetUsagePage() {
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
           <h2 className="font-bold text-gray-900">{selectedTarget ? t.target.logTitle(selectedTarget.barcodeCode) : t.target.allLogsTitle}</h2>
-          <span className="text-xs text-gray-400">{t.target.totalCount} {total.toLocaleString()}{t.target.countUnit}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400">{t.target.totalCount} {total.toLocaleString()}{t.target.countUnit}</span>
+            <button
+              onClick={handleDownloadCSV}
+              disabled={logs.length === 0}
+              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Download size={13} />
+              CSV
+            </button>
+          </div>
         </div>
         {loading ? (
           <div className="flex items-center justify-center py-12"><Loader2 size={24} className="animate-spin text-blue-500" /></div>
