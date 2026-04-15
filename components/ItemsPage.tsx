@@ -171,14 +171,16 @@ export default function ItemsPage() {
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t.nav.items}</h1>
           <p className="text-sm text-gray-500 mt-0.5">{t.items.subtitle}</p>
         </div>
-        <button onClick={handleExportCSV} disabled={!items || items.length === 0}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-          <Download size={15} />CSV
-        </button>
-        <button onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-blue-500 rounded-xl hover:bg-blue-600 shadow-sm">
-          <Plus size={16} />{t.items.newItem}
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={handleExportCSV} disabled={!items || items.length === 0}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            <Download size={15} />CSV
+          </button>
+          <button onClick={openCreate}
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-blue-500 rounded-xl hover:bg-blue-600 shadow-sm">
+            <Plus size={16} />{t.items.newItem}
+          </button>
+        </div>
       </div>
 
       {/* 등록 / 수정 폼 */}
