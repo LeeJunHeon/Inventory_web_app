@@ -119,6 +119,14 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { id, targetUnitId, note } = body;
 
+    const beforeSlot = await prisma.chamberSlot.findUnique({
+      where: { id: Number(id) },
+      include: {
+        targetUnit: { include: { barcodes: { take: 1 } } },
+        location: true,
+      },
+    });
+
     const slot = await prisma.chamberSlot.update({
       where: { id: Number(id) },
       data: {
@@ -128,6 +136,35 @@ export async function PUT(request: NextRequest) {
         note: note ?? null,
       },
     });
+
+    if (user?.id && beforeSlot) {
+      const ch: string[] = [];
+
+      if (beforeSlot.targetUnitId !== (targetUnitId ?? null)) {
+        const beforeCode = beforeSlot.targetUnit?.barcodes[0]?.code ?? "비어있음";
+        let afterCode = "비어있음";
+        if (targetUnitId) {
+          const newTarget = await prisma.targetUnit.findUnique({
+            where: { id: Number(targetUnitId) },
+            include: { barcodes: { take: 1 } },
+          });
+          afterCode = newTarget?.barcodes[0]?.code ?? String(targetUnitId);
+        }
+        ch.push(`타겟: ${beforeCode} → ${afterCode}`);
+      }
+
+      const beforeNote = beforeSlot.note ?? "";
+      const afterNote = note ?? "";
+      if (beforeNote !== afterNote) {
+        ch.push(`메모: ${beforeNote || "-"} → ${afterNote || "-"}`);
+      }
+
+      if (ch.length > 0) {
+        await prisma.activityLog.create({
+          data: { userId: user.id, action: "UPDATE", tableName: "chamber_slot", recordId: Number(id), detail: ch.join(" | ") },
+        });
+      }
+    }
 
     return NextResponse.json(slot);
   } catch (error) {

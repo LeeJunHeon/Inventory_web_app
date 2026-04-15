@@ -86,26 +86,38 @@ export async function PUT(request: NextRequest) {
         canViewBarcodeCreatePrint:toYN(u.perms.barcodeCreatePrint,true),
       };
 
+      const beforePerm = await prisma.userTabPermission.findUnique({ where: { userId: u.id } });
+
       await prisma.userTabPermission.upsert({
         where:  { userId: u.id },
         update: perms,
         create: { userId: u.id, ...perms },
       });
 
-      if (actorId) await prisma.activityLog.create({
-        data: { userId: actorId, action: "UPDATE", tableName: "user", recordId: u.id,
-          detail: (() => {
-            const ch: string[] = [];
-            if (beforeUser) {
-              if (beforeUser.role !== u.role) ch.push(`권한: ${beforeUser.role} → ${u.role}`);
-              const beforeActive = beforeUser.isActive;
-              const afterActive = toYN(u.isActive, true);
-              if (beforeActive !== afterActive) ch.push(`활성: ${beforeActive} → ${afterActive}`);
-            }
-            return ch.length > 0 ? ch.join(" | ") : undefined;
-          })() || undefined,
-        },
-      });
+      if (actorId) {
+        const ch: string[] = [];
+        if (beforeUser) {
+          if (beforeUser.role !== u.role) ch.push(`권한: ${beforeUser.role} → ${u.role}`);
+          const beforeActive = beforeUser.isActive;
+          const afterActive = toYN(u.isActive, true);
+          if (beforeActive !== afterActive) ch.push(`활성: ${beforeActive} → ${afterActive}`);
+        }
+        const permLabels: Record<string, string> = {
+          canViewMain: "대시보드", canViewStatus: "보유현황", canViewPeriod: "기간별",
+          canViewUserPerm: "사용자관리", canViewTargetUsage: "타겟사용현황",
+          canViewBarcode: "바코드", canViewBarcodeCreatePrint: "바코드생성",
+        };
+        for (const [key, label] of Object.entries(permLabels)) {
+          const before = (beforePerm as any)?.[key] ?? "Y";
+          const after = (perms as any)[key];
+          if (before !== after) ch.push(`${label}: ${before} → ${after}`);
+        }
+        if (ch.length > 0) {
+          await prisma.activityLog.create({
+            data: { userId: actorId, action: "UPDATE", tableName: "user", recordId: u.id, detail: ch.join(" | ") },
+          });
+        }
+      }
     }
 
     return NextResponse.json({ message: "저장 완료" });

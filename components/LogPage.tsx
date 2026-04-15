@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Fragment } from "react";
 import { Download, ChevronLeft, ChevronRight } from "lucide-react";
 import DatePicker from "./DatePicker";
 import { useT } from "@/lib/i18n";
@@ -40,6 +40,19 @@ const TABLE_COLORS: Record<string, string> = {
   user:         "bg-indigo-100 text-indigo-700",
   target_unit:  "bg-yellow-100 text-yellow-700",
 };
+
+function parseDiff(detail: string): Array<{ field: string; from: string; to: string }> | null {
+  if (!detail || !detail.includes(" → ")) return null;
+  return detail.split(" | ").map(item => {
+    const colonIdx = item.indexOf(": ");
+    if (colonIdx === -1) return { field: "", from: "", to: item };
+    const field = item.slice(0, colonIdx);
+    const rest = item.slice(colonIdx + 2);
+    const arrowIdx = rest.indexOf(" → ");
+    if (arrowIdx === -1) return { field, from: rest, to: "" };
+    return { field, from: rest.slice(0, arrowIdx), to: rest.slice(arrowIdx + 3) };
+  });
+}
 
 const PAGE_LIMIT = 50;
 
@@ -242,75 +255,154 @@ export default function LogPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {logs.map(log => (
-                    <tr key={log.id} className="hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => setExpandedLogId(prev => prev === log.id ? null : log.id)}>
-                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
-                        {new Date(log.createdAt).toLocaleString("ko-KR", {
-                          year: "numeric", month: "2-digit", day: "2-digit",
-                          hour: "2-digit", minute: "2-digit",
-                        })}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-gray-800">{log.userName}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-lg ${
-                          TABLE_COLORS[log.tableName] ?? "bg-gray-100 text-gray-600"
-                        }`}>
-                          {log.tableLabel}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-lg ${
-                          ACTION_COLORS[log.action] ?? "bg-gray-100 text-gray-600"
-                        }`}>
-                          {log.actionLabel}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">
-                        {expandedLogId === log.id ? (
-                          <span className="text-xs whitespace-pre-wrap break-all">{log.detail || "-"}</span>
-                        ) : (
-                          <span className="text-xs max-w-xs truncate block">{log.detail || "-"}</span>
+                  {logs.map(log => {
+                    const parsed = log.action === "UPDATE" ? parseDiff(log.detail) : null;
+                    const isExpanded = expandedLogId === log.id;
+                    return (
+                      <Fragment key={log.id}>
+                        <tr className="hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => setExpandedLogId(prev => prev === log.id ? null : log.id)}>
+                          <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                            {new Date(log.createdAt).toLocaleString("ko-KR", {
+                              year: "numeric", month: "2-digit", day: "2-digit",
+                              hour: "2-digit", minute: "2-digit",
+                            })}
+                          </td>
+                          <td className="px-4 py-3 font-medium text-gray-800">{log.userName}</td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-lg ${
+                              TABLE_COLORS[log.tableName] ?? "bg-gray-100 text-gray-600"
+                            }`}>
+                              {log.tableLabel}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-lg ${
+                              ACTION_COLORS[log.action] ?? "bg-gray-100 text-gray-600"
+                            }`}>
+                              {log.actionLabel}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-gray-600">
+                            {parsed ? (
+                              <span className="text-xs">
+                                {parsed[0].field}: {parsed[0].from} → {parsed[0].to}
+                                {parsed.length > 1 && (
+                                  <span className="text-gray-400 ml-1">외 {parsed.length - 1}건</span>
+                                )}
+                              </span>
+                            ) : (
+                              <span className="text-xs">{log.detail || "-"}</span>
+                            )}
+                          </td>
+                        </tr>
+                        {isExpanded && (
+                          <tr className="bg-blue-50/50">
+                            <td colSpan={5} className="px-6 py-3">
+                              {parsed ? (
+                                <table className="text-xs w-full max-w-2xl">
+                                  <thead>
+                                    <tr className="text-gray-400">
+                                      <th className="text-left pb-1 pr-8 font-medium w-32">항목</th>
+                                      <th className="text-left pb-1 pr-8 font-medium">이전</th>
+                                      <th className="text-left pb-1 font-medium">변경 후</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {parsed.map((row, i) => (
+                                      <tr key={i} className="border-t border-blue-100">
+                                        <td className="py-1 pr-8 font-medium text-gray-600">{row.field}</td>
+                                        <td className="py-1 pr-8 text-red-500 line-through">{row.from || "-"}</td>
+                                        <td className="py-1 text-green-600 font-medium">{row.to || "-"}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              ) : (
+                                <span className="text-xs text-gray-600 whitespace-pre-wrap">{log.detail || "-"}</span>
+                              )}
+                            </td>
+                          </tr>
                         )}
-                      </td>
-                    </tr>
-                  ))}
+                      </Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
             {/* 모바일 카드 */}
             <div className="md:hidden divide-y divide-gray-100">
-              {logs.map(log => (
-                <div key={log.id} className="px-4 py-3 space-y-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-lg ${
-                        ACTION_COLORS[log.action] ?? "bg-gray-100 text-gray-600"
-                      }`}>
-                        {log.actionLabel}
-                      </span>
-                      <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-lg ${
-                        TABLE_COLORS[log.tableName] ?? "bg-gray-100 text-gray-600"
-                      }`}>
-                        {log.tableLabel}
+              {logs.map(log => {
+                const parsed = log.action === "UPDATE" ? parseDiff(log.detail) : null;
+                const isExpanded = expandedLogId === log.id;
+                return (
+                  <div key={log.id} className="px-4 py-3 space-y-1 cursor-pointer" onClick={() => setExpandedLogId(prev => prev === log.id ? null : log.id)}>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-lg ${
+                          ACTION_COLORS[log.action] ?? "bg-gray-100 text-gray-600"
+                        }`}>
+                          {log.actionLabel}
+                        </span>
+                        <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-lg ${
+                          TABLE_COLORS[log.tableName] ?? "bg-gray-100 text-gray-600"
+                        }`}>
+                          {log.tableLabel}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-400">
+                        {new Date(log.createdAt).toLocaleString("ko-KR", {
+                          month: "2-digit", day: "2-digit",
+                          hour: "2-digit", minute: "2-digit",
+                        })}
                       </span>
                     </div>
-                    <span className="text-xs text-gray-400">
-                      {new Date(log.createdAt).toLocaleString("ko-KR", {
-                        month: "2-digit", day: "2-digit",
-                        hour: "2-digit", minute: "2-digit",
-                      })}
-                    </span>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium text-gray-800">{log.userName}</span>
+                      {!isExpanded && (
+                        <span className="text-xs text-gray-500 text-right">
+                          {parsed ? (
+                            <>
+                              {parsed[0].field}: {parsed[0].from} → {parsed[0].to}
+                              {parsed.length > 1 && (
+                                <span className="text-gray-400 ml-1">외 {parsed.length - 1}건</span>
+                              )}
+                            </>
+                          ) : (
+                            log.detail || "-"
+                          )}
+                        </span>
+                      )}
+                    </div>
+                    {isExpanded && (
+                      <div className="mt-2 pt-2 border-t border-blue-100 bg-blue-50/50 -mx-4 px-4 py-2">
+                        {parsed ? (
+                          <table className="text-xs w-full">
+                            <thead>
+                              <tr className="text-gray-400">
+                                <th className="text-left pb-1 pr-4 font-medium">항목</th>
+                                <th className="text-left pb-1 pr-4 font-medium">이전</th>
+                                <th className="text-left pb-1 font-medium">변경 후</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {parsed.map((row, i) => (
+                                <tr key={i} className="border-t border-blue-100">
+                                  <td className="py-1 pr-4 font-medium text-gray-600">{row.field}</td>
+                                  <td className="py-1 pr-4 text-red-500 line-through">{row.from || "-"}</td>
+                                  <td className="py-1 text-green-600 font-medium">{row.to || "-"}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <span className="text-xs text-gray-600 whitespace-pre-wrap">{log.detail || "-"}</span>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-800">{log.userName}</span>
-                            <span
-                              className={`text-xs text-gray-500 text-right ${expandedLogId === log.id ? 'whitespace-pre-wrap break-all' : 'truncate max-w-[60%]'}`}
-                              onClick={() => setExpandedLogId(prev => prev === log.id ? null : log.id)}
-                            >{log.detail || "-"}</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}
