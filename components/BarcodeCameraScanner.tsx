@@ -36,14 +36,11 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
         const scanner = new Html5Qrcode(divId, { verbose: false } as any);
         scannerRef.current = scanner;
 
-        const cameraConstraint = { facingMode };
-
         await scanner.start(
-          cameraConstraint,
+          { facingMode: { ideal: facingMode } },
           {
             fps: 10,
             qrbox: { width: 220, height: 220 },
-            videoConstraints: {},
             formatsToSupport: [
               Html5QrcodeSupportedFormats.QR_CODE,
               Html5QrcodeSupportedFormats.CODE_128,
