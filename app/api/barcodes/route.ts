@@ -27,37 +27,46 @@ export async function GET(request: NextRequest) {
       ];
     }
     if (search) {
-      // 검색어(스캔 조회)가 있을 때만 비활성 바코드 제외
-      // BarcodePage 목록에서는 비활성도 보여야 하므로 search 없는 경우는 필터 미적용
-      where.isActive = { not: "N" };
-      let searchOR;
       if (searchType === "바코드") {
-        searchOR = [{ code: { equals: search, mode: "insensitive" as const } }];
-      } else if (searchType === "품목코드") {
-        searchOR = [
-          { item: { code: { contains: search, mode: "insensitive" as const } } },
-          { targetUnit: { item: { code: { contains: search, mode: "insensitive" as const } } } },
-        ];
-      } else if (searchType === "품목명") {
-        searchOR = [
-          { item: { name: { contains: search, mode: "insensitive" as const } } },
-          { targetUnit: { item: { name: { contains: search, mode: "insensitive" as const } } } },
-        ];
+        // Prisma 7 단일 OR 버그 우회: OR 배열 대신 where에 직접 조건 할당
+        if (where.OR) {
+          // 카테고리 필터가 동시에 있는 경우 AND로 결합
+          where.AND = [
+            { OR: where.OR },
+            { code: { contains: search, mode: "insensitive" as const } },
+          ];
+          delete where.OR;
+        } else {
+          where.code = { contains: search, mode: "insensitive" as const };
+        }
       } else {
-        searchOR = [
-          { code: { contains: search, mode: "insensitive" as const } },
-          { item: { code: { contains: search, mode: "insensitive" as const } } },
-          { item: { name: { contains: search, mode: "insensitive" as const } } },
-          { targetUnit: { item: { code: { contains: search, mode: "insensitive" as const } } } },
-          { targetUnit: { item: { name: { contains: search, mode: "insensitive" as const } } } },
-        ];
-      }
-      // category 필터와 search가 동시에 적용될 때 AND 조건으로 결합
-      if (where.OR) {
-        where.AND = [{ OR: where.OR }, { OR: searchOR }];
-        delete where.OR;
-      } else {
-        where.OR = searchOR;
+        let searchOR;
+        if (searchType === "품목코드") {
+          searchOR = [
+            { item: { code: { contains: search, mode: "insensitive" as const } } },
+            { targetUnit: { item: { code: { contains: search, mode: "insensitive" as const } } } },
+          ];
+        } else if (searchType === "품목명") {
+          searchOR = [
+            { item: { name: { contains: search, mode: "insensitive" as const } } },
+            { targetUnit: { item: { name: { contains: search, mode: "insensitive" as const } } } },
+          ];
+        } else {
+          searchOR = [
+            { code: { contains: search, mode: "insensitive" as const } },
+            { item: { code: { contains: search, mode: "insensitive" as const } } },
+            { item: { name: { contains: search, mode: "insensitive" as const } } },
+            { targetUnit: { item: { code: { contains: search, mode: "insensitive" as const } } } },
+            { targetUnit: { item: { name: { contains: search, mode: "insensitive" as const } } } },
+          ];
+        }
+        // category 필터와 search가 동시에 적용될 때 AND 조건으로 결합
+        if (where.OR) {
+          where.AND = [{ OR: where.OR }, { OR: searchOR }];
+          delete where.OR;
+        } else {
+          where.OR = searchOR;
+        }
       }
     }
 
