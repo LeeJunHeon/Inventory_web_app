@@ -44,7 +44,10 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
           { facingMode: facingMode }, // html5-qrcode 필수 인자 (문자열 형식)
           {
             fps: 10,
-            qrbox: { width: 220, height: 220 },
+            qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+              const size = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.85);
+              return { width: size, height: size };
+            },
             videoConstraints: {
               facingMode: { ideal: facingMode }, // 실제 getUserMedia에 사용되는 값
             },
