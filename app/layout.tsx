@@ -22,23 +22,23 @@ export default function RootLayout({
           crossOrigin="anonymous"
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"
         />
+        <Script
+          id="suppress-abort-error"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.addEventListener('unhandledrejection', function(e) {
+                var msg = (e.reason && e.reason.message) ? e.reason.message : String(e.reason || '');
+                var name = (e.reason && e.reason.name) ? e.reason.name : '';
+                if (name === 'AbortError' || msg.indexOf('interrupted by a new load') !== -1) {
+                  e.preventDefault();
+                  e.stopImmediatePropagation && e.stopImmediatePropagation();
+                }
+              }, true);
+            `,
+          }}
+          />
       </head>
-      <Script
-        id="suppress-abort-error"
-        strategy="beforeInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `
-            window.addEventListener('unhandledrejection', function(e) {
-              var msg = (e.reason && e.reason.message) ? e.reason.message : String(e.reason || '');
-              var name = (e.reason && e.reason.name) ? e.reason.name : '';
-              if (name === 'AbortError' || msg.indexOf('interrupted by a new load') !== -1) {
-                e.preventDefault();
-                e.stopImmediatePropagation && e.stopImmediatePropagation();
-              }
-            }, true);
-          `,
-        }}
-      />
       <body style={{ fontFamily: "'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif" }}>
         <Providers>{children}</Providers>
       </body>
