@@ -192,13 +192,13 @@ export default function LogPage() {
         </div>
 
         {/* 액션 필터 */}
-        <div className="flex flex-wrap gap-2">
-          <span className="text-xs font-semibold text-gray-400 self-center mr-1">{t.logs.actionFilterLabel}</span>
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <span className="text-xs font-semibold text-gray-400 self-center mr-1 shrink-0">{t.logs.actionFilterLabel}</span>
           {(["CREATE", "UPDATE", "DELETE"] as const).map(a => (
             <button
               key={a}
               onClick={() => toggleAction(a)}
-              className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors ${
+              className={`shrink-0 px-3 py-1 text-xs font-semibold rounded-lg transition-colors ${
                 action === a
                   ? ACTION_COLORS[a]
                   : "bg-gray-100 text-gray-500 hover:bg-gray-200"
@@ -207,11 +207,11 @@ export default function LogPage() {
               {a === "CREATE" ? t.logs.actionCreate : a === "UPDATE" ? t.logs.actionUpdate : t.logs.actionDelete}
             </button>
           ))}
-          <span className="text-xs font-semibold text-gray-400 self-center mx-1">|</span>
-          <span className="text-xs font-semibold text-gray-400 self-center mr-1">{t.logs.tableFilterLabel}</span>
+          <span className="text-xs font-semibold text-gray-400 self-center mx-1 shrink-0">|</span>
+          <span className="text-xs font-semibold text-gray-400 self-center mr-1 shrink-0">{t.logs.tableFilterLabel}</span>
           {TABLE_LABELS.map(tbl => (
             <button key={tbl.key} onClick={() => toggleTable(tbl.key)}
-              className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors ${
+              className={`shrink-0 px-3 py-1 text-xs font-semibold rounded-lg transition-colors ${
                 tableName === tbl.key ? TABLE_COLORS[tbl.key] : "bg-gray-100 text-gray-500 hover:bg-gray-200"
               }`}>
               {tbl.label}

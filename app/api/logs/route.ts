@@ -144,46 +144,50 @@ export async function GET(request: NextRequest) {
 
           } else if (log.tableName === "target_unit") {
             try {
-              const tu = await prisma.targetUnit.findUnique({
-                where: { id: log.recordId },
-                include: {
-                  barcodes: { where: { isActive: "Y" }, take: 1 },
-                  item: true,
-                },
-              });
-              if (tu) {
-                const bc = tu.barcodes[0]?.code ?? "";
-                detail = `${bc ? bc + " " : ""}${tu.item?.name ?? ""} → ${tu.status}`;
-              } else if (log.action === "UPDATE" && log.detail) {
+              if (log.action === "UPDATE" && log.detail) {
                 detail = log.detail;
               } else {
-                detail = `ID: ${log.recordId}`;
+                const tu = await prisma.targetUnit.findUnique({
+                  where: { id: log.recordId },
+                  include: {
+                    barcodes: { where: { isActive: "Y" }, take: 1 },
+                    item: true,
+                  },
+                });
+                if (tu) {
+                  const bc = tu.barcodes[0]?.code ?? "";
+                  detail = `${bc ? bc + " " : ""}${tu.item?.name ?? ""} → ${tu.status}`;
+                } else {
+                  detail = `ID: ${log.recordId}`;
+                }
               }
             } catch { detail = `ID: ${log.recordId}`; }
 
           } else if (log.tableName === "chamber_slot") {
             try {
-              const cs = await prisma.chamberSlot.findUnique({
-                where: { id: log.recordId },
-                include: {
-                  location: true,
-                  targetUnit: {
-                    include: {
-                      barcodes: { where: { isActive: "Y" }, take: 1 },
-                      item: true,
-                    },
-                  },
-                },
-              });
-              if (cs) {
-                const loc  = cs.location?.name ?? "";
-                const bc   = cs.targetUnit?.barcodes[0]?.code ?? "";
-                const name = cs.targetUnit?.item?.name ?? "비어있음";
-                detail = `${loc} → ${bc ? bc + " " : ""}${name}`;
-              } else if (log.action === "UPDATE" && log.detail) {
+              if (log.action === "UPDATE" && log.detail) {
                 detail = log.detail;
               } else {
-                detail = `ID: ${log.recordId}`;
+                const cs = await prisma.chamberSlot.findUnique({
+                  where: { id: log.recordId },
+                  include: {
+                    location: true,
+                    targetUnit: {
+                      include: {
+                        barcodes: { where: { isActive: "Y" }, take: 1 },
+                        item: true,
+                      },
+                    },
+                  },
+                });
+                if (cs) {
+                  const loc  = cs.location?.name ?? "";
+                  const bc   = cs.targetUnit?.barcodes[0]?.code ?? "";
+                  const name = cs.targetUnit?.item?.name ?? "비어있음";
+                  detail = `${loc} → ${bc ? bc + " " : ""}${name}`;
+                } else {
+                  detail = `ID: ${log.recordId}`;
+                }
               }
             } catch { detail = `ID: ${log.recordId}`; }
           }
