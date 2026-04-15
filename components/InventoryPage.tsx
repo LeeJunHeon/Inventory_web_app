@@ -8,24 +8,7 @@ import TransactionModal     from "./TransactionModal";
 import EditTransactionModal from "./EditTransactionModal";
 import DatePicker           from "./DatePicker";
 import { useT } from "@/lib/i18n";
-
-// ── CSV 다운로드 헬퍼 ──────────────────────────────────
-function downloadCSV(data: InventoryItem[], filename: string, headers: string[]) {
-  const rows = data.map(i => [
-    i.txNo || "", i.id, i.date, i.type, i.category, i.code, i.name,
-    i.qty, i.price, i.amount, i.partner, i.userName ?? "", i.barcode, i.memo,
-  ]);
-  const csv = [headers, ...rows]
-    .map(row => row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
-    .join("\n");
-  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" }); // BOM for Korean Excel
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement("a");
-  a.href     = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
+import { exportCSV } from "@/lib/csvUtils";
 
 interface LocationOption { id: number; name: string; }
 
@@ -170,7 +153,10 @@ export default function InventoryPage({
     const now      = new Date();
     const dateStr  = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}`;
     const filename = `${t.inventory.csvFilename}_${dateStr}.csv`;
-    downloadCSV(items, filename, t.inventory.csvHeaders);
+    exportCSV(t.inventory.csvHeaders, items.map(i => [
+      i.txNo || "", i.id, i.date, i.type, i.category, i.code, i.name,
+      i.qty, i.price, i.amount, i.partner, i.userName ?? "", i.barcode, i.memo,
+    ]), filename);
   };
 
   const SortIcon = ({ field }: { field: string }) => {

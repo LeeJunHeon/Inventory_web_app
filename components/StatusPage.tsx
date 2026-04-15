@@ -5,17 +5,7 @@ import { Search, AlertTriangle, CheckCircle, AlertCircle, Loader2, Check, X, Che
 import { CATEGORY_COLORS } from "@/lib/data";
 import { useT } from "@/lib/i18n";
 import type { Messages } from "@/messages/ko";
-
-function exportCSV(headers: string[], rows: (string | number | null | undefined)[][], filename: string) {
-  const BOM = "\uFEFF";
-  const csv = BOM + [headers, ...rows]
-    .map(row => row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
-    .join("\n");
-  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
-  const a = document.createElement("a");
-  a.href = url; a.download = filename; a.click();
-  URL.revokeObjectURL(url);
-}
+import { exportCSV } from "@/lib/csvUtils";
 
 interface LocationOption { id: number; name: string; }
 

@@ -3,17 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Search, Plus, Edit, Trash2, Loader2, X, Download } from "lucide-react";
 import { useT } from "@/lib/i18n";
-
-function exportCSV(headers: string[], rows: (string | number | null | undefined)[][], filename: string) {
-  const BOM = "\uFEFF";
-  const csv = BOM + [headers, ...rows]
-    .map(row => row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
-    .join("\n");
-  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
-  const a = document.createElement("a");
-  a.href = url; a.download = filename; a.click();
-  URL.revokeObjectURL(url);
-}
+import { exportCSV } from "@/lib/csvUtils";
 
 interface Partner {
   id: number; name: string;

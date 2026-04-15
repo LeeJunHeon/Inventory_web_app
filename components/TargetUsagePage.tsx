@@ -5,17 +5,7 @@ import { Search, Save, AlertTriangle, Weight, MapPin, FileText, ArrowDown, Arrow
 import { TARGET_STATUS_LABELS, formatWeight } from "@/lib/data";
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
 import { useT } from "@/lib/i18n";
-
-function exportCSV(headers: string[], rows: (string | number | null | undefined)[][], filename: string) {
-  const BOM = "\uFEFF";
-  const csv = BOM + [headers, ...rows]
-    .map(row => row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
-    .join("\n");
-  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
-  const a = document.createElement("a");
-  a.href = url; a.download = filename; a.click();
-  URL.revokeObjectURL(url);
-}
+import { exportCSV } from "@/lib/csvUtils";
 
 interface TargetInfo { id: number; barcodeCode: string; itemCode: string; itemName: string; materialName: string; status: string; memo: string; }
 interface LogItem { id: number; targetId: number; timestamp: string; type: string; weight: number | null; location: string; locationId: number | null; reason: string; userName: string; barcodeCode: string; itemName: string; }
@@ -106,32 +96,6 @@ export default function TargetUsagePage() {
     );
   };
 
-  const handleDownloadCSV = () => {
-    if (!logs || logs.length === 0) return;
-    const BOM = "\uFEFF";
-    const headers = ["타임스탬프", "구분", "무게(g)", "품목명", "바코드", "위치", "사유", "작업자"];
-    const rows = logs.map((log) => [
-      log.timestamp   ?? "",
-      log.type        ?? "",
-      log.weight      ?? "",
-      log.itemName    ?? "",
-      log.barcodeCode ?? "",
-      log.location    ?? "",
-      log.reason      ?? "",
-      log.userName    ?? "",
-    ].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","));
-    const csv = BOM + [headers.join(","), ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    const filename = selectedTarget
-      ? `타겟사용현황_${selectedTarget.barcodeCode}_${new Date().toISOString().split("T")[0]}.csv`
-      : `타겟사용현황_전체_${new Date().toISOString().split("T")[0]}.csv`;
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
   const [page, setPage]                     = useState(1);
   const [loading, setLoading]               = useState(true);
   const [weight, setWeight]                 = useState("");

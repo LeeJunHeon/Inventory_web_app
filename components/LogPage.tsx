@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Download, ChevronLeft, ChevronRight } from "lucide-react";
 import DatePicker from "./DatePicker";
 import { useT } from "@/lib/i18n";
+import { exportCSV } from "@/lib/csvUtils";
 
 interface LogEntry {
   id: number;
@@ -110,25 +111,14 @@ export default function LogPage() {
   // CSV 내보내기
   const handleExport = () => {
     if (logs.length === 0) return;
-    const header = t.logs.csvHeaders;
-    const rows = logs.map(l => [
+    exportCSV(t.logs.csvHeaders, logs.map(l => [
       new Date(l.createdAt).toLocaleString("ko-KR"),
       l.userName,
       l.tableLabel,
       l.actionLabel,
       String(l.recordId),
       l.detail,
-    ]);
-    const csv = [header, ...rows]
-      .map(r => r.map(c => `"${c.replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href     = url;
-    a.download = `activity_log_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    ]), `activity_log_${new Date().toISOString().slice(0, 10)}.csv`);
   };
 
   const toggleAction = (v: string) => setAction(prev => prev === v ? "" : v);

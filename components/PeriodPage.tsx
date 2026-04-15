@@ -6,24 +6,7 @@ import { useSession } from "next-auth/react";
 import DatePicker from "./DatePicker";
 import { TYPE_COLORS, CATEGORY_COLORS, formatPrice, formatQty, InventoryItem } from "@/lib/data";
 import { useT } from "@/lib/i18n";
-
-// ── CSV 다운로드 헬퍼 ──────────────────────────────
-function downloadCSV(data: InventoryItem[], startDate: string, endDate: string, headers: string[], filename: string) {
-  const rows = data.map(i => [
-    i.date, i.type, i.category, i.code, i.name,
-    i.qty, i.price, i.amount, i.partner, i.handler, i.barcode, i.memo,
-  ]);
-  const csv = [headers, ...rows]
-    .map(row => row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
-    .join("\n");
-  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement("a");
-  a.href     = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
+import { exportCSV } from "@/lib/csvUtils";
 
 // 이번 달 1일 ~ 오늘 기본값
 function getDefaultDates() {
@@ -107,7 +90,10 @@ export default function PeriodPage() {
 
   const handleCSV = () => {
     if (items.length === 0) { alert(t.inventory.noExportData); return; }
-    downloadCSV(items, startDate, endDate, t.period.csvHeaders, `${t.period.csvFilename}_${startDate}_${endDate}.csv`);
+    exportCSV(t.period.csvHeaders, items.map(i => [
+      i.date, i.type, i.category, i.code, i.name,
+      i.qty, i.price, i.amount, i.partner, i.handler, i.barcode, i.memo,
+    ]), `${t.period.csvFilename}_${startDate}_${endDate}.csv`);
   };
 
   const summary = {
