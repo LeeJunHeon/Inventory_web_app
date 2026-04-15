@@ -1,8 +1,19 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Search, Plus, Edit, Trash2, Loader2, X } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Loader2, X, Download } from "lucide-react";
 import { useT } from "@/lib/i18n";
+
+function exportCSV(headers: string[], rows: (string | number | null | undefined)[][], filename: string) {
+  const BOM = "\uFEFF";
+  const csv = BOM + [headers, ...rows]
+    .map(row => row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
 
 interface Partner {
   id: number; name: string;
@@ -14,6 +25,17 @@ const EMPTY_FORM = { name: "", managerName: "", contact: "" };
 export default function PartnersPage() {
   const { t } = useT();
   const [partners, setPartners]     = useState<Partner[]>([]);
+  const handleExportCSV = () => {
+    if (!partners || partners.length === 0) return;
+    exportCSV(
+      ["거래처명", "담당자", "연락처", "이메일", "활성여부"],
+      partners.map((p: any) => [
+        p.name, p.managerName ?? "", p.contact ?? "",
+        p.email ?? "", p.isActive === true || p.isActive === "Y" ? "활성" : "비활성",
+      ]),
+      `거래처관리_${new Date().toISOString().split("T")[0]}.csv`
+    );
+  };
   const [loading, setLoading]       = useState(true);
   const [search, setSearch]     = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -99,6 +121,10 @@ export default function PartnersPage() {
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t.nav.partners}</h1>
           <p className="text-sm text-gray-500 mt-0.5">{t.partners.subtitle}</p>
         </div>
+        <button onClick={handleExportCSV} disabled={!partners || partners.length === 0}
+          className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <Download size={15} />CSV
+        </button>
         <button onClick={openCreate}
           className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-blue-500 rounded-xl hover:bg-blue-600 shadow-sm">
           <Plus size={16} />{t.partners.newPartner}
