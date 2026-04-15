@@ -23,20 +23,13 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
 
     const init = async () => {
       try {
+        // @zxing/library는 별도 import 금지 — 모듈 인스턴스 충돌로 스캔 불가
         const { BrowserMultiFormatReader } = await import("@zxing/browser");
-        const { BarcodeFormat, DecodeHintType } = await import("@zxing/library");
 
-        const hints = new Map();
-        hints.set(DecodeHintType.POSSIBLE_FORMATS, [
-          BarcodeFormat.QR_CODE,
-          BarcodeFormat.CODE_128,
-          BarcodeFormat.CODE_39,
-          BarcodeFormat.EAN_13,
-          BarcodeFormat.DATA_MATRIX,
-        ]);
-        hints.set(DecodeHintType.TRY_HARDER, true);
-
-        const reader = new BrowserMultiFormatReader(hints, 150);
+        // hints 없이 생성 — 기본값으로 QR/바코드 모든 포맷 인식
+        const reader = new BrowserMultiFormatReader(undefined, {
+          delayBetweenScanAttempts: 200,
+        });
 
         if (!videoRef.current || !mountedRef.current) return;
 
@@ -44,12 +37,10 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
           {
             video: {
               facingMode: { ideal: facingMode },
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
             },
           },
           videoRef.current,
-          (result, err) => {
+          (result, _err) => {
             if (result && mountedRef.current) {
               onDetected(result.getText());
             }
@@ -124,6 +115,7 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
             className="w-full"
             playsInline
             muted
+            autoPlay
           />
           <button
             onClick={switchCamera}
