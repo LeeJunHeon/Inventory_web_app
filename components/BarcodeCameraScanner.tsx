@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { X, CameraOff } from "lucide-react";
+import { X, CameraOff, SwitchCamera } from "lucide-react";
 
 interface Props {
   onDetected: (code: string) => void;
@@ -13,6 +13,8 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
   const mountedRef = useRef(true);
   const [error, setError] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
+  const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
+  const [switching, setSwitching] = useState(false);
   const divIdRef = useRef(`barcode-scanner-${Date.now()}`);
 
   useEffect(() => {
@@ -26,7 +28,6 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
         // 이전 인스턴스 완전 정리
         const existingEl = document.getElementById(divId);
         if (existingEl) {
-          // video 태그 명시적 정지 후 제거
           const videos = existingEl.querySelectorAll("video");
           videos.forEach(v => { v.srcObject = null; v.remove(); });
           existingEl.innerHTML = "";
@@ -35,23 +36,7 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
         const scanner = new Html5Qrcode(divId, { verbose: false } as any);
         scannerRef.current = scanner;
 
-        // 광각 제외 카메라 선택
-        let cameraConstraint: object = { facingMode: "environment" };
-        try {
-          const cameras = await Html5Qrcode.getCameras();
-          if (cameras.length > 0) {
-            const nonWide = cameras.filter(c =>
-              !c.label.toLowerCase().includes("wide") &&
-              !c.label.toLowerCase().includes("ultra")
-            );
-            const target = nonWide.length > 0
-              ? nonWide[nonWide.length - 1]
-              : cameras[cameras.length - 1];
-            cameraConstraint = { deviceId: { exact: target.id } };
-          }
-        } catch {
-          // getCameras 실패 시 facingMode 폴백 유지
-        }
+        const cameraConstraint = { facingMode };
 
         await scanner.start(
           cameraConstraint,
@@ -82,7 +67,6 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
         const el = document.getElementById(divId);
         if (el) {
           const videos = el.querySelectorAll("video");
-          // 첫 번째 video만 유지, 나머지 제거
           for (let i = 1; i < videos.length; i++) {
             videos[i].srcObject = null;
             videos[i].remove();
@@ -91,11 +75,13 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
 
         isRunningRef.current = true;
         setStarted(true);
+        setSwitching(false);
       } catch (err: any) {
         if (!mountedRef.current) return;
         const msg = err?.message ?? String(err);
         // AbortError는 video play 타이밍 이슈로 기능에 영향 없음 — 무시
         if (msg.includes("AbortError") || msg.includes("interrupted by a new load")) return;
+        setSwitching(false);
         if (msg.includes("NotAllowedError") || msg.includes("Permission")) {
           setError("카메라 권한이 거부되었습니다.\n브라우저 주소창 옆 카메라 아이콘을 클릭해 권한을 허용해주세요.");
         } else if (msg.includes("NotFoundError")) {
@@ -128,7 +114,25 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
         el.innerHTML = "";
       }
     };
-  }, []);
+  }, [facingMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const switchCamera = async () => {
+    if (!scannerRef.current || !isRunningRef.current) return;
+    setSwitching(true);
+    try {
+      isRunningRef.current = false;
+      await scannerRef.current.stop().catch(() => {});
+      const el = document.getElementById(divIdRef.current);
+      if (el) {
+        const videos = el.querySelectorAll("video");
+        videos.forEach((v: HTMLVideoElement) => { v.srcObject = null; v.remove(); });
+        el.innerHTML = "";
+      }
+      setFacingMode(prev => prev === "environment" ? "user" : "environment");
+    } catch {
+      setSwitching(false);
+    }
+  };
 
   if (error) {
     return (
@@ -156,13 +160,21 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
             className="w-full [&_button]:hidden [&_select]:hidden [&_img]:hidden [&_video:not(:first-of-type)]:hidden"
           />
           <button
+            onClick={switchCamera}
+            disabled={switching}
+            className="absolute top-2 left-2 z-10 p-1.5 bg-white/90 rounded-full shadow hover:bg-white disabled:opacity-50"
+            title={facingMode === "environment" ? "전면 카메라로 전환" : "후면 카메라로 전환"}
+          >
+            <SwitchCamera size={16} className="text-gray-700" />
+          </button>
+          <button
             onClick={onClose}
             className="absolute top-2 right-2 z-10 p-1.5 bg-white/90 rounded-full shadow hover:bg-white">
             <X size={16} className="text-gray-700" />
           </button>
           {started && (
             <p className="absolute bottom-0 left-0 right-0 text-center text-xs text-white/80 py-1.5 bg-black/50">
-              바코드를 사각형 안에 맞춰주세요
+              {switching ? "카메라 전환 중..." : `${facingMode === "environment" ? "후면" : "전면"} · 바코드를 사각형 안에 맞춰주세요`}
             </p>
           )}
         </div>
