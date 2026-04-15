@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       where.isActive = { not: "N" };
       let searchOR;
       if (searchType === "바코드") {
-        searchOR = [{ code: { contains: search, mode: "insensitive" as const } }];
+        searchOR = [{ code: { equals: search, mode: "insensitive" as const } }];
       } else if (searchType === "품목코드") {
         searchOR = [
           { item: { code: { contains: search, mode: "insensitive" as const } } },
