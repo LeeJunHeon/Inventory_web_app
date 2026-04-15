@@ -556,6 +556,14 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           </button>
         </div>
 
+        {error && (
+          <div className="mx-6 mt-3 flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-xl sticky top-0 z-10">
+            <span className="text-xs text-red-500 font-medium">⚠️ {error}</span>
+            <button onClick={() => setError("")} className="ml-auto text-red-400 hover:text-red-600">
+              <X size={14} />
+            </button>
+          </div>
+        )}
         <div className="p-6 space-y-5">
 
           {/* 구분 */}
@@ -668,14 +676,6 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
               />
             )}
             <p className="mt-1.5 text-xs text-gray-400">{t.tx.barcodeHint}</p>
-            {error && (
-              <div className="flex items-center gap-2 mt-1.5 px-3 py-2 bg-red-50 border border-red-200 rounded-xl">
-                <span className="text-xs text-red-500 font-medium">⚠️ {error}</span>
-                <button onClick={() => setError("")} className="ml-auto text-red-400 hover:text-red-600">
-                  <X size={14} />
-                </button>
-              </div>
-            )}
             {/* 타겟 ID 연결 안내 */}
             {targetUnitId && (
               <span className="inline-flex items-center mt-1.5 gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700">
