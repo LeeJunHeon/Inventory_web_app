@@ -395,7 +395,7 @@ export async function PUT(request: NextRequest) {
 
     const before = await prisma.inventoryTx.findUnique({
       where: { id: Number(id) },
-      include: { item: true, partner: true, location: true },
+      include: { item: true, partner: true, location: true, barcode: true },
     });
 
     const tx = await prisma.inventoryTx.update({
@@ -439,6 +439,18 @@ export async function PUT(request: NextRequest) {
           _changes.push(`비고: ${before.memo || "-"} → ${body.memo || "-"}`);
         if (body.unitPrice !== undefined && String(before.unitPrice ?? "") !== String(body.unitPrice ?? ""))
           _changes.push(`단가: ${before.unitPrice ?? "-"} → ${body.unitPrice ?? "-"}`);
+        if (body.currency !== undefined && (before.currency ?? "") !== (body.currency ?? ""))
+          _changes.push(`통화: ${before.currency ?? "-"} → ${body.currency ?? "-"}`);
+        if (body.refTxNo !== undefined && (before.refTxNo ?? "") !== (body.refTxNo ?? ""))
+          _changes.push(`참조입고: ${before.refTxNo ?? "-"} → ${body.refTxNo ?? "-"}`);
+        if (body.partnerId !== undefined && String(before.partnerId ?? "") !== String(body.partnerId)) {
+          const afterPartner = await prisma.partner.findUnique({ where: { id: Number(body.partnerId) } });
+          _changes.push(`거래처: ${before.partner?.name ?? "-"} → ${afterPartner?.name ?? String(body.partnerId)}`);
+        }
+        if (body.barcodeId !== undefined && String(before.barcodeId ?? "") !== String(body.barcodeId)) {
+          const afterBarcode = await prisma.barcode.findUnique({ where: { id: Number(body.barcodeId) } });
+          _changes.push(`바코드: ${before.barcode?.code ?? "-"} → ${afterBarcode?.code ?? String(body.barcodeId)}`);
+        }
       }
       const _detail = _changes.length > 0 ? _changes.join(" | ") : undefined;
 

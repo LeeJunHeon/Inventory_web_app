@@ -68,6 +68,7 @@ export default function LogPage() {
   const [action, setAction]       = useState("");
   const [tableName, setTableName] = useState("");
   const [users, setUsers]         = useState<UserOption[]>([]);
+  const [expandedLogId, setExpandedLogId] = useState<number | null>(null);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_LIMIT));
 
@@ -253,7 +254,7 @@ export default function LogPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {logs.map(log => (
-                    <tr key={log.id} className="hover:bg-gray-50/50 transition-colors">
+                    <tr key={log.id} className="hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => setExpandedLogId(prev => prev === log.id ? null : log.id)}>
                       <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
                         {new Date(log.createdAt).toLocaleString("ko-KR", {
                           year: "numeric", month: "2-digit", day: "2-digit",
@@ -275,7 +276,13 @@ export default function LogPage() {
                           {log.actionLabel}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-600 max-w-xs truncate">{log.detail || "-"}</td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {expandedLogId === log.id ? (
+                          <span className="text-xs whitespace-pre-wrap break-all">{log.detail || "-"}</span>
+                        ) : (
+                          <span className="text-xs max-w-xs truncate block">{log.detail || "-"}</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -308,7 +315,10 @@ export default function LogPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-800">{log.userName}</span>
-                    <span className="text-xs text-gray-500 truncate max-w-[60%] text-right">{log.detail || "-"}</span>
+                            <span
+                              className={`text-xs text-gray-500 text-right ${expandedLogId === log.id ? 'whitespace-pre-wrap break-all' : 'truncate max-w-[60%]'}`}
+                              onClick={() => setExpandedLogId(prev => prev === log.id ? null : log.id)}
+                            >{log.detail || "-"}</span>
                   </div>
                 </div>
               ))}
