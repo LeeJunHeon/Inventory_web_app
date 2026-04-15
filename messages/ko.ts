@@ -471,6 +471,7 @@ export const ko = {
     sfAll: "전체",
     sfInStock: "보유중",
     sfOutStock: "미보유",
+    sfShortage: "부족",
     searchPlaceholder: "품목코드, 품목명 검색...",
     catAll: "전체",
     catWafer: "웨이퍼",

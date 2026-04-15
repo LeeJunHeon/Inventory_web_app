@@ -473,6 +473,7 @@ export const en: Messages = {
     sfAll: "All",
     sfInStock: "In Stock",
     sfOutStock: "Out of Stock",
+    sfShortage: "Shortage",
     searchPlaceholder: "Search by code, name...",
     catAll: "All",
     catWafer: "Wafer",

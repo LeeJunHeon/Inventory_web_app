@@ -34,7 +34,7 @@ export async function GET() {
       select: { id: true, name: true, code: true, minStockQty: true },
     });
 
-    let shortageCount = 0;  // locationSummary 계산 후 allShortageItemIds.size로 교체
+    let shortageCount = 0;
     const shortageItems: {
       itemId: number;
       itemName: string;
@@ -148,9 +148,6 @@ export async function GET() {
 
       return { locationId: loc.id, locationName: loc.name, totalItems: locTotal, shortageCount: locShortage };
     }));
-
-    // 위치별 부족 품목 합집합으로 shortageCount 재설정
-    shortageCount = allShortageItemIds.size;
 
     // 최근 5건
     const recent = await prisma.inventoryTx.findMany({

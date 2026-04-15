@@ -29,7 +29,7 @@ const CATS = ["웨이퍼", "타겟", "가스", "기자재/소모품"];
 
 interface StatusPageProps {
   initialLocationId?: number | null;
-  initialStockFilter?: "전체" | "보유중" | "미보유";
+  initialStockFilter?: "전체" | "보유중" | "미보유" | "부족";
 }
 
 export default function StatusPage({ initialLocationId, initialStockFilter }: StatusPageProps) {
@@ -43,7 +43,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
   const [editValue, setEditValue]           = useState("");
   const [savingId, setSavingId]             = useState<number | null>(null);
   const [toast, setToast]                   = useState("");
-  const [stockFilter, setStockFilter]       = useState<"전체" | "보유중" | "미보유">(initialStockFilter ?? "전체");
+  const [stockFilter, setStockFilter]       = useState<"전체" | "보유중" | "미보유" | "부족">(initialStockFilter ?? "전체");
   const [sortField, setSortField]           = useState<"name" | "code" | "category" | "currentQty" | "requiredQty">("name");
   const [sortDir, setSortDir]               = useState<"asc" | "desc">("asc");
 
@@ -53,6 +53,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
     "전체": t.status.sfAll,
     "보유중": t.status.sfInStock,
     "미보유": t.status.sfOutStock,
+    "부족": t.status.sfShortage,
   };
   const CAT_LABEL_MAP: Record<string, string> = {
     "전체": t.status.catAll,
@@ -148,6 +149,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
   const filteredItems = filtered.filter(item => {
     if (stockFilter === "보유중") return item.currentQty > 0;
     if (stockFilter === "미보유") return item.currentQty === 0;
+    if (stockFilter === "부족") return item.requiredQty > 0 && item.currentQty < item.requiredQty;
     return true;
   });
 
@@ -227,20 +229,21 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
       )}
 
       {/* 보유상태 필터 */}
-      <div className="flex gap-2 mb-3">
-        {(["전체", "보유중", "미보유"] as const).map(f => (
+      <div className="flex gap-2 mb-3 flex-wrap">
+        {(["전체", "보유중", "미보유", "부족"] as const).map(f => (
           <button
             key={f}
             onClick={() => setStockFilter(f)}
             className={`px-3 py-1 rounded-full text-sm border transition-colors ${
               stockFilter === f
-                ? "bg-blue-600 text-white border-blue-600"
+                ? f === "부족" ? "bg-rose-500 text-white border-rose-500" : "bg-blue-600 text-white border-blue-600"
                 : "bg-white text-gray-600 border-gray-300 hover:border-blue-400"
             }`}
           >
             {STOCK_FILTER_LABEL[f]}
             {f === "보유중" && <span className="ml-1 text-xs opacity-75">({items.filter(i=>i.currentQty>0).length})</span>}
             {f === "미보유" && <span className="ml-1 text-xs opacity-75">({items.filter(i=>i.currentQty===0).length})</span>}
+            {f === "부족" && <span className="ml-1 text-xs opacity-75">({items.filter(i=>i.requiredQty>0&&i.currentQty<i.requiredQty).length})</span>}
           </button>
         ))}
       </div>

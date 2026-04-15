@@ -64,7 +64,7 @@ export default function Home() {
   const [showNotif, setShowNotif]     = useState(false);
   const [perms, setPerms]             = useState<Perms | null>(null);
   const [statusLocationId, setStatusLocationId] = useState<number | null>(null);
-  const [statusStockFilter, setStatusStockFilter] = useState<"전체" | "보유중" | "미보유">("전체");
+  const [statusStockFilter, setStatusStockFilter] = useState<"전체" | "보유중" | "미보유" | "부족">("전체");
   const [inventoryInitialFilter, setInventoryInitialFilter] = useState<{ type?: string; date?: string } | null>(null);
 
   const userName = session?.user?.name ?? "로딩중...";
@@ -262,7 +262,7 @@ export default function Home() {
                     </ul>
                     <div className="px-4 py-2.5 border-t border-gray-100">
                       <button
-                        onClick={() => { setPage("status"); setShowNotif(false); }}
+                        onClick={() => { setStatusLocationId(null); setStatusStockFilter("부족"); setPage("status"); setShowNotif(false); }}
                         className="w-full text-xs font-semibold text-blue-500 hover:text-blue-600 text-center py-1"
                       >
                         {t.header.viewAll}
