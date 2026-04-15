@@ -21,7 +21,9 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
   const [quantity, setQuantity]   = useState(String(item.qty));
   const [unitPrice, setUnitPrice] = useState(String(item.price));
   const [currency, setCurrency]   = useState(item.currency ?? "KRW");
-  const [exchangeRateAtEntry]     = useState(item.exchangeRateAtEntry);
+  const [exchangeRateAtEntry, setExchangeRateAtEntry] = useState<number | null>(
+    item.exchangeRateAtEntry ?? null
+  );
   const [memo, setMemo]           = useState(item.memo);
   const [locationId, setLocationId]           = useState<number>(item.locationId ?? 1);
   const [locationOptions, setLocationOptions] = useState<LocationOption[]>([]);
@@ -30,6 +32,18 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
   const [showInboundSelect, setShowInboundSelect] = useState(false);
   const [saving, setSaving]       = useState(false);
   const [error, setError]         = useState("");
+
+  // currency 변경 시 환율 자동 조회
+  useEffect(() => {
+    if (currency === "USD" && !exchangeRateAtEntry) {
+      fetch("/api/exchange-rate")
+        .then(r => r.json())
+        .then(data => setExchangeRateAtEntry(data.rate))
+        .catch(() => {});
+    } else if (currency === "KRW") {
+      setExchangeRateAtEntry(null);
+    }
+  }, [currency]); // exchangeRateAtEntry는 의존성 제외 (무한 루프 방지)
 
   // 마운트 시 위치 목록 로드
   useEffect(() => {
@@ -185,11 +199,21 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
                 className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
             </div>
           </div>
-          {currency === "USD" && exchangeRateAtEntry && (
+          {currency === "USD" && (
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">{t.tx.entryRate}</label>
-              <input readOnly value={`₩${exchangeRateAtEntry.toLocaleString()}`}
-                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                {t.tx.entryRate ?? "등록 환율"}
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={exchangeRateAtEntry ?? ""}
+                  onChange={e => setExchangeRateAtEntry(Number(e.target.value) || null)}
+                  placeholder="예: 1472"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+                <span className="text-sm text-gray-400 shrink-0">원</span>
+              </div>
             </div>
           )}
 
