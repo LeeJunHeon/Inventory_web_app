@@ -36,9 +36,7 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
         ]);
         hints.set(DecodeHintType.TRY_HARDER, true);
 
-        const reader = new BrowserMultiFormatReader(hints, {
-          delayBetweenScanAttempts: 150,
-        });
+        const reader = new BrowserMultiFormatReader(hints, 150);
 
         if (!videoRef.current || !mountedRef.current) return;
 
@@ -126,7 +124,6 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
             className="w-full"
             playsInline
             muted
-            autoPlay
           />
           <button
             onClick={switchCamera}
