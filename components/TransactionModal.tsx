@@ -8,6 +8,7 @@ import InboundSelectModal, { type InboundTx } from "./InboundSelectModal";
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
 import { useT } from "@/lib/i18n";
 import DatePicker           from "./DatePicker";
+import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -44,22 +45,7 @@ interface SelectedInbound {
   barcodeCode:  string;
 }
 
-const HANGUL_TO_ENG: Record<string, string> = {
-  'ㅂ':'q','ㅈ':'w','ㄷ':'e','ㄱ':'r','ㅅ':'t','ㅛ':'y','ㅕ':'u','ㅑ':'i','ㅐ':'o','ㅔ':'p',
-  'ㅁ':'a','ㄴ':'s','ㅇ':'d','ㄹ':'f','ㅎ':'g','ㅗ':'h','ㅓ':'j','ㅏ':'k','ㅣ':'l',
-  'ㅋ':'z','ㅌ':'x','ㅊ':'c','ㅍ':'v','ㅠ':'b','ㅜ':'n','ㅡ':'m',
-  'ㅃ':'Q','ㅉ':'W','ㄸ':'E','ㄲ':'R','ㅆ':'T','ㅒ':'O','ㅖ':'P',
-  'ㅘ':'hk','ㅙ':'ho','ㅚ':'hl','ㅝ':'nj','ㅞ':'np','ㅟ':'nl','ㅢ':'ml',
-};
 
-function normalizeBarcodeInput(str: string): string {
-  return str
-    .split('')
-    .map(ch => HANGUL_TO_ENG[ch] ?? ch)
-    .filter(ch => !/[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/.test(ch))
-    .join('')
-    .toUpperCase();
-}
 
 export default function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModalProps) {
   const { data: session } = useSession();
