@@ -214,7 +214,7 @@ export async function POST(request: NextRequest) {
         weight:       body.weight     ?? null,
         locationId:   body.locationId || null,
         reason:       body.reason     || null,
-        userId:       body.userId     || null,
+        userId:       sessionUserId ?? null,
       },
     });
 
