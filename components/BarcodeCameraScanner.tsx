@@ -10,11 +10,26 @@ interface Props {
 export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsRef = useRef<any>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const mountedRef = useRef(true);
   const [error, setError] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
   const [switching, setSwitching] = useState(false);
+
+  const stopAll = () => {
+    if (controlsRef.current) {
+      controlsRef.current.stop();
+      controlsRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t: MediaStreamTrack) => t.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
 
   useEffect(() => {
     mountedRef.current = true;
@@ -23,22 +38,48 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
 
     const init = async () => {
       try {
-        // @zxing/library는 별도 import 금지 — 모듈 인스턴스 충돌로 스캔 불가
-        const { BrowserMultiFormatReader } = await import("@zxing/browser");
+        if (!videoRef.current || !mountedRef.current) return;
 
-        // hints 없이 생성 — 기본값으로 QR/바코드 모든 포맷 인식
+        // 1. 스트림을 직접 획득 (ZXing에 맡기지 않음)
+        // — 모바일 카메라는 준비 시간이 필요하므로 우리가 직접 제어
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: facingMode } },
+        });
+        streamRef.current = stream;
+
+        if (!mountedRef.current) {
+          stream.getTracks().forEach(t => t.stop());
+          return;
+        }
+
+        // 2. 비디오에 스트림 연결 후 loadedmetadata 이벤트 대기
+        // — videoWidth/videoHeight 가 0인 상태에서 ZXing이 시작하는 것을 방지
+        const video = videoRef.current;
+        video.srcObject = stream;
+
+        await new Promise<void>(resolve => {
+          if (video.readyState >= 1) {
+            resolve();
+          } else {
+            video.addEventListener("loadedmetadata", () => resolve(), { once: true });
+          }
+        });
+
+        if (!mountedRef.current) {
+          stopAll();
+          return;
+        }
+
+        // 3. ZXing import (hints 없음 — 기본값으로 QR + 모든 바코드 포맷 인식)
+        const { BrowserMultiFormatReader } = await import("@zxing/browser");
         const reader = new BrowserMultiFormatReader(undefined, {
           delayBetweenScanAttempts: 200,
         });
 
-        if (!videoRef.current || !mountedRef.current) return;
-
-        const controls = await reader.decodeFromConstraints(
-          {
-            video: {
-              facingMode: { ideal: facingMode },
-            },
-          },
+        // 4. decodeFromConstraints 대신 decodeFromStream 사용
+        // — 이미 준비된 스트림을 넘기므로 타이밍 문제 없음
+        const controls = await reader.decodeFromStream(
+          stream,
           videoRef.current,
           (result, _err) => {
             if (result && mountedRef.current) {
@@ -49,6 +90,7 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
 
         if (!mountedRef.current) {
           controls.stop();
+          stopAll();
           return;
         }
 
@@ -73,20 +115,15 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
 
     return () => {
       mountedRef.current = false;
-      if (controlsRef.current) {
-        controlsRef.current.stop();
-        controlsRef.current = null;
-      }
+      stopAll();
     };
   }, [facingMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const switchCamera = async () => {
+  const switchCamera = () => {
     if (!started) return;
     setSwitching(true);
-    if (controlsRef.current) {
-      controlsRef.current.stop();
-      controlsRef.current = null;
-    }
+    setStarted(false);
+    stopAll();
     setFacingMode(prev => prev === "environment" ? "user" : "environment");
   };
 
