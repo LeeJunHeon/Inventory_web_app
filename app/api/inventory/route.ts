@@ -318,7 +318,7 @@ export async function POST(request: NextRequest) {
         partnerId:    finalPartnerId,
         txReasonId:   body.txReasonId   || null,
         locationId:   Number(body.locationId),
-        userId:       sessionUserId      ?? body.userId ?? null,
+        userId:       sessionUserId ?? null,
         memo:         body.memo         || null,
         targetUnitId: body.targetUnitId || null,
         barcodeId:    body.barcodeId    || null,

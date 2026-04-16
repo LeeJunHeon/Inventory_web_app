@@ -256,7 +256,7 @@ export async function POST(request: NextRequest) {
     }
 
     // activity_log 기록
-    const logUserId = sessionUserId ?? (body.userId ? Number(body.userId) : null);
+    const logUserId = sessionUserId ?? null;
     await logActivity(logUserId, "CREATE", "target_log", log.id);
 
     return NextResponse.json(log, { status: 201 });
