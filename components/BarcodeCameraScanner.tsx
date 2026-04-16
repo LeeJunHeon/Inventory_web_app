@@ -9,21 +9,22 @@ interface Props {
 
 export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const controlsRef = useRef<any>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const animFrameRef = useRef<number | null>(null);
   const mountedRef = useRef(true);
+  const detectedRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
   const [switching, setSwitching] = useState(false);
 
   const stopAll = () => {
-    if (controlsRef.current) {
-      controlsRef.current.stop();
-      controlsRef.current = null;
+    if (animFrameRef.current !== null) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
     }
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t: MediaStreamTrack) => t.stop());
+      streamRef.current.getTracks().forEach(t => t.stop());
       streamRef.current = null;
     }
     if (videoRef.current) {
@@ -33,6 +34,7 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
 
   useEffect(() => {
     mountedRef.current = true;
+    detectedRef.current = false;
     setError(null);
     setStarted(false);
 
@@ -40,63 +42,66 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
       try {
         if (!videoRef.current || !mountedRef.current) return;
 
-        // 1. 스트림을 직접 획득 (ZXing에 맡기지 않음)
-        // — 모바일 카메라는 준비 시간이 필요하므로 우리가 직접 제어
+        // 1. 카메라 스트림 직접 획득
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: { ideal: facingMode } },
         });
         streamRef.current = stream;
 
-        if (!mountedRef.current) {
-          stream.getTracks().forEach(t => t.stop());
-          return;
-        }
+        if (!mountedRef.current) { stopAll(); return; }
 
-        // 2. 비디오에 스트림 연결 후 loadedmetadata 이벤트 대기
-        // — videoWidth/videoHeight 가 0인 상태에서 ZXing이 시작하는 것을 방지
+        // 2. video에 스트림 연결 — ZXing에게 video 관리 맡기지 않음
         const video = videoRef.current;
         video.srcObject = stream;
 
-        await new Promise<void>(resolve => {
-          if (video.readyState >= 1) {
+        // 3. 실제로 프레임이 나올 때까지 대기 (playing 이벤트)
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error("camera timeout")), 10000);
+          video.addEventListener("playing", () => {
+            clearTimeout(timeout);
             resolve();
-          } else {
-            video.addEventListener("loadedmetadata", () => resolve(), { once: true });
-          }
+          }, { once: true });
+          video.play().catch(reject);
         });
 
-        if (!mountedRef.current) {
-          stopAll();
-          return;
-        }
+        if (!mountedRef.current) { stopAll(); return; }
 
-        // 3. ZXing import (hints 없음 — 기본값으로 QR + 모든 바코드 포맷 인식)
+        // 4. ZXing은 canvas 디코딩만 담당 — video 관리 일절 없음
         const { BrowserMultiFormatReader } = await import("@zxing/browser");
-        const reader = new BrowserMultiFormatReader(undefined, {
-          delayBetweenScanAttempts: 200,
-        });
+        const reader = new BrowserMultiFormatReader();
 
-        // 4. decodeFromConstraints 대신 decodeFromStream 사용
-        // — 이미 준비된 스트림을 넘기므로 타이밍 문제 없음
-        const controls = await reader.decodeFromStream(
-          stream,
-          videoRef.current,
-          (result, _err) => {
-            if (result && mountedRef.current) {
-              onDetected(result.getText());
-            }
-          }
-        );
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
 
-        if (!mountedRef.current) {
-          controls.stop();
-          stopAll();
-          return;
-        }
-
-        controlsRef.current = controls;
         setStarted(true);
         setSwitching(false);
+
+        // 5. requestAnimationFrame 루프로 매 프레임 스캔
+        const scan = () => {
+          if (!mountedRef.current || detectedRef.current) return;
+
+          // video가 실제 프레임을 출력 중일 때만 디코딩 시도
+          if (video.readyState >= 2 && video.videoWidth > 0) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            try {
+              const result = reader.decodeFromCanvas(canvas);
+              if (result && mountedRef.current && !detectedRef.current) {
+                detectedRef.current = true;
+                onDetected(result.getText());
+                return; // 인식 후 루프 종료
+              }
+            } catch {
+              // NotFoundException — 이번 프레임에 코드 없음, 정상
+            }
+          }
+
+          animFrameRef.current = requestAnimationFrame(scan);
+        };
+
+        animFrameRef.current = requestAnimationFrame(scan);
       } catch (err: any) {
         if (!mountedRef.current) return;
         setSwitching(false);
@@ -123,6 +128,7 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
     if (!started) return;
     setSwitching(true);
     setStarted(false);
+    detectedRef.current = false;
     stopAll();
     setFacingMode(prev => prev === "environment" ? "user" : "environment");
   };
@@ -152,7 +158,6 @@ export default function BarcodeCameraScanner({ onDetected, onClose }: Props) {
             className="w-full"
             playsInline
             muted
-            autoPlay
           />
           <button
             onClick={switchCamera}
