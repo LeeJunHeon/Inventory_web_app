@@ -81,9 +81,9 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          date,
-          type,
-          quantity:   Number(quantity),
+          txDate:   date,
+          txType:   type,
+          qty:      Number(quantity),
           unitPrice:  Number(unitPrice) || 0,
           amount,
           memo,

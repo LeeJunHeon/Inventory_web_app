@@ -228,6 +228,36 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 타겟 입고 시 바코드 필수 + targetUnitId 연결 검증
+    if (body.txType === "입고") {
+      const item = await prisma.item.findUnique({
+        where: { id: Number(body.itemId) },
+        include: { category: true },
+      });
+      if (item?.category?.name === "타겟") {
+        // 케이스 A: 바코드 없이 타겟 입고 시도
+        if (!body.barcodeId) {
+          return NextResponse.json(
+            { error: "타겟 품목은 반드시 바코드를 스캔하여 입고해야 합니다." },
+            { status: 400 }
+          );
+        }
+        // 케이스 B: 바코드는 있지만 targetUnitId가 없는 경우
+        if (!body.targetUnitId) {
+          const barcode = await prisma.barcode.findUnique({
+            where: { id: Number(body.barcodeId) },
+            select: { targetUnitId: true, code: true },
+          });
+          if (!barcode?.targetUnitId) {
+            return NextResponse.json(
+              { error: `바코드(${barcode?.code})에 연결된 타겟 정보가 없습니다. 바코드를 다시 생성해주세요.` },
+              { status: 400 }
+            );
+          }
+        }
+      }
+    }
+
     // 출고/불출 수량 초과 방지
     if ((body.txType === "출고" || body.txType === "불출") && body.refTxNo) {
       const refInbound = await prisma.inventoryTx.findUnique({
