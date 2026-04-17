@@ -92,6 +92,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const [locationOptions, setLocationOptions] = useState<LocationOption[]>([]);
   const [locationId, setLocationId]           = useState<number>(1);
   const [showItemSelector, setShowItemSelector] = useState(false);
+  const [itemSelectorSearch, setItemSelectorSearch] = useState("");
   const selectorRef = useRef<HTMLDivElement>(null);
   const barcodeInputRef = useRef<HTMLInputElement>(null);
   const inboundModalBarcodeId = useRef<number | null>(null);
@@ -177,7 +178,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       setLocationId(1);
       setCurrency("KRW");
       setExchangeRateAtEntry(null);
-      setMemo(""); setError(""); setShowItemSelector(false);
+      setMemo(""); setError(""); setShowItemSelector(false); setItemSelectorSearch("");
       setShowBarcodeSelector(false); setBarcodeSelectorSearch(""); setBarcodeSelectorList([]);
       setWaferSpec(null);
       setShowInboundSelect(false); setSelectedInbound(null);
@@ -767,17 +768,33 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                   <input value={itemCode} readOnly placeholder={t.barcode.autoFill}
                     className="flex-1 min-w-0 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
                   <button
-                    onClick={() => setShowItemSelector(v => !v)}
+                    onClick={() => { setItemSelectorSearch(""); setShowItemSelector(v => !v); }}
                     className="px-3 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-medium hover:bg-blue-600 transition-colors whitespace-nowrap">
                     {t.barcode.selectBtn}
                   </button>
                 </div>
                 {showItemSelector && (
-                  <div className="absolute left-0 right-0 z-20 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-52 overflow-y-auto">
-                    {itemOptions.length === 0 ? (
-                      <p className="px-4 py-3 text-sm text-gray-400">{t.tx.noItemsInCat}</p>
-                    ) : (
-                      itemOptions.map(opt => (
+                  <div className="absolute left-0 right-0 z-20 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-64 flex flex-col">
+                    <div className="px-3 py-2 border-b border-gray-100">
+                      <input
+                        type="text"
+                        placeholder="품목코드 또는 품목명 검색"
+                        value={itemSelectorSearch}
+                        onChange={e => setItemSelectorSearch(e.target.value)}
+                        autoFocus
+                        className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div className="overflow-y-auto">
+                    {(() => {
+                      const q = itemSelectorSearch.toLowerCase();
+                      const filtered = itemOptions
+                        .filter(opt => !q || opt.code.toLowerCase().includes(q) || opt.name.toLowerCase().includes(q))
+                        .sort((a, b) => a.code.localeCompare(b.code));
+                      if (filtered.length === 0) return (
+                        <p className="px-4 py-3 text-sm text-gray-400">{itemSelectorSearch ? "검색 결과가 없습니다" : t.tx.noItemsInCat}</p>
+                      );
+                      return filtered.map(opt => (
                         <button key={opt.id}
                           onClick={() => {
                             cancelCreatedBarcode();
@@ -806,8 +823,9 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                             )}
                           </div>
                         </button>
-                      ))
-                    )}
+                      ));
+                    })()}
+                    </div>
                   </div>
                 )}
               </div>
