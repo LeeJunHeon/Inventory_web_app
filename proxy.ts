@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Edge Runtime용 — Prisma 없는 authConfig만 사용 (성능 유지)
+// Prisma가 포함된 auth.ts는 Edge Runtime에서 실행 불가
 const { auth } = NextAuth(authConfig);
 
 export default auth((req: NextRequest & { auth: any }) => {
@@ -19,7 +20,7 @@ export default auth((req: NextRequest & { auth: any }) => {
     return NextResponse.next();
   }
 
-  // /api/* 전체: 미인증 시 401 JSON 반환
+  // /api/* 전체: 미인증 시 401 JSON 반환 (API 클라이언트 대응)
   if (pathname.startsWith("/api/")) {
     if (!req.auth?.user) {
       return NextResponse.json(
@@ -31,7 +32,7 @@ export default auth((req: NextRequest & { auth: any }) => {
   }
 
   // 페이지 라우트: 미인증 시 포털 로그인 페이지로 리다이렉트
-  // (로그인은 포털에서 담당, 재고관리 자체 /login 페이지 없음)
+  // (재고관리 자체 /login 페이지는 없음, 로그인은 포털에서 담당)
   if (!req.auth?.user) {
     return NextResponse.redirect(
       new URL("/login", "https://vanam.synology.me")
