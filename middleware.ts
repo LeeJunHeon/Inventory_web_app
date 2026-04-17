@@ -30,14 +30,12 @@ export default auth((req: NextRequest & { auth: any }) => {
     return NextResponse.next();
   }
 
-  // 페이지 라우트: /login 은 항상 허용
-  if (pathname.startsWith("/login")) {
-    return NextResponse.next();
-  }
-
-  // 페이지 라우트: 미인증 시 /login 으로 리다이렉트
+  // 페이지 라우트: 미인증 시 포털 로그인 페이지로 리다이렉트
+  // (로그인은 포털에서 담당, 재고관리 자체 /login 페이지 없음)
   if (!req.auth?.user) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    return NextResponse.redirect(
+      new URL("/login", "https://vanam.synology.me")
+    );
   }
 
   return NextResponse.next();
@@ -46,6 +44,6 @@ export default auth((req: NextRequest & { auth: any }) => {
 export const config = {
   matcher: [
     "/api/((?!auth).*)",
-    "/((?!_next/static|_next/image|favicon.ico|login).*)",
+    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };
