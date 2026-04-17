@@ -242,7 +242,7 @@ export async function POST(request: NextRequest) {
             const n = Number(t.txNo);
             return !isNaN(n) && n > max ? n : max;
           }, 0);
-          const newTxNo = String(lastNo + 1).padStart(8, "0");
+          const newTxNo = String(lastNo + 1);
           await tx.inventoryTx.create({
             data: {
               txNo: newTxNo,
