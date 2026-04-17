@@ -14,6 +14,7 @@ services:
       - "5433:5432"
     networks:
       - internal
+      - vanam-db-net
 
   nextjs:
     build:
@@ -38,6 +39,8 @@ services:
 networks:
   internal:
     driver: bridge
+  vanam-db-net:
+    external: true
 
 volumes:
   postgres_data:
