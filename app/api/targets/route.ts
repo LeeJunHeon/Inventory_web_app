@@ -218,6 +218,49 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // 미사용 → 사용중 자동 상태 전이 + inventory_tx 자동 기록
+    if (isMeasure) {
+      const tu = await prisma.targetUnit.findUnique({
+        where: { id: body.targetUnitId },
+        select: { status: true, itemId: true },
+      });
+      if (tu?.status === "미사용") {
+        await prisma.$transaction(async (tx) => {
+          await tx.targetUnit.update({
+            where: { id: body.targetUnitId },
+            data: { status: "사용중" },
+          });
+          const bc = await tx.barcode.findFirst({
+            where: { targetUnitId: body.targetUnitId, isActive: "Y" },
+            select: { id: true },
+          });
+          const allTxNos = await tx.inventoryTx.findMany({
+            where: { txNo: { not: null } },
+            select: { txNo: true },
+          });
+          const lastNo = allTxNos.reduce((max, t) => {
+            const n = Number(t.txNo);
+            return !isNaN(n) && n > max ? n : max;
+          }, 0);
+          const newTxNo = String(lastNo + 1).padStart(8, "0");
+          await tx.inventoryTx.create({
+            data: {
+              txNo: newTxNo,
+              txType: "사용중",
+              txDate: new Date(),
+              itemId: tu.itemId!,
+              targetUnitId: body.targetUnitId,
+              barcodeId: bc?.id ?? null,
+              locationId: body.locationId ? Number(body.locationId) : 1,
+              qty: 1,
+              userId: sessionUserId,
+              memo: "타겟 사용 시작 - 자동 기록",
+            },
+          });
+        });
+      }
+    }
+
     // chamber_slot 자동 업데이트
     const STORAGE_IDS_SLOT = [3, 4];
     const CHAMBER_IDS_SLOT = [5, 6, 7, 8, 9, 10];
@@ -247,7 +290,7 @@ export async function POST(request: NextRequest) {
     if (isDispose) {
       await prisma.targetUnit.update({
         where: { id: body.targetUnitId },
-        data: { status: "disposed", disposedAt: new Date() },
+        data: { status: "폐기", disposedAt: new Date() },
       });
       await prisma.barcode.updateMany({
         where: { targetUnitId: body.targetUnitId },

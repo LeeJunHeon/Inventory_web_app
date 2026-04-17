@@ -149,7 +149,7 @@ model TargetSpec {
 model TargetUnit {
   id         Int      @id @default(autoincrement())
   itemId     Int      @map("item_id")
-  status     String   @default("available") // available | using | disposed
+  status     String   @default("미사용") // 미사용 | 사용중 | 폐기 | 판매완료
   createdAt  DateTime @default(now()) @map("created_at") @db.Date
   disposedAt DateTime? @map("disposed_at") @db.Date
   note       String?

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Search, AlertTriangle, CheckCircle, AlertCircle, Loader2, Check, X, ChevronUp, ChevronDown, ChevronsUpDown, Download } from "lucide-react";
 import { CATEGORY_COLORS } from "@/lib/data";
+import TargetStatusSection from "@/components/TargetStatusSection";
 import { useT } from "@/lib/i18n";
 import type { Messages } from "@/messages/ko";
 import { exportCSV } from "@/lib/csvUtils";
@@ -270,6 +271,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
       </div>
 
       {CATS.filter((cat) => selectedCategory === "전체" || selectedCategory === cat).map((cat) => {
+        if (cat === "타겟") return <TargetStatusSection key={cat} />;
         const catItems = sortedItems.filter((i) => i.category === cat);
         if (catItems.length === 0 && search) return null;
         return (

@@ -29,12 +29,12 @@ export async function PUT(
       data: {
         ...(status !== undefined && { status }),
         ...(note   !== undefined && { note }),
-        ...(status === "disposed" && { disposedAt: new Date() }),
+        ...(status === "폐기" && { disposedAt: new Date() }),
       },
     });
 
     // 폐기 처리 시 연결된 바코드 비활성화
-    if (status === "disposed") {
+    if (status === "폐기") {
       await prisma.barcode.updateMany({
         where: { targetUnitId: id },
         data:  { isActive: "N" },

@@ -291,7 +291,7 @@ export default function TargetUsagePage() {
       const res = await fetch(`/api/targets/${selectedTarget.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "disposed" }),
+        body: JSON.stringify({ status: "폐기" }),
       });
       if (!res.ok) { const e = await res.json(); showToast(e.error || t.target.disposeFailed); return; }
       // 폐기 로그도 함께 기록
@@ -529,7 +529,7 @@ export default function TargetUsagePage() {
                               itemName: slot.itemName ?? "",
                               itemCode: slot.itemCode ?? "",
                               materialCode: slot.materialCode ?? "",
-                              status: "using",
+                              status: "사용중",
                             }
                           : null
                       );
@@ -678,12 +678,14 @@ export default function TargetUsagePage() {
                       </p>
                     </div>
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                      tu.status === "available" ? "bg-emerald-100 text-emerald-700" :
-                      tu.status === "using"     ? "bg-blue-100 text-blue-700" :
+                      tu.status === "미사용" ? "bg-emerald-100 text-emerald-700" :
+                      tu.status === "사용중" ? "bg-blue-100 text-blue-700" :
+                      tu.status === "판매완료" ? "bg-purple-100 text-purple-700" :
                       "bg-gray-100 text-gray-500"
                     }`}>
-                      {tu.status === "available" ? t.target.statusAvailable :
-                       tu.status === "using"     ? t.target.statusUsing : t.target.statusDisposed}
+                      {tu.status === "미사용" ? t.target.statusAvailable :
+                       tu.status === "사용중" ? t.target.statusUsing :
+                       tu.status === "판매완료" ? "판매완료" : t.target.statusDisposed}
                     </span>
                   </div>
                 </button>
@@ -728,7 +730,7 @@ export default function TargetUsagePage() {
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 disabled:opacity-60">
                   <Save size={16} />{saving ? t.common.saving : t.target.saveInfo}
                 </button>
-                {selectedTarget.status !== "disposed" && (
+                {selectedTarget.status !== "폐기" && (
                   <button onClick={handleDispose} disabled={saving}
                     className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-60 transition-all ${
                       disposeConfirm

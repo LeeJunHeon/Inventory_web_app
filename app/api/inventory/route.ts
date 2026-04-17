@@ -358,6 +358,26 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // 출고 시: 타겟이 미사용 상태이면 판매완료로 자동 전이
+    if (body.txType === "출고" && body.barcodeId) {
+      const bc = await prisma.barcode.findUnique({
+        where: { id: Number(body.barcodeId) },
+        select: { targetUnitId: true },
+      });
+      if (bc?.targetUnitId) {
+        const tu = await prisma.targetUnit.findUnique({
+          where: { id: bc.targetUnitId },
+          select: { status: true },
+        });
+        if (tu?.status === "미사용") {
+          await prisma.targetUnit.update({
+            where: { id: bc.targetUnitId },
+            data: { status: "판매완료" },
+          });
+        }
+      }
+    }
+
     // activity_log 기록
     await logActivity(sessionUserId, "CREATE", "inventory_tx", tx.id);
 
