@@ -138,6 +138,8 @@ export async function GET(request: NextRequest) {
       refTxNo:    tx.refTxNo    ?? null,
       itemId:     tx.itemId,
       barcodeId:  tx.barcodeId  ?? null,
+      partnerId:  tx.partnerId  ?? null,
+      txReasonId: tx.txReasonId ?? null,
       txReason:   tx.txReason?.name  || "",
       userName:   tx.user?.name      ?? null,
       itemSpec:   buildItemSpec(tx.item.waferSpec),

@@ -30,6 +30,10 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
   const [refTxNo, setRefTxNo]                 = useState<string | null>(item.refTxNo ?? null);
   const [selectedInbound, setSelectedInbound] = useState<InboundTx | null>(null);
   const [showInboundSelect, setShowInboundSelect] = useState(false);
+  const [partnerId, setPartnerId]   = useState<number | null>(item.partnerId ?? null);
+  const [txReasonId, setTxReasonId] = useState<number | null>(item.txReasonId ?? null);
+  const [partners, setPartners]     = useState<{ id: number; name: string }[]>([]);
+  const [txReasons, setTxReasons]   = useState<{ id: number; name: string }[]>([]);
   const [saving, setSaving]       = useState(false);
   const [error, setError]         = useState("");
 
@@ -45,7 +49,7 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
     }
   }, [currency]); // exchangeRateAtEntry는 의존성 제외 (무한 루프 방지)
 
-  // 마운트 시 위치 목록 로드
+  // 마운트 시 위치/거래처/불출유형 목록 로드
   useEffect(() => {
     fetch("/api/locations")
       .then(r => r.json()).then((locs: LocationOption[]) => {
@@ -53,6 +57,10 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
         const txLocs = locs.filter(l => l.id === 1 || l.id === 2);
         setLocationOptions(txLocs.length > 0 ? txLocs : locs);
       }).catch(console.error);
+    fetch("/api/partners")
+      .then(r => r.json()).then(setPartners).catch(console.error);
+    fetch("/api/tx-reasons")
+      .then(r => r.json()).then(setTxReasons).catch(console.error);
   }, []);
 
   // 위치 변경 시 참조입고건 초기화
@@ -89,6 +97,8 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
           memo,
           locationId,
           refTxNo:    refTxNo ?? null,
+          partnerId:  partnerId ?? null,
+          txReasonId: txReasonId ?? null,
           currency,
           exchangeRateAtEntry: exchangeRateAtEntry ?? null,
         }),
@@ -229,6 +239,38 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
               ))}
             </select>
           </div>
+
+          {/* 거래처 — 입고 또는 출고일 때만 표시 */}
+          {(type === "입고" || type === "출고") && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">거래처</label>
+              <select
+                value={partnerId ?? ""}
+                onChange={e => setPartnerId(e.target.value ? Number(e.target.value) : null)}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                <option value="">선택 안 함</option>
+                {partners.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* 불출유형 — 불출일 때만 표시 */}
+          {type === "불출" && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">불출유형</label>
+              <select
+                value={txReasonId ?? ""}
+                onChange={e => setTxReasonId(e.target.value ? Number(e.target.value) : null)}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                <option value="">선택 안 함</option>
+                {txReasons.map(r => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* 참조 입고건 — 출고/불출일 때만 표시 */}
           {(type === "출고" || type === "불출") && (
