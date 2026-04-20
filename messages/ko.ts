@@ -37,7 +37,7 @@ export const ko = {
     admin: "관리자 설정",
     logs: "활동 로그",
     master: "MASTER",
-    inventorySystem: "재고관리",
+    inventorySystem: "재고 관리",
     inventorySystemSub: "Inventory System",
   },
   header: {

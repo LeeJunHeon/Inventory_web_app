@@ -4,8 +4,8 @@ import Providers from "@/components/Providers";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "재고관리 시스템",
-  description: "통합 재고관리 웹앱",
+  title: "재고 관리 시스템",
+  description: "통합 재고 관리 웹앱",
 };
 
 export default function RootLayout({
