@@ -173,7 +173,13 @@ export default function Sidebar({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-900 truncate">{userName}</p>
-              <p className="text-[10px] text-gray-400">{userRole}</p>
+              <p className="text-[10px] text-gray-400">
+                {userRole === "admin"
+                  ? t.admin.roleAdmin
+                  : userRole === "employee"
+                  ? t.admin.roleEmployee
+                  : userRole}
+              </p>
             </div>
             <button
               onClick={() => setShowLogoutConfirm(true)}
