@@ -35,6 +35,7 @@ services:
       - postgres
     networks:
       - internal
+      - vanam-db-net
 
 networks:
   internal:
