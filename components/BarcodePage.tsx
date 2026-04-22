@@ -399,9 +399,9 @@ export default function BarcodePage() {
         <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 space-y-4">
           <h2 className="font-bold text-blue-900">{t.barcode.createTitle}</h2>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap lg:gap-3 gap-3">
             {/* 품목군 */}
-            <div className="flex-1 min-w-[150px]">
+            <div className="sm:flex-1 sm:min-w-[150px] w-full">
               <label className="block text-xs font-semibold text-blue-700 mb-1">{t.barcode.catLabel}</label>
               <select value={createCategory} onChange={e => setCreateCategory(e.target.value)}
                 className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none">
@@ -412,19 +412,19 @@ export default function BarcodePage() {
             </div>
 
             {/* 품목코드 + 선택 */}
-            <div className="flex-1 min-w-[160px]">
+            <div className="sm:flex-1 sm:min-w-[160px] w-full">
               <label className="block text-xs font-semibold text-blue-700 mb-1">{t.barcode.itemCodeLabel}</label>
               <div className="relative" ref={itemDropRef}>
                 <div className="flex gap-1">
                   <input value={createItemCode} readOnly placeholder={t.barcode.autoFill}
-                    className="flex-1 px-3 py-2.5 bg-white border border-blue-200 rounded-xl text-sm" />
+                    className="flex-1 min-w-0 px-3 py-2.5 bg-white border border-blue-200 rounded-xl text-sm" />
                   <button onClick={() => setShowItemDrop(v => !v)}
-                    className="px-3 py-2.5 bg-blue-500 text-white rounded-xl text-xs font-semibold hover:bg-blue-600">
+                    className="shrink-0 px-3 py-2.5 bg-blue-500 text-white rounded-xl text-xs font-semibold hover:bg-blue-600 whitespace-nowrap">
                     {t.barcode.selectBtn}
                   </button>
                 </div>
                 {showItemDrop && (
-                  <div className="absolute left-0 right-0 z-20 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                  <div className="absolute left-0 right-0 z-[100] mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
                     {itemOptions.length === 0 ? (
                       <p className="px-3 py-2.5 text-sm text-gray-400">{t.barcode.noItems}</p>
                     ) : itemOptions.map(opt => (
@@ -443,7 +443,7 @@ export default function BarcodePage() {
 
             {/* 품목명 자동 입력 (타겟 외에만 표시) */}
             {createCategory !== "타겟" && (
-              <div className="flex-1 min-w-[150px]">
+              <div className="sm:flex-1 sm:min-w-[150px] w-full">
                 <label className="block text-xs font-semibold text-blue-700 mb-1">{t.barcode.itemNameLabel}</label>
                 <input value={createItemName} readOnly placeholder={t.barcode.autoFill}
                   className="w-full px-3 py-2.5 bg-white border border-blue-200 rounded-xl text-sm" />
@@ -451,7 +451,7 @@ export default function BarcodePage() {
             )}
 
             {/* 메모 (모든 카테고리) */}
-            <div className="flex-1 min-w-[160px]">
+            <div className="sm:flex-1 sm:min-w-[160px] w-full">
               <label className="block text-xs font-semibold text-blue-700 mb-1">
                 {t.barcode.memoLabel} {createCategory !== "타겟" && <span className="text-blue-400 font-normal">{t.barcode.memoOptional}</span>}
               </label>
@@ -461,7 +461,7 @@ export default function BarcodePage() {
             </div>
 
             {/* 버튼 */}
-            <div className="flex items-end">
+            <div className="flex items-end w-full sm:w-auto">
               <button onClick={handleCreate} disabled={creating}
                 className="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:opacity-60 whitespace-nowrap">
                 <QrCode size={16} />{creating ? t.barcode.creating : t.barcode.createSave}

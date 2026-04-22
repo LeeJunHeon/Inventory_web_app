@@ -259,7 +259,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
             <input type="text" placeholder={t.status.searchPlaceholder} value={search} onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
           </div>
-          <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1">
+          <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1 overflow-x-auto">
             {["전체", ...CATS].map((cat) => (
               <button key={cat} onClick={() => setSelectedCategory(cat)}
                 className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${selectedCategory === cat ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}>

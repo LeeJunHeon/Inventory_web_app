@@ -252,7 +252,7 @@ export default function InventoryPage({
               ))}
             </select>
           </div>
-          <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1">
+          <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1 overflow-x-auto">
             {TYPES.map((type) => (
               <button key={type} onClick={() => { setTypeFilter(type); setPage(1); }}
                 className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${typeFilter === type ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}>

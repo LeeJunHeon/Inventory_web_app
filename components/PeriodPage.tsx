@@ -180,7 +180,7 @@ export default function PeriodPage() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1.5">{t.period.typeLabel}</label>
-              <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1">
+              <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1 overflow-x-auto">
                 {["전체", "입고", "출고", "불출"].map(type => (
                   <button
                     key={type}
