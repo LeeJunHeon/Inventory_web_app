@@ -11,12 +11,15 @@ import { exportCSV } from "@/lib/csvUtils";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
 
 interface PortSlot {
+  id: number;
   portNumber: number;
   canisterId: number | null;
   canisterCode: string | null;
   materialName: string | null;
   remainPercent: number | null;
   equipmentName: string;
+  loadedAt: string | null;
+  note: string | null;
 }
 
 interface CanisterInfo {
@@ -54,19 +57,9 @@ const PAGE_LIMIT = 50;
 export default function AldPrecursorPage() {
   const { t } = useT();
 
-  // ─── 대시보드 포트 데이터 (추후 API로 교체) ───
-  const [ncdPorts, setNcdPorts] = useState<PortSlot[]>([
-    { portNumber: 1, canisterId: null, canisterCode: null, materialName: null, remainPercent: null, equipmentName: "NCD-1" },
-    { portNumber: 2, canisterId: null, canisterCode: null, materialName: null, remainPercent: null, equipmentName: "NCD-1" },
-    { portNumber: 3, canisterId: null, canisterCode: null, materialName: null, remainPercent: null, equipmentName: "NCD-1" },
-  ]);
-  const [rayvacPorts, setRayvacPorts] = useState<PortSlot[]>([
-    { portNumber: 1, canisterId: null, canisterCode: null, materialName: null, remainPercent: null, equipmentName: "Rayvac-1" },
-    { portNumber: 2, canisterId: null, canisterCode: null, materialName: null, remainPercent: null, equipmentName: "Rayvac-1" },
-    { portNumber: 3, canisterId: null, canisterCode: null, materialName: null, remainPercent: null, equipmentName: "Rayvac-1" },
-    { portNumber: 4, canisterId: null, canisterCode: null, materialName: null, remainPercent: null, equipmentName: "Rayvac-1" },
-    { portNumber: 5, canisterId: null, canisterCode: null, materialName: null, remainPercent: null, equipmentName: "Rayvac-1" },
-  ]);
+  // ─── 대시보드 포트 데이터 ───
+  const [ncdPorts, setNcdPorts]       = useState<PortSlot[]>([]);
+  const [rayvacPorts, setRayvacPorts] = useState<PortSlot[]>([]);
 
   // ─── 포트 슬롯 편집 ───
   const [editingPort, setEditingPort] = useState<PortSlot | null>(null);
@@ -107,6 +100,7 @@ export default function AldPrecursorPage() {
   const [measureWeight, setMeasureWeight] = useState("");
   const [cumulativeCycle, setCumulativeCycle] = useState("");
   const [locationId, setLocationId] = useState<number | "">("");
+  const [locationOptions, setLocationOptions] = useState<{ id: number; name: string }[]>([]);
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
   const [weightError, setWeightError] = useState("");
@@ -120,6 +114,25 @@ export default function AldPrecursorPage() {
       typeof navigator !== "undefined" &&
         (navigator.maxTouchPoints > 0 || /Mobi|Android/i.test(navigator.userAgent))
     );
+  }, []);
+
+  const fetchPortSlots = async () => {
+    try {
+      const res = await fetch("/api/ald/port-slots");
+      if (!res.ok) return;
+      const slots: PortSlot[] = await res.json();
+      setNcdPorts(slots.filter(s => s.equipmentName === "NCD-1"));
+      setRayvacPorts(slots.filter(s => s.equipmentName === "Rayvac-1"));
+    } catch {}
+  };
+
+  useEffect(() => { fetchPortSlots(); }, []);
+
+  useEffect(() => {
+    fetch("/api/locations")
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setLocationOptions(data))
+      .catch(() => {});
   }, []);
 
   // Measure Weight 자동 계산
@@ -145,18 +158,76 @@ export default function AldPrecursorPage() {
     setSearchError("");
     setIsSearching(true);
     try {
-      console.log("[ALD] handleSearch", { searchType, query: q }); // TODO: API 연결
-    } catch { setSearchError(t.ald.saveFailed); }
+      const param = searchType === "바코드"
+        ? `barcode=${encodeURIComponent(q)}`
+        : `search=${encodeURIComponent(q)}&type=${encodeURIComponent(searchType)}`;
+      const res = await fetch(`/api/ald?${param}`);
+      if (!res.ok) { const e = await res.json(); setSearchError(e.error || "조회 실패"); return; }
+      const data = await res.json();
+      // 단일 Canister 반환 (바코드 검색)
+      const canister = Array.isArray(data) ? data[0] : data;
+      if (!canister) { setSearchError("Canister를 찾을 수 없습니다."); return; }
+      setSelectedCanister(canister);
+      setGrossWeight(""); setMeasureWeight(""); setCumulativeCycle("");
+      setReason(""); setLocationId(""); setWeightError("");
+      // 로그 조회
+      await fetchLogs(1, canister.id);
+    } catch { setSearchError("조회 중 오류가 발생했습니다."); }
     finally { setIsSearching(false); }
   };
+
+  const fetchLogs = async (p: number, cId?: number) => {
+    const id = cId ?? selectedCanister?.id;
+    if (!id) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/ald/logs?canisterId=${id}&page=${p}&limit=${PAGE_LIMIT}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setLogs(data.logs);
+      setTotal(data.total);
+      setPage(p);
+    } catch {}
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => {
+    if (selectedCanister) fetchLogs(page);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   const handleSave = async () => {
     if (!selectedCanister || !grossWeight) return;
     setWeightError("");
     setSaving(true);
     try {
-      console.log("[ALD] handleSave", { canisterId: selectedCanister.id, logSubType, grossWeight, measureWeight, cumulativeCycle, locationId, reason }); // TODO: API 연결
+      const res = await fetch("/api/ald/logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          canisterId:      selectedCanister.id,
+          logSubType:      logSubType,
+          materialName:    selectedCanister.materialName,
+          grossWeight:     parseFloat(grossWeight),
+          locationId:      locationId || null,
+          cumulativeCycle: cumulativeCycle ? parseInt(cumulativeCycle) : null,
+          reason,
+        }),
+      });
+      if (!res.ok) {
+        const e = await res.json();
+        setWeightError(e.error || t.ald.saveFailed);
+        return;
+      }
       showToast(t.ald.savedOk);
+      setGrossWeight(""); setMeasureWeight(""); setCumulativeCycle("");
+      setReason(""); setLocationId(""); setWeightError("");
+      await fetchLogs(1);
+      // 충진이면 Canister 정보 새로고침
+      if (logSubType === "충진") {
+        const r = await fetch(`/api/ald?barcode=${selectedCanister.barcodeCode}`);
+        if (r.ok) setSelectedCanister(await r.json());
+      }
     } catch { showToast(t.ald.saveFailed); }
     finally { setSaving(false); }
   };
@@ -165,9 +236,21 @@ export default function AldPrecursorPage() {
     if (!createTareWeight) return;
     setCreating(true);
     try {
-      console.log("[ALD] handleCreate", { materialName: createMaterialName, tareWeight: createTareWeight, initialGrossWeight: createInitialGross, memo: createMemo }); // TODO: API 연결
-      showToast(t.ald.createSuccess);
-      setCreateMaterialName(""); setCreateTareWeight(""); setCreateInitialGross(""); setCreateMemo("");
+      const res = await fetch("/api/ald", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          materialName:       createMaterialName || null,
+          tareWeight:         parseFloat(createTareWeight),
+          initialGrossWeight: createInitialGross ? parseFloat(createInitialGross) : null,
+          memo:               createMemo || null,
+        }),
+      });
+      if (!res.ok) { const e = await res.json(); showToast(e.error || t.ald.createFailed); return; }
+      const created = await res.json();
+      showToast(`${created.barcodeCode} ${t.ald.createSuccess}`);
+      setCreateMaterialName(""); setCreateTareWeight("");
+      setCreateInitialGross(""); setCreateMemo("");
       setShowCreate(false);
     } catch { showToast(t.ald.createFailed); }
     finally { setCreating(false); }
@@ -178,31 +261,21 @@ export default function AldPrecursorPage() {
     if (!editingPort) return;
     setPortSaving(true);
     try {
-      // TODO: API 연결
-      console.log("[ALD] handlePortSave", {
-        equipment: editingPort.equipmentName,
-        portNumber: editingPort.portNumber,
-        canisterId: portSelectedCanister?.id ?? null,
+      const res = await fetch("/api/ald/port-slots", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slotId:     editingPort.id,
+          canisterId: portSelectedCanister?.id ?? null,
+        }),
       });
-      // 로컬 state 업데이트
-      const updatedSlot: PortSlot = {
-        ...editingPort,
-        canisterId: portSelectedCanister?.id ?? null,
-        canisterCode: portSelectedCanister?.barcodeCode ?? null,
-        materialName: portSelectedCanister?.materialName ?? null,
-      };
-      if (editingPort.equipmentName === "NCD-1") {
-        setNcdPorts(prev => prev.map(p => p.portNumber === editingPort.portNumber ? updatedSlot : p));
-      } else {
-        setRayvacPorts(prev => prev.map(p => p.portNumber === editingPort.portNumber ? updatedSlot : p));
-      }
+      if (!res.ok) { const e = await res.json(); showToast(e.error || "저장 실패"); return; }
+      // 포트 데이터 새로고침
+      await fetchPortSlots();
       showToast("저장되었습니다.");
       setEditingPort(null);
-    } catch {
-      showToast("저장 실패");
-    } finally {
-      setPortSaving(false);
-    }
+    } catch { showToast("저장 실패"); }
+    finally { setPortSaving(false); }
   };
 
   // 포트 비우기
@@ -230,14 +303,14 @@ export default function AldPrecursorPage() {
     if (!query.trim()) { setPortSearchResults([]); return; }
     setPortSearchLoading(true);
     try {
-      // TODO: API 연결 (category=ald 필터)
-      console.log("[ALD] portSearch", query);
-      setPortSearchResults([]); // 임시
-    } catch {
-      setPortSearchResults([]);
-    } finally {
-      setPortSearchLoading(false);
-    }
+      const res = await fetch(
+        `/api/ald?search=${encodeURIComponent(query)}&type=바코드`
+      );
+      if (!res.ok) { setPortSearchResults([]); return; }
+      const data = await res.json();
+      setPortSearchResults(Array.isArray(data) ? data : [data]);
+    } catch { setPortSearchResults([]); }
+    finally { setPortSearchLoading(false); }
   };
 
   const handleCsvExport = () => {
@@ -682,6 +755,9 @@ export default function AldPrecursorPage() {
                 <select value={locationId} onChange={(e) => setLocationId(Number(e.target.value) || "")}
                   className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none">
                   <option value="">선택</option>
+                  {locationOptions.map(loc => (
+                    <option key={loc.id} value={loc.id}>{loc.name}</option>
+                  ))}
                 </select>
               </div>
               <div>
