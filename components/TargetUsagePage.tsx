@@ -490,7 +490,7 @@ export default function TargetUsagePage() {
       )}
 
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">{t.nav.target}</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t.nav.target}</h1>
         <p className="text-sm text-gray-500 mt-1">{t.target.subtitle}</p>
       </div>
 
@@ -578,7 +578,7 @@ export default function TargetUsagePage() {
       )}
 
       {/* 바코드 조회 */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-2">
+      <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
         <label className="block text-sm font-semibold text-gray-700 mb-2">{t.target.searchLabel}</label>
         <div className="flex gap-2">
           <select
@@ -596,7 +596,7 @@ export default function TargetUsagePage() {
             <option value="품목코드">{t.target.searchTypeItemCode}</option>
             <option value="품목명">{t.target.searchTypeItemName}</option>
           </select>
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 min-w-0">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               ref={barcodeInputRef}
@@ -639,17 +639,19 @@ export default function TargetUsagePage() {
               </div>
             )}
           </div>
+          <button onClick={handleSearch} disabled={isSearching} className="shrink-0 flex items-center justify-center px-4 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 whitespace-nowrap disabled:opacity-60">
+            {isSearching ? <Loader2 size={16} className="animate-spin" /> : t.target.searchBtn}
+          </button>
           {isMobile && (
             <button
               type="button"
               onClick={() => setShowCameraScanner(true)}
-              className="p-2 rounded border border-gray-300 hover:bg-gray-100"
+              className="shrink-0 px-3 py-2.5 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200"
               title="카메라로 스캔"
             >
               <Camera size={18} />
             </button>
           )}
-          <button onClick={handleSearch} className="px-5 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600">{t.target.searchBtn}</button>
         </div>
         {searchError && <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-xl">{searchError}</p>}
 
