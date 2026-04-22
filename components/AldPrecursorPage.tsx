@@ -136,18 +136,19 @@ export default function AldPrecursorPage() {
   const handleCsvExport = () => {
     if (logs.length === 0) return;
     exportCSV(
-      `ald-${selectedCanister?.barcodeCode || "logs"}.csv`,
-      logs.map((l) => ({
-        시간: l.timestamp,
-        구분: l.logSubType,
-        Gross: l.grossWeight ?? "",
-        Pure: l.pureWeight ?? "",
-        누적사이클: l.cumulativeCycle ?? "",
-        "소모량(g/cyc)": l.consumptionPerCycle ?? "",
-        "잔여량(%)": l.remainPercent ?? "",
-        현위치: l.location,
-        작성자: l.userName,
-      }))
+      ["시간", "구분", "Gross(g)", "Pure(g)", "누적사이클", "소모량(g/cyc)", "잔여량(%)", "현위치", "작성자"],
+      logs.map((l) => [
+        l.timestamp,
+        l.logSubType,
+        l.grossWeight ?? "",
+        l.pureWeight ?? "",
+        l.cumulativeCycle ?? "",
+        l.consumptionPerCycle != null ? l.consumptionPerCycle.toFixed(4) : "",
+        l.remainPercent != null ? l.remainPercent.toFixed(1) : "",
+        l.location,
+        l.userName,
+      ]),
+      `ALD_${selectedCanister?.barcodeCode || "logs"}_${new Date().toISOString().split("T")[0]}.csv`
     );
   };
 
