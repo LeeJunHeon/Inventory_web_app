@@ -96,6 +96,7 @@ export default function AldPrecursorPage() {
 
   // ─── 측정 입력 ───
   const [logSubType, setLogSubType] = useState<"측정" | "충진">("측정");
+  const [fillMaterialName, setFillMaterialName] = useState("");
   const [grossWeight, setGrossWeight] = useState("");
   const [measureWeight, setMeasureWeight] = useState("");
   const [cumulativeCycle, setCumulativeCycle] = useState("");
@@ -207,7 +208,9 @@ export default function AldPrecursorPage() {
         body: JSON.stringify({
           canisterId:      selectedCanister.id,
           logSubType:      logSubType,
-          materialName:    selectedCanister.materialName,
+          materialName:    (logSubType === "충진" && fillMaterialName)
+            ? fillMaterialName
+            : selectedCanister.materialName,
           grossWeight:     parseFloat(grossWeight),
           locationId:      locationId || null,
           cumulativeCycle: cumulativeCycle ? parseInt(cumulativeCycle) : null,
@@ -221,7 +224,7 @@ export default function AldPrecursorPage() {
       }
       showToast(t.ald.savedOk);
       setGrossWeight(""); setMeasureWeight(""); setCumulativeCycle("");
-      setReason(""); setLocationId(""); setWeightError("");
+      setReason(""); setLocationId(""); setWeightError(""); setFillMaterialName("");
       await fetchLogs(1);
       // 충진이면 Canister 정보 새로고침
       if (logSubType === "충진") {
@@ -706,7 +709,10 @@ export default function AldPrecursorPage() {
                 <p className="text-xs text-gray-400 mb-1.5">{t.ald.subTypeLabel}</p>
                 <div className="flex gap-2">
                   {(["측정", "충진"] as const).map((type) => (
-                    <button key={type} onClick={() => setLogSubType(type)}
+                    <button key={type} onClick={() => {
+                      setLogSubType(type);
+                      if (type === "측정") setFillMaterialName("");
+                    }}
                       className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${
                         logSubType === type ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
                       {type === "측정" ? t.ald.subTypeMeasure : t.ald.subTypeFill}
@@ -714,6 +720,25 @@ export default function AldPrecursorPage() {
                   ))}
                 </div>
               </div>
+              {logSubType === "충진" && (
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">
+                    <span className="inline-flex items-center gap-1">
+                      <Droplet size={12} /> {t.ald.materialLabel}
+                      <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-md font-medium ml-1">
+                        변경 시 입력
+                      </span>
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    value={fillMaterialName}
+                    onChange={(e) => setFillMaterialName(e.target.value)}
+                    placeholder={selectedCanister?.materialName || t.ald.materialPlaceholder}
+                    className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-400 bg-blue-50/30"
+                  />
+                </div>
+              )}
               <div>
                 <label className="block text-xs text-gray-400 mb-1">
                   <span className="inline-flex items-center gap-1"><Weight size={12} /> {t.ald.grossWeightLabel}</span>
