@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       if (itemName) whereItem.name = { contains: itemName, mode: "insensitive" };
 
       const targetUnits = await prisma.targetUnit.findMany({
-        where: { item: whereItem },
+        where: { category: "sputter", item: whereItem },
         include: {
           item: { include: { category: true, targetSpec: true } },
           barcodes: { take: 1 },
@@ -222,8 +222,14 @@ export async function POST(request: NextRequest) {
     if (isMeasure) {
       const tu = await prisma.targetUnit.findUnique({
         where: { id: body.targetUnitId },
-        select: { status: true, itemId: true },
+        select: { status: true, itemId: true, category: true },
       });
+      if (tu && tu.category !== "sputter") {
+        return NextResponse.json(
+          { error: "ALD Canister는 타겟 사용현황 API를 사용할 수 없습니다." },
+          { status: 400 }
+        );
+      }
       if (tu?.status === "미사용") {
         await prisma.$transaction(async (tx) => {
           await tx.targetUnit.update({
