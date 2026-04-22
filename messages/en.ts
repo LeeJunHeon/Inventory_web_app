@@ -601,5 +601,12 @@ export const en: Messages = {
     colAuthor: "Author",
     noLogs: "No records",
     noCanister: "Search for a canister",
+    portEditTitle: "Port Settings",
+    portCurrentLabel: "Current",
+    portClearBtn: "Clear",
+    portSaveBtn: "Save",
+    portSearchPlaceholder: "Enter barcode (e.g. C-001)",
+    portSaving: "Saving...",
+    portEmptySlot: "Empty",
   },
 };

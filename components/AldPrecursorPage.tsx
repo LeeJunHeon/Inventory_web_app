@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
   Search, Save, Weight, MapPin, FileText, Loader2,
-  Camera, Download, RefreshCw, Droplet, Plus, X, QrCode,
+  Camera, Download, RefreshCw, Droplet, Plus, X, QrCode, Pencil,
 } from "lucide-react";
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
 import { useT } from "@/lib/i18n";
@@ -12,9 +12,11 @@ import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
 
 interface PortSlot {
   portNumber: number;
+  canisterId: number | null;
   canisterCode: string | null;
   materialName: string | null;
   remainPercent: number | null;
+  equipmentName: string;
 }
 
 interface CanisterInfo {
@@ -53,18 +55,27 @@ export default function AldPrecursorPage() {
   const { t } = useT();
 
   // ─── 대시보드 포트 데이터 (추후 API로 교체) ───
-  const [ncdPorts] = useState<PortSlot[]>([
-    { portNumber: 1, canisterCode: null, materialName: null, remainPercent: null },
-    { portNumber: 2, canisterCode: null, materialName: null, remainPercent: null },
-    { portNumber: 3, canisterCode: null, materialName: null, remainPercent: null },
+  const [ncdPorts, setNcdPorts] = useState<PortSlot[]>([
+    { portNumber: 1, canisterId: null, canisterCode: null, materialName: null, remainPercent: null, equipmentName: "NCD-1" },
+    { portNumber: 2, canisterId: null, canisterCode: null, materialName: null, remainPercent: null, equipmentName: "NCD-1" },
+    { portNumber: 3, canisterId: null, canisterCode: null, materialName: null, remainPercent: null, equipmentName: "NCD-1" },
   ]);
-  const [rayvacPorts] = useState<PortSlot[]>([
-    { portNumber: 1, canisterCode: null, materialName: null, remainPercent: null },
-    { portNumber: 2, canisterCode: null, materialName: null, remainPercent: null },
-    { portNumber: 3, canisterCode: null, materialName: null, remainPercent: null },
-    { portNumber: 4, canisterCode: null, materialName: null, remainPercent: null },
-    { portNumber: 5, canisterCode: null, materialName: null, remainPercent: null },
+  const [rayvacPorts, setRayvacPorts] = useState<PortSlot[]>([
+    { portNumber: 1, canisterId: null, canisterCode: null, materialName: null, remainPercent: null, equipmentName: "Rayvac-1" },
+    { portNumber: 2, canisterId: null, canisterCode: null, materialName: null, remainPercent: null, equipmentName: "Rayvac-1" },
+    { portNumber: 3, canisterId: null, canisterCode: null, materialName: null, remainPercent: null, equipmentName: "Rayvac-1" },
+    { portNumber: 4, canisterId: null, canisterCode: null, materialName: null, remainPercent: null, equipmentName: "Rayvac-1" },
+    { portNumber: 5, canisterId: null, canisterCode: null, materialName: null, remainPercent: null, equipmentName: "Rayvac-1" },
   ]);
+
+  // ─── 포트 슬롯 편집 ───
+  const [editingPort, setEditingPort] = useState<PortSlot | null>(null);
+  const [portSearchQuery, setPortSearchQuery] = useState("");
+  const portSearchRef = useRef<HTMLInputElement>(null);
+  const [portSearchResults, setPortSearchResults] = useState<CanisterInfo[]>([]);
+  const [portSelectedCanister, setPortSelectedCanister] = useState<CanisterInfo | null>(null);
+  const [portSearchLoading, setPortSearchLoading] = useState(false);
+  const [portSaving, setPortSaving] = useState(false);
 
   // ─── Canister 생성 ───
   const [showCreate, setShowCreate] = useState(false);
@@ -162,6 +173,73 @@ export default function AldPrecursorPage() {
     finally { setCreating(false); }
   };
 
+  // 포트에 Canister 배정
+  const handlePortSave = async () => {
+    if (!editingPort) return;
+    setPortSaving(true);
+    try {
+      // TODO: API 연결
+      console.log("[ALD] handlePortSave", {
+        equipment: editingPort.equipmentName,
+        portNumber: editingPort.portNumber,
+        canisterId: portSelectedCanister?.id ?? null,
+      });
+      // 로컬 state 업데이트
+      const updatedSlot: PortSlot = {
+        ...editingPort,
+        canisterId: portSelectedCanister?.id ?? null,
+        canisterCode: portSelectedCanister?.barcodeCode ?? null,
+        materialName: portSelectedCanister?.materialName ?? null,
+      };
+      if (editingPort.equipmentName === "NCD-1") {
+        setNcdPorts(prev => prev.map(p => p.portNumber === editingPort.portNumber ? updatedSlot : p));
+      } else {
+        setRayvacPorts(prev => prev.map(p => p.portNumber === editingPort.portNumber ? updatedSlot : p));
+      }
+      showToast("저장되었습니다.");
+      setEditingPort(null);
+    } catch {
+      showToast("저장 실패");
+    } finally {
+      setPortSaving(false);
+    }
+  };
+
+  // 포트 비우기
+  const handlePortClear = () => {
+    if (!editingPort) return;
+    setPortSelectedCanister(null);
+    const clearedSlot: PortSlot = {
+      ...editingPort,
+      canisterId: null,
+      canisterCode: null,
+      materialName: null,
+      remainPercent: null,
+    };
+    if (editingPort.equipmentName === "NCD-1") {
+      setNcdPorts(prev => prev.map(p => p.portNumber === editingPort.portNumber ? clearedSlot : p));
+    } else {
+      setRayvacPorts(prev => prev.map(p => p.portNumber === editingPort.portNumber ? clearedSlot : p));
+    }
+    setEditingPort(null);
+    showToast("포트를 비웠습니다.");
+  };
+
+  // 포트 Canister 검색
+  const handlePortSearch = async (query: string) => {
+    if (!query.trim()) { setPortSearchResults([]); return; }
+    setPortSearchLoading(true);
+    try {
+      // TODO: API 연결 (category=ald 필터)
+      console.log("[ALD] portSearch", query);
+      setPortSearchResults([]); // 임시
+    } catch {
+      setPortSearchResults([]);
+    } finally {
+      setPortSearchLoading(false);
+    }
+  };
+
   const handleCsvExport = () => {
     if (logs.length === 0) return;
     exportCSV(
@@ -191,7 +269,7 @@ export default function AldPrecursorPage() {
     return "text-red-500";
   };
 
-  const renderEquipmentCard = (name: string, dotColor: string, ports: PortSlot[]) => (
+  const renderEquipmentCard = (name: string, dotColor: string, ports: PortSlot[], onEditPort: (slot: PortSlot) => void) => (
     <div className="bg-white rounded-2xl border border-gray-100 p-5">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -215,9 +293,17 @@ export default function AldPrecursorPage() {
                   <span className="text-xs text-gray-400 font-mono truncate">{slot.canisterCode}</span>
                 )}
               </div>
-              <span className={`text-xs font-bold shrink-0 ml-2 ${remainTextColor(slot.remainPercent)}`}>
-                {slot.remainPercent != null ? `${slot.remainPercent.toFixed(1)}%` : "—"}
-              </span>
+              <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                <span className={`text-xs font-bold ${remainTextColor(slot.remainPercent)}`}>
+                  {slot.remainPercent != null ? `${slot.remainPercent.toFixed(1)}%` : "—"}
+                </span>
+                <button
+                  onClick={() => onEditPort(slot)}
+                  className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600"
+                >
+                  <Pencil size={12} />
+                </button>
+              </div>
             </div>
             <div className="w-full bg-gray-100 rounded-full h-2">
               <div
@@ -251,6 +337,100 @@ export default function AldPrecursorPage() {
         />
       )}
 
+      {/* ── 포트 편집 모달 ── */}
+      {editingPort && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+          onClick={() => setEditingPort(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 헤더 */}
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-gray-900">
+                {editingPort.equipmentName} · {t.ald.portLabel} {editingPort.portNumber} {t.ald.portEditTitle}
+              </h3>
+              <button
+                onClick={() => setEditingPort(null)}
+                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 text-sm"
+              >✕</button>
+            </div>
+
+            {/* 현재 장착 */}
+            <div className="px-3 py-2.5 bg-gray-50 rounded-xl text-sm">
+              <span className="text-xs text-gray-400">{t.ald.portCurrentLabel}: </span>
+              <span className="font-semibold text-gray-800">
+                {portSelectedCanister
+                  ? `${portSelectedCanister.barcodeCode} · ${portSelectedCanister.materialName || "-"}`
+                  : t.ald.portEmptySlot}
+              </span>
+            </div>
+
+            {/* 검색 */}
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <div className="relative flex-1 min-w-0">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    ref={portSearchRef}
+                    type="text"
+                    value={portSearchQuery}
+                    onChange={(e) => {
+                      setPortSearchQuery(e.target.value.toUpperCase());
+                      handlePortSearch(e.target.value);
+                    }}
+                    placeholder={t.ald.portSearchPlaceholder}
+                    className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {portSearchLoading && (
+                    <Loader2 size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 animate-spin text-blue-500" />
+                  )}
+                </div>
+              </div>
+
+              {/* 검색 결과 */}
+              {portSearchResults.length > 0 && (
+                <div className="max-h-40 overflow-y-auto space-y-1 border border-gray-100 rounded-xl p-1">
+                  {portSearchResults.map((c) => (
+                    <button
+                      key={c.id}
+                      onClick={() => {
+                        setPortSelectedCanister(c);
+                        setPortSearchQuery("");
+                        setPortSearchResults([]);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-blue-50 rounded-lg transition-colors"
+                    >
+                      <p className="text-sm font-semibold text-gray-900">{c.barcodeCode}</p>
+                      <p className="text-xs text-gray-500">{c.materialName || c.itemName}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 버튼 */}
+            <div className="flex gap-2">
+              <button
+                onClick={handlePortClear}
+                className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50"
+              >
+                {t.ald.portClearBtn}
+              </button>
+              <button
+                onClick={handlePortSave}
+                disabled={portSaving}
+                className="flex-1 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 disabled:opacity-60"
+              >
+                {portSaving ? t.ald.portSaving : t.ald.portSaveBtn}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── 헤더 ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -270,9 +450,23 @@ export default function AldPrecursorPage() {
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
           {t.ald.dashboardTitle}
         </p>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {renderEquipmentCard("NCD ALD", "bg-blue-500", ncdPorts)}
-          {renderEquipmentCard("Rayvac ALD", "bg-purple-500", rayvacPorts)}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {renderEquipmentCard("NCD ALD", "bg-blue-500", ncdPorts, (slot) => {
+            setEditingPort(slot);
+            setPortSelectedCanister(
+              slot.canisterId ? { id: slot.canisterId, barcodeCode: slot.canisterCode ?? "", itemCode: "", itemName: "", materialName: slot.materialName ?? "", status: "사용중", tareWeight: null, initialGrossWeight: null } : null
+            );
+            setPortSearchQuery("");
+            setPortSearchResults([]);
+          })}
+          {renderEquipmentCard("Rayvac ALD", "bg-purple-500", rayvacPorts, (slot) => {
+            setEditingPort(slot);
+            setPortSelectedCanister(
+              slot.canisterId ? { id: slot.canisterId, barcodeCode: slot.canisterCode ?? "", itemCode: "", itemName: "", materialName: slot.materialName ?? "", status: "사용중", tareWeight: null, initialGrossWeight: null } : null
+            );
+            setPortSearchQuery("");
+            setPortSearchResults([]);
+          })}
         </div>
       </div>
 

@@ -599,6 +599,13 @@ export const ko = {
     colAuthor: "작성자",
     noLogs: "기록이 없습니다",
     noCanister: "Canister를 조회하세요",
+    portEditTitle: "포트 설정",
+    portCurrentLabel: "현재 장착",
+    portClearBtn: "비우기",
+    portSaveBtn: "저장",
+    portSearchPlaceholder: "바코드 입력 (예: C-001)",
+    portSaving: "저장 중...",
+    portEmptySlot: "미장착",
   },
 };
 
