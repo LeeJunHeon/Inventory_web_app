@@ -29,6 +29,7 @@ model Location {
   inventoryTxs InventoryTx[]
   targetLogs   TargetLog[]
   chamberSlots ChamberSlot[]
+  aldLogDetails AldLogDetail[]
 
   @@map("location")
 }
@@ -72,6 +73,7 @@ model User {
   barcodeScans    BarcodeScan[]
   chamberSlots    ChamberSlot[]
   activityLogs    ActivityLog[]
+  aldPortSlots    AldPortSlot[]
 
   @@map("user")
 }
@@ -147,18 +149,21 @@ model TargetSpec {
 
 // ── 타겟 개별 단위 ──
 model TargetUnit {
-  id         Int      @id @default(autoincrement())
-  itemId     Int      @map("item_id")
-  status     String   @default("미사용") // 미사용 | 사용중 | 폐기 | 판매완료
-  createdAt  DateTime @default(now()) @map("created_at") @db.Date
+  id         Int       @id @default(autoincrement())
+  itemId     Int       @map("item_id")
+  status     String    @default("미사용") // 미사용 | 사용중 | 폐기 | 판매완료
+  category   String    @default("sputter") // sputter | ald
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Date
   disposedAt DateTime? @map("disposed_at") @db.Date
   note       String?
 
-  item         Item          @relation(fields: [itemId], references: [id])
-  barcodes     Barcode[]
-  inventoryTxs InventoryTx[]
-  targetLogs   TargetLog[]
-  chamberSlot  ChamberSlot?
+  item            Item             @relation(fields: [itemId], references: [id])
+  barcodes        Barcode[]
+  inventoryTxs    InventoryTx[]
+  targetLogs      TargetLog[]
+  chamberSlot     ChamberSlot?
+  aldCanisterSpec AldCanisterSpec?
+  aldPortSlot     AldPortSlot?
 
   @@map("target_unit")
 }
@@ -174,9 +179,10 @@ model TargetLog {
   userId       Int?     @map("user_id")
   loggedAt     DateTime @default(now()) @map("logged_at")
 
-  targetUnit TargetUnit @relation(fields: [targetUnitId], references: [id])
-  location   Location?  @relation(fields: [locationId], references: [id])
-  user       User?      @relation(fields: [userId], references: [id])
+  targetUnit   TargetUnit    @relation(fields: [targetUnitId], references: [id])
+  location     Location?     @relation(fields: [locationId], references: [id])
+  user         User?         @relation(fields: [userId], references: [id])
+  aldLogDetail AldLogDetail?
 
   @@map("target_log")
 }
@@ -298,4 +304,57 @@ model AppSetting {
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("app_setting")
+}
+
+// ── ALD Canister 전용 메타 ──
+model AldCanisterSpec {
+  targetUnitId       Int      @id @map("target_unit_id")
+  tareWeight         Decimal  @map("tare_weight") @db.Decimal(10, 3)
+  materialName       String?  @map("material_name")
+  initialGrossWeight Decimal? @map("initial_gross_weight") @db.Decimal(10, 3)
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at")
+
+  targetUnit TargetUnit @relation(fields: [targetUnitId], references: [id], onDelete: Cascade)
+
+  @@map("ald_canister_spec")
+}
+
+// ── ALD 측정 로그 상세 (target_log 1:1 확장) ──
+model AldLogDetail {
+  id                   Int      @id @default(autoincrement())
+  targetLogId          Int      @unique @map("target_log_id")
+  logSubType           String?  @map("log_sub_type")           // 측정 | 충진 | 폐기
+  materialName         String?  @map("material_name")
+  grossWeight          Decimal? @map("gross_weight")           @db.Decimal(10, 3)
+  tareWeight           Decimal? @map("tare_weight")            @db.Decimal(10, 3)
+  measureWeight        Decimal? @map("measure_weight")         @db.Decimal(10, 3)
+  cumulativeCycle      Int?     @map("cumulative_cycle")
+  cycleDelta           Int?     @map("cycle_delta")
+  consumptionPerCycle  Decimal? @map("consumption_per_cycle")  @db.Decimal(10, 5)
+  remainPercent        Decimal? @map("remain_percent")         @db.Decimal(5, 2)
+  estimatedRemainCycle Int?     @map("estimated_remain_cycle")
+  locationId           Int?     @map("location_id")
+
+  targetLog TargetLog @relation(fields: [targetLogId], references: [id], onDelete: Cascade)
+  location  Location? @relation(fields: [locationId], references: [id])
+
+  @@map("ald_log_detail")
+}
+
+// ── ALD 장비 포트별 Canister 현황 ──
+model AldPortSlot {
+  id            Int       @id @default(autoincrement())
+  equipmentName String    @map("equipment_name")
+  portNumber    Int       @map("port_number")
+  targetUnitId  Int?      @unique @map("target_unit_id")
+  loadedAt      DateTime? @map("loaded_at")
+  updatedById   Int?      @map("updated_by_id")
+  note          String?
+
+  targetUnit TargetUnit? @relation(fields: [targetUnitId], references: [id], onDelete: SetNull)
+  updatedBy  User?       @relation(fields: [updatedById], references: [id])
+
+  @@unique([equipmentName, portNumber])
+  @@map("ald_port_slot")
 }
