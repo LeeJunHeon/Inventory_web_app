@@ -150,14 +150,14 @@ model TargetSpec {
 // ── 타겟 개별 단위 ──
 model TargetUnit {
   id         Int       @id @default(autoincrement())
-  itemId     Int       @map("item_id")
+  itemId     Int?      @map("item_id")
   status     String    @default("미사용") // 미사용 | 사용중 | 폐기 | 판매완료
   category   String    @default("sputter") // sputter | ald
   createdAt  DateTime  @default(now()) @map("created_at") @db.Date
   disposedAt DateTime? @map("disposed_at") @db.Date
   note       String?
 
-  item            Item             @relation(fields: [itemId], references: [id])
+  item            Item?            @relation(fields: [itemId], references: [id])
   barcodes        Barcode[]
   inventoryTxs    InventoryTx[]
   targetLogs      TargetLog[]
