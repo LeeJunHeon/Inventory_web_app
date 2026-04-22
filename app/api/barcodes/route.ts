@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
         const targetUnit = await tx.targetUnit.create({
           data: {
             itemId: item.id,
-            status: "available",
+            status: "미사용",
           },
         });
 

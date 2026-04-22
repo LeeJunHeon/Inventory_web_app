@@ -167,7 +167,7 @@ model TargetUnit {
 model TargetLog {
   id           Int      @id @default(autoincrement())
   targetUnitId Int      @map("target_unit_id")
-  logType      String   @map("log_type")  // measure | dispose | move
+  logType      String   @map("log_type")  // 측정 | 폐기
   weight       Decimal? @db.Decimal(10, 3)
   locationId   Int?     @map("location_id")
   reason       String?

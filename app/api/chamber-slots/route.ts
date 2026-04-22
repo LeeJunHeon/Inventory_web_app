@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       }
 
       const targets = await prisma.targetUnit.findMany({
-        where: { ...where, status: { not: "disposed" } },
+        where: { ...where, status: { not: "폐기" } },
         include: {
           item: { include: { targetSpec: true } },
           barcodes: { where: { isActive: "Y" }, take: 1 },
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
             barcodes: { take: 1 },
             targetLogs: {
               where: {
-                logType: { in: ["측정", "measure"] },
+                logType: "측정",
                 weight: { not: null },
               },
               orderBy: { loggedAt: "desc" },

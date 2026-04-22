@@ -151,8 +151,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     const logType     = body.logType || body.type || "측정";
-    const isDispose   = logType === "폐기" || logType === "dispose";
-    const isMeasure   = logType === "측정" || logType === "measure";
+    const isDispose   = logType === "폐기";
+    const isMeasure   = logType === "측정";
 
     if (isMeasure) {
       const STORAGE_IDS = [3, 4];
@@ -190,7 +190,7 @@ export async function POST(request: NextRequest) {
       const lastLog = await prisma.targetLog.findFirst({
         where: {
           targetUnitId: body.targetUnitId,
-          logType: { in: ["측정", "measure"] },
+          logType: "측정",
           weight: { not: null },
         },
         orderBy: { loggedAt: "desc" },

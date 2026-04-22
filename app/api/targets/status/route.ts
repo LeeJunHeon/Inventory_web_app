@@ -25,7 +25,7 @@ export async function GET() {
     const allMeasureLogs = await prisma.targetLog.findMany({
       where: {
         targetUnitId: { in: ids },
-        logType: { in: ["측정", "measure"] },
+        logType: "측정",
         weight: { not: null },
       },
       include: { location: true },

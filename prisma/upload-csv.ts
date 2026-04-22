@@ -190,7 +190,7 @@ async function main() {
       data: rows.map(r => ({
         id:         req(toInt(r.id),      "id"),
         itemId:     req(toInt(r.item_id), "item_id"),
-        status:     r.status || "available",
+        status:     r.status || "미사용",
         createdAt:  req(toDate(r.created_at), "created_at"),
         disposedAt: toDate(r.disposed_at),
         note:       r.note || null,
