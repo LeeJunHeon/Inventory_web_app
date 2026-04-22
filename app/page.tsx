@@ -9,6 +9,7 @@ import InventoryPage    from "@/components/InventoryPage";
 import StatusPage       from "@/components/StatusPage";
 import PeriodPage       from "@/components/PeriodPage";
 import TargetUsagePage  from "@/components/TargetUsagePage";
+import AldPrecursorPage from "@/components/AldPrecursorPage";
 import BarcodePage      from "@/components/BarcodePage";
 import ItemsPage        from "@/components/ItemsPage";
 import PartnersPage     from "@/components/PartnersPage";
@@ -95,7 +96,8 @@ export default function Home() {
     inventory: t.nav.inventory,
     status:    t.nav.status,
     period:    t.nav.period,
-    target:    t.nav.target,
+    target:    t.nav.targetSputter,
+    ald:       t.nav.targetAld,
     barcode:   t.nav.barcode,
     tracing:   t.nav.tracing,
     items:     t.nav.items,
@@ -113,6 +115,7 @@ export default function Home() {
       case "status":     return perms.canViewStatus;
       case "period":     return perms.canViewPeriod;
       case "target":     return perms.canViewTargetUsage;
+      case "ald":        return perms.canViewTargetUsage;
       case "barcode":    return perms.canViewBarcode;
       case "tracing":    return true;
       case "items":      return true;
@@ -148,6 +151,7 @@ export default function Home() {
       case "status":    return <StatusPage initialLocationId={statusLocationId} initialStockFilter={statusStockFilter} />;
       case "period":    return <PeriodPage />;
       case "target":    return <TargetUsagePage />;
+      case "ald":       return <AldPrecursorPage />;
       case "barcode":   return <BarcodePage />;
       case "tracing":   return <StockTracingPage />;
       case "items":     return <ItemsPage />;

@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
-import { Home, Package, BarChart3, Clock, Target, QrCode, Users, LogOut, Boxes, X, Layers, Building2, Search, FileText } from "lucide-react";
+import { Home, Package, BarChart3, Clock, Target, QrCode, Users, LogOut, Boxes, X, Layers, Building2, Search, FileText, Droplet } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 export type PageId =
   | "dashboard" | "inventory" | "status" | "period"
-  | "target" | "barcode" | "tracing" | "items" | "partners" | "admin" | "logs";
+  | "target" | "ald" | "barcode" | "tracing" | "items" | "partners" | "admin" | "logs";
 
 interface Perms {
   role: string;
@@ -28,6 +28,7 @@ function isVisible(id: PageId, perms: Perms | null): boolean {
     case "status":     return perms.canViewStatus;
     case "period":     return perms.canViewPeriod;
     case "target":     return perms.canViewTargetUsage;
+    case "ald":        return perms.canViewTargetUsage;
     case "barcode":    return perms.canViewBarcode;
     case "tracing":    return true;
     case "items":      return true;
@@ -56,17 +57,18 @@ export default function Sidebar({
   const { t } = useT();
 
   const NAV_ITEMS: { id: PageId; label: string; icon: React.ElementType; group?: string }[] = [
-    { id: "dashboard",  label: t.nav.dashboard, icon: Home },
-    { id: "inventory",  label: t.nav.inventory,  icon: Package },
-    { id: "status",     label: t.nav.status,     icon: BarChart3 },
-    { id: "period",     label: t.nav.period,     icon: Clock },
-    { id: "target",     label: t.nav.target,     icon: Target },
-    { id: "barcode",    label: t.nav.barcode,    icon: QrCode },
-    { id: "tracing",    label: t.nav.tracing,    icon: Search },
-    { id: "items",      label: t.nav.items,      icon: Layers },
-    { id: "partners",   label: t.nav.partners,   icon: Building2, group: t.nav.master },
-    { id: "admin",      label: t.nav.admin,      icon: Users,     group: t.nav.master },
-    { id: "logs",       label: t.nav.logs,       icon: FileText,  group: t.nav.master },
+    { id: "dashboard",  label: t.nav.dashboard,      icon: Home },
+    { id: "inventory",  label: t.nav.inventory,       icon: Package },
+    { id: "status",     label: t.nav.status,          icon: BarChart3 },
+    { id: "period",     label: t.nav.period,          icon: Clock },
+    { id: "barcode",    label: t.nav.barcode,         icon: QrCode },
+    { id: "tracing",    label: t.nav.tracing,         icon: Search },
+    { id: "items",      label: t.nav.items,           icon: Layers },
+    { id: "target",     label: t.nav.targetSputter,   icon: Target,   group: t.nav.targetGroup },
+    { id: "ald",        label: t.nav.targetAld,       icon: Droplet,  group: t.nav.targetGroup },
+    { id: "partners",   label: t.nav.partners,        icon: Building2, group: t.nav.master },
+    { id: "admin",      label: t.nav.admin,           icon: Users,     group: t.nav.master },
+    { id: "logs",       label: t.nav.logs,            icon: FileText,  group: t.nav.master },
   ];
 
   // userName이 확정될 때마다 최신 권한 재조회 (로그인 직후, 사용자 전환 시 반영)
