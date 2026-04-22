@@ -118,11 +118,14 @@ export async function POST(request: NextRequest) {
     const consumptionPerCycle = (cycleDelta && cycleDelta > 0 && prevMeasure != null)
       ? (prevMeasure - measure) / cycleDelta : null;
 
-    const remainPercent = initialPure > 0
-      ? (measure / initialPure) * 100 : null;
+    const remainPercent = logSubType === "충진"
+      ? 100
+      : (initialPure > 0 ? (measure / initialPure) * 100 : null);
 
-    const estimatedRemainCycle = (curCycle && measure > 0 && initialPure > measure)
-      ? Math.round(measure * curCycle / (initialPure - measure)) : null;
+    const estimatedRemainCycle = logSubType === "충진"
+      ? null
+      : ((curCycle && measure > 0 && initialPure > measure)
+          ? Math.round(measure * curCycle / (initialPure - measure)) : null);
 
     // 충진이면 이전보다 measure가 높아도 OK, 측정이면 체크
     if (logSubType === "측정" && prevMeasure != null && measure > prevMeasure) {
