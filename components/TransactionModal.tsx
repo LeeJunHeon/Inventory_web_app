@@ -54,9 +54,9 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const CAT_LABEL: Record<string, string> = {
     "웨이퍼": t.inventory.catWafer,
     "타겟": t.inventory.catTarget,
+    "ALD Canister": t.inventory.catAldCanister,
     "가스": t.inventory.catGas,
     "기자재/소모품": t.inventory.catEquip,
-    "ALD 캐니스터": t.inventory.catAldCanister,
   };
   const isMobile = typeof navigator !== "undefined" &&
     (navigator.maxTouchPoints > 0 || /Mobi|Android/i.test(navigator.userAgent));
@@ -377,7 +377,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         body: JSON.stringify({
           itemId,
           materialName: barcodeCreateMaterial || null,
-          ...(category === "ALD 캐니스터" && {
+          ...(category === "ALD Canister" && {
             aldMaterialName: aldMaterialName || null,
             aldTareWeight:   aldTareWeight ? parseFloat(aldTareWeight) : null,
             aldInitialGross: aldInitialGross ? parseFloat(aldInitialGross) : null,
@@ -453,6 +453,11 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           currency:     currency,
           exchangeRateAtEntry: currency === "USD" ? exchangeRateAtEntry : null,
           locationId:   locationId,
+          ...(category === "ALD Canister" && {
+            aldMaterialName: aldMaterialName || null,
+            aldTareWeight:   aldTareWeight   ? parseFloat(aldTareWeight) : null,
+            aldInitialGross: aldInitialGross ? parseFloat(aldInitialGross) : null,
+          }),
         }),
       });
       if (!res.ok) {
@@ -461,6 +466,9 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       }
       onSuccess?.();
       justCreatedBarcodeId.current = null;
+      setAldMaterialName("");
+      setAldTareWeight("");
+      setAldInitialGross("");
       onClose();
     } catch {
       setError(t.common.networkError); barcodeInputRef.current?.focus();
@@ -695,7 +703,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                     placeholder={t.tx.materialPlaceholder}
                     className="w-full px-3 py-2 border border-blue-200 rounded-xl text-sm outline-none bg-white focus:ring-2 focus:ring-blue-400" />
                 )}
-                {category === "ALD 캐니스터" && (
+                {category === "ALD Canister" && (
                   <div className="space-y-2">
                     <p className="text-xs text-blue-600">{t.tx.aldCanisterHint}</p>
                     <div>
@@ -792,7 +800,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">{t.items.catLabel}</label>
             <div className="flex gap-2 flex-wrap">
-              {["웨이퍼", "타겟", "가스", "기자재/소모품", "ALD 캐니스터"].map((c) => (
+              {["웨이퍼", "타겟", "ALD Canister", "가스", "기자재/소모품"].map((c) => (
                 <button key={c} onClick={() => setCategory(c)}
                   className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                     category === c
@@ -897,6 +905,53 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
               ) : (
                 <p className="text-xs text-blue-400">{t.tx.noSpec}</p>
               )}
+            </div>
+          )}
+
+          {/* ALD Canister 전용 입력 필드 */}
+          {category === "ALD Canister" && type === "입고" && (
+            <div className="bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 space-y-3">
+              <p className="text-xs font-semibold text-teal-700">{t.tx.aldCanisterHint}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-teal-700 mb-1">
+                    {t.tx.aldCanisterMaterialLabel} <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={aldMaterialName}
+                    onChange={e => setAldMaterialName(e.target.value)}
+                    placeholder={t.tx.aldCanisterMaterialPlaceholder}
+                    className="w-full px-3 py-2 border border-teal-200 rounded-xl text-sm outline-none bg-white focus:ring-2 focus:ring-teal-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-teal-700 mb-1">
+                    {t.tx.aldCanisterTareLabel} <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.001"
+                    value={aldTareWeight}
+                    onChange={e => setAldTareWeight(e.target.value)}
+                    placeholder={t.tx.aldCanisterTarePlaceholder}
+                    className="w-full px-3 py-2 border border-teal-200 rounded-xl text-sm outline-none bg-white focus:ring-2 focus:ring-teal-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-teal-700 mb-1">
+                    {t.tx.aldCanisterGrossLabel}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.001"
+                    value={aldInitialGross}
+                    onChange={e => setAldInitialGross(e.target.value)}
+                    placeholder={t.tx.aldCanisterGrossPlaceholder}
+                    className="w-full px-3 py-2 border border-teal-200 rounded-xl text-sm outline-none bg-white focus:ring-2 focus:ring-teal-400"
+                  />
+                </div>
+              </div>
             </div>
           )}
 
