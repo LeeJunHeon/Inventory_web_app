@@ -52,7 +52,7 @@ export interface TargetLog {
 }
 
 // ──────── 상수 ────────
-export const CATEGORIES = ["전체", "웨이퍼", "타겟", "가스", "기자재/소모품"];
+export const CATEGORIES = ["전체", "웨이퍼", "타겟", "ALD Canister", "가스", "기자재/소모품"];
 export const TYPES = ["전체", "입고", "출고", "불출", "사용중"];
 
 export const TYPE_COLORS: Record<string, { bg: string; text: string; border: string; dot: string }> = {

@@ -117,6 +117,7 @@ export async function POST(request: NextRequest) {
       // 1. target_unit 생성 (category = 'ald')
       const targetUnit = await tx.targetUnit.create({
         data: {
+          itemId:   body.itemId ? Number(body.itemId) : null,
           status:   "미사용",
           category: "ald",
           note:     memo || null,

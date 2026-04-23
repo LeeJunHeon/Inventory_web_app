@@ -63,15 +63,14 @@ export default function AldPrecursorPage() {
 
   // ─── 포트 슬롯 편집 ───
   const [editingPort, setEditingPort] = useState<PortSlot | null>(null);
-  const [portSearchQuery, setPortSearchQuery] = useState("");
-  const portSearchRef = useRef<HTMLInputElement>(null);
-  const [portSearchResults, setPortSearchResults] = useState<CanisterInfo[]>([]);
+  const [allCanisters, setAllCanisters] = useState<CanisterInfo[]>([]);
   const [portSelectedCanister, setPortSelectedCanister] = useState<CanisterInfo | null>(null);
-  const [portSearchLoading, setPortSearchLoading] = useState(false);
   const [portSaving, setPortSaving] = useState(false);
 
   // ─── Canister 생성 ───
   const [showCreate, setShowCreate] = useState(false);
+  const [createItemId, setCreateItemId] = useState<number | null>(null);
+  const [aldItemOptions, setAldItemOptions] = useState<{ id: number; code: string; name: string }[]>([]);
   const [createMaterialName, setCreateMaterialName] = useState("");
   const [createTareWeight, setCreateTareWeight] = useState("");
   const [createInitialGross, setCreateInitialGross] = useState("");
@@ -133,6 +132,13 @@ export default function AldPrecursorPage() {
     fetch("/api/locations")
       .then(r => r.ok ? r.json() : [])
       .then(data => setLocationOptions(data))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/items?category=ALD%20Canister")
+      .then(r => r.ok ? r.json() : [])
+      .then(setAldItemOptions)
       .catch(() => {});
   }, []);
 
@@ -243,6 +249,7 @@ export default function AldPrecursorPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          itemId:             createItemId ?? null,
           materialName:       createMaterialName || null,
           tareWeight:         parseFloat(createTareWeight),
           initialGrossWeight: createInitialGross ? parseFloat(createInitialGross) : null,
@@ -252,6 +259,7 @@ export default function AldPrecursorPage() {
       if (!res.ok) { const e = await res.json(); showToast(e.error || t.ald.createFailed); return; }
       const created = await res.json();
       showToast(`${created.barcodeCode} ${t.ald.createSuccess}`);
+      setCreateItemId(null);
       setCreateMaterialName(""); setCreateTareWeight("");
       setCreateInitialGross(""); setCreateMemo("");
       setShowCreate(false);
@@ -299,21 +307,6 @@ export default function AldPrecursorPage() {
     }
     setEditingPort(null);
     showToast("포트를 비웠습니다.");
-  };
-
-  // 포트 Canister 검색
-  const handlePortSearch = async (query: string) => {
-    if (!query.trim()) { setPortSearchResults([]); return; }
-    setPortSearchLoading(true);
-    try {
-      const res = await fetch(
-        `/api/ald?search=${encodeURIComponent(query)}&type=바코드`
-      );
-      if (!res.ok) { setPortSearchResults([]); return; }
-      const data = await res.json();
-      setPortSearchResults(Array.isArray(data) ? data : [data]);
-    } catch { setPortSearchResults([]); }
-    finally { setPortSearchLoading(false); }
   };
 
   const handleCsvExport = () => {
@@ -444,47 +437,35 @@ export default function AldPrecursorPage() {
               </span>
             </div>
 
-            {/* 검색 */}
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <div className="relative flex-1 min-w-0">
-                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    ref={portSearchRef}
-                    type="text"
-                    value={portSearchQuery}
-                    onChange={(e) => {
-                      setPortSearchQuery(e.target.value.toUpperCase());
-                      handlePortSearch(e.target.value);
-                    }}
-                    placeholder={t.ald.portSearchPlaceholder}
-                    className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  {portSearchLoading && (
-                    <Loader2 size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 animate-spin text-blue-500" />
-                  )}
-                </div>
-              </div>
-
-              {/* 검색 결과 */}
-              {portSearchResults.length > 0 && (
-                <div className="max-h-40 overflow-y-auto space-y-1 border border-gray-100 rounded-xl p-1">
-                  {portSearchResults.map((c) => (
-                    <button
-                      key={c.id}
-                      onClick={() => {
-                        setPortSelectedCanister(c);
-                        setPortSearchQuery("");
-                        setPortSearchResults([]);
-                      }}
-                      className="w-full text-left px-3 py-2 hover:bg-blue-50 rounded-lg transition-colors"
-                    >
+            {/* Canister 목록 선택 */}
+            <div className="max-h-48 overflow-y-auto space-y-1 border border-gray-100 rounded-xl p-1">
+              {allCanisters.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-4">등록된 Canister가 없습니다</p>
+              ) : allCanisters.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => setPortSelectedCanister(c)}
+                  className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                    portSelectedCanister?.id === c.id
+                      ? "bg-blue-50 border border-blue-200"
+                      : "hover:bg-gray-50"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
                       <p className="text-sm font-semibold text-gray-900">{c.barcodeCode}</p>
-                      <p className="text-xs text-gray-500">{c.materialName || c.itemName}</p>
-                    </button>
-                  ))}
-                </div>
-              )}
+                      <p className="text-xs text-gray-500">{c.materialName || "-"}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                        c.status === "미사용" ? "bg-emerald-100 text-emerald-700" :
+                        c.status === "사용중" ? "bg-blue-100 text-blue-700" :
+                        "bg-gray-100 text-gray-500"
+                      }`}>{c.status}</span>
+                    </div>
+                  </div>
+                </button>
+              ))}
             </div>
 
             {/* 버튼 */}
@@ -532,16 +513,20 @@ export default function AldPrecursorPage() {
             setPortSelectedCanister(
               slot.canisterId ? { id: slot.canisterId, barcodeCode: slot.canisterCode ?? "", itemCode: "", itemName: "", materialName: slot.materialName ?? "", status: "사용중", tareWeight: null, initialGrossWeight: null } : null
             );
-            setPortSearchQuery("");
-            setPortSearchResults([]);
+            fetch("/api/ald")
+              .then(r => r.ok ? r.json() : [])
+              .then((data: CanisterInfo[]) => setAllCanisters(data))
+              .catch(() => setAllCanisters([]));
           })}
           {renderEquipmentCard("Rayvac ALD", "bg-purple-500", rayvacPorts, (slot) => {
             setEditingPort(slot);
             setPortSelectedCanister(
               slot.canisterId ? { id: slot.canisterId, barcodeCode: slot.canisterCode ?? "", itemCode: "", itemName: "", materialName: slot.materialName ?? "", status: "사용중", tareWeight: null, initialGrossWeight: null } : null
             );
-            setPortSearchQuery("");
-            setPortSearchResults([]);
+            fetch("/api/ald")
+              .then(r => r.ok ? r.json() : [])
+              .then((data: CanisterInfo[]) => setAllCanisters(data))
+              .catch(() => setAllCanisters([]));
           })}
         </div>
       </div>
@@ -562,6 +547,21 @@ export default function AldPrecursorPage() {
                 className="p-1 rounded-lg hover:bg-blue-100 text-blue-400">
                 <X size={18} />
               </button>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-blue-700 mb-1">
+                Canister 품목 <span className="text-rose-500">*</span>
+              </label>
+              <select
+                value={createItemId ?? ""}
+                onChange={(e) => setCreateItemId(e.target.value ? Number(e.target.value) : null)}
+                className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400"
+              >
+                <option value="">품목 선택</option>
+                {aldItemOptions.map(opt => (
+                  <option key={opt.id} value={opt.id}>{opt.name} ({opt.code})</option>
+                ))}
+              </select>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -596,7 +596,7 @@ export default function AldPrecursorPage() {
                 className="px-4 py-2 text-sm text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50">
                 취소
               </button>
-              <button onClick={handleCreate} disabled={creating || !createTareWeight}
+              <button onClick={handleCreate} disabled={creating || !createTareWeight || !createItemId}
                 className="flex items-center gap-2 px-5 py-2 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:opacity-60">
                 <QrCode size={16} />
                 {creating ? t.ald.creating : t.ald.createSaveBtn}

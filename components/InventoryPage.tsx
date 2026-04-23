@@ -76,6 +76,7 @@ export default function InventoryPage({
     "전체": t.inventory.catAll,
     "웨이퍼": t.inventory.catWafer,
     "타겟": t.inventory.catTarget,
+    "ALD Canister": t.inventory.catAldCanister,
     "가스": t.inventory.catGas,
     "기자재/소모품": t.inventory.catEquip,
   };
