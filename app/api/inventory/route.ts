@@ -217,13 +217,16 @@ export async function POST(request: NextRequest) {
         where: { id: Number(body.barcodeId) },
         include: { item: { include: { category: true } } },
       });
-      if (barcode?.item?.category?.name === "타겟") {
+      const isTargetOrCanister =
+        barcode?.item?.category?.name === "타겟" ||
+        barcode?.item?.category?.name === "ALD 캐니스터";
+      if (isTargetOrCanister) {
         const existingInbound = await prisma.inventoryTx.findFirst({
           where: { barcodeId: Number(body.barcodeId), txType: "입고" },
         });
         if (existingInbound) {
           return NextResponse.json(
-            { error: `해당 타겟 바코드(${barcode.code})는 이미 입고된 이력이 있습니다. 타겟은 바코드당 1회만 입고 가능합니다.` },
+            { error: `해당 바코드(${barcode.code})는 이미 입고된 이력이 있습니다. 바코드당 1회만 입고 가능합니다.` },
             { status: 400 }
           );
         }
@@ -236,15 +239,18 @@ export async function POST(request: NextRequest) {
         where: { id: Number(body.itemId) },
         include: { category: true },
       });
-      if (item?.category?.name === "타겟") {
-        // 케이스 A: 바코드 없이 타겟 입고 시도
+      const isTargetLike =
+        item?.category?.name === "타겟" ||
+        item?.category?.name === "ALD 캐니스터";
+      if (isTargetLike) {
+        // 바코드 없이 입고 시도 차단
         if (!body.barcodeId) {
           return NextResponse.json(
-            { error: "타겟 품목은 반드시 바코드를 스캔하여 입고해야 합니다." },
+            { error: `${item!.category!.name} 품목은 반드시 바코드를 스캔하여 입고해야 합니다.` },
             { status: 400 }
           );
         }
-        // 케이스 B: 바코드는 있지만 targetUnitId가 없는 경우
+        // 바코드는 있지만 targetUnitId가 없는 경우
         if (!body.targetUnitId) {
           const barcode = await prisma.barcode.findUnique({
             where: { id: Number(body.barcodeId) },
@@ -252,7 +258,7 @@ export async function POST(request: NextRequest) {
           });
           if (!barcode?.targetUnitId) {
             return NextResponse.json(
-              { error: `바코드(${barcode?.code})에 연결된 타겟 정보가 없습니다. 바코드를 다시 생성해주세요.` },
+              { error: `바코드(${barcode?.code})에 연결된 정보가 없습니다. 바코드를 다시 생성해주세요.` },
               { status: 400 }
             );
           }
@@ -377,6 +383,34 @@ export async function POST(request: NextRequest) {
             data: { status: "판매완료" },
           });
         }
+      }
+    }
+
+    // 불출 시: ALD 캐니스터이면 폐기 자동 처리 + 포트 슬롯 비우기
+    if (body.txType === "불출" && body.barcodeId) {
+      const bc = await prisma.barcode.findUnique({
+        where: { id: Number(body.barcodeId) },
+        include: {
+          item: { include: { category: true } },
+          targetUnit: true,
+        },
+      });
+      if (bc?.item?.category?.name === "ALD 캐니스터" && bc.targetUnitId) {
+        // 상태 → 폐기
+        await prisma.targetUnit.update({
+          where: { id: bc.targetUnitId },
+          data: { status: "폐기", disposedAt: new Date() },
+        });
+        // 바코드 비활성화
+        await prisma.barcode.update({
+          where: { id: Number(body.barcodeId) },
+          data: { isActive: "N" },
+        });
+        // 포트 슬롯 자동 비우기
+        await prisma.aldPortSlot.updateMany({
+          where: { targetUnitId: bc.targetUnitId },
+          data: { targetUnitId: null, loadedAt: null },
+        });
       }
     }
 

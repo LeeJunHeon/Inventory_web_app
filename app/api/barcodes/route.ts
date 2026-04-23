@@ -176,6 +176,55 @@ export async function POST(request: NextRequest) {
         targetId: result.targetUnit ? `TU-${String(result.targetUnit.id).padStart(3, "0")}` : "",
         isActive: result.isActive,
       }, { status: 201 });
+    } else if (item.category.name === "ALD 캐니스터") {
+      const result = await prisma.$transaction(async (tx) => {
+        // 1. target_unit 생성 (category = 'ald')
+        const targetUnit = await tx.targetUnit.create({
+          data: {
+            itemId:   item.id,
+            status:   "미사용",
+            category: "ald",
+            note:     body.memo || null,
+          },
+        });
+
+        // 2. ald_canister_spec 생성 (aldTareWeight 필수)
+        if (body.aldTareWeight) {
+          await tx.aldCanisterSpec.create({
+            data: {
+              targetUnitId:       targetUnit.id,
+              tareWeight:         Number(body.aldTareWeight),
+              materialName:       body.aldMaterialName || null,
+              initialGrossWeight: body.aldInitialGross ? Number(body.aldInitialGross) : null,
+            },
+          });
+        }
+
+        // 3. barcode 생성 (C prefix)
+        const seq = await tx.barcodeSeq.upsert({
+          where:  { prefix: "C" },
+          update: { lastNo: { increment: 1 } },
+          create: { prefix: "C", lastNo: 1 },
+        });
+        const newCode = `C-${seq.lastNo}`;
+
+        const barcode = await tx.barcode.create({
+          data: {
+            code:         newCode,
+            itemId:       item.id,
+            targetUnitId: targetUnit.id,
+            isActive:     "Y",
+            memo:         body.memo || null,
+          },
+        });
+
+        return { targetUnit, barcode };
+      });
+
+      return NextResponse.json(
+        { id: result.barcode.id, code: result.barcode.code, targetUnitId: result.targetUnit.id },
+        { status: 201 }
+      );
     }
 
     // 타겟이 아닌 경우 바코드만 생성

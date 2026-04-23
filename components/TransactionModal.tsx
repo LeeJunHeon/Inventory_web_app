@@ -56,6 +56,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
     "타겟": t.inventory.catTarget,
     "가스": t.inventory.catGas,
     "기자재/소모품": t.inventory.catEquip,
+    "ALD 캐니스터": t.inventory.catAldCanister,
   };
   const isMobile = typeof navigator !== "undefined" &&
     (navigator.maxTouchPoints > 0 || /Mobi|Android/i.test(navigator.userAgent));
@@ -117,6 +118,9 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const [barcodeCreateMaterial, setBarcodeCreateMaterial] = useState("");
   const [barcodeCreating, setBarcodeCreating] = useState(false);
   const [barcodeCreateError, setBarcodeCreateError] = useState("");
+  const [aldMaterialName, setAldMaterialName] = useState("");
+  const [aldTareWeight, setAldTareWeight]     = useState("");
+  const [aldInitialGross, setAldInitialGross] = useState("");
 
   // 웨이퍼 스펙
   const [waferSpec, setWaferSpec] = useState<WaferSpecInfo | null>(null);
@@ -370,13 +374,24 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       const res = await fetch("/api/barcodes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemId, materialName: barcodeCreateMaterial || null }),
+        body: JSON.stringify({
+          itemId,
+          materialName: barcodeCreateMaterial || null,
+          ...(category === "ALD 캐니스터" && {
+            aldMaterialName: aldMaterialName || null,
+            aldTareWeight:   aldTareWeight ? parseFloat(aldTareWeight) : null,
+            aldInitialGross: aldInitialGross ? parseFloat(aldInitialGross) : null,
+          }),
+        }),
       });
       const data = await res.json();
       if (!res.ok) { setBarcodeCreateError((data.error || t.common.saveFail) + (data.detail ? `\n${data.detail}` : "")); return; }
       // 생성된 바코드를 자동으로 입력란에 채우고 조회
       setBarcodeInput(data.code);
       justCreatedBarcodeId.current = data.id;
+      setAldMaterialName("");
+      setAldTareWeight("");
+      setAldInitialGross("");
       setShowBarcodeCreate(false);
       setBarcodeCreateMaterial("");
       await handleBarcodeLookup(data.code);
@@ -569,6 +584,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                   setTxReasonId(null); setDisburseeId(null);
                   setMemo(""); setWaferSpec(null); setError("");
                   setShowBarcodeCreate(false);
+                  setAldMaterialName(""); setAldTareWeight(""); setAldInitialGross("");
                   setBarcodeCreateMaterial("");
                   setBarcodeCreateError("");
                   setShowCameraScanner(false);
@@ -679,6 +695,34 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                     placeholder={t.tx.materialPlaceholder}
                     className="w-full px-3 py-2 border border-blue-200 rounded-xl text-sm outline-none bg-white focus:ring-2 focus:ring-blue-400" />
                 )}
+                {category === "ALD 캐니스터" && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-blue-600">{t.tx.aldCanisterHint}</p>
+                    <div>
+                      <label className="block text-xs font-semibold text-blue-700 mb-1">{t.tx.aldCanisterMaterialLabel}</label>
+                      <input type="text" value={aldMaterialName}
+                        onChange={e => setAldMaterialName(e.target.value)}
+                        placeholder={t.tx.aldCanisterMaterialPlaceholder}
+                        className="w-full px-3 py-2 border border-blue-200 rounded-xl text-sm outline-none bg-white focus:ring-2 focus:ring-blue-400" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs font-semibold text-blue-700 mb-1">{t.tx.aldCanisterTareLabel}</label>
+                        <input type="number" step="0.001" value={aldTareWeight}
+                          onChange={e => setAldTareWeight(e.target.value)}
+                          placeholder={t.tx.aldCanisterTarePlaceholder}
+                          className="w-full px-3 py-2 border border-blue-200 rounded-xl text-sm outline-none bg-white focus:ring-2 focus:ring-blue-400" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-blue-700 mb-1">{t.tx.aldCanisterGrossLabel}</label>
+                        <input type="number" step="0.001" value={aldInitialGross}
+                          onChange={e => setAldInitialGross(e.target.value)}
+                          placeholder={t.tx.aldCanisterGrossPlaceholder}
+                          className="w-full px-3 py-2 border border-blue-200 rounded-xl text-sm outline-none bg-white focus:ring-2 focus:ring-blue-400" />
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {barcodeCreateError && (
                   <p className="text-xs text-red-500 whitespace-pre-line">{barcodeCreateError}</p>
                 )}
@@ -748,7 +792,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">{t.items.catLabel}</label>
             <div className="flex gap-2 flex-wrap">
-              {["웨이퍼", "타겟", "가스", "기자재/소모품"].map((c) => (
+              {["웨이퍼", "타겟", "가스", "기자재/소모품", "ALD 캐니스터"].map((c) => (
                 <button key={c} onClick={() => setCategory(c)}
                   className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                     category === c
