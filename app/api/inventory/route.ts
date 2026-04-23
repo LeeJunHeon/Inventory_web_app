@@ -219,7 +219,7 @@ export async function POST(request: NextRequest) {
       });
       const isTargetOrCanister =
         barcode?.item?.category?.name === "타겟" ||
-        barcode?.item?.category?.name === "ALD 캐니스터";
+        barcode?.item?.category?.name === "ALD Canister";
       if (isTargetOrCanister) {
         const existingInbound = await prisma.inventoryTx.findFirst({
           where: { barcodeId: Number(body.barcodeId), txType: "입고" },
@@ -241,7 +241,7 @@ export async function POST(request: NextRequest) {
       });
       const isTargetLike =
         item?.category?.name === "타겟" ||
-        item?.category?.name === "ALD 캐니스터";
+        item?.category?.name === "ALD Canister";
       if (isTargetLike) {
         // 바코드 없이 입고 시도 차단
         if (!body.barcodeId) {
@@ -386,7 +386,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 불출 시: ALD 캐니스터이면 폐기 자동 처리 + 포트 슬롯 비우기
+    // 불출 시: ALD Canister이면 폐기 자동 처리 + 포트 슬롯 비우기
     if (body.txType === "불출" && body.barcodeId) {
       const bc = await prisma.barcode.findUnique({
         where: { id: Number(body.barcodeId) },
@@ -395,7 +395,7 @@ export async function POST(request: NextRequest) {
           targetUnit: true,
         },
       });
-      if (bc?.item?.category?.name === "ALD 캐니스터" && bc.targetUnitId) {
+      if (bc?.item?.category?.name === "ALD Canister" && bc.targetUnitId) {
         // 상태 → 폐기
         await prisma.targetUnit.update({
           where: { id: bc.targetUnitId },

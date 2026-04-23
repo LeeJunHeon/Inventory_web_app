@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
         targetId: result.targetUnit ? `TU-${String(result.targetUnit.id).padStart(3, "0")}` : "",
         isActive: result.isActive,
       }, { status: 201 });
-    } else if (item.category.name === "ALD 캐니스터") {
+    } else if (item.category.name === "ALD Canister") {
       const result = await prisma.$transaction(async (tx) => {
         // 1. target_unit 생성 (category = 'ald')
         const targetUnit = await tx.targetUnit.create({
