@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (category && category !== "전체") {
-      // ALD 조회 시 서브 카테고리(ALD Canister, ALD Material 등) 포함
+      // ALD 조회 시 서브 카테고리(ALD Canister, ALD Precursor 등) 포함
       where.category = category === "ALD"
         ? {
             OR: [

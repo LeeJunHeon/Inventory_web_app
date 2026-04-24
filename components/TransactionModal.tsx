@@ -221,7 +221,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       .then(setItemOptions)
       .catch(() => setError(t.tx.itemLoadFailed));
     if (category === "ALD Canister") {
-      fetch("/api/items?category=ALD%20Material")
+      fetch("/api/items?category=ALD%20Precursor")
         .then(r => r.ok ? r.json() : [])
         .then((items: {id:number; name:string; code:string}[]) => setMaterialItems(items))
         .catch(() => setMaterialItems([]));
