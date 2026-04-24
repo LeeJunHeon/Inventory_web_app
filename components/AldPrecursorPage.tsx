@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
   Search, Save, Weight, MapPin, FileText, Loader2,
-  Camera, Download, RefreshCw, Droplet, Plus, X, QrCode, Pencil,
+  Camera, Download, RefreshCw, Droplet, Pencil,
 } from "lucide-react";
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
 import { useT } from "@/lib/i18n";
@@ -67,16 +67,6 @@ export default function AldPrecursorPage() {
   const [portSelectedCanister, setPortSelectedCanister] = useState<CanisterInfo | null>(null);
   const [portSaving, setPortSaving] = useState(false);
 
-  // ─── Canister 생성 ───
-  const [showCreate, setShowCreate] = useState(false);
-  const [createItemId, setCreateItemId] = useState<number | null>(null);
-  const [aldItemOptions, setAldItemOptions] = useState<{ id: number; code: string; name: string }[]>([]);
-  const [createMaterialName, setCreateMaterialName] = useState("");
-  const [createTareWeight, setCreateTareWeight] = useState("");
-  const [createInitialGross, setCreateInitialGross] = useState("");
-  const [createMemo, setCreateMemo] = useState("");
-  const [creating, setCreating] = useState(false);
-
   // ─── 검색 ───
   const [searchType, setSearchType] = useState<"바코드" | "품목코드" | "물질명">("바코드");
   const [barcodeInput, setBarcodeInput] = useState("");
@@ -132,13 +122,6 @@ export default function AldPrecursorPage() {
     fetch("/api/locations")
       .then(r => r.ok ? r.json() : [])
       .then(data => setLocationOptions(data))
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    fetch("/api/items?category=ALD%20Canister")
-      .then(r => r.ok ? r.json() : [])
-      .then(setAldItemOptions)
       .catch(() => {});
   }, []);
 
@@ -239,32 +222,6 @@ export default function AldPrecursorPage() {
       }
     } catch { showToast(t.ald.saveFailed); }
     finally { setSaving(false); }
-  };
-
-  const handleCreate = async () => {
-    if (!createTareWeight) return;
-    setCreating(true);
-    try {
-      const res = await fetch("/api/ald", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          itemId:             createItemId ?? null,
-          materialName:       createMaterialName || null,
-          tareWeight:         parseFloat(createTareWeight),
-          initialGrossWeight: createInitialGross ? parseFloat(createInitialGross) : null,
-          memo:               createMemo || null,
-        }),
-      });
-      if (!res.ok) { const e = await res.json(); showToast(e.error || t.ald.createFailed); return; }
-      const created = await res.json();
-      showToast(`${created.barcodeCode} ${t.ald.createSuccess}`);
-      setCreateItemId(null);
-      setCreateMaterialName(""); setCreateTareWeight("");
-      setCreateInitialGross(""); setCreateMemo("");
-      setShowCreate(false);
-    } catch { showToast(t.ald.createFailed); }
-    finally { setCreating(false); }
   };
 
   // 포트에 Canister 배정
@@ -529,81 +486,6 @@ export default function AldPrecursorPage() {
               .catch(() => setAllCanisters([]));
           })}
         </div>
-      </div>
-
-      {/* ── 새 Canister 등록 ── */}
-      <div>
-        <button onClick={() => setShowCreate((v) => !v)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 transition-colors">
-          <Plus size={16} />
-          {t.ald.createBtn}
-        </button>
-
-        {showCreate && (
-          <div className="mt-3 bg-blue-50 border border-blue-200 rounded-2xl p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-bold text-blue-900">{t.ald.createTitle}</h2>
-              <button onClick={() => setShowCreate(false)}
-                className="p-1 rounded-lg hover:bg-blue-100 text-blue-400">
-                <X size={18} />
-              </button>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-blue-700 mb-1">
-                Canister 품목 <span className="text-rose-500">*</span>
-              </label>
-              <select
-                value={createItemId ?? ""}
-                onChange={(e) => setCreateItemId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400"
-              >
-                <option value="">품목 선택</option>
-                {aldItemOptions.map(opt => (
-                  <option key={opt.id} value={opt.id}>{opt.name} ({opt.code})</option>
-                ))}
-              </select>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-blue-700 mb-1">{t.ald.materialNameLabel}</label>
-                <input type="text" value={createMaterialName} onChange={(e) => setCreateMaterialName(e.target.value)}
-                  placeholder={t.ald.materialPlaceholder}
-                  className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm outline-none bg-white focus:ring-2 focus:ring-blue-400" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-blue-700 mb-1">{t.ald.tareWeightLabel}</label>
-                <input type="number" step="0.001" value={createTareWeight} onChange={(e) => setCreateTareWeight(e.target.value)}
-                  placeholder="0.000"
-                  className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm outline-none bg-white focus:ring-2 focus:ring-blue-400" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-blue-700 mb-1">
-                  {t.ald.initialGrossLabel}
-                  <span className="ml-1 text-blue-400 font-normal">({t.ald.initialGrossHint})</span>
-                </label>
-                <input type="number" step="0.001" value={createInitialGross} onChange={(e) => setCreateInitialGross(e.target.value)}
-                  placeholder="0.000"
-                  className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm outline-none bg-white focus:ring-2 focus:ring-blue-400" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-blue-700 mb-1">{t.ald.memoLabel}</label>
-                <input type="text" value={createMemo} onChange={(e) => setCreateMemo(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm outline-none bg-white focus:ring-2 focus:ring-blue-400" />
-              </div>
-            </div>
-            <div className="flex items-center justify-end gap-2">
-              <button onClick={() => setShowCreate(false)}
-                className="px-4 py-2 text-sm text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50">
-                취소
-              </button>
-              <button onClick={handleCreate} disabled={creating || !createTareWeight || !createItemId}
-                className="flex items-center gap-2 px-5 py-2 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:opacity-60">
-                <QrCode size={16} />
-                {creating ? t.ald.creating : t.ald.createSaveBtn}
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ── 바코드 검색 ── */}
