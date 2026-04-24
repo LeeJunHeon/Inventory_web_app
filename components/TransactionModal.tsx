@@ -121,6 +121,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const [aldMaterialName, setAldMaterialName] = useState("");
   const [aldTareWeight, setAldTareWeight]     = useState("");
   const [aldInitialGross, setAldInitialGross] = useState("");
+  const [materialItems, setMaterialItems] = useState<{id:number; name:string; code:string}[]>([]);
 
   // 웨이퍼 스펙
   const [waferSpec, setWaferSpec] = useState<WaferSpecInfo | null>(null);
@@ -219,6 +220,12 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       .then(r => r.json())
       .then(setItemOptions)
       .catch(() => setError(t.tx.itemLoadFailed));
+    if (category === "ALD Canister") {
+      fetch("/api/items?category=기자재%2F소모품")
+        .then(r => r.ok ? r.json() : [])
+        .then((items: {id:number; name:string; code:string}[]) => setMaterialItems(items))
+        .catch(() => setMaterialItems([]));
+    }
     setItemId(null); setItemCode(""); setItemName("");
     setShowItemSelector(false);
     setWaferSpec(null);
@@ -417,6 +424,11 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         setError(t.tx.qtyExceeded(selectedInbound.remainQty));
         barcodeInputRef.current?.focus(); return;
       }
+    }
+    // ALD Canister: 바코드 생성 필수
+    if (category === "ALD Canister" && type === "입고" && !barcodeId) {
+      setError("ALD Canister는 바코드를 먼저 생성해야 합니다. '생성' 버튼을 눌러 C-xxx 바코드를 만들어주세요.");
+      return;
     }
     // 출고/불출 시 바코드 필수 검증
     if ((type === "출고" || type === "불출") && !barcodeId) {
@@ -708,10 +720,16 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                     <p className="text-xs text-blue-600">{t.tx.aldCanisterHint}</p>
                     <div>
                       <label className="block text-xs font-semibold text-blue-700 mb-1">{t.tx.aldCanisterMaterialLabel}</label>
-                      <input type="text" value={aldMaterialName}
+                      <select
+                        value={aldMaterialName}
                         onChange={e => setAldMaterialName(e.target.value)}
-                        placeholder={t.tx.aldCanisterMaterialPlaceholder}
-                        className="w-full px-3 py-2 border border-blue-200 rounded-xl text-sm outline-none bg-white focus:ring-2 focus:ring-blue-400" />
+                        className="w-full px-3 py-2 border border-blue-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400"
+                      >
+                        <option value="">물질 선택</option>
+                        {materialItems.map(m => (
+                          <option key={m.id} value={m.name}>{m.name} ({m.code})</option>
+                        ))}
+                      </select>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
@@ -905,53 +923,6 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
               ) : (
                 <p className="text-xs text-blue-400">{t.tx.noSpec}</p>
               )}
-            </div>
-          )}
-
-          {/* ALD Canister 전용 입력 필드 */}
-          {category === "ALD Canister" && type === "입고" && (
-            <div className="bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 space-y-3">
-              <p className="text-xs font-semibold text-teal-700">{t.tx.aldCanisterHint}</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-teal-700 mb-1">
-                    {t.tx.aldCanisterMaterialLabel} <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={aldMaterialName}
-                    onChange={e => setAldMaterialName(e.target.value)}
-                    placeholder={t.tx.aldCanisterMaterialPlaceholder}
-                    className="w-full px-3 py-2 border border-teal-200 rounded-xl text-sm outline-none bg-white focus:ring-2 focus:ring-teal-400"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-teal-700 mb-1">
-                    {t.tx.aldCanisterTareLabel} <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.001"
-                    value={aldTareWeight}
-                    onChange={e => setAldTareWeight(e.target.value)}
-                    placeholder={t.tx.aldCanisterTarePlaceholder}
-                    className="w-full px-3 py-2 border border-teal-200 rounded-xl text-sm outline-none bg-white focus:ring-2 focus:ring-teal-400"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-teal-700 mb-1">
-                    {t.tx.aldCanisterGrossLabel}
-                  </label>
-                  <input
-                    type="number"
-                    step="0.001"
-                    value={aldInitialGross}
-                    onChange={e => setAldInitialGross(e.target.value)}
-                    placeholder={t.tx.aldCanisterGrossPlaceholder}
-                    className="w-full px-3 py-2 border border-teal-200 rounded-xl text-sm outline-none bg-white focus:ring-2 focus:ring-teal-400"
-                  />
-                </div>
-              </div>
             </div>
           )}
 
