@@ -44,7 +44,6 @@ export async function GET(request: NextRequest) {
         tareWeight:            l.aldLogDetail?.tareWeight     ? Number(l.aldLogDetail.tareWeight)            : null,
         measureWeight:         l.aldLogDetail?.measureWeight  ? Number(l.aldLogDetail.measureWeight)         : null,
         cumulativeCycle:       l.aldLogDetail?.cumulativeCycle    ?? null,
-        cycleDelta:            l.aldLogDetail?.cycleDelta         ?? null,
         consumptionPerCycle:   l.aldLogDetail?.consumptionPerCycle
                                  ? Number(l.aldLogDetail.consumptionPerCycle) : null,
         remainPercent:         l.aldLogDetail?.remainPercent
