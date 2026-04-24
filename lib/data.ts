@@ -65,7 +65,9 @@ export const TYPE_COLORS: Record<string, { bg: string; text: string; border: str
 export const CATEGORY_COLORS: Record<string, string> = {
   "웨이퍼": "bg-violet-100 text-violet-700",
   "타겟": "bg-sky-100 text-sky-700",
+  "ALD":          "bg-teal-50 text-teal-600",
   "ALD Canister": "bg-teal-100 text-teal-700",
+  "ALD Material": "bg-cyan-100 text-cyan-700",
   "가스": "bg-emerald-100 text-emerald-700",
   "기자재/소모품": "bg-orange-100 text-orange-700",
 };
