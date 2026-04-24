@@ -135,7 +135,6 @@ export async function POST(request: NextRequest) {
           tareWeight:           tare,
           measureWeight:        measure,
           cumulativeCycle:      curCycle,
-          cycleDelta:           null,
           consumptionPerCycle:  body.consumptionPerCycle
             ? Number(body.consumptionPerCycle) : null,
           remainPercent:        remainPercent,
