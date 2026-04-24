@@ -11,9 +11,9 @@ interface ItemOption {
   category: string; categoryId: number;
   unit: string | null; note: string | null; isActive: boolean;
 }
-interface CategoryOption { id: number; name: string; codePrefix: string | null; }
+interface CategoryOption { id: number; name: string; codePrefix: string | null; parentId: number | null; }
 
-const CATS = ["전체", "웨이퍼", "타겟", "ALD Canister", "가스", "기자재/소모품"];
+const CATS = ["전체", "웨이퍼", "타겟", "ALD", "가스", "기자재/소모품"];
 
 const EMPTY_FORM = { code: "", name: "", categoryId: "", unit: "", note: "" };
 
@@ -23,7 +23,7 @@ export default function ItemsPage() {
     "전체": t.barcode.catAll,
     "웨이퍼": t.inventory.catWafer,
     "타겟": t.inventory.catTarget,
-    "ALD Canister": t.inventory.catAldCanister,
+    "ALD": "ALD",
     "가스": t.inventory.catGas,
     "기자재/소모품": t.inventory.catEquip,
   };
@@ -189,7 +189,29 @@ export default function ItemsPage() {
                 disabled={!!editTarget}
                 className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none disabled:opacity-60">
                 <option value="">{t.items.selectPlaceholder}</option>
-                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                {/* 최상위 카테고리 */}
+                {categories
+                  .filter(c => c.parentId === null)
+                  .map(parent => (
+                    <optgroup key={parent.id} label={parent.name}>
+                      {/* 서브 카테고리가 있으면 서브만 선택 가능 */}
+                      {categories.filter(c => c.parentId === parent.id).length > 0
+                        ? categories
+                            .filter(c => c.parentId === parent.id)
+                            .map(child => (
+                              <option key={child.id} value={child.id}>
+                                {child.name}
+                              </option>
+                            ))
+                        : (
+                          <option key={parent.id} value={parent.id}>
+                            {parent.name}
+                          </option>
+                        )
+                      }
+                    </optgroup>
+                  ))
+                }
               </select>
             </div>
             {/* 품목코드 */}
