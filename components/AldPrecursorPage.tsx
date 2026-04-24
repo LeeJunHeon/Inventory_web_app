@@ -640,7 +640,7 @@ export default function AldPrecursorPage() {
               {/* 사이클당 소모량 — 직접 입력 */}
               <div>
                 <label className="block text-xs text-gray-400 mb-1">
-                  사이클당 소모량
+                  사이클당 소모량 <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="number" step="0.001"
@@ -652,7 +652,10 @@ export default function AldPrecursorPage() {
               </div>
               <div>
                 <label className="block text-xs text-gray-400 mb-1">
-                  <span className="inline-flex items-center gap-1"><RefreshCw size={12} /> {t.ald.cycleLabel}</span>
+                  <span className="inline-flex items-center gap-1">
+                    <RefreshCw size={12} /> {t.ald.cycleLabel}
+                    <span className="text-rose-500">*</span>
+                  </span>
                 </label>
                 <input type="number" value={cumulativeCycle} onChange={(e) => setCumulativeCycle(e.target.value)}
                   placeholder="0"
@@ -680,7 +683,7 @@ export default function AldPrecursorPage() {
               </div>
               {weightError && <p className="text-xs text-red-500 flex items-center gap-1">{weightError}</p>}
             </div>
-            <button onClick={handleSave} disabled={saving || !measureWeight}
+            <button onClick={handleSave} disabled={saving || !measureWeight || !consumptionPerCycle || !cumulativeCycle}
               className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:opacity-60">
               <Save size={16} />
               {saving ? <Loader2 size={16} className="animate-spin" /> : t.ald.saveBtn}

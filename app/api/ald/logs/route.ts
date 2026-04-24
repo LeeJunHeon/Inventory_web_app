@@ -91,36 +91,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Canister 정보를 찾을 수 없습니다." }, { status: 404 });
     }
 
-    const measure         = Number(body.measureWeight);
-    const consumptionInput = body.consumptionPerCycle
-      ? Number(body.consumptionPerCycle) : null;
-
+    const measure     = Number(body.measureWeight);
     const tare        = Number(spec.tareWeight);
     const initialPure = spec.initialGrossWeight
                           ? Number(spec.initialGrossWeight) - tare
                           : measure; // 최초 충진이면 measure가 기준
 
-    // 이전 로그 조회 (소모량, cycle delta 계산용)
-    const prevLog = await prisma.targetLog.findFirst({
-      where:   { targetUnitId: Number(canisterId) },
-      orderBy: { loggedAt: "desc" },
-      include: { aldLogDetail: true },
-    });
-
-    // 계산
-    const prevMeasure = prevLog?.aldLogDetail?.measureWeight
-                          ? Number(prevLog.aldLogDetail.measureWeight) : null;
-    const prevCycle   = prevLog?.aldLogDetail?.cumulativeCycle ?? null;
-    const curCycle    = cumulativeCycle ? Number(cumulativeCycle) : null;
-
-    const cycleDelta = (curCycle != null && prevCycle != null)
-      ? curCycle - prevCycle : null;
-
-    const consumptionPerCycle = (cycleDelta && cycleDelta > 0 && prevMeasure != null)
-      ? (prevMeasure - measure) / cycleDelta : null;
-
-    // 직접 입력값이 있으면 우선, 없으면 자동계산값 사용
-    const finalConsumption = consumptionInput ?? consumptionPerCycle;
+    const curCycle = cumulativeCycle ? Number(cumulativeCycle) : null;
 
     const remainPercent = logSubType === "충진"
       ? 100
@@ -130,14 +107,6 @@ export async function POST(request: NextRequest) {
       ? null
       : ((curCycle && measure > 0 && initialPure > measure)
           ? Math.round(measure * curCycle / (initialPure - measure)) : null);
-
-    // 충진이면 이전보다 measure가 높아도 OK, 측정이면 체크
-    if (logSubType !== "충진" && prevMeasure !== null && measure > prevMeasure) {
-      return NextResponse.json(
-        { error: "이전 측정값보다 높습니다. 충진이면 구분을 '충진'으로 변경하세요." },
-        { status: 400 }
-      );
-    }
 
     const sessionUserId = await getSessionUserId();
 
@@ -165,8 +134,9 @@ export async function POST(request: NextRequest) {
           tareWeight:           tare,
           measureWeight:        measure,
           cumulativeCycle:      curCycle,
-          cycleDelta:           cycleDelta,
-          consumptionPerCycle:  finalConsumption,
+          cycleDelta:           null,
+          consumptionPerCycle:  body.consumptionPerCycle
+            ? Number(body.consumptionPerCycle) : null,
           remainPercent:        remainPercent,
           estimatedRemainCycle: estimatedRemainCycle,
           locationId:           locationId ? Number(locationId) : null,
