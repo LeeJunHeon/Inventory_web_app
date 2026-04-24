@@ -172,9 +172,8 @@ export async function POST(request: NextRequest) {
         await tx.aldCanisterSpec.update({
           where: { targetUnitId: Number(canisterId) },
           data: {
-            initialGrossWeight: measure + tare,
-            materialName:       materialName || spec.materialName,
-            updatedAt:          new Date(),
+            materialName: materialName || spec.materialName,
+            updatedAt:    new Date(),
           },
         });
         // 상태 → 사용중
