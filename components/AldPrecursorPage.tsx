@@ -612,6 +612,18 @@ export default function AldPrecursorPage() {
                   />
                 </div>
               )}
+              {/* Gross Weight — 참고용 표시만 */}
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">
+                  {t.ald.grossWeightLabel}
+                </label>
+                <div className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-500">
+                  {selectedCanister.initialGrossWeight != null
+                    ? `${Number(selectedCanister.initialGrossWeight).toFixed(3)} g`
+                    : "-"}
+                </div>
+              </div>
+
               {/* Tare Weight — 참고용 표시만 */}
               <div>
                 <label className="block text-xs text-gray-400 mb-1">{t.ald.tareWeightInputLabel}</label>
@@ -639,30 +651,34 @@ export default function AldPrecursorPage() {
                 />
               </div>
 
-              {/* 사이클당 소모량 — 직접 입력 */}
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">
-                  사이클당 소모량 <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="number" step="0.001"
-                  value={consumptionPerCycle}
-                  onChange={(e) => setConsumptionPerCycle(e.target.value)}
-                  placeholder="0.000"
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">
-                  <span className="inline-flex items-center gap-1">
-                    <RefreshCw size={12} /> {t.ald.cycleLabel}
-                    <span className="text-rose-500">*</span>
-                  </span>
-                </label>
-                <input type="number" value={cumulativeCycle} onChange={(e) => setCumulativeCycle(e.target.value)}
-                  placeholder="0"
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
-              </div>
+              {/* 사이클당 소모량 — 측정 시에만 표시 */}
+              {logSubType !== "충진" && (
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">
+                    사이클당 소모량 <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="number" step="0.001"
+                    value={consumptionPerCycle}
+                    onChange={(e) => setConsumptionPerCycle(e.target.value)}
+                    placeholder="0.000"
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
+              {logSubType !== "충진" && (
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">
+                    <span className="inline-flex items-center gap-1">
+                      <RefreshCw size={12} /> {t.ald.cycleLabel}
+                      <span className="text-rose-500">*</span>
+                    </span>
+                  </label>
+                  <input type="number" value={cumulativeCycle} onChange={(e) => setCumulativeCycle(e.target.value)}
+                    placeholder="0"
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+              )}
               <div>
                 <label className="block text-xs text-gray-400 mb-1">
                   <span className="inline-flex items-center gap-1"><MapPin size={12} /> {t.ald.locationLabel}</span>
@@ -711,7 +727,7 @@ export default function AldPrecursorPage() {
               </div>
               {weightError && <p className="text-xs text-red-500 flex items-center gap-1">{weightError}</p>}
             </div>
-            <button onClick={handleSave} disabled={saving || !measureWeight || !consumptionPerCycle || !cumulativeCycle}
+            <button onClick={handleSave} disabled={saving || !measureWeight || (logSubType !== "충진" && (!consumptionPerCycle || !cumulativeCycle))}
               className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:opacity-60">
               <Save size={16} />
               {saving ? <Loader2 size={16} className="animate-spin" /> : t.ald.saveBtn}
