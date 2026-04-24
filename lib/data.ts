@@ -3,7 +3,7 @@ export interface InventoryItem {
   id: number;
   txNo: string;
   date: string;
-  type: "입고" | "출고" | "불출";
+  type: "입고" | "출고" | "불출" | "충진 입고";
   category: string;
   code: string;
   name: string;
@@ -57,6 +57,7 @@ export const TYPES = ["전체", "입고", "출고", "불출", "사용중"];
 
 export const TYPE_COLORS: Record<string, { bg: string; text: string; border: string; dot: string }> = {
   "입고": { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", dot: "bg-blue-500" },
+  "충진 입고": { bg: "bg-indigo-50", text: "text-indigo-700", border: "border-indigo-200", dot: "bg-indigo-500" },
   "출고": { bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200", dot: "bg-rose-500" },
   "불출": { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", dot: "bg-amber-500" },
   "사용중": { bg: "bg-teal-50", text: "text-teal-700", border: "border-teal-200", dot: "bg-teal-500" },
