@@ -74,14 +74,13 @@ export async function POST(request: NextRequest) {
       canisterId,
       logSubType,      // "측정" | "충진"
       materialName,
-      grossWeight,
       locationId,
       cumulativeCycle,
       reason,
     } = body;
 
-    if (!canisterId || !grossWeight) {
-      return NextResponse.json({ error: "canisterId, grossWeight는 필수입니다." }, { status: 400 });
+    if (!canisterId || body.measureWeight == null) {
+      return NextResponse.json({ error: "canisterId, measureWeight는 필수입니다." }, { status: 400 });
     }
 
     // Canister spec 조회 (tare, initialGross)
@@ -92,12 +91,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Canister 정보를 찾을 수 없습니다." }, { status: 404 });
     }
 
-    const tare         = Number(spec.tareWeight);
-    const gross        = Number(grossWeight);
-    const measure      = gross - tare;
-    const initialPure  = spec.initialGrossWeight
-                           ? Number(spec.initialGrossWeight) - tare
-                           : measure; // 최초 충진이면 measure가 기준
+    const measure         = Number(body.measureWeight);
+    const consumptionInput = body.consumptionPerCycle
+      ? Number(body.consumptionPerCycle) : null;
+
+    const tare        = Number(spec.tareWeight);
+    const initialPure = spec.initialGrossWeight
+                          ? Number(spec.initialGrossWeight) - tare
+                          : measure; // 최초 충진이면 measure가 기준
 
     // 이전 로그 조회 (소모량, cycle delta 계산용)
     const prevLog = await prisma.targetLog.findFirst({
@@ -118,6 +119,9 @@ export async function POST(request: NextRequest) {
     const consumptionPerCycle = (cycleDelta && cycleDelta > 0 && prevMeasure != null)
       ? (prevMeasure - measure) / cycleDelta : null;
 
+    // 직접 입력값이 있으면 우선, 없으면 자동계산값 사용
+    const finalConsumption = consumptionInput ?? consumptionPerCycle;
+
     const remainPercent = logSubType === "충진"
       ? 100
       : (initialPure > 0 ? (measure / initialPure) * 100 : null);
@@ -128,7 +132,7 @@ export async function POST(request: NextRequest) {
           ? Math.round(measure * curCycle / (initialPure - measure)) : null);
 
     // 충진이면 이전보다 measure가 높아도 OK, 측정이면 체크
-    if (logSubType === "측정" && prevMeasure != null && measure > prevMeasure) {
+    if (logSubType !== "충진" && prevMeasure !== null && measure > prevMeasure) {
       return NextResponse.json(
         { error: "이전 측정값보다 높습니다. 충진이면 구분을 '충진'으로 변경하세요." },
         { status: 400 }
@@ -156,12 +160,13 @@ export async function POST(request: NextRequest) {
           targetLogId:          log.id,
           logSubType:           logSubType || "측정",
           materialName:         materialName || spec.materialName || null,
-          grossWeight:          gross,
+          grossWeight:          spec.initialGrossWeight
+            ? Number(spec.initialGrossWeight) : null,
           tareWeight:           tare,
           measureWeight:        measure,
           cumulativeCycle:      curCycle,
           cycleDelta:           cycleDelta,
-          consumptionPerCycle:  consumptionPerCycle,
+          consumptionPerCycle:  finalConsumption,
           remainPercent:        remainPercent,
           estimatedRemainCycle: estimatedRemainCycle,
           locationId:           locationId ? Number(locationId) : null,
@@ -173,7 +178,7 @@ export async function POST(request: NextRequest) {
         await tx.aldCanisterSpec.update({
           where: { targetUnitId: Number(canisterId) },
           data: {
-            initialGrossWeight: gross,
+            initialGrossWeight: measure + tare,
             materialName:       materialName || spec.materialName,
             updatedAt:          new Date(),
           },
@@ -197,7 +202,7 @@ export async function POST(request: NextRequest) {
     });
 
     await logActivity(sessionUserId, "CREATE", "target_log", saved.id,
-      `ALD ${logSubType || "측정"}: gross=${gross}g, measure=${measure.toFixed(3)}g`);
+      `ALD ${logSubType || "측정"}: measure=${measure.toFixed(3)}g`);
 
     return NextResponse.json({ id: saved.id, message: "저장되었습니다." }, { status: 201 });
   } catch (error) {
