@@ -31,7 +31,7 @@ export const en: Messages = {
     inventory: "Inventory",
     status: "Stock Status",
     period: "Period Report",
-    target: "Material Usage",
+    target: "Target Usage",
     targetGroup: "Material Usage",
     targetSputter: "Sputter (Target)",
     targetAld: "ALD (Precursor)",

@@ -29,7 +29,7 @@ export const ko = {
     inventory: "재고 관리",
     status: "보유 현황",
     period: "기간별 조회",
-    target: "물질 사용현황",
+    target: "Target 사용 현황",
     targetGroup: "물질 사용현황",
     targetSputter: "Sputter (Target)",
     targetAld: "ALD (Precursor)",
