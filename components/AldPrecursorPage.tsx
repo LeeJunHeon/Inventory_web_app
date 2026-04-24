@@ -99,6 +99,7 @@ export default function AldPrecursorPage() {
   // ─── UX ───
   const [toast, setToast] = useState("");
   const [isMobile, setIsMobile] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
 
   useEffect(() => {
     setIsMobile(
@@ -452,31 +453,37 @@ export default function AldPrecursorPage() {
 
       {/* ── 대시보드 ── */}
       <div>
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+        <button
+          onClick={() => setShowDashboard(prev => !prev)}
+          className="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 hover:text-gray-600 transition-colors"
+        >
           {t.ald.dashboardTitle}
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {renderEquipmentCard("NCD ALD", "bg-blue-500", ncdPorts, (slot) => {
-            setEditingPort(slot);
-            setPortSelectedCanister(
-              slot.canisterId ? { id: slot.canisterId, barcodeCode: slot.canisterCode ?? "", itemCode: "", itemName: "", materialName: slot.materialName ?? "", status: "사용중", tareWeight: null, initialGrossWeight: null } : null
-            );
-            fetch("/api/ald")
-              .then(r => r.ok ? r.json() : [])
-              .then((data: CanisterInfo[]) => setAllCanisters(data))
-              .catch(() => setAllCanisters([]));
-          })}
-          {renderEquipmentCard("Rayvac ALD", "bg-purple-500", rayvacPorts, (slot) => {
-            setEditingPort(slot);
-            setPortSelectedCanister(
-              slot.canisterId ? { id: slot.canisterId, barcodeCode: slot.canisterCode ?? "", itemCode: "", itemName: "", materialName: slot.materialName ?? "", status: "사용중", tareWeight: null, initialGrossWeight: null } : null
-            );
-            fetch("/api/ald")
-              .then(r => r.ok ? r.json() : [])
-              .then((data: CanisterInfo[]) => setAllCanisters(data))
-              .catch(() => setAllCanisters([]));
-          })}
-        </div>
+          <span className="text-gray-300">{showDashboard ? "▲" : "▼"}</span>
+        </button>
+        {showDashboard && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {renderEquipmentCard("NCD ALD", "bg-blue-500", ncdPorts, (slot) => {
+              setEditingPort(slot);
+              setPortSelectedCanister(
+                slot.canisterId ? { id: slot.canisterId, barcodeCode: slot.canisterCode ?? "", itemCode: "", itemName: "", materialName: slot.materialName ?? "", status: "사용중", tareWeight: null, initialGrossWeight: null } : null
+              );
+              fetch("/api/ald")
+                .then(r => r.ok ? r.json() : [])
+                .then((data: CanisterInfo[]) => setAllCanisters(data))
+                .catch(() => setAllCanisters([]));
+            })}
+            {renderEquipmentCard("Rayvac ALD", "bg-purple-500", rayvacPorts, (slot) => {
+              setEditingPort(slot);
+              setPortSelectedCanister(
+                slot.canisterId ? { id: slot.canisterId, barcodeCode: slot.canisterCode ?? "", itemCode: "", itemName: "", materialName: slot.materialName ?? "", status: "사용중", tareWeight: null, initialGrossWeight: null } : null
+              );
+              fetch("/api/ald")
+                .then(r => r.ok ? r.json() : [])
+                .then((data: CanisterInfo[]) => setAllCanisters(data))
+                .catch(() => setAllCanisters([]));
+            })}
+          </div>
+        )}
       </div>
 
       {/* ── 바코드 검색 ── */}
