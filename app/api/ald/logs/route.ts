@@ -78,6 +78,7 @@ export async function POST(request: NextRequest) {
       cumulativeCycle,
       reason,
     } = body;
+    const slotId = body.slotId ? Number(body.slotId) : null;
 
     if (!canisterId || body.measureWeight == null) {
       return NextResponse.json({ error: "canisterId, measureWeight는 필수입니다." }, { status: 400 });
@@ -142,6 +143,30 @@ export async function POST(request: NextRequest) {
           locationId:           locationId ? Number(locationId) : null,
         },
       });
+
+      // slotId가 있으면 해당 포트에 canister 자동 배정
+      if (slotId) {
+        // 기존에 이 canister가 배정된 다른 슬롯 비우기
+        await tx.aldPortSlot.updateMany({
+          where: {
+            targetUnitId: Number(canisterId),
+            id: { not: slotId },
+          },
+          data: {
+            targetUnitId: null,
+            loadedAt:     null,
+          },
+        });
+
+        // 선택한 슬롯에 canister 배정
+        await tx.aldPortSlot.update({
+          where: { id: slotId },
+          data: {
+            targetUnitId: Number(canisterId),
+            loadedAt:     new Date(),
+          },
+        });
+      }
 
       // 충진이면 spec 업데이트 (기준점 리셋 + 물질명 갱신)
       if (logSubType === "충진") {
