@@ -554,7 +554,7 @@ export const en: Messages = {
   },
   ald: {
     pageTitle: "Precursor Usage Status",
-    subtitle: "Scan canister barcode to record fill and measurement",
+    subtitle: "Scan canister barcode to record measurement",
     dashboardTitle: "Canister Status by Equipment",
     portLabel: "Port",
     emptyPort: "Empty",

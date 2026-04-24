@@ -587,18 +587,6 @@ export default function AldPrecursorPage() {
           {/* 측정 입력 */}
           <div className="bg-white rounded-2xl border border-gray-100 p-5 flex flex-col">
             <div className="flex-1 space-y-3">
-              <div>
-                <p className="text-xs text-gray-400 mb-1.5">{t.ald.subTypeLabel}</p>
-                <div className="flex gap-2">
-                  {(["측정"] as const).map((type) => (
-                    <button key={type} onClick={() => setLogSubType(type)}
-                      className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${
-                        logSubType === type ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
-                      {t.ald.subTypeMeasure}
-                    </button>
-                  ))}
-                </div>
-              </div>
               {/* Gross Weight — 참고용 표시만 */}
               <div>
                 <label className="block text-xs text-gray-400 mb-1">

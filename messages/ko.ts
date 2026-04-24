@@ -552,7 +552,7 @@ export const ko = {
   },
   ald: {
     pageTitle: "Precursor 사용 현황",
-    subtitle: "Canister 바코드를 스캔하여 충진 및 측정을 기록합니다",
+    subtitle: "Canister 바코드를 스캔하여 측정을 기록합니다",
     dashboardTitle: "장비별 Canister 현황",
     portLabel: "Port",
     emptyPort: "비어있음",
