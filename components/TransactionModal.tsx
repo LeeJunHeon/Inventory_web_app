@@ -121,6 +121,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const [aldMaterialName, setAldMaterialName] = useState("");
   const [aldTareWeight, setAldTareWeight]     = useState("");
   const [aldInitialGross, setAldInitialGross] = useState("");
+  const [inboundType, setInboundType] = useState<"신규" | "충진">("신규");
   const [materialItems, setMaterialItems] = useState<{id:number; name:string; code:string}[]>([]);
 
   // 웨이퍼 스펙
@@ -425,10 +426,16 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         barcodeInputRef.current?.focus(); return;
       }
     }
-    // ALD Canister: 바코드 생성 필수
-    if (category === "ALD Canister" && type === "입고" && !barcodeId) {
-      setError("ALD Canister는 바코드를 먼저 생성해야 합니다. '생성' 버튼을 눌러 C-xxx 바코드를 만들어주세요.");
-      return;
+    // ALD Canister 입고 유효성 검사
+    if (category === "ALD Canister" && type === "입고") {
+      if (!barcodeId) {
+        setError("ALD Canister는 바코드를 먼저 생성하거나 스캔해야 합니다.");
+        return;
+      }
+      if (inboundType === "충진" && !aldMaterialName) {
+        setError("충진 입고 시 물질을 선택해야 합니다.");
+        return;
+      }
     }
     // 출고/불출 시 바코드 필수 검증
     if ((type === "출고" || type === "불출") && !barcodeId) {
@@ -450,7 +457,9 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           txDate:    date,
-          txType:    type,
+          txType:    (category === "ALD Canister" && type === "입고" && inboundType === "충진")
+            ? "충진 입고"
+            : type,
           itemId,
           qty:       Number(quantity),
           unitPrice: Number(unitPrice) || null,
@@ -481,6 +490,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       setAldMaterialName("");
       setAldTareWeight("");
       setAldInitialGross("");
+      setInboundType("신규");
       onClose();
     } catch {
       setError(t.common.networkError); barcodeInputRef.current?.focus();
@@ -605,6 +615,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                   setMemo(""); setWaferSpec(null); setError("");
                   setShowBarcodeCreate(false);
                   setAldMaterialName(""); setAldTareWeight(""); setAldInitialGross("");
+                  setInboundType("신규");
                   setBarcodeCreateMaterial("");
                   setBarcodeCreateError("");
                   setShowCameraScanner(false);
@@ -705,8 +716,26 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 {t.tx.targetLinked(String(targetUnitId).padStart(3, "0"))}
               </span>
             )}
+            {/* 충진 입고 시 물질 선택 */}
+            {category === "ALD Canister" && type === "입고" && inboundType === "충진" && barcodeId && (
+              <div className="mt-3 space-y-2">
+                <label className="block text-xs font-semibold text-indigo-700">
+                  {t.inventory.fillMaterialLabel} <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={aldMaterialName}
+                  onChange={e => setAldMaterialName(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-indigo-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-400"
+                >
+                  <option value="">물질 선택</option>
+                  {materialItems.map(m => (
+                    <option key={m.id} value={m.name}>{m.name} ({m.code})</option>
+                  ))}
+                </select>
+              </div>
+            )}
             {/* 입고: 인라인 바코드 생성 폼 */}
-            {type === "입고" && showBarcodeCreate && (
+            {type === "입고" && showBarcodeCreate && !(category === "ALD Canister" && inboundType === "충진") && (
               <div className="mt-2 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 space-y-2">
                 <p className="text-xs font-semibold text-blue-700">{t.tx.createBarcodeTitle}</p>
                 {category === "타겟" && (
@@ -819,7 +848,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
             <label className="block text-sm font-semibold text-gray-700 mb-2">{t.items.catLabel}</label>
             <div className="flex gap-2 flex-wrap">
               {["웨이퍼", "타겟", "ALD Canister", "가스", "기자재/소모품"].map((c) => (
-                <button key={c} onClick={() => setCategory(c)}
+                <button key={c} onClick={() => { setCategory(c); setInboundType("신규"); }}
                   className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                     category === c
                       ? `${CATEGORY_COLORS[c]} shadow-sm ring-1 ring-gray-200`
@@ -828,6 +857,53 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
               ))}
             </div>
           </div>
+
+          {category === "ALD Canister" && type === "입고" && (
+            <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3 space-y-3">
+              {/* 입고 유형 선택 */}
+              <div>
+                <p className="text-xs font-semibold text-indigo-700 mb-2">
+                  {t.inventory.inboundTypeLabel}
+                </p>
+                <div className="flex gap-3">
+                  {(["신규", "충진"] as const).map((opt) => (
+                    <label
+                      key={opt}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer text-sm font-medium transition-colors ${
+                        inboundType === opt
+                          ? "bg-indigo-500 text-white border-indigo-500"
+                          : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="inboundType"
+                        value={opt}
+                        checked={inboundType === opt}
+                        onChange={() => {
+                          setInboundType(opt);
+                          setBarcodeInput("");
+                          setBarcodeId(null);
+                          setTargetUnitId(null);
+                          setShowBarcodeCreate(false);
+                          setAldMaterialName("");
+                          setAldTareWeight("");
+                          setAldInitialGross("");
+                        }}
+                        className="sr-only"
+                      />
+                      {opt === "신규" ? t.inventory.inboundTypeNew : t.inventory.inboundTypeFill}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* 충진 입고 안내 */}
+              {inboundType === "충진" && (
+                <p className="text-xs text-indigo-600">{t.inventory.fillInboundHint}</p>
+              )}
+            </div>
+          )}
 
           {/* 품목코드 / 품목명 */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
