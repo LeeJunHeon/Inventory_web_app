@@ -99,14 +99,11 @@ export async function POST(request: NextRequest) {
 
     const curCycle = cumulativeCycle ? Number(cumulativeCycle) : null;
 
-    const remainPercent = logSubType === "충진"
-      ? 100
-      : (initialPure > 0 ? (measure / initialPure) * 100 : null);
+    const remainPercent = initialPure > 0
+      ? (measure / initialPure) * 100 : null;
 
-    const estimatedRemainCycle = logSubType === "충진"
-      ? null
-      : ((curCycle && measure > 0 && initialPure > measure)
-          ? Math.round(measure * curCycle / (initialPure - measure)) : null);
+    const estimatedRemainCycle = (curCycle && measure > 0 && initialPure > measure)
+      ? Math.round(measure * curCycle / (initialPure - measure)) : null;
 
     const sessionUserId = await getSessionUserId();
 
@@ -127,7 +124,7 @@ export async function POST(request: NextRequest) {
       await tx.aldLogDetail.create({
         data: {
           targetLogId:          log.id,
-          logSubType:           logSubType || "측정",
+          logSubType:           "측정",
           materialName:         materialName || spec.materialName || null,
           grossWeight:          spec.initialGrossWeight
             ? Number(spec.initialGrossWeight) : null,
@@ -163,22 +160,6 @@ export async function POST(request: NextRequest) {
             targetUnitId: Number(canisterId),
             loadedAt:     new Date(),
           },
-        });
-      }
-
-      // 충진이면 spec 업데이트 (기준점 리셋 + 물질명 갱신)
-      if (logSubType === "충진") {
-        await tx.aldCanisterSpec.update({
-          where: { targetUnitId: Number(canisterId) },
-          data: {
-            materialName: materialName || spec.materialName,
-            updatedAt:    new Date(),
-          },
-        });
-        // 상태 → 사용중
-        await tx.targetUnit.update({
-          where: { id: Number(canisterId) },
-          data:  { status: "사용중" },
         });
       }
 
