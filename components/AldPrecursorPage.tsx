@@ -89,6 +89,7 @@ export default function AldPrecursorPage() {
   const [measureWeight, setMeasureWeight] = useState("");
   const [consumptionPerCycle, setConsumptionPerCycle] = useState("");
   const [cumulativeCycle, setCumulativeCycle] = useState("");
+  const [slotId,     setSlotId]     = useState<number | "">("");
   const [locationId, setLocationId] = useState<number | "">("");
   const [locationOptions, setLocationOptions] = useState<{ id: number; name: string }[]>([]);
   const [reason, setReason] = useState("");
@@ -119,7 +120,7 @@ export default function AldPrecursorPage() {
   useEffect(() => { fetchPortSlots(); }, []);
 
   useEffect(() => {
-    fetch("/api/locations")
+    fetch("/api/locations?type=ald")
       .then(r => r.ok ? r.json() : [])
       .then(data => setLocationOptions(data))
       .catch(() => {});
@@ -191,6 +192,7 @@ export default function AldPrecursorPage() {
           measureWeight:       parseFloat(measureWeight),
           consumptionPerCycle: consumptionPerCycle ? parseFloat(consumptionPerCycle) : null,
           locationId:          locationId || null,
+          slotId:              slotId || null,
           cumulativeCycle:     cumulativeCycle ? parseInt(cumulativeCycle) : null,
           reason,
         }),
@@ -202,13 +204,11 @@ export default function AldPrecursorPage() {
       }
       showToast(t.ald.savedOk);
       setMeasureWeight(""); setConsumptionPerCycle(""); setCumulativeCycle("");
-      setReason(""); setLocationId(""); setWeightError(""); setFillMaterialName("");
+      setReason(""); setLocationId(""); setSlotId(""); setWeightError(""); setFillMaterialName("");
       await fetchLogs(1);
-      // 충진이면 Canister 정보 새로고침
-      if (logSubType === "충진") {
-        const r = await fetch(`/api/ald?barcode=${selectedCanister.barcodeCode}`);
-        if (r.ok) setSelectedCanister(await r.json());
-      }
+      const r = await fetch(`/api/ald?barcode=${selectedCanister.barcodeCode}`);
+      if (r.ok) setSelectedCanister(await r.json());
+      await fetchPortSlots();
     } catch { showToast(t.ald.saveFailed); }
     finally { setSaving(false); }
   };
@@ -334,6 +334,8 @@ export default function AldPrecursorPage() {
       </div>
     </div>
   );
+
+  const portSlots = [...ncdPorts, ...rayvacPorts];
 
   return (
     <div className="space-y-5">
@@ -665,11 +667,37 @@ export default function AldPrecursorPage() {
                 <label className="block text-xs text-gray-400 mb-1">
                   <span className="inline-flex items-center gap-1"><MapPin size={12} /> {t.ald.locationLabel}</span>
                 </label>
-                <select value={locationId} onChange={(e) => setLocationId(Number(e.target.value) || "")}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none">
+                <select
+                  value={slotId}
+                  onChange={(e) => {
+                    const sid = Number(e.target.value) || "";
+                    setSlotId(sid);
+                    // slotId로 locationId 자동 연결
+                    if (sid) {
+                      const slot = portSlots.find(s => s.id === Number(sid));
+                      const loc  = locationOptions.find(l => l.name === slot?.equipmentName);
+                      setLocationId(loc?.id || "");
+                    } else {
+                      setLocationId("");
+                    }
+                  }}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none"
+                >
                   <option value="">선택</option>
                   {locationOptions.map(loc => (
-                    <option key={loc.id} value={loc.id}>{loc.name}</option>
+                    <optgroup key={loc.id} label={loc.name}>
+                      {portSlots
+                        .filter(s => s.equipmentName === loc.name)
+                        .map(s => (
+                          <option key={s.id} value={s.id}>
+                            Port {s.portNumber}
+                            {s.canisterCode
+                              ? ` (${s.canisterCode} · ${s.materialName ?? "-"})`
+                              : " (비어있음)"}
+                          </option>
+                        ))
+                      }
+                    </optgroup>
                   ))}
                 </select>
               </div>
