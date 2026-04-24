@@ -347,7 +347,11 @@ export default function AldPrecursorPage() {
       {/* 카메라 스캐너 */}
       {showCameraScanner && (
         <BarcodeCameraScanner
-          onDetected={(code) => { setBarcodeInput(code); setShowCameraScanner(false); }}
+          onDetected={(code: string) => {
+            setBarcodeInput(normalizeBarcodeInput(code));
+            setShowCameraScanner(false);
+            setTimeout(() => handleSearch(), 100);
+          }}
           onClose={() => setShowCameraScanner(false)}
         />
       )}
