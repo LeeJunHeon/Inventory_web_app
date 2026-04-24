@@ -25,10 +25,11 @@ model Location {
   id      Int     @id @default(autoincrement())
   name    String  @unique
   address String?
+  type    String  @default("general")
 
-  inventoryTxs InventoryTx[]
-  targetLogs   TargetLog[]
-  chamberSlots ChamberSlot[]
+  inventoryTxs  InventoryTx[]
+  targetLogs    TargetLog[]
+  chamberSlots  ChamberSlot[]
   aldLogDetails AldLogDetail[]
 
   @@map("location")
