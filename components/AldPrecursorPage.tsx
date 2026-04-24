@@ -86,8 +86,8 @@ export default function AldPrecursorPage() {
   // ─── 측정 입력 ───
   const [logSubType, setLogSubType] = useState<"측정" | "충진">("측정");
   const [fillMaterialName, setFillMaterialName] = useState("");
-  const [grossWeight, setGrossWeight] = useState("");
   const [measureWeight, setMeasureWeight] = useState("");
+  const [consumptionPerCycle, setConsumptionPerCycle] = useState("");
   const [cumulativeCycle, setCumulativeCycle] = useState("");
   const [locationId, setLocationId] = useState<number | "">("");
   const [locationOptions, setLocationOptions] = useState<{ id: number; name: string }[]>([]);
@@ -125,18 +125,6 @@ export default function AldPrecursorPage() {
       .catch(() => {});
   }, []);
 
-  // Measure Weight 자동 계산
-  useEffect(() => {
-    const g = parseFloat(grossWeight);
-    const tare = selectedCanister?.tareWeight ?? null;
-    if (!isNaN(g) && tare != null) {
-      const m = g - tare;
-      setMeasureWeight(m >= 0 ? m.toFixed(3) : "");
-    } else {
-      setMeasureWeight("");
-    }
-  }, [grossWeight, selectedCanister?.tareWeight]);
-
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(""), 3000);
@@ -158,7 +146,7 @@ export default function AldPrecursorPage() {
       const canister = Array.isArray(data) ? data[0] : data;
       if (!canister) { setSearchError("Canister를 찾을 수 없습니다."); return; }
       setSelectedCanister(canister);
-      setGrossWeight(""); setMeasureWeight(""); setCumulativeCycle("");
+      setMeasureWeight(""); setConsumptionPerCycle(""); setCumulativeCycle("");
       setReason(""); setLocationId(""); setWeightError("");
       // 로그 조회
       await fetchLogs(1, canister.id);
@@ -187,7 +175,7 @@ export default function AldPrecursorPage() {
   }, [page]);
 
   const handleSave = async () => {
-    if (!selectedCanister || !grossWeight) return;
+    if (!selectedCanister || !measureWeight) return;
     setWeightError("");
     setSaving(true);
     try {
@@ -195,14 +183,15 @@ export default function AldPrecursorPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          canisterId:      selectedCanister.id,
-          logSubType:      logSubType,
-          materialName:    (logSubType === "충진" && fillMaterialName)
+          canisterId:          selectedCanister.id,
+          logSubType:          logSubType,
+          materialName:        (logSubType === "충진" && fillMaterialName)
             ? fillMaterialName
             : selectedCanister.materialName,
-          grossWeight:     parseFloat(grossWeight),
-          locationId:      locationId || null,
-          cumulativeCycle: cumulativeCycle ? parseInt(cumulativeCycle) : null,
+          measureWeight:       parseFloat(measureWeight),
+          consumptionPerCycle: consumptionPerCycle ? parseFloat(consumptionPerCycle) : null,
+          locationId:          locationId || null,
+          cumulativeCycle:     cumulativeCycle ? parseInt(cumulativeCycle) : null,
           reason,
         }),
       });
@@ -212,7 +201,7 @@ export default function AldPrecursorPage() {
         return;
       }
       showToast(t.ald.savedOk);
-      setGrossWeight(""); setMeasureWeight(""); setCumulativeCycle("");
+      setMeasureWeight(""); setConsumptionPerCycle(""); setCumulativeCycle("");
       setReason(""); setLocationId(""); setWeightError(""); setFillMaterialName("");
       await fetchLogs(1);
       // 충진이면 Canister 정보 새로고침
@@ -621,31 +610,45 @@ export default function AldPrecursorPage() {
                   />
                 </div>
               )}
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">
-                  <span className="inline-flex items-center gap-1"><Weight size={12} /> {t.ald.grossWeightLabel}</span>
-                </label>
-                <input type="number" step="0.001" value={grossWeight} onChange={(e) => setGrossWeight(e.target.value)}
-                  placeholder="0.000"
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
-              </div>
+              {/* Tare Weight — 참고용 표시만 */}
               <div>
                 <label className="block text-xs text-gray-400 mb-1">{t.ald.tareWeightInputLabel}</label>
-                <input type="text" readOnly
-                  value={selectedCanister.tareWeight != null ? selectedCanister.tareWeight.toFixed(3) : ""}
-                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-500" />
+                <div className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-500">
+                  {selectedCanister.tareWeight != null
+                    ? `${selectedCanister.tareWeight.toFixed(3)} g`
+                    : "-"}
+                </div>
               </div>
+
+              {/* Measure Weight — 직접 입력 */}
               <div>
                 <label className="block text-xs text-gray-400 mb-1">
-                  <span className="inline-flex items-center gap-1.5">
-                    {t.ald.measureWeightLabel}
-                    <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-md font-medium">
-                      {t.ald.measureWeightAuto}
-                    </span>
+                  <span className="inline-flex items-center gap-1">
+                    <Weight size={12} /> {t.ald.measureWeightLabel}
+                    <span className="text-rose-500 ml-0.5">*</span>
                   </span>
                 </label>
-                <input type="text" readOnly value={measureWeight}
-                  className="w-full px-3 py-2.5 bg-blue-50 border border-blue-100 rounded-xl text-sm font-semibold text-blue-800" />
+                <input
+                  type="number" step="0.001"
+                  value={measureWeight}
+                  onChange={(e) => setMeasureWeight(e.target.value)}
+                  placeholder="0.000"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* 사이클당 소모량 — 직접 입력 */}
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">
+                  사이클당 소모량
+                </label>
+                <input
+                  type="number" step="0.001"
+                  value={consumptionPerCycle}
+                  onChange={(e) => setConsumptionPerCycle(e.target.value)}
+                  placeholder="0.000"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
               <div>
                 <label className="block text-xs text-gray-400 mb-1">
@@ -677,7 +680,7 @@ export default function AldPrecursorPage() {
               </div>
               {weightError && <p className="text-xs text-red-500 flex items-center gap-1">{weightError}</p>}
             </div>
-            <button onClick={handleSave} disabled={saving || !grossWeight}
+            <button onClick={handleSave} disabled={saving || !measureWeight}
               className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:opacity-60">
               <Save size={16} />
               {saving ? <Loader2 size={16} className="animate-spin" /> : t.ald.saveBtn}
