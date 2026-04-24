@@ -17,7 +17,15 @@ export async function GET(request: NextRequest) {
     }
 
     if (category && category !== "전체") {
-      where.category = { name: category };
+      // ALD 조회 시 서브 카테고리(ALD Canister, ALD Material 등) 포함
+      where.category = category === "ALD"
+        ? {
+            OR: [
+              { name: "ALD" },
+              { parent: { name: "ALD" } },
+            ],
+          }
+        : { name: category };
     }
     if (search) {
       where.OR = [
