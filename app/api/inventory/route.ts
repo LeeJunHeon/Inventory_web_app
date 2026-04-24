@@ -19,7 +19,7 @@ function buildItemSpec(ws: {
   return parts.length > 0 ? parts.join(" | ") : null;
 }
 
-const VALID_TYPES = ["입고", "출고", "불출"];
+const VALID_TYPES = ["입고", "출고", "불출", "충진 입고"];
 
 // GET /api/inventory
 export async function GET(request: NextRequest) {
@@ -365,6 +365,27 @@ export async function POST(request: NextRequest) {
         exchangeRateAtEntry: resolvedExchangeRate,
       },
     });
+
+    // 충진 입고 시: ald_canister_spec 물질명 업데이트
+    if (body.txType === "충진 입고" && body.barcodeId) {
+      const fillBc = await prisma.barcode.findUnique({
+        where:  { id: Number(body.barcodeId) },
+        select: { targetUnitId: true },
+      });
+      if (fillBc?.targetUnitId) {
+        await prisma.aldCanisterSpec.updateMany({
+          where: { targetUnitId: fillBc.targetUnitId },
+          data:  {
+            materialName: body.aldMaterialName || null,
+            updatedAt:    new Date(),
+          },
+        });
+        await prisma.targetUnit.update({
+          where: { id: fillBc.targetUnitId },
+          data:  { status: "사용중" },
+        });
+      }
+    }
 
     // 출고 시: 타겟이 미사용 상태이면 판매완료로 자동 전이
     if (body.txType === "출고" && body.barcodeId) {
