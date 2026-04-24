@@ -85,7 +85,6 @@ export default function AldPrecursorPage() {
 
   // ─── 측정 입력 ───
   const [logSubType, setLogSubType] = useState<"측정" | "충진">("측정");
-  const [fillMaterialName, setFillMaterialName] = useState("");
   const [measureWeight, setMeasureWeight] = useState("");
   const [consumptionPerCycle, setConsumptionPerCycle] = useState("");
   const [cumulativeCycle, setCumulativeCycle] = useState("");
@@ -187,9 +186,7 @@ export default function AldPrecursorPage() {
         body: JSON.stringify({
           canisterId:          selectedCanister.id,
           logSubType:          logSubType,
-          materialName:        (logSubType === "충진" && fillMaterialName)
-            ? fillMaterialName
-            : selectedCanister.materialName,
+          materialName:        selectedCanister.materialName,
           measureWeight:       parseFloat(measureWeight),
           consumptionPerCycle: consumptionPerCycle ? parseFloat(consumptionPerCycle) : null,
           locationId:          locationId || null,
@@ -205,7 +202,7 @@ export default function AldPrecursorPage() {
       }
       showToast(t.ald.savedOk);
       setMeasureWeight(""); setConsumptionPerCycle(""); setCumulativeCycle("");
-      setReason(""); setLocationId(""); setSlotId(""); setWeightError(""); setFillMaterialName("");
+      setReason(""); setLocationId(""); setSlotId(""); setWeightError("");
       await fetchLogs(1);
       const r = await fetch(`/api/ald?barcode=${selectedCanister.barcodeCode}`);
       if (r.ok) setSelectedCanister(await r.json());
@@ -588,37 +585,15 @@ export default function AldPrecursorPage() {
               <div>
                 <p className="text-xs text-gray-400 mb-1.5">{t.ald.subTypeLabel}</p>
                 <div className="flex gap-2">
-                  {(["측정", "충진"] as const).map((type) => (
-                    <button key={type} onClick={() => {
-                      setLogSubType(type);
-                      if (type === "측정") setFillMaterialName("");
-                    }}
+                  {(["측정"] as const).map((type) => (
+                    <button key={type} onClick={() => setLogSubType(type)}
                       className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${
                         logSubType === type ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
-                      {type === "측정" ? t.ald.subTypeMeasure : t.ald.subTypeFill}
+                      {t.ald.subTypeMeasure}
                     </button>
                   ))}
                 </div>
               </div>
-              {logSubType === "충진" && (
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">
-                    <span className="inline-flex items-center gap-1">
-                      <Droplet size={12} /> {t.ald.materialLabel}
-                      <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-md font-medium ml-1">
-                        변경 시 입력
-                      </span>
-                    </span>
-                  </label>
-                  <input
-                    type="text"
-                    value={fillMaterialName}
-                    onChange={(e) => setFillMaterialName(e.target.value)}
-                    placeholder={selectedCanister?.materialName || t.ald.materialPlaceholder}
-                    className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-400 bg-blue-50/30"
-                  />
-                </div>
-              )}
               {/* Gross Weight — 참고용 표시만 */}
               <div>
                 <label className="block text-xs text-gray-400 mb-1">
@@ -658,34 +633,30 @@ export default function AldPrecursorPage() {
                 />
               </div>
 
-              {/* 사이클당 소모량 — 측정 시에만 표시 */}
-              {logSubType !== "충진" && (
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">
-                    사이클당 소모량 <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="number" step="0.001"
-                    value={consumptionPerCycle}
-                    onChange={(e) => setConsumptionPerCycle(e.target.value)}
-                    placeholder="0.000"
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              )}
-              {logSubType !== "충진" && (
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">
-                    <span className="inline-flex items-center gap-1">
-                      <RefreshCw size={12} /> {t.ald.cycleLabel}
-                      <span className="text-rose-500">*</span>
-                    </span>
-                  </label>
-                  <input type="number" value={cumulativeCycle} onChange={(e) => setCumulativeCycle(e.target.value)}
-                    placeholder="0"
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-              )}
+              {/* 사이클당 소모량 */}
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">
+                  사이클당 소모량 <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="number" step="0.001"
+                  value={consumptionPerCycle}
+                  onChange={(e) => setConsumptionPerCycle(e.target.value)}
+                  placeholder="0.000"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">
+                  <span className="inline-flex items-center gap-1">
+                    <RefreshCw size={12} /> {t.ald.cycleLabel}
+                    <span className="text-rose-500">*</span>
+                  </span>
+                </label>
+                <input type="number" value={cumulativeCycle} onChange={(e) => setCumulativeCycle(e.target.value)}
+                  placeholder="0"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
               <div>
                 <label className="block text-xs text-gray-400 mb-1">
                   <span className="inline-flex items-center gap-1"><MapPin size={12} /> {t.ald.locationLabel}</span>
@@ -734,7 +705,7 @@ export default function AldPrecursorPage() {
               </div>
               {weightError && <p className="text-xs text-red-500 flex items-center gap-1">{weightError}</p>}
             </div>
-            <button onClick={handleSave} disabled={saving || !measureWeight || (logSubType !== "충진" && (!consumptionPerCycle || !cumulativeCycle))}
+            <button onClick={handleSave} disabled={saving || !measureWeight || !consumptionPerCycle || !cumulativeCycle}
               className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:opacity-60">
               <Save size={16} />
               {saving ? <Loader2 size={16} className="animate-spin" /> : t.ald.saveBtn}
