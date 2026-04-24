@@ -13,7 +13,7 @@ interface ItemOption {
 }
 interface CategoryOption { id: number; name: string; codePrefix: string | null; }
 
-const CATS = ["전체", "웨이퍼", "타겟", "가스", "기자재/소모품"];
+const CATS = ["전체", "웨이퍼", "타겟", "ALD Canister", "가스", "기자재/소모품"];
 
 const EMPTY_FORM = { code: "", name: "", categoryId: "", unit: "", note: "" };
 
@@ -23,6 +23,7 @@ export default function ItemsPage() {
     "전체": t.barcode.catAll,
     "웨이퍼": t.inventory.catWafer,
     "타겟": t.inventory.catTarget,
+    "ALD Canister": t.inventory.catAldCanister,
     "가스": t.inventory.catGas,
     "기자재/소모품": t.inventory.catEquip,
   };

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin, getSessionUserId, logActivity } from "@/lib/auth-helpers";
+import { requireAuth, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 
 // GET /api/items
 export async function GET(request: NextRequest) {
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/items — 품목 등록
 export async function POST(request: NextRequest) {
-  const authResult = await requireAdmin();
+  const authResult = await requireAuth();
   if ("error" in authResult) {
     return NextResponse.json({ error: authResult.error }, { status: authResult.status });
   }
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
 
 // PUT /api/items?id=1 — 품목 수정
 export async function PUT(request: NextRequest) {
-  const authResult = await requireAdmin();
+  const authResult = await requireAuth();
   if ("error" in authResult) {
     return NextResponse.json({ error: authResult.error }, { status: authResult.status });
   }
@@ -151,7 +151,7 @@ export async function PUT(request: NextRequest) {
 
 // DELETE /api/items?id=1 — 품목 삭제
 export async function DELETE(request: NextRequest) {
-  const authResult = await requireAdmin();
+  const authResult = await requireAuth();
   if ("error" in authResult) {
     return NextResponse.json({ error: authResult.error }, { status: authResult.status });
   }
