@@ -59,10 +59,10 @@ export default function ItemsPage() {
       .then(setCategories)
       .catch(() => {
         setCategories([
-          { id: 1, name: "웨이퍼",      codePrefix: "W" },
-          { id: 2, name: "타겟",        codePrefix: "T" },
-          { id: 3, name: "가스",        codePrefix: "G" },
-          { id: 4, name: "기자재/소모품", codePrefix: "E" },
+          { id: 1, name: "웨이퍼",       codePrefix: "W", parentId: null },
+          { id: 2, name: "타겟",         codePrefix: "T", parentId: null },
+          { id: 3, name: "가스",         codePrefix: "G", parentId: null },
+          { id: 4, name: "기자재/소모품", codePrefix: "E", parentId: null },
         ]);
         showToast(t.items.catLoadFailed);
       });
