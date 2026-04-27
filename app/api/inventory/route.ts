@@ -376,8 +376,10 @@ export async function POST(request: NextRequest) {
         await prisma.aldCanisterSpec.updateMany({
           where: { targetUnitId: fillBc.targetUnitId },
           data:  {
-            materialName: body.aldMaterialName || null,
-            updatedAt:    new Date(),
+            materialName:       body.aldMaterialName || null,
+            initialGrossWeight: body.aldInitialGross
+              ? Number(body.aldInitialGross) : undefined,
+            updatedAt: new Date(),
           },
         });
         await prisma.targetUnit.update({
