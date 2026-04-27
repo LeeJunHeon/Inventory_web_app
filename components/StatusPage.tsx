@@ -60,6 +60,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
     "전체": t.status.catAll,
     "웨이퍼": t.status.catWafer,
     "타겟": t.status.catTarget,
+    "ALD Canister": t.inventory.catAldCanister,
     "가스": t.status.catGas,
     "기자재/소모품": t.status.catEquip,
   };
@@ -260,7 +261,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
           </div>
           <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1 overflow-x-auto">
-            {["전체", ...CATS].map((cat) => (
+            {["전체", ...CATS, "ALD Canister"].map((cat) => (
               <button key={cat} onClick={() => setSelectedCategory(cat)}
                 className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${selectedCategory === cat ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}>
                 {CAT_LABEL_MAP[cat] || cat}
@@ -270,7 +271,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
         </div>
       </div>
 
-      {CATS.filter((cat) => selectedCategory === "전체" || selectedCategory === cat).map((cat) => {
+      {[...CATS, "ALD Canister"].filter((cat) => selectedCategory === "전체" || selectedCategory === cat).map((cat) => {
         if (cat === "타겟") return <TargetStatusSection key={cat} />;
         const catItems = sortedItems.filter((i) => i.category === cat);
         if (catItems.length === 0 && search) return null;

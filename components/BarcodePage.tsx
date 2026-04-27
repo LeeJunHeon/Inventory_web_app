@@ -15,7 +15,7 @@ interface BarcodeItem {
 }
 interface ItemOption { id: number; code: string; name: string; }
 
-const CATS = ["전체", "타겟", "웨이퍼", "가스", "기자재/소모품"];
+const CATS = ["전체", "타겟", "ALD Canister", "웨이퍼", "가스", "기자재/소모품"];
 
 export default function BarcodePage() {
   const { t } = useT();
@@ -25,6 +25,7 @@ export default function BarcodePage() {
   };
   const CAT_LABEL: Record<string, string> = {
     "전체": t.barcode.catAll, "타겟": t.barcode.catTarget,
+    "ALD Canister": t.inventory.catAldCanister,
     "웨이퍼": t.barcode.catWafer, "가스": t.barcode.catGas,
     "기자재/소모품": t.barcode.catEquip,
   };
@@ -405,7 +406,7 @@ export default function BarcodePage() {
               <label className="block text-xs font-semibold text-blue-700 mb-1">{t.barcode.catLabel}</label>
               <select value={createCategory} onChange={e => setCreateCategory(e.target.value)}
                 className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none">
-                {["타겟", "웨이퍼", "가스", "기자재/소모품"].map(c => (
+                {["타겟", "ALD Canister", "웨이퍼", "가스", "기자재/소모품"].map(c => (
                   <option key={c} value={c}>{CAT_LABEL[c] || c}</option>
                 ))}
               </select>
