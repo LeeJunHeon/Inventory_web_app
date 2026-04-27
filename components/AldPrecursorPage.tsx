@@ -545,11 +545,11 @@ export default function AldPrecursorPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <p className="text-xs text-gray-400 mb-1">{t.ald.barcodeLabel}</p>
-                  <p className="text-sm font-mono font-semibold text-gray-900">{selectedCanister.barcodeCode}</p>
+                  <p className="text-xs font-mono text-gray-500">{selectedCanister.barcodeCode}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-400 mb-1">{t.ald.materialLabel}</p>
-                  <p className="text-sm font-semibold text-gray-900">{selectedCanister.materialName || "-"}</p>
+                  <p className="text-base font-bold text-gray-900">{selectedCanister.materialName || "-"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-400 mb-1">{t.ald.itemCodeLabel}</p>
