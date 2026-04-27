@@ -117,7 +117,11 @@ export default function AldPrecursorPage() {
     } catch {}
   };
 
-  useEffect(() => { fetchPortSlots(); }, []);
+  useEffect(() => {
+    fetchPortSlots();
+    fetchLogs(1);   // 마운트 시 전체 ALD 로그 로드
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     fetch("/api/locations?type=ald")
@@ -157,10 +161,12 @@ export default function AldPrecursorPage() {
 
   const fetchLogs = async (p: number, cId?: number) => {
     const id = cId ?? selectedCanister?.id;
-    if (!id) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/ald/logs?canisterId=${id}&page=${p}&limit=${PAGE_LIMIT}`);
+      const url = id
+        ? `/api/ald/logs?canisterId=${id}&page=${p}&limit=${PAGE_LIMIT}`
+        : `/api/ald/logs?page=${p}&limit=${PAGE_LIMIT}`;
+      const res = await fetch(url);
       if (!res.ok) return;
       const data = await res.json();
       setLogs(data.logs);
@@ -171,7 +177,7 @@ export default function AldPrecursorPage() {
   };
 
   useEffect(() => {
-    if (selectedCanister) fetchLogs(page);
+    fetchLogs(page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
@@ -517,6 +523,18 @@ export default function AldPrecursorPage() {
             className="shrink-0 flex items-center justify-center px-4 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 whitespace-nowrap disabled:opacity-60">
             {isSearching ? <Loader2 size={16} className="animate-spin" /> : t.ald.searchBtn}
           </button>
+          {selectedCanister && (
+            <button
+              onClick={() => {
+                setSelectedCanister(null);
+                setBarcodeInput("");
+                fetchLogs(1);  // 전체 로그로 돌아가기
+              }}
+              className="shrink-0 px-3 py-2.5 bg-gray-100 text-gray-500 rounded-xl hover:bg-gray-200 text-xs"
+            >
+              전체
+            </button>
+          )}
           {isMobile && (
             <button onClick={() => setShowCameraScanner(true)}
               className="shrink-0 px-3 py-2.5 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200">
@@ -708,8 +726,7 @@ export default function AldPrecursorPage() {
       )}
 
       {/* ── 이력 테이블 ── */}
-      {selectedCanister && (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h2 className="font-bold text-gray-900">{t.ald.recordTitle}</h2>
@@ -783,8 +800,7 @@ export default function AldPrecursorPage() {
               </table>
             </div>
           )}
-        </div>
-      )}
+      </div>
 
       {/* ── 미선택 안내 ── */}
       {!selectedCanister && (

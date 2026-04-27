@@ -13,14 +13,15 @@ export async function GET(request: NextRequest) {
     const limit      = Math.max(1, Number(searchParams.get("limit") || "50"));
     const skip       = (page - 1) * limit;
 
-    if (!canisterId) {
-      return NextResponse.json({ error: "canisterId가 필요합니다." }, { status: 400 });
-    }
+    // canisterId 없으면 ALD 전체 로그 반환
+    const whereClause = canisterId
+      ? { targetUnitId: canisterId }
+      : { targetUnit: { category: "ald" } };
 
     const [total, logs] = await Promise.all([
-      prisma.targetLog.count({ where: { targetUnitId: canisterId } }),
+      prisma.targetLog.count({ where: whereClause }),
       prisma.targetLog.findMany({
-        where:   { targetUnitId: canisterId },
+        where:   whereClause,
         orderBy: { loggedAt: "desc" },
         skip,
         take:    limit,
