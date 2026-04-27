@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
   Search, Save, Weight, MapPin, FileText, Loader2,
-  Camera, Download, RefreshCw, Droplet, Pencil,
+  Camera, Download, RefreshCw, Pencil,
 } from "lucide-react";
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
 import { useT } from "@/lib/i18n";
@@ -81,6 +81,8 @@ export default function AldPrecursorPage() {
   const [logs, setLogs] = useState<AldLogItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [sortKey, setSortKey] = useState<string | null>(null);
+  const [sortAsc, setSortAsc] = useState(true);
   const [loading, setLoading] = useState(false);
 
   // ─── 측정 입력 ───
@@ -259,12 +261,34 @@ export default function AldPrecursorPage() {
     showToast("포트를 비웠습니다.");
   };
 
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortAsc(prev => !prev);
+    } else {
+      setSortKey(key);
+      setSortAsc(true);
+    }
+  };
+
+  const sortedLogs = sortKey
+    ? [...logs].sort((a, b) => {
+        const av = (a as Record<string, unknown>)[sortKey];
+        const bv = (b as Record<string, unknown>)[sortKey];
+        if (av == null && bv == null) return 0;
+        if (av == null) return sortAsc ? 1 : -1;
+        if (bv == null) return sortAsc ? -1 : 1;
+        return sortAsc
+          ? (av < bv ? -1 : av > bv ? 1 : 0)
+          : (av > bv ? -1 : av < bv ? 1 : 0);
+      })
+    : logs;
+
   const handleCsvExport = () => {
     if (logs.length === 0) return;
     exportCSV(
       ["시간","구분","물질명","Canister","Gross(g)","Tare(g)","Measure(g)","누적사이클","소모량(g/cyc)","잔여량(%)","추정잔여(cyc)","현위치","작성자"],
       logs.map((l) => [
-        l.timestamp, l.logSubType, l.materialName, selectedCanister?.barcodeCode ?? "",
+        l.timestamp, l.logSubType, l.materialName, l.canisterId?.toString() ?? "",
         l.grossWeight ?? "", l.tareWeight ?? "", l.measureWeight ?? "",
         l.cumulativeCycle ?? "",
         l.consumptionPerCycle != null ? l.consumptionPerCycle.toFixed(4) : "",
@@ -755,21 +779,36 @@ export default function AldPrecursorPage() {
               <table className="w-full">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100">
-                    {[t.ald.colTime, t.ald.colSubType, t.ald.colMaterial, t.ald.colCanister].map((h) => (
-                      <th key={h} className="text-left text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">{h}</th>
-                    ))}
-                    {[t.ald.colGross, t.ald.colTare, t.ald.colMeasure, t.ald.colCycle, t.ald.colConsumption, t.ald.colRemain, t.ald.colEstimatedCycle].map((h) => (
-                      <th key={h} className="text-right text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">{h}</th>
-                    ))}
-                    {[t.ald.colLocation, t.ald.colAuthor].map((h) => (
-                      <th key={h} className="text-left text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap">{h}</th>
+                    {[
+                      { label: t.ald.colTime,           key: "timestamp" },
+                      { label: t.ald.colSubType,        key: "logSubType" },
+                      { label: t.ald.colMaterial,       key: "materialName" },
+                      { label: t.ald.colCanister,       key: "canisterId" },
+                      { label: t.ald.colGross,          key: "grossWeight" },
+                      { label: t.ald.colTare,           key: "tareWeight" },
+                      { label: t.ald.colMeasure,        key: "measureWeight" },
+                      { label: t.ald.colCycle,          key: "cumulativeCycle" },
+                      { label: t.ald.colConsumption,    key: "consumptionPerCycle" },
+                      { label: t.ald.colRemain,         key: "remainPercent" },
+                      { label: t.ald.colEstimatedCycle, key: "estimatedRemainCycle" },
+                      { label: t.ald.colLocation,       key: "location" },
+                      { label: t.ald.colAuthor,         key: "userName" },
+                    ].map(({ label, key }) => (
+                      <th
+                        key={key}
+                        onClick={() => handleSort(key)}
+                        className="text-left text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap cursor-pointer hover:text-gray-800 select-none"
+                      >
+                        {label}
+                        {sortKey === key ? (sortAsc ? " ▲" : " ▼") : ""}
+                      </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {logs.length === 0 ? (
+                  {sortedLogs.length === 0 ? (
                     <tr><td colSpan={13} className="px-5 py-12 text-center text-sm text-gray-400">{t.ald.noLogs}</td></tr>
-                  ) : logs.map((log) => (
+                  ) : sortedLogs.map((log) => (
                     <tr key={log.id} className="border-b border-gray-50 hover:bg-gray-50/50">
                       <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{log.timestamp}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
@@ -802,13 +841,6 @@ export default function AldPrecursorPage() {
           )}
       </div>
 
-      {/* ── 미선택 안내 ── */}
-      {!selectedCanister && (
-        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-          <Droplet size={40} className="mb-3 text-gray-200" />
-          <p className="text-sm">{t.ald.noCanister}</p>
-        </div>
-      )}
     </div>
   );
 }
