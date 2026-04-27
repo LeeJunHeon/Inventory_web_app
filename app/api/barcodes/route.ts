@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
     }
 
     // BarcodeSeq를 이용한 순번 자동 생성
-    const CATEGORY_PREFIX: Record<string, string> = { "타겟": "T", "웨이퍼": "W", "가스": "G", "기자재": "E" };
+    const CATEGORY_PREFIX: Record<string, string> = { "타겟": "T", "웨이퍼": "W", "가스": "G", "기자재": "E", "ALD Canister": "C" };
     const prefix = CATEGORY_PREFIX[item.category.name] ?? item.category.name.charAt(0).toUpperCase();
     const seq = await prisma.barcodeSeq.upsert({
       where:  { prefix },
