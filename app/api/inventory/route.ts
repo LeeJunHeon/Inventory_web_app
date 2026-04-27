@@ -386,6 +386,46 @@ export async function POST(request: NextRequest) {
           where: { id: fillBc.targetUnitId },
           data:  { status: "사용중" },
         });
+
+        // 충진 입고 → target_log + ald_log_detail 생성 (ALD 탭 이력에 표시)
+        const allTxNosForLog = await prisma.inventoryTx.findMany({
+          where: { txNo: { not: null } },
+          select: { txNo: true },
+        });
+        const lastNoForLog = allTxNosForLog.reduce((max, t) => {
+          const n = parseInt(t.txNo ?? "", 10);
+          return isNaN(n) ? max : Math.max(max, n);
+        }, 0);
+
+        const fillLog = await prisma.targetLog.create({
+          data: {
+            targetUnitId: fillBc.targetUnitId,
+            logType:      "측정",
+            loggedAt:     new Date(),
+            userId:       sessionUserId ?? null,
+          },
+        });
+
+        const fillSpec = await prisma.aldCanisterSpec.findUnique({
+          where: { targetUnitId: fillBc.targetUnitId },
+        });
+
+        await prisma.aldLogDetail.create({
+          data: {
+            targetLogId:        fillLog.id,
+            logSubType:         "충진",
+            materialName:       body.aldMaterialName || null,
+            grossWeight:        body.aldInitialGross
+              ? Number(body.aldInitialGross) : null,
+            tareWeight:         fillSpec?.tareWeight
+              ? Number(fillSpec.tareWeight) : null,
+            measureWeight:      null,
+            cumulativeCycle:    null,
+            consumptionPerCycle: null,
+            remainPercent:      100,
+            estimatedRemainCycle: null,
+          },
+        });
       }
     }
 
