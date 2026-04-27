@@ -519,6 +519,44 @@ export async function PUT(request: NextRequest) {
       include: { item: true, partner: true, location: true, barcode: true },
     });
 
+    if (!before) {
+      return NextResponse.json(
+        { error: "수정할 거래를 찾을 수 없습니다." },
+        { status: 404 }
+      );
+    }
+
+    // ① 자기 자신을 참조 입고건으로 선택하는 것 차단
+    if (body.refTxNo && body.refTxNo === before.txNo) {
+      return NextResponse.json(
+        { error: "자기 자신의 입고건을 참조할 수 없습니다." },
+        { status: 400 }
+      );
+    }
+
+    // ② 입고건을 출고/불출로 구분 변경 차단
+    if (
+      before.txType === "입고" &&
+      body.txType &&
+      (body.txType === "출고" || body.txType === "불출")
+    ) {
+      return NextResponse.json(
+        { error: "입고 건은 출고/불출로 변경할 수 없습니다. 삭제 후 새로 등록해 주세요." },
+        { status: 400 }
+      );
+    }
+
+    // ③ 출고/불출건을 입고로 구분 변경 차단
+    if (
+      (before.txType === "출고" || before.txType === "불출") &&
+      body.txType === "입고"
+    ) {
+      return NextResponse.json(
+        { error: "출고/불출 건은 입고로 변경할 수 없습니다. 삭제 후 새로 등록해 주세요." },
+        { status: 400 }
+      );
+    }
+
     const tx = await prisma.inventoryTx.update({
       where: { id: Number(id) },
       data: {
