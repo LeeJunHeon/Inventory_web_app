@@ -39,6 +39,7 @@ export default function PeriodPage() {
     "전체": t.inventory.catAll,
     "웨이퍼": t.inventory.catWafer,
     "타겟": t.inventory.catTarget,
+    "ALD Canister": t.inventory.catAldCanister,
     "가스": t.inventory.catGas,
     "기자재/소모품": t.inventory.catEquip,
   };
@@ -114,7 +115,7 @@ export default function PeriodPage() {
     }
   });
 
-  const CATEGORY_LIST = ["타겟", "웨이퍼", "가스", "기자재/소모품"];
+  const CATEGORY_LIST = ["타겟", "ALD Canister", "웨이퍼", "가스", "기자재/소모품"];
   const TYPE_LIST = ["입고", "출고", "불출"] as const;
 
   const categoryBreakdown: Record<string, Record<string, { count: number; qty: number; amount: number }>> = {};
@@ -173,7 +174,7 @@ export default function PeriodPage() {
               <label className="block text-xs font-semibold text-gray-500 mb-1.5">{t.period.catLabel}</label>
               <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}
                 className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                {["전체", "웨이퍼", "타겟", "가스", "기자재/소모품"].map(cat => (
+                {["전체", "웨이퍼", "타겟", "ALD Canister", "가스", "기자재/소모품"].map(cat => (
                   <option key={cat} value={cat}>{CAT_LABEL_MAP[cat] || cat}</option>
                 ))}
               </select>
