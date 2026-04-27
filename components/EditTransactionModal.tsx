@@ -343,6 +343,7 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
         <InboundSelectModal
           isOpen={showInboundSelect}
           itemId={item.itemId}
+          excludeTxNo={item.txNo}
           defaultLocationId={locationId || null}
           onSelect={(inbound: InboundTx) => {
             setSelectedInbound(inbound);
