@@ -148,63 +148,69 @@ export default function BarcodePage() {
   // 이미지 저장: 400px 고해상도 QRCodeCanvas를 1:1로 복사해 텍스트 합성
   const handleSaveImage = () => {
     if (!printItem) return;
-    // 화면 밖 고해상도 canvas (400×400)
-    const qrCanvas = document.querySelector(".barcode-label-canvas canvas") as HTMLCanvasElement | null;
+    const qrCanvas = document.querySelector<HTMLCanvasElement>(
+      ".qr-canvas-hidden canvas"
+    );
     if (!qrCanvas) return;
 
-    const QR = 400; // QRCodeCanvas size prop과 동일
-    const PAD = 30;
-    const TEXT_H = 140; // 텍스트 영역 높이
+    // 가로 레이아웃: QR(160) + 여백 + 텍스트 영역
+    const QR = 160;
+    const PAD = 16;
+    const TEXT_X = QR + PAD * 2 + 8;
+    const W = QR + PAD * 2 + 240;  // 전체 너비
+    const H = QR + PAD * 2;         // 전체 높이
 
     const out = document.createElement("canvas");
-    out.width  = QR + PAD * 2;        // 460
-    out.height = QR + PAD + TEXT_H;   // 510
-
+    out.width  = W;
+    out.height = H;
     const ctx = out.getContext("2d")!;
 
     // 흰 배경
     ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, out.width, out.height);
+    ctx.fillRect(0, 0, W, H);
 
-    // QR 코드 1:1 복사 (원본 400px → 그대로)
+    // QR 코드 (좌측)
     ctx.drawImage(qrCanvas, PAD, PAD, QR, QR);
 
     // 구분선
     ctx.strokeStyle = "#e5e7eb";
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(PAD, QR + PAD + 8);
-    ctx.lineTo(out.width - PAD, QR + PAD + 8);
+    ctx.moveTo(QR + PAD * 2, PAD);
+    ctx.lineTo(QR + PAD * 2, H - PAD);
     ctx.stroke();
 
-    // 바코드 코드
+    // 바코드 코드 (굵게)
     ctx.fillStyle = "#111827";
-    ctx.font = "bold 24px monospace";
-    ctx.textAlign = "center";
-    ctx.fillText(printItem.code, out.width / 2, QR + PAD + 42);
+    ctx.font = "bold 22px sans-serif";
+    ctx.textBaseline = "top";
+    ctx.fillText(printItem.code, TEXT_X, PAD + 8);
 
     // 품목명
     if (printItem.itemName) {
+      ctx.font = "16px sans-serif";
       ctx.fillStyle = "#374151";
-      ctx.font = "20px sans-serif";
-      ctx.fillText(printItem.itemName, out.width / 2, QR + PAD + 65);
+      const name = printItem.itemName.length > 22
+        ? printItem.itemName.slice(0, 22) + "…"
+        : printItem.itemName;
+      ctx.fillText(name, TEXT_X, PAD + 40);
     }
+
     // 품목코드
     if (printItem.itemCode) {
-      ctx.fillStyle = "#6b7280";
-      ctx.font = "16px monospace";
-      ctx.fillText(printItem.itemCode, out.width / 2, QR + PAD + 92);
+      ctx.font = "13px sans-serif";
+      ctx.fillStyle = "#9ca3af";
+      ctx.fillText(printItem.itemCode, TEXT_X, PAD + 68);
     }
+
     // 메모
     if (printItem.memo) {
-      ctx.fillStyle = "#9CA3AF";
-      ctx.font = "14px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(
-        printItem.memo.length > 30 ? printItem.memo.slice(0, 30) + "…" : printItem.memo,
-        out.width / 2,
-        QR + PAD + 116
-      );
+      ctx.font = "12px sans-serif";
+      ctx.fillStyle = "#9ca3af";
+      const memo = printItem.memo.length > 28
+        ? printItem.memo.slice(0, 28) + "…"
+        : printItem.memo;
+      ctx.fillText(memo, TEXT_X, PAD + 90);
     }
 
     const link = document.createElement("a");
@@ -341,7 +347,7 @@ export default function BarcodePage() {
               </div>
             </div>
             {/* 이미지 저장용 고해상도 QRCodeCanvas (화면 밖) */}
-            <div className="barcode-label-canvas" aria-hidden style={{ position: "absolute", left: "-9999px", top: "-9999px" }}>
+            <div className="qr-canvas-hidden barcode-label-canvas" aria-hidden style={{ position: "absolute", left: "-9999px", top: "-9999px" }}>
               <QRCodeCanvas value={printItem.code} size={400} />
             </div>
             {/* body.appendChild에 복사될 실제 라벨 콘텐츠 (hidden) */}
