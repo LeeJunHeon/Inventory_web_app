@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef } from "react";
 import {
   Search, Save, Weight, MapPin, FileText, Loader2,
-  Camera, Download, RefreshCw, Pencil,
+  Camera, RefreshCw, Pencil,
 } from "lucide-react";
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
+import CsvButton from "@/components/CsvButton";
 import { useT } from "@/lib/i18n";
 import { exportCSV } from "@/lib/csvUtils";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
@@ -475,12 +476,7 @@ export default function AldPrecursorPage() {
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t.ald.pageTitle}</h1>
           <p className="text-sm text-gray-500 mt-1">{t.ald.subtitle}</p>
         </div>
-        {logs.length > 0 && (
-          <button onClick={handleCsvExport}
-            className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200">
-            <Download size={15} /> CSV
-          </button>
-        )}
+        <CsvButton onClick={handleCsvExport} disabled={logs.length === 0} />
       </div>
 
       {/* ── 대시보드 ── */}
@@ -757,12 +753,7 @@ export default function AldPrecursorPage() {
               <span className="text-xs text-gray-400">{total}건</span>
             </div>
             <div className="flex items-center gap-2">
-              {logs.length > 0 && (
-                <button onClick={handleCsvExport}
-                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50">
-                  <Download size={14} /> CSV
-                </button>
-              )}
+              <CsvButton onClick={handleCsvExport} disabled={logs.length === 0} />
               <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}
                 className="px-2.5 py-1.5 text-xs bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 disabled:opacity-40">이전</button>
               <span className="text-xs text-gray-500 min-w-[40px] text-center">{page}</span>

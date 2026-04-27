@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Download, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import CsvButton from "@/components/CsvButton";
 import { useSession } from "next-auth/react";
 import DatePicker from "./DatePicker";
 import { TYPE_COLORS, CATEGORY_COLORS, formatPrice, formatQty, InventoryItem } from "@/lib/data";
@@ -212,12 +213,7 @@ export default function PeriodPage() {
                 <span className="text-xs text-gray-400 whitespace-nowrap">{t.period.wonPerUsd}</span>
               </div>
             </div>
-            <button
-              onClick={handleCSV}
-              disabled={items.length === 0}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-              <Download size={15} />CSV
-            </button>
+            <CsvButton onClick={handleCSV} disabled={items.length === 0} />
           </div>
         </div>
       </div>

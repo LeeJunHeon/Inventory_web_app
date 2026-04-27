@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Search, Plus, Download, Edit, Trash2, ArrowUpDown, ArrowDown, ArrowUp, ChevronDown, Loader2 } from "lucide-react";
+import { Search, Plus, Edit, Trash2, ArrowUpDown, ArrowDown, ArrowUp, ChevronDown, Loader2 } from "lucide-react";
 import { CATEGORIES, TYPES, TYPE_COLORS, CATEGORY_COLORS, formatPrice, formatQty, InventoryItem } from "@/lib/data";
 import { useSession } from "next-auth/react";
 import TransactionModal     from "./TransactionModal";
 import EditTransactionModal from "./EditTransactionModal";
+import CsvButton            from "@/components/CsvButton";
 import DatePicker           from "./DatePicker";
 import { useT } from "@/lib/i18n";
 import { exportCSV } from "@/lib/csvUtils";
@@ -181,11 +182,7 @@ export default function InventoryPage({
           <p className="text-sm text-gray-500 mt-0.5">{t.inventory.subtitle}</p>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={handleExport}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-            <Download size={15} />CSV
-          </button>
+          <CsvButton onClick={handleExport} disabled={items.length === 0} />
           <button onClick={() => setModalOpen(true)}
             className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-sm font-bold text-white bg-blue-500 rounded-xl hover:bg-blue-600 shadow-sm">
             <Plus size={16} />{t.inventory.newRecord}
