@@ -158,7 +158,7 @@ export default function BarcodePage() {
     const PAD = 16;
     const TEXT_X = QR + PAD * 2 + 8;
     const W = QR + PAD * 2 + 240;  // 전체 너비
-    const H = QR + PAD * 2;         // 전체 높이
+    const H = QR + PAD * 2 + 20;    // 품목명 줄바꿈 대비 20px 추가
 
     const out = document.createElement("canvas");
     out.width  = W;
@@ -186,21 +186,38 @@ export default function BarcodePage() {
     ctx.textBaseline = "top";
     ctx.fillText(printItem.code, TEXT_X, PAD + 8);
 
-    // 품목명
+    // 품목명 줄바꿈 처리 (최대 너비 초과 시 다음 줄로)
+    let line2 = "";
     if (printItem.itemName) {
+      const maxTextW = W - TEXT_X - PAD;
       ctx.font = "16px sans-serif";
       ctx.fillStyle = "#374151";
-      const name = printItem.itemName.length > 22
-        ? printItem.itemName.slice(0, 22) + "…"
-        : printItem.itemName;
-      ctx.fillText(name, TEXT_X, PAD + 40);
+      const words = printItem.itemName.split(" ");
+      let line1 = "";
+      let isSecondLine = false;
+      for (const word of words) {
+        const test = (line1 ? line1 + " " : "") + word;
+        if (!isSecondLine && ctx.measureText(test).width > maxTextW) {
+          isSecondLine = true;
+          line2 = word;
+        } else if (isSecondLine) {
+          line2 += (line2 ? " " : "") + word;
+        } else {
+          line1 = test;
+        }
+      }
+      ctx.fillText(line1, TEXT_X, PAD + 38);
+      if (line2) ctx.fillText(line2, TEXT_X, PAD + 58);
     }
+
+    // 품목명 2줄이면 아래로 20px 이동
+    const nameOffset = line2 ? 20 : 0;
 
     // 품목코드
     if (printItem.itemCode) {
       ctx.font = "13px sans-serif";
       ctx.fillStyle = "#9ca3af";
-      ctx.fillText(printItem.itemCode, TEXT_X, PAD + 68);
+      ctx.fillText(printItem.itemCode, TEXT_X, PAD + 68 + nameOffset);
     }
 
     // 메모
@@ -210,7 +227,7 @@ export default function BarcodePage() {
       const memo = printItem.memo.length > 28
         ? printItem.memo.slice(0, 28) + "…"
         : printItem.memo;
-      ctx.fillText(memo, TEXT_X, PAD + 90);
+      ctx.fillText(memo, TEXT_X, PAD + 90 + nameOffset);
     }
 
     const link = document.createElement("a");
