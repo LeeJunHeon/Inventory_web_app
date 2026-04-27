@@ -25,11 +25,12 @@ interface InboundSelectModalProps {
   itemId: number | null;
   barcodeId?: number | null;
   defaultLocationId?: number | null;
+  excludeTxNo?: string | null;
   onSelect: (inbound: InboundTx) => void;
   onClose: () => void;
 }
 
-export default function InboundSelectModal({ isOpen, itemId, barcodeId, defaultLocationId, onSelect, onClose }: InboundSelectModalProps) {
+export default function InboundSelectModal({ isOpen, itemId, barcodeId, defaultLocationId, excludeTxNo, onSelect, onClose }: InboundSelectModalProps) {
   const [list, setList] = useState<InboundTx[]>([]);
   const [loading, setLoading] = useState(false);
   const [locationWarning, setLocationWarning] = useState<string | null>(null);
@@ -72,7 +73,9 @@ export default function InboundSelectModal({ isOpen, itemId, barcodeId, defaultL
                   ⚠️ {locationWarning}
                 </div>
               )}
-              {list.map(tx => (
+              {list
+                .filter(tx => !excludeTxNo || tx.txNo !== excludeTxNo)
+                .map(tx => (
             <button key={tx.txNo}
               onClick={() => {
                 const currentLocName = defaultLocationId === 1 ? '본사' : defaultLocationId === 2 ? '공덕' : null;
