@@ -476,7 +476,6 @@ export default function AldPrecursorPage() {
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t.ald.pageTitle}</h1>
           <p className="text-sm text-gray-500 mt-1">{t.ald.subtitle}</p>
         </div>
-        <CsvButton onClick={handleCsvExport} disabled={logs.length === 0} />
       </div>
 
       {/* ── 대시보드 ── */}
