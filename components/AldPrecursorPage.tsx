@@ -526,7 +526,16 @@ export default function AldPrecursorPage() {
           <div className="relative flex-1 min-w-0">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input ref={barcodeInputRef} type="text" value={barcodeInput}
-              onChange={(e) => { setBarcodeInput(searchType === "바코드" ? normalizeBarcodeInput(e.target.value) : e.target.value); setSearchError(""); }}
+              onChange={(e) => {
+                const v = searchType === "바코드" ? normalizeBarcodeInput(e.target.value) : e.target.value;
+                setBarcodeInput(v);
+                setSearchError("");
+                // 검색창 비우면 selectedCanister 해제 + 전체 로그 복원
+                if (v.trim() === "" && selectedCanister) {
+                  setSelectedCanister(null);
+                  fetchLogs(1);
+                }
+              }}
               onCompositionStart={() => { isComposingRef.current = true; }}
               onCompositionEnd={(e) => { isComposingRef.current = false; setBarcodeInput(searchType === "바코드" ? normalizeBarcodeInput(e.currentTarget.value) : e.currentTarget.value); }}
               onKeyDown={(e) => { if (e.key === "Enter" && !isComposingRef.current) handleSearch(); }}
