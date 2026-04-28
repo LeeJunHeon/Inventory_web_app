@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import {
   Search, Save, Weight, MapPin, FileText, Loader2,
   Camera, RefreshCw, Pencil,
+  ArrowDown, ArrowUp, ArrowUpDown,
 } from "lucide-react";
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
 import CsvButton from "@/components/CsvButton";
@@ -37,6 +38,7 @@ interface CanisterInfo {
 interface AldLogItem {
   id: number;
   canisterId: number;
+  canisterCode: string;
   timestamp: string;
   logSubType: string;
   materialName: string;
@@ -82,8 +84,8 @@ export default function AldPrecursorPage() {
   const [logs, setLogs] = useState<AldLogItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [sortKey, setSortKey] = useState<string | null>(null);
-  const [sortAsc, setSortAsc] = useState(true);
+  const [sortField, setSortField] = useState<string>("timestamp");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [loading, setLoading] = useState(false);
 
   // ─── 측정 입력 ───
@@ -262,27 +264,32 @@ export default function AldPrecursorPage() {
     showToast("포트를 비웠습니다.");
   };
 
-  const handleSort = (key: string) => {
-    if (sortKey === key) {
-      setSortAsc(prev => !prev);
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortField !== field) return <ArrowUpDown size={12} className="text-gray-300" />;
+    return sortDir === "asc"
+      ? <ArrowUp size={12} className="text-gray-600" />
+      : <ArrowDown size={12} className="text-gray-600" />;
+  };
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDir(prev => prev === "asc" ? "desc" : "asc");
     } else {
-      setSortKey(key);
-      setSortAsc(true);
+      setSortField(field);
+      setSortDir("desc");
     }
   };
 
-  const sortedLogs = sortKey
-    ? [...logs].sort((a, b) => {
-        const av = (a as Record<string, unknown>)[sortKey];
-        const bv = (b as Record<string, unknown>)[sortKey];
-        if (av == null && bv == null) return 0;
-        if (av == null) return sortAsc ? 1 : -1;
-        if (bv == null) return sortAsc ? -1 : 1;
-        return sortAsc
-          ? (av < bv ? -1 : av > bv ? 1 : 0)
-          : (av > bv ? -1 : av < bv ? 1 : 0);
-      })
-    : logs;
+  const sortedLogs = [...logs].sort((a, b) => {
+    const av = (a as Record<string, unknown>)[sortField];
+    const bv = (b as Record<string, unknown>)[sortField];
+    if (av == null && bv == null) return 0;
+    if (av == null) return sortDir === "asc" ? 1 : -1;
+    if (bv == null) return sortDir === "asc" ? -1 : 1;
+    return sortDir === "asc"
+      ? (av < bv ? -1 : av > bv ? 1 : 0)
+      : (av > bv ? -1 : av < bv ? 1 : 0);
+  });
 
   const handleCsvExport = () => {
     if (logs.length === 0) return;
@@ -756,11 +763,11 @@ export default function AldPrecursorPage() {
       {/* ── 이력 테이블 ── */}
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="font-bold text-gray-900">
+              {selectedCanister ? t.ald.logTitle(selectedCanister.barcodeCode) : t.ald.allLogsTitle}
+            </h2>
             <div className="flex items-center gap-2">
-              <h2 className="font-bold text-gray-900">{t.ald.recordTitle}</h2>
-              <span className="text-xs text-gray-400">{total}건</span>
-            </div>
-            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400">{t.ald.totalCount} {total.toLocaleString()}{t.ald.countUnit}</span>
               <CsvButton onClick={handleCsvExport} disabled={logs.length === 0} />
               <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}
                 className="px-2.5 py-1.5 text-xs bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 disabled:opacity-40">이전</button>
@@ -782,7 +789,7 @@ export default function AldPrecursorPage() {
                       { label: t.ald.colTime,           key: "timestamp" },
                       { label: t.ald.colSubType,        key: "logSubType" },
                       { label: t.ald.colMaterial,       key: "materialName" },
-                      { label: t.ald.colCanister,       key: "canisterId" },
+                      { label: t.ald.colCanister,       key: "canisterCode" },
                       { label: t.ald.colGross,          key: "grossWeight" },
                       { label: t.ald.colTare,           key: "tareWeight" },
                       { label: t.ald.colMeasure,        key: "measureWeight" },
@@ -796,10 +803,12 @@ export default function AldPrecursorPage() {
                       <th
                         key={key}
                         onClick={() => handleSort(key)}
-                        className="text-left text-xs font-semibold text-gray-500 px-4 py-3 whitespace-nowrap cursor-pointer hover:text-gray-800 select-none"
+                        className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer whitespace-nowrap select-none hover:text-gray-800"
                       >
-                        {label}
-                        {sortKey === key ? (sortAsc ? " ▲" : " ▼") : ""}
+                        <div className="flex items-center gap-1">
+                          {label}
+                          <SortIcon field={key} />
+                        </div>
                       </th>
                     ))}
                   </tr>
@@ -808,30 +817,34 @@ export default function AldPrecursorPage() {
                   {sortedLogs.length === 0 ? (
                     <tr><td colSpan={13} className="px-5 py-12 text-center text-sm text-gray-400">{t.ald.noLogs}</td></tr>
                   ) : sortedLogs.map((log) => (
-                    <tr key={log.id} className="border-b border-gray-50 hover:bg-gray-50/50">
-                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{log.timestamp}</td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${log.logSubType === "충진" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"}`}>
+                    <tr key={log.id} className="border-b border-gray-50 hover:bg-blue-50/30">
+                      <td className="px-5 py-3 text-sm text-gray-600 whitespace-nowrap">{log.timestamp}</td>
+                      <td className="px-5 py-3 whitespace-nowrap">
+                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${
+                          log.logSubType === "충진"
+                            ? "bg-indigo-50 text-indigo-700"
+                            : "bg-blue-50 text-blue-700"
+                        }`}>
                           {log.logSubType}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">{log.materialName || "-"}</td>
-                      <td className="px-4 py-3 text-sm text-gray-500 font-mono whitespace-nowrap">{selectedCanister.barcodeCode}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700 text-right font-mono whitespace-nowrap">{log.grossWeight != null ? log.grossWeight.toFixed(3) : "-"}</td>
-                      <td className="px-4 py-3 text-sm text-gray-500 text-right font-mono whitespace-nowrap">{log.tareWeight != null ? log.tareWeight.toFixed(3) : "-"}</td>
-                      <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right font-mono whitespace-nowrap">{log.measureWeight != null ? log.measureWeight.toFixed(3) : "-"}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700 text-right whitespace-nowrap">{log.cumulativeCycle?.toLocaleString() ?? "-"}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700 text-right font-mono whitespace-nowrap">{log.consumptionPerCycle != null ? log.consumptionPerCycle.toFixed(4) : "-"}</td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <td className="px-5 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">{log.materialName || "-"}</td>
+                      <td className="px-5 py-3 text-sm text-gray-500 font-mono whitespace-nowrap">{log.canisterCode || "-"}</td>
+                      <td className="px-5 py-3 text-sm text-gray-700 text-right font-mono whitespace-nowrap">{log.grossWeight != null ? log.grossWeight.toFixed(3) : "-"}</td>
+                      <td className="px-5 py-3 text-sm text-gray-500 text-right font-mono whitespace-nowrap">{log.tareWeight != null ? log.tareWeight.toFixed(3) : "-"}</td>
+                      <td className="px-5 py-3 text-sm font-semibold text-gray-900 text-right font-mono whitespace-nowrap">{log.measureWeight != null ? log.measureWeight.toFixed(3) : "-"}</td>
+                      <td className="px-5 py-3 text-sm text-gray-700 text-right whitespace-nowrap">{log.cumulativeCycle?.toLocaleString() ?? "-"}</td>
+                      <td className="px-5 py-3 text-sm text-gray-700 text-right font-mono whitespace-nowrap">{log.consumptionPerCycle != null ? log.consumptionPerCycle.toFixed(4) : "-"}</td>
+                      <td className="px-5 py-3 text-right whitespace-nowrap">
                         {log.remainPercent != null ? (
                           <span className={`text-sm font-bold ${remainTextColor(log.remainPercent)}`}>
                             {log.remainPercent.toFixed(1)}%
                           </span>
                         ) : "-"}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700 text-right whitespace-nowrap">{log.estimatedRemainCycle != null ? log.estimatedRemainCycle.toLocaleString() : "-"}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{log.location || "-"}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{log.userName || "-"}</td>
+                      <td className="px-5 py-3 text-sm text-gray-700 text-right whitespace-nowrap">{log.estimatedRemainCycle != null ? log.estimatedRemainCycle.toLocaleString() : "-"}</td>
+                      <td className="px-5 py-3 text-sm text-gray-600 whitespace-nowrap">{log.location || "-"}</td>
+                      <td className="px-5 py-3 text-sm text-gray-600 whitespace-nowrap">{log.userName || "-"}</td>
                     </tr>
                   ))}
                 </tbody>

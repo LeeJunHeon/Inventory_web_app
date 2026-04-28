@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
           aldLogDetail: true,
           location:     true,
           user:         true,
+          targetUnit:   { include: { barcodes: { select: { code: true } } } },
         },
       }),
     ]);
@@ -38,6 +39,7 @@ export async function GET(request: NextRequest) {
       logs: logs.map(l => ({
         id:                    l.id,
         canisterId:            l.targetUnitId,
+        canisterCode:          l.targetUnit?.barcodes?.[0]?.code || "",
         timestamp:             l.loggedAt.toISOString().replace("T", " ").slice(0, 16),
         logSubType:            l.aldLogDetail?.logSubType || l.logType,
         materialName:          l.aldLogDetail?.materialName || "",
