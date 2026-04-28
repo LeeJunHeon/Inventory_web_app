@@ -637,6 +637,54 @@ export async function DELETE(request: NextRequest) {
 
     const sessionUserId = await getSessionUserId();
 
+    // 삭제 전 거래 정보 조회
+    const beforeDelete = await prisma.inventoryTx.findUnique({
+      where: { id: Number(id) },
+      include: {
+        barcode: { select: { id: true, code: true, targetUnitId: true } },
+      },
+    });
+
+    if (!beforeDelete) {
+      return NextResponse.json(
+        { error: "삭제할 거래를 찾을 수 없습니다." },
+        { status: 404 }
+      );
+    }
+
+    // ① 입고/충진 입고건이면: 출고/불출이 참조 중인지 확인
+    if (beforeDelete.txType === "입고" || beforeDelete.txType === "충진 입고") {
+      const refCount = await prisma.inventoryTx.count({
+        where: {
+          refTxNo: beforeDelete.txNo,
+          NOT: { id: Number(id) },
+        },
+      });
+      if (refCount > 0) {
+        return NextResponse.json(
+          {
+            error: `이 입고 거래를 참조하는 출고/불출 거래가 ${refCount}건 있습니다. 먼저 해당 거래를 삭제해 주세요.`,
+          },
+          { status: 400 }
+        );
+      }
+
+      // ② 입고건과 연결된 target_unit에 측정/사용 이력이 있는지 확인
+      if (beforeDelete.barcode?.targetUnitId) {
+        const logCount = await prisma.targetLog.count({
+          where: { targetUnitId: beforeDelete.barcode.targetUnitId },
+        });
+        if (logCount > 0) {
+          return NextResponse.json(
+            {
+              error: `이 거래에 연결된 측정/사용 이력이 ${logCount}건 있습니다. 측정 이력을 먼저 삭제할 수 없으므로, 이 거래는 삭제할 수 없습니다.`,
+            },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
     await prisma.inventoryTx.delete({ where: { id: Number(id) } });
 
     // activity_log 기록
