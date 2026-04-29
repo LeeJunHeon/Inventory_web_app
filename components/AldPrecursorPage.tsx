@@ -112,6 +112,14 @@ export default function AldPrecursorPage() {
     );
   }, []);
 
+  // 마운트 시 바코드 input 자동 포커스 (PC USB 바코드 리더기 지원)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      barcodeInputRef.current?.focus();
+    }, 150);
+    return () => clearTimeout(timer);
+  }, []);
+
   const fetchPortSlots = async () => {
     try {
       const res = await fetch("/api/ald/port-slots");
@@ -265,10 +273,10 @@ export default function AldPrecursorPage() {
   };
 
   const SortIcon = ({ field }: { field: string }) => {
-    if (sortField !== field) return <ArrowUpDown size={12} className="text-gray-300" />;
+    if (sortField !== field) return <ArrowUpDown size={14} className="text-gray-300" />;
     return sortDir === "asc"
-      ? <ArrowUp size={12} className="text-gray-600" />
-      : <ArrowDown size={12} className="text-gray-600" />;
+      ? <ArrowUp size={14} className="text-blue-500" />
+      : <ArrowDown size={14} className="text-blue-500" />;
   };
 
   const handleSort = (field: string) => {
@@ -281,8 +289,8 @@ export default function AldPrecursorPage() {
   };
 
   const sortedLogs = [...logs].sort((a, b) => {
-    const av = (a as Record<string, unknown>)[sortField];
-    const bv = (b as Record<string, unknown>)[sortField];
+    const av = (a as unknown as Record<string, unknown>)[sortField];
+    const bv = (b as unknown as Record<string, unknown>)[sortField];
     if (av == null && bv == null) return 0;
     if (av == null) return sortDir === "asc" ? 1 : -1;
     if (bv == null) return sortDir === "asc" ? -1 : 1;
@@ -769,11 +777,6 @@ export default function AldPrecursorPage() {
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-400">{t.ald.totalCount} {total.toLocaleString()}{t.ald.countUnit}</span>
               <CsvButton onClick={handleCsvExport} disabled={logs.length === 0} />
-              <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}
-                className="px-2.5 py-1.5 text-xs bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 disabled:opacity-40">이전</button>
-              <span className="text-xs text-gray-500 min-w-[40px] text-center">{page}</span>
-              <button onClick={() => setPage((p) => p + 1)} disabled={page * PAGE_LIMIT >= total}
-                className="px-2.5 py-1.5 text-xs bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 disabled:opacity-40">다음</button>
             </div>
           </div>
           {loading ? (
@@ -781,6 +784,7 @@ export default function AldPrecursorPage() {
               <Loader2 size={24} className="animate-spin text-blue-500" />
             </div>
           ) : (
+            <>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -850,6 +854,34 @@ export default function AldPrecursorPage() {
                 </tbody>
               </table>
             </div>
+            {/* 페이지네이션 — 테이블 하단 (TargetUsagePage와 동일 스타일) */}
+            {total > PAGE_LIMIT && (
+              <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
+                <span className="text-xs text-gray-400">
+                  {((page - 1) * PAGE_LIMIT + 1).toLocaleString()}–{Math.min(page * PAGE_LIMIT, total).toLocaleString()} / {total.toLocaleString()}{t.ald.countUnit}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page <= 1}
+                    className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {t.common.prev}
+                  </button>
+                  <span className="text-xs text-gray-500 min-w-[60px] text-center">
+                    {page} / {Math.ceil(total / PAGE_LIMIT)}
+                  </span>
+                  <button
+                    onClick={() => setPage(p => p + 1)}
+                    disabled={page >= Math.ceil(total / PAGE_LIMIT)}
+                    className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {t.common.next}
+                  </button>
+                </div>
+              </div>
+            )}
+            </>
           )}
       </div>
 
