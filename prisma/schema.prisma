@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 // ── 품목 카테고리 ──
@@ -27,10 +27,11 @@ model Location {
   address String?
   type    String  @default("general")
 
-  inventoryTxs  InventoryTx[]
-  targetLogs    TargetLog[]
-  chamberSlots  ChamberSlot[]
-  aldLogDetails AldLogDetail[]
+  inventoryTxs    InventoryTx[]
+  targetLogs      TargetLog[]
+  chamberSlots    ChamberSlot[]
+  aldLogDetails   AldLogDetail[]
+  chamberSlotLogs ChamberSlotLog[]
 
   @@map("location")
 }
@@ -54,7 +55,7 @@ model Partner {
   managerName String? @map("manager_name")
   contact     String?
   email       String?
-  isActive   Boolean  @default(true) @map("is_active")
+  isActive    Boolean @default(true) @map("is_active")
 
   inventoryTxs InventoryTx[]
 
@@ -63,11 +64,11 @@ model Partner {
 
 // ── 사용자 ──
 model User {
-  id           Int     @id @default(autoincrement())
-  name         String
-  email        String? @unique
-  role         String? // admin / viewer / operator
-  isActive     String  @default("Y") @map("is_active") // Y | N
+  id              Int                @id @default(autoincrement())
+  name            String
+  email           String?            @unique
+  role            String? // admin / viewer / operator
+  isActive        String             @default("Y") @map("is_active") // Y | N
   permission      UserTabPermission?
   inventoryTxs    InventoryTx[]
   targetLogs      TargetLog[]
@@ -75,19 +76,20 @@ model User {
   chamberSlots    ChamberSlot[]
   activityLogs    ActivityLog[]
   aldPortSlots    AldPortSlot[]
+  chamberSlotLogs ChamberSlotLog[]
 
   @@map("user")
 }
 
 // ── 탭 권한 ──
 model UserTabPermission {
-  userId                  Int    @id @map("user_id")
-  canViewMain             String @default("Y") @map("can_view_main")
-  canViewStatus           String @default("Y") @map("can_view_status")
-  canViewPeriod           String @default("Y") @map("can_view_period")
-  canViewUserPerm         String @default("N") @map("can_view_user_perm")
-  canViewTargetUsage      String @default("Y") @map("can_view_target_usage")
-  canViewBarcode          String @default("Y") @map("can_view_barcode")
+  userId                    Int    @id @map("user_id")
+  canViewMain               String @default("Y") @map("can_view_main")
+  canViewStatus             String @default("Y") @map("can_view_status")
+  canViewPeriod             String @default("Y") @map("can_view_period")
+  canViewUserPerm           String @default("N") @map("can_view_user_perm")
+  canViewTargetUsage        String @default("Y") @map("can_view_target_usage")
+  canViewBarcode            String @default("Y") @map("can_view_barcode")
   canViewBarcodeCreatePrint String @default("Y") @map("can_view_barcode_create_print")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -97,13 +99,13 @@ model UserTabPermission {
 
 // ── 품목 마스터 ──
 model Item {
-  id           Int    @id @default(autoincrement())
-  categoryId   Int    @map("category_id")
-  code         String @unique
-  name         String
-  unit         String?
-  minStockQty  Int    @default(0) @map("min_stock_qty")
-  note         String?
+  id          Int     @id @default(autoincrement())
+  categoryId  Int     @map("category_id")
+  code        String  @unique
+  name        String
+  unit        String?
+  minStockQty Int     @default(0) @map("min_stock_qty")
+  note        String?
 
   category     ItemCategory  @relation(fields: [categoryId], references: [id])
   waferSpec    WaferSpec?
@@ -111,7 +113,7 @@ model Item {
   barcodes     Barcode[]
   targetUnits  TargetUnit[]
   inventoryTxs InventoryTx[]
-  isActive   Boolean  @default(true) @map("is_active")
+  isActive     Boolean       @default(true) @map("is_active")
 
   @@map("item")
 }
@@ -120,13 +122,13 @@ model Item {
 model WaferSpec {
   itemId        Int     @id @map("item_id")
   diameterInch  Int     @map("diameter_inch")
-  waferType     String? @map("wafer_type")    // P, P+, N, Metal 등
+  waferType     String? @map("wafer_type") // P, P+, N, Metal 등
   dopant        String?
-  grade         String?                        // Test, Prime, Monitor
+  grade         String? // Test, Prime, Monitor
   thicknessNote String? @map("thickness_note")
   resistivity   String?
-  orientation   String?                        // 1-0-0, 1-1-1
-  surface       String?                        // SSP, DSP
+  orientation   String? // 1-0-0, 1-1-1
+  surface       String? // SSP, DSP
   oxidation     String?
 
   item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
@@ -139,9 +141,9 @@ model TargetSpec {
   itemId        Int      @id @map("item_id")
   diameterInch  Int      @map("diameter_inch")
   thicknessInch Decimal? @map("thickness_inch") @db.Decimal(5, 3)
-  materialCode  String   @map("material_code")  // AU, SI, SIO2, ATC 등
+  materialCode  String   @map("material_code") // AU, SI, SIO2, ATC 등
   purity        Decimal? @db.Decimal(6, 3)
-  hasCopper     String?  @map("has_copper")      // Y | N
+  hasCopper     String?  @map("has_copper") // Y | N
 
   item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
@@ -158,13 +160,15 @@ model TargetUnit {
   disposedAt DateTime? @map("disposed_at") @db.Date
   note       String?
 
-  item            Item?            @relation(fields: [itemId], references: [id])
-  barcodes        Barcode[]
-  inventoryTxs    InventoryTx[]
-  targetLogs      TargetLog[]
-  chamberSlot     ChamberSlot?
-  aldCanisterSpec AldCanisterSpec?
-  aldPortSlot     AldPortSlot?
+  item                      Item?            @relation(fields: [itemId], references: [id])
+  barcodes                  Barcode[]
+  inventoryTxs              InventoryTx[]
+  targetLogs                TargetLog[]
+  chamberSlot               ChamberSlot?
+  aldCanisterSpec           AldCanisterSpec?
+  aldPortSlot               AldPortSlot?
+  chamberSlotLogsAsCurrent  ChamberSlotLog[] @relation("LogCurrentTarget")
+  chamberSlotLogsAsPrevious ChamberSlotLog[] @relation("LogPrevTarget")
 
   @@map("target_unit")
 }
@@ -173,7 +177,7 @@ model TargetUnit {
 model TargetLog {
   id           Int      @id @default(autoincrement())
   targetUnitId Int      @map("target_unit_id")
-  logType      String   @map("log_type")  // 측정 | 폐기
+  logType      String   @map("log_type") // 측정 | 폐기
   weight       Decimal? @db.Decimal(10, 3)
   locationId   Int?     @map("location_id")
   reason       String?
@@ -215,33 +219,33 @@ model Barcode {
 
 // ── 재고 거래 이력 ──
 model InventoryTx {
-  id           Int      @id @default(autoincrement())
-  txNo         String?  @unique @map("tx_no")
-  txDate       DateTime @default(now()) @map("tx_date") @db.Date
-  txType       String   @map("tx_type")    // 입고 | 불출 | 출고
-  itemId       Int      @map("item_id")
-  targetUnitId Int?     @map("target_unit_id")
-  qty          Int
-  unitPrice    Decimal? @map("unit_price") @db.Decimal(15, 2)
-  amount       Decimal? @db.Decimal(15, 2)
-  partnerId    Int?     @map("partner_id")
-  txReasonId   Int?     @map("tx_reason_id")
-  locationId   Int      @map("location_id")
-  userId       Int?     @map("user_id")
-  memo         String?
-  refTxNo      String?  @map("ref_tx_no")
-  barcodeId    Int?     @map("barcode_id")
-  currency     String?  @default("KRW")
+  id                  Int      @id @default(autoincrement())
+  txNo                String?  @unique @map("tx_no")
+  txDate              DateTime @default(now()) @map("tx_date") @db.Date
+  txType              String   @map("tx_type") // 입고 | 불출 | 출고
+  itemId              Int      @map("item_id")
+  targetUnitId        Int?     @map("target_unit_id")
+  qty                 Int
+  unitPrice           Decimal? @map("unit_price") @db.Decimal(15, 2)
+  amount              Decimal? @db.Decimal(15, 2)
+  partnerId           Int?     @map("partner_id")
+  txReasonId          Int?     @map("tx_reason_id")
+  locationId          Int      @map("location_id")
+  userId              Int?     @map("user_id")
+  memo                String?
+  refTxNo             String?  @map("ref_tx_no")
+  barcodeId           Int?     @map("barcode_id")
+  currency            String?  @default("KRW")
   exchangeRateAtEntry Decimal? @map("exchange_rate_at_entry") @db.Decimal(10, 2)
-  createdAt    DateTime @default(now()) @map("created_at")
+  createdAt           DateTime @default(now()) @map("created_at")
 
-  item       Item       @relation(fields: [itemId], references: [id])
-  targetUnit TargetUnit? @relation(fields: [targetUnitId], references: [id])
-  partner    Partner?   @relation(fields: [partnerId], references: [id])
-  txReason   TxReason?  @relation(fields: [txReasonId], references: [id])
-  location   Location   @relation(fields: [locationId], references: [id])
-  user       User?      @relation(fields: [userId], references: [id])
-  barcode    Barcode?   @relation(fields: [barcodeId], references: [id])
+  item         Item          @relation(fields: [itemId], references: [id])
+  targetUnit   TargetUnit?   @relation(fields: [targetUnitId], references: [id])
+  partner      Partner?      @relation(fields: [partnerId], references: [id])
+  txReason     TxReason?     @relation(fields: [txReasonId], references: [id])
+  location     Location      @relation(fields: [locationId], references: [id])
+  user         User?         @relation(fields: [userId], references: [id])
+  barcode      Barcode?      @relation(fields: [barcodeId], references: [id])
   barcodeScans BarcodeScan[]
 
   @@map("inventory_tx")
@@ -252,7 +256,7 @@ model BarcodeScan {
   id            Int      @id @default(autoincrement())
   barcodeId     Int      @map("barcode_id")
   scanTime      DateTime @default(now()) @map("scan_time")
-  opType        String?  @map("op_type")   // 출고 | 불출
+  opType        String?  @map("op_type") // 출고 | 불출
   txReasonId    Int?     @map("tx_reason_id")
   userId        Int?     @map("user_id")
   qty           Int
@@ -268,16 +272,16 @@ model BarcodeScan {
 
 // ── 챔버 슬롯 현황 ──
 model ChamberSlot {
-  id           Int         @id @default(autoincrement())
-  locationId   Int         @map("location_id")
-  targetUnitId Int?        @unique @map("target_unit_id")
-  loadedAt     DateTime?   @map("loaded_at")
-  updatedById  Int?        @map("updated_by_id")
+  id           Int       @id @default(autoincrement())
+  locationId   Int       @map("location_id")
+  targetUnitId Int?      @unique @map("target_unit_id")
+  loadedAt     DateTime? @map("loaded_at")
+  updatedById  Int?      @map("updated_by_id")
   note         String?
 
-  location     Location    @relation(fields: [locationId], references: [id])
-  targetUnit   TargetUnit? @relation(fields: [targetUnitId], references: [id])
-  updatedBy    User?       @relation(fields: [updatedById], references: [id])
+  location   Location    @relation(fields: [locationId], references: [id])
+  targetUnit TargetUnit? @relation(fields: [targetUnitId], references: [id])
+  updatedBy  User?       @relation(fields: [updatedById], references: [id])
 
   @@map("chamber_slot")
 }
@@ -286,7 +290,7 @@ model ChamberSlot {
 model ActivityLog {
   id        Int      @id @default(autoincrement())
   userId    Int?     @map("user_id")
-  action    String   // CREATE, UPDATE, DELETE
+  action    String // CREATE, UPDATE, DELETE
   tableName String   @map("table_name")
   recordId  Int      @map("record_id")
   detail    String?
@@ -325,15 +329,15 @@ model AldCanisterSpec {
 model AldLogDetail {
   id                   Int      @id @default(autoincrement())
   targetLogId          Int      @unique @map("target_log_id")
-  logSubType           String?  @map("log_sub_type")           // 측정 | 충진 | 폐기
+  logSubType           String?  @map("log_sub_type") // 측정 | 충진 | 폐기
   materialName         String?  @map("material_name")
-  grossWeight          Decimal? @map("gross_weight")           @db.Decimal(10, 3)
-  tareWeight           Decimal? @map("tare_weight")            @db.Decimal(10, 3)
-  measureWeight        Decimal? @map("measure_weight")         @db.Decimal(10, 3)
+  grossWeight          Decimal? @map("gross_weight") @db.Decimal(10, 3)
+  tareWeight           Decimal? @map("tare_weight") @db.Decimal(10, 3)
+  measureWeight        Decimal? @map("measure_weight") @db.Decimal(10, 3)
   cumulativeCycle      Int?     @map("cumulative_cycle")
   cycleDelta           Int?     @map("cycle_delta")
-  consumptionPerCycle  Decimal? @map("consumption_per_cycle")  @db.Decimal(10, 5)
-  remainPercent        Decimal? @map("remain_percent")         @db.Decimal(5, 2)
+  consumptionPerCycle  Decimal? @map("consumption_per_cycle") @db.Decimal(10, 5)
+  remainPercent        Decimal? @map("remain_percent") @db.Decimal(5, 2)
   estimatedRemainCycle Int?     @map("estimated_remain_cycle")
   locationId           Int?     @map("location_id")
 
@@ -358,4 +362,25 @@ model AldPortSlot {
 
   @@unique([equipmentName, portNumber])
   @@map("ald_port_slot")
+}
+
+// ── 챔버 슬롯 변경 이력 ──
+model ChamberSlotLog {
+  id                   Int      @id @default(autoincrement())
+  locationId           Int      @map("location_id")
+  targetUnitId         Int?     @map("target_unit_id")
+  previousTargetUnitId Int?     @map("previous_target_unit_id")
+  action               String // load | unload | swap
+  changedAt            DateTime @default(now()) @map("changed_at")
+  changedById          Int?     @map("changed_by_id")
+  note                 String?
+
+  location           Location    @relation(fields: [locationId], references: [id])
+  targetUnit         TargetUnit? @relation("LogCurrentTarget", fields: [targetUnitId], references: [id])
+  previousTargetUnit TargetUnit? @relation("LogPrevTarget", fields: [previousTargetUnitId], references: [id])
+  changedBy          User?       @relation(fields: [changedById], references: [id])
+
+  @@index([locationId, changedAt])
+  @@index([targetUnitId, changedAt])
+  @@map("chamber_slot_log")
 }

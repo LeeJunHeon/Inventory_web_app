@@ -168,6 +168,27 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // chamber_slot_log 기록 (타겟이 바뀐 경우만)
+    if (beforeSlot && beforeSlot.targetUnitId !== (targetUnitId ?? null)) {
+      const beforeTU = beforeSlot.targetUnitId;
+      const afterTU = targetUnitId ?? null;
+      let action: string;
+      if (beforeTU == null) action = "load";
+      else if (afterTU == null) action = "unload";
+      else action = "swap";
+
+      await prisma.chamberSlotLog.create({
+        data: {
+          locationId: beforeSlot.locationId,
+          targetUnitId: afterTU,
+          previousTargetUnitId: beforeTU,
+          action,
+          changedById: user?.id ?? null,
+          note: note || "수동 변경",
+        },
+      });
+    }
+
     return NextResponse.json(slot);
   } catch (error) {
     console.error("PUT /api/chamber-slots error:", error);

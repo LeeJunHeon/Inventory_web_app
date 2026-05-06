@@ -271,32 +271,69 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // chamber_slot 자동 업데이트
+    // chamber_slot 자동 업데이트 + 이력 기록
     const STORAGE_IDS_SLOT = [3, 4];
     const CHAMBER_IDS_SLOT = [5, 6, 7, 8, 9, 10];
     const newLocationId = body.locationId ? Number(body.locationId) : null;
 
     if (newLocationId && CHAMBER_IDS_SLOT.includes(newLocationId)) {
-      // 챔버로 이동 → 해당 챔버 슬롯에 타겟 등록
-      await prisma.chamberSlot.updateMany({
+      // 챔버로 이동 → 기존 타겟 조회 → 변경된 경우만 업데이트 + 로그 기록
+      const existingSlot = await prisma.chamberSlot.findFirst({
         where: { locationId: newLocationId },
-        data: {
-          targetUnitId: body.targetUnitId,
-          loadedAt: new Date(),
-        },
+        select: { targetUnitId: true },
       });
+      const previousTargetUnitId = existingSlot?.targetUnitId ?? null;
+
+      if (previousTargetUnitId !== body.targetUnitId) {
+        await prisma.chamberSlot.updateMany({
+          where: { locationId: newLocationId },
+          data: {
+            targetUnitId: body.targetUnitId,
+            loadedAt: new Date(),
+          },
+        });
+        await prisma.chamberSlotLog.create({
+          data: {
+            locationId: newLocationId,
+            targetUnitId: body.targetUnitId,
+            previousTargetUnitId,
+            action: previousTargetUnitId == null ? "load" : "swap",
+            changedById: sessionUserId ?? null,
+            note: "측정 저장으로 자동 변경",
+          },
+        });
+      }
     } else if (newLocationId && STORAGE_IDS_SLOT.includes(newLocationId)) {
-      // 보관함으로 이동 → 해당 타겟이 있던 챔버 슬롯 비우기
-      await prisma.chamberSlot.updateMany({
+      // 보관함으로 이동 → 해당 타겟이 있던 챔버 슬롯 비우기 + 로그 기록
+      const slotsToUnload = await prisma.chamberSlot.findMany({
         where: { targetUnitId: body.targetUnitId },
-        data: {
-          targetUnitId: null,
-          loadedAt: null,
-        },
+        select: { locationId: true },
       });
+
+      if (slotsToUnload.length > 0) {
+        await prisma.chamberSlot.updateMany({
+          where: { targetUnitId: body.targetUnitId },
+          data: {
+            targetUnitId: null,
+            loadedAt: null,
+          },
+        });
+        for (const s of slotsToUnload) {
+          await prisma.chamberSlotLog.create({
+            data: {
+              locationId: s.locationId,
+              targetUnitId: null,
+              previousTargetUnitId: body.targetUnitId,
+              action: "unload",
+              changedById: sessionUserId ?? null,
+              note: "보관함 이동으로 자동 비움",
+            },
+          });
+        }
+      }
     }
 
-    // 폐기 처리인 경우 타겟 상태 변경 + 바코드 비활성화
+    // 폐기 처리인 경우 타겟 상태 변경 + 바코드 비활성화 + 챔버 슬롯 자동 비움
     if (isDispose) {
       await prisma.targetUnit.update({
         where: { id: body.targetUnitId },
@@ -306,6 +343,33 @@ export async function POST(request: NextRequest) {
         where: { targetUnitId: body.targetUnitId },
         data: { isActive: "N" },
       });
+
+      // 폐기 타겟이 챔버에 있었다면 비우고 unload 로그 기록
+      const disposedSlots = await prisma.chamberSlot.findMany({
+        where: { targetUnitId: body.targetUnitId },
+        select: { locationId: true },
+      });
+      if (disposedSlots.length > 0) {
+        await prisma.chamberSlot.updateMany({
+          where: { targetUnitId: body.targetUnitId },
+          data: {
+            targetUnitId: null,
+            loadedAt: null,
+          },
+        });
+        for (const s of disposedSlots) {
+          await prisma.chamberSlotLog.create({
+            data: {
+              locationId: s.locationId,
+              targetUnitId: null,
+              previousTargetUnitId: body.targetUnitId,
+              action: "unload",
+              changedById: sessionUserId ?? null,
+              note: "폐기 처리로 자동 비움",
+            },
+          });
+        }
+      }
     }
 
     // activity_log 기록

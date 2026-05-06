@@ -72,6 +72,22 @@ interface MovementsResponse {
   disposedAt: string | null;
 }
 
+interface ChamberHistoryLog {
+  id: number;
+  locationId: number;
+  locationName: string;
+  action: string; // load | unload | swap
+  targetUnitId: number | null;
+  targetBarcode: string | null;
+  targetItemName: string | null;
+  previousTargetUnitId: number | null;
+  previousBarcode: string | null;
+  previousItemName: string | null;
+  changedAt: string;
+  changedBy: string | null;
+  note: string | null;
+}
+
 const PAGE_LIMIT = 50;
 
 export default function TargetUsagePage() {
@@ -130,6 +146,9 @@ export default function TargetUsagePage() {
   const [movements, setMovements] = useState<MovementSegment[]>([]);
   const [movementsMeta, setMovementsMeta] = useState<{ unknownLocationCount: number; isDisposed: boolean; disposedAt: string | null }>({ unknownLocationCount: 0, isDisposed: false, disposedAt: null });
   const [movementsLoading, setMovementsLoading] = useState(false);
+  const [historySlot, setHistorySlot] = useState<ChamberSlot | null>(null);
+  const [historyLogs, setHistoryLogs] = useState<ChamberHistoryLog[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [editingSlot, setEditingSlot]       = useState<ChamberSlot | null>(null);
   const [slotSearchType, setSlotSearchType] = useState<"바코드" | "품목코드" | "품목명">("바코드");
   const [slotSearchQuery, setSlotSearchQuery] = useState("");
@@ -240,6 +259,18 @@ export default function TargetUsagePage() {
       })
       .finally(() => setMovementsLoading(false));
   }, [showMovements, selectedTarget, movements.length]);
+
+  // 이력 모달 열리면 fetch
+  useEffect(() => {
+    if (!historySlot) return;
+    setHistoryLoading(true);
+    setHistoryLogs([]);
+    fetch(`/api/chamber-slots/history?locationId=${historySlot.locationId}&limit=100`)
+      .then(r => r.json())
+      .then(data => Array.isArray(data) && setHistoryLogs(data))
+      .catch(() => setHistoryLogs([]))
+      .finally(() => setHistoryLoading(false));
+  }, [historySlot]);
 
   const handleSearch = async () => {
     const code = barcodeInput.trim();
@@ -548,6 +579,98 @@ export default function TargetUsagePage() {
         </div>
       )}
 
+      {/* 챔버 슬롯 이력 모달 */}
+      {historySlot && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+          onClick={() => setHistorySlot(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <div>
+                <h3 className="font-bold text-gray-900">{historySlot.locationName} 이력</h3>
+                <p className="text-xs text-gray-500 mt-0.5">최근 100건 표시</p>
+              </div>
+              <button
+                onClick={() => setHistorySlot(null)}
+                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 text-sm"
+              >✕</button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {historyLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 size={24} className="animate-spin text-blue-500" />
+                </div>
+              ) : historyLogs.length === 0 ? (
+                <p className="text-sm text-gray-400 py-12 text-center">변경 이력이 없습니다.</p>
+              ) : (
+                historyLogs.map(log => {
+                  const ts = new Date(log.changedAt).toLocaleString("ko-KR", {
+                    year: "numeric", month: "2-digit", day: "2-digit",
+                    hour: "2-digit", minute: "2-digit",
+                  });
+                  const actionLabel =
+                    log.action === "load" ? "장착" :
+                    log.action === "unload" ? "제거" : "교체";
+                  const actionColor =
+                    log.action === "load" ? "bg-emerald-50 text-emerald-700" :
+                    log.action === "unload" ? "bg-rose-50 text-rose-700" :
+                    "bg-blue-50 text-blue-700";
+                  return (
+                    <div key={log.id} className="px-4 py-3 rounded-xl border border-gray-100 bg-gray-50">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${actionColor}`}>
+                          {actionLabel}
+                        </span>
+                        <span className="text-xs text-gray-500 font-mono">{ts}</span>
+                      </div>
+                      <div className="mt-2 space-y-1">
+                        {log.action === "load" && (
+                          <p className="text-sm text-gray-700">
+                            <span className="text-emerald-600">→</span>{" "}
+                            <span className="font-mono font-semibold">{log.targetBarcode || "-"}</span>
+                            {log.targetItemName && <span className="text-gray-500 ml-1.5">({log.targetItemName})</span>}
+                          </p>
+                        )}
+                        {log.action === "unload" && (
+                          <p className="text-sm text-gray-700">
+                            <span className="text-rose-500">←</span>{" "}
+                            <span className="font-mono font-semibold">{log.previousBarcode || "-"}</span>
+                            {log.previousItemName && <span className="text-gray-500 ml-1.5">({log.previousItemName})</span>}
+                          </p>
+                        )}
+                        {log.action === "swap" && (
+                          <>
+                            <p className="text-sm text-gray-500">
+                              <span className="text-rose-500">←</span>{" "}
+                              <span className="font-mono">{log.previousBarcode || "-"}</span>
+                              {log.previousItemName && <span className="text-gray-400 ml-1.5">({log.previousItemName})</span>}
+                            </p>
+                            <p className="text-sm text-gray-700">
+                              <span className="text-emerald-600">→</span>{" "}
+                              <span className="font-mono font-semibold">{log.targetBarcode || "-"}</span>
+                              {log.targetItemName && <span className="text-gray-500 ml-1.5">({log.targetItemName})</span>}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                      <div className="mt-2 flex items-center justify-between text-xs text-gray-400">
+                        <span>{log.changedBy || "-"}</span>
+                        {log.note && <span className="italic truncate ml-2">{log.note}</span>}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div>
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t.nav.target}</h1>
         <p className="text-sm text-gray-500 mt-1">{t.target.subtitle}</p>
@@ -575,29 +698,37 @@ export default function TargetUsagePage() {
               >
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-bold text-gray-700">{slot.locationName}</p>
-                  <button
-                    onClick={() => {
-                      setEditingSlot(slot);
-                      setSlotSearchQuery("");
-                      setSlotSearchResults([]);
-                      setSlotSelectedTarget(
-                        slot.targetUnitId
-                          ? {
-                              id: slot.targetUnitId,
-                              barcodeCode: slot.barcodeCode ?? "",
-                              itemName: slot.itemName ?? "",
-                              itemCode: slot.itemCode ?? "",
-                              materialCode: slot.materialCode ?? "",
-                              status: "사용중",
-                            }
-                          : null
-                      );
-                      setEditNote(slot.note ?? "");
-                    }}
-                    className="text-xs text-blue-500 hover:text-blue-600 font-medium"
-                  >
-                    {t.common.edit}
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setHistorySlot(slot)}
+                      className="text-xs text-gray-500 hover:text-blue-600 font-medium"
+                    >
+                      이력
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingSlot(slot);
+                        setSlotSearchQuery("");
+                        setSlotSearchResults([]);
+                        setSlotSelectedTarget(
+                          slot.targetUnitId
+                            ? {
+                                id: slot.targetUnitId,
+                                barcodeCode: slot.barcodeCode ?? "",
+                                itemName: slot.itemName ?? "",
+                                itemCode: slot.itemCode ?? "",
+                                materialCode: slot.materialCode ?? "",
+                                status: "사용중",
+                              }
+                            : null
+                        );
+                        setEditNote(slot.note ?? "");
+                      }}
+                      className="text-xs text-blue-500 hover:text-blue-600 font-medium"
+                    >
+                      {t.common.edit}
+                    </button>
+                  </div>
                 </div>
                 {slot.targetUnitId ? (
                   <>
