@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, Save, AlertTriangle, Weight, MapPin, FileText, ArrowDown, ArrowUp, ArrowUpDown, Loader2, Camera } from "lucide-react";
+import { Search, Save, AlertTriangle, Weight, MapPin, FileText, ArrowDown, ArrowUp, ArrowUpDown, Loader2, Camera, MapPinned, ChevronDown } from "lucide-react";
 import CsvButton from "@/components/CsvButton";
 import { TARGET_STATUS_LABELS, formatWeight } from "@/lib/data";
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
@@ -46,6 +46,30 @@ interface ChamberSlot {
   loadedAt: string | null;
   updatedBy: string | null;
   note: string | null;
+}
+
+interface MovementSegment {
+  locationId: number | null;
+  locationName: string;
+  enteredAt: string;
+  leftAt: string | null;
+  measurementCount: number;
+  firstWeight: number | null;
+  lastWeight: number | null;
+}
+
+interface MovementsResponse {
+  target: {
+    id: number;
+    barcodeCode: string;
+    itemCode: string;
+    itemName: string;
+    status: string;
+  };
+  segments: MovementSegment[];
+  unknownLocationCount: number;
+  isDisposed: boolean;
+  disposedAt: string | null;
 }
 
 const PAGE_LIMIT = 50;
@@ -102,6 +126,10 @@ export default function TargetUsagePage() {
   const [locationOptions, setLocationOptions] = useState<LocationOption[]>([]);
   const [chamberSlots, setChamberSlots]     = useState<ChamberSlot[]>([]);
   const [showChamberStatus, setShowChamberStatus] = useState(false);
+  const [showMovements, setShowMovements] = useState(false);
+  const [movements, setMovements] = useState<MovementSegment[]>([]);
+  const [movementsMeta, setMovementsMeta] = useState<{ unknownLocationCount: number; isDisposed: boolean; disposedAt: string | null }>({ unknownLocationCount: 0, isDisposed: false, disposedAt: null });
+  const [movementsLoading, setMovementsLoading] = useState(false);
   const [editingSlot, setEditingSlot]       = useState<ChamberSlot | null>(null);
   const [slotSearchType, setSlotSearchType] = useState<"바코드" | "품목코드" | "품목명">("바코드");
   const [slotSearchQuery, setSlotSearchQuery] = useState("");
@@ -182,6 +210,36 @@ export default function TargetUsagePage() {
   };
 
   useEffect(() => { fetchLogs(1); }, []);
+
+  // selectedTarget 바뀌면 movements 초기화 + 토글 닫기
+  useEffect(() => {
+    setMovements([]);
+    setMovementsMeta({ unknownLocationCount: 0, isDisposed: false, disposedAt: null });
+    setShowMovements(false);
+  }, [selectedTarget?.id]);
+
+  // 토글 펼치면 movements lazy fetch
+  useEffect(() => {
+    if (!showMovements || !selectedTarget) return;
+    if (movements.length > 0) return; // 이미 캐시 있음
+    setMovementsLoading(true);
+    fetch(`/api/targets/movements?targetUnitId=${selectedTarget.id}`)
+      .then(r => r.json())
+      .then((data: MovementsResponse) => {
+        if (Array.isArray(data.segments)) {
+          setMovements(data.segments);
+          setMovementsMeta({
+            unknownLocationCount: data.unknownLocationCount ?? 0,
+            isDisposed: data.isDisposed ?? false,
+            disposedAt: data.disposedAt ?? null,
+          });
+        }
+      })
+      .catch(() => {
+        setMovements([]);
+      })
+      .finally(() => setMovementsLoading(false));
+  }, [showMovements, selectedTarget, movements.length]);
 
   const handleSearch = async () => {
     const code = barcodeInput.trim();
@@ -800,6 +858,101 @@ export default function TargetUsagePage() {
             </button>
           </div>
 
+        </div>
+      )}
+
+      {/* 이동 내역 */}
+      {selectedTarget && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
+          <button
+            onClick={() => setShowMovements(v => !v)}
+            className="flex items-center gap-2 text-sm font-bold text-gray-900 hover:text-blue-600 transition-colors w-full text-left"
+          >
+            <MapPinned size={16} className="text-blue-500" />
+            <span>이동 내역</span>
+            {movements.length > 0 && (
+              <span className="text-xs text-gray-400 font-normal">
+                ({movements.length}개 위치)
+              </span>
+            )}
+            {movementsMeta.unknownLocationCount > 0 && (
+              <span className="text-[11px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded-md font-medium">
+                위치 미상 {movementsMeta.unknownLocationCount}건
+              </span>
+            )}
+            <ChevronDown
+              size={14}
+              className={`ml-auto text-gray-400 transition-transform ${showMovements ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          {showMovements && (
+            <div className="mt-4 space-y-2">
+              {movementsLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 size={20} className="animate-spin text-blue-500" />
+                </div>
+              ) : movements.length === 0 ? (
+                <p className="text-sm text-gray-400 py-6 text-center">위치 정보가 있는 측정 기록이 없습니다.</p>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    {movements.map((seg, idx) => {
+                      const entered = new Date(seg.enteredAt).toLocaleDateString("ko-KR");
+                      const left = seg.leftAt ? new Date(seg.leftAt).toLocaleDateString("ko-KR") : "현재";
+                      const isCurrent = seg.leftAt === null && !movementsMeta.isDisposed;
+                      return (
+                        <div
+                          key={idx}
+                          className={`px-4 py-3 rounded-xl border ${
+                            isCurrent ? "bg-blue-50/50 border-blue-200" : "bg-gray-50 border-gray-100"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <div className="flex items-center gap-2">
+                              <MapPin size={14} className={isCurrent ? "text-blue-500" : "text-gray-400"} />
+                              <span className="text-sm font-semibold text-gray-900">
+                                {seg.locationName || "(위치 미상)"}
+                              </span>
+                              {isCurrent && (
+                                <span className="text-[11px] bg-blue-500 text-white px-1.5 py-0.5 rounded-md font-semibold">
+                                  현재
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-xs text-gray-500 font-mono">
+                              {entered} ~ {left}
+                            </span>
+                          </div>
+                          <div className="mt-1.5 flex items-center gap-3 text-xs text-gray-500">
+                            <span>측정 {seg.measurementCount}회</span>
+                            {(seg.firstWeight != null || seg.lastWeight != null) && (
+                              <span className="font-mono">
+                                {seg.firstWeight != null ? `${seg.firstWeight.toFixed(3)}g` : "-"}
+                                {" → "}
+                                {seg.lastWeight != null ? `${seg.lastWeight.toFixed(3)}g` : "-"}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {movementsMeta.isDisposed && (
+                    <div className="px-4 py-2.5 rounded-xl bg-rose-50 border border-rose-200 flex items-center gap-2">
+                      <AlertTriangle size={14} className="text-rose-500" />
+                      <span className="text-xs font-semibold text-rose-700">폐기됨</span>
+                      {movementsMeta.disposedAt && (
+                        <span className="text-xs text-rose-500 ml-auto font-mono">
+                          {new Date(movementsMeta.disposedAt).toLocaleDateString("ko-KR")}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
       )}
 
