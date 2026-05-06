@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { expandBarcodeVariants } from "@/lib/barcodeUtils";
 
 export const dynamic = "force-dynamic";
 
@@ -15,10 +16,11 @@ export async function GET(request: NextRequest) {
     try {
       let where: any = {};
       if (type === "바코드") {
+        const variants = expandBarcodeVariants(q);
         where = {
           barcodes: {
             some: {
-              code: { equals: q, mode: "insensitive" },
+              OR: variants.map(v => ({ code: { equals: v, mode: "insensitive" as const } })),
               isActive: "Y",
             },
           },

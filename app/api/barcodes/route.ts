@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, getSessionUserId, logActivity } from "@/lib/auth-helpers";
+import { expandBarcodeVariants } from "@/lib/barcodeUtils";
 
 // GET /api/barcodes — 바코드 목록 조회
 export async function GET(request: NextRequest) {
@@ -27,16 +28,22 @@ export async function GET(request: NextRequest) {
     }
     if (search) {
       if (searchType === "바코드") {
-        // Prisma 7 단일 OR 버그 우회: OR 배열 대신 where에 직접 조건 할당
+        const variants = expandBarcodeVariants(search);
+        const codeOR = variants.map(v => ({
+          code: { contains: v, mode: "insensitive" as const },
+        }));
+        // Prisma 7 단일 OR 버그 우회: variants가 1개면 직접 할당
         if (where.OR) {
           // 카테고리 필터가 동시에 있는 경우 AND로 결합
           where.AND = [
             { OR: where.OR },
-            { code: { contains: search, mode: "insensitive" as const } },
+            codeOR.length === 1 ? codeOR[0] : { OR: codeOR },
           ];
           delete where.OR;
+        } else if (codeOR.length === 1) {
+          where.code = codeOR[0].code;
         } else {
-          where.code = { contains: search, mode: "insensitive" as const };
+          where.OR = codeOR;
         }
       } else {
         let searchOR;

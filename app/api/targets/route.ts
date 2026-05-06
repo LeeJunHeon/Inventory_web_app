@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId, logActivity } from "@/lib/auth-helpers";
+import { expandBarcodeVariants } from "@/lib/barcodeUtils";
 
 // GET /api/targets?barcode=T-0187&page=1&limit=50
 export async function GET(request: NextRequest) {
@@ -42,8 +43,11 @@ export async function GET(request: NextRequest) {
 
     // 바코드 지정 시: 해당 타겟 정보 + 로그 (페이지네이션 적용)
     if (barcode) {
+      const variants = expandBarcodeVariants(barcode);
       const bc = await prisma.barcode.findFirst({
-        where: { code: { equals: barcode, mode: "insensitive" } },
+        where: {
+          OR: variants.map(v => ({ code: { equals: v, mode: "insensitive" as const } })),
+        },
         include: {
           item: { include: { category: true, targetSpec: true } },
           targetUnit: {

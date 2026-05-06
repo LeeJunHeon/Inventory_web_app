@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { expandBarcodeVariants } from "@/lib/barcodeUtils";
 
 export const dynamic = "force-dynamic";
 
@@ -12,8 +13,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "code 파라미터가 필요합니다." }, { status: 400 });
     }
 
+    const variants = expandBarcodeVariants(code);
     const barcode = await prisma.barcode.findFirst({
-      where: { code: { equals: code, mode: "insensitive" } },
+      where: {
+        OR: variants.map(v => ({ code: { equals: v, mode: "insensitive" as const } })),
+      },
       include: {
         item: { include: { category: true } },
         targetUnit: { include: { item: { include: { category: true } } } },
