@@ -122,7 +122,7 @@ export default function TargetUsagePage() {
 
   // 장비 위치 목록 로드 (마운트 시 1회)
   useEffect(() => {
-    fetch("/api/locations?type=target")
+    fetch("/api/locations?type=sputter")
       .then(r => r.json())
       .then(setLocationOptions)
       .catch(console.error);
