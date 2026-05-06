@@ -112,6 +112,9 @@ export async function GET(request: NextRequest) {
       segments[segments.length - 1].leftAt = disposeLog!.loggedAt.toISOString();
     }
 
+    // 최신순 정렬: ASC로 압축된 segments를 reverse하여 가장 최근 위치가 첫 번째로 오도록
+    segments.reverse();
+
     return NextResponse.json({
       target: {
         id: targetUnitId,

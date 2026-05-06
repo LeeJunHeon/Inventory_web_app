@@ -89,6 +89,7 @@ interface ChamberHistoryLog {
 }
 
 const PAGE_LIMIT = 50;
+const HISTORY_PAGE_LIMIT = 5;
 
 export default function TargetUsagePage() {
   const [isMobile, setIsMobile] = useState(false);
@@ -126,6 +127,51 @@ export default function TargetUsagePage() {
     );
   };
 
+  // 이동 내역 CSV (현재 표시되는 segments 전체)
+  const handleMovementsCSV = () => {
+    if (!selectedTarget || movements.length === 0) return;
+    exportCSV(
+      ["위치", "시작일", "종료일", "측정횟수", "첫 무게(g)", "마지막 무게(g)"],
+      movements.map(seg => [
+        seg.locationName || "(위치 미상)",
+        new Date(seg.enteredAt).toLocaleDateString("ko-KR"),
+        seg.leftAt ? new Date(seg.leftAt).toLocaleDateString("ko-KR") : "현재",
+        String(seg.measurementCount),
+        seg.firstWeight != null ? seg.firstWeight.toFixed(3) : "",
+        seg.lastWeight != null ? seg.lastWeight.toFixed(3) : "",
+      ]),
+      `타겟이동내역_${selectedTarget.barcodeCode}_${new Date().toISOString().split("T")[0]}.csv`
+    );
+  };
+
+  // 챔버 이력 CSV (전체 데이터 - 페이지 무관, all=true로 별도 fetch)
+  const handleHistoryCSV = async () => {
+    if (!historySlot) return;
+    try {
+      const res = await fetch(`/api/chamber-slots/history?locationId=${historySlot.locationId}&all=true`);
+      const data = await res.json();
+      const allLogs = Array.isArray(data.logs) ? data.logs : [];
+      if (allLogs.length === 0) return;
+
+      exportCSV(
+        ["변경시각", "액션", "이전 바코드", "이전 품목", "현재 바코드", "현재 품목", "작업자", "메모"],
+        allLogs.map((log: any) => [
+          new Date(log.changedAt).toLocaleString("ko-KR"),
+          log.action === "load" ? "장착" : log.action === "unload" ? "제거" : "교체",
+          log.previousBarcode ?? "",
+          log.previousItemName ?? "",
+          log.targetBarcode ?? "",
+          log.targetItemName ?? "",
+          log.changedBy ?? "",
+          log.note ?? "",
+        ]),
+        `챔버이력_${historySlot.locationName}_${new Date().toISOString().split("T")[0]}.csv`
+      );
+    } catch (err) {
+      console.error("handleHistoryCSV error:", err);
+    }
+  };
+
   const [page, setPage]                     = useState(1);
   const [loading, setLoading]               = useState(true);
   const [weight, setWeight]                 = useState("");
@@ -149,6 +195,8 @@ export default function TargetUsagePage() {
   const [historySlot, setHistorySlot] = useState<ChamberSlot | null>(null);
   const [historyLogs, setHistoryLogs] = useState<ChamberHistoryLog[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyTotal, setHistoryTotal] = useState(0);
   const [editingSlot, setEditingSlot]       = useState<ChamberSlot | null>(null);
   const [slotSearchType, setSlotSearchType] = useState<"바코드" | "품목코드" | "품목명">("바코드");
   const [slotSearchQuery, setSlotSearchQuery] = useState("");
@@ -260,17 +308,33 @@ export default function TargetUsagePage() {
       .finally(() => setMovementsLoading(false));
   }, [showMovements, selectedTarget, movements.length]);
 
-  // 이력 모달 열리면 fetch
+  // historySlot 변경 시 페이지 1로 리셋
+  useEffect(() => {
+    setHistoryPage(1);
+    setHistoryTotal(0);
+  }, [historySlot?.id]);
+
+  // 이력 모달 열리면 fetch (페이지 변경 시에도)
   useEffect(() => {
     if (!historySlot) return;
     setHistoryLoading(true);
-    setHistoryLogs([]);
-    fetch(`/api/chamber-slots/history?locationId=${historySlot.locationId}&limit=100`)
+    fetch(`/api/chamber-slots/history?locationId=${historySlot.locationId}&page=${historyPage}&limit=${HISTORY_PAGE_LIMIT}`)
       .then(r => r.json())
-      .then(data => Array.isArray(data) && setHistoryLogs(data))
-      .catch(() => setHistoryLogs([]))
+      .then(data => {
+        if (Array.isArray(data.logs)) {
+          setHistoryLogs(data.logs);
+          setHistoryTotal(data.total ?? 0);
+        } else {
+          setHistoryLogs([]);
+          setHistoryTotal(0);
+        }
+      })
+      .catch(() => {
+        setHistoryLogs([]);
+        setHistoryTotal(0);
+      })
       .finally(() => setHistoryLoading(false));
-  }, [historySlot]);
+  }, [historySlot, historyPage]);
 
   const handleSearch = async () => {
     const code = barcodeInput.trim();
@@ -592,12 +656,15 @@ export default function TargetUsagePage() {
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <div>
                 <h3 className="font-bold text-gray-900">{historySlot.locationName} 이력</h3>
-                <p className="text-xs text-gray-500 mt-0.5">최근 100건 표시</p>
+                <p className="text-xs text-gray-500 mt-0.5">전체 {historyTotal.toLocaleString()}건</p>
               </div>
-              <button
-                onClick={() => setHistorySlot(null)}
-                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 text-sm"
-              >✕</button>
+              <div className="flex items-center gap-2">
+                <CsvButton onClick={handleHistoryCSV} disabled={historyTotal === 0} />
+                <button
+                  onClick={() => setHistorySlot(null)}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 text-sm"
+                >✕</button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
@@ -667,6 +734,34 @@ export default function TargetUsagePage() {
                 })
               )}
             </div>
+
+            {/* 페이지네이션 */}
+            {historyTotal > HISTORY_PAGE_LIMIT && (
+              <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
+                <span className="text-xs text-gray-400">
+                  {((historyPage - 1) * HISTORY_PAGE_LIMIT + 1).toLocaleString()}–{Math.min(historyPage * HISTORY_PAGE_LIMIT, historyTotal).toLocaleString()} / {historyTotal.toLocaleString()}건
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setHistoryPage(p => Math.max(1, p - 1))}
+                    disabled={historyPage <= 1}
+                    className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {t.common.prev}
+                  </button>
+                  <span className="text-xs text-gray-500 min-w-[60px] text-center">
+                    {historyPage} / {Math.ceil(historyTotal / HISTORY_PAGE_LIMIT)}
+                  </span>
+                  <button
+                    onClick={() => setHistoryPage(p => p + 1)}
+                    disabled={historyPage >= Math.ceil(historyTotal / HISTORY_PAGE_LIMIT)}
+                    className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {t.common.next}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -995,27 +1090,33 @@ export default function TargetUsagePage() {
       {/* 이동 내역 */}
       {selectedTarget && (
         <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
-          <button
-            onClick={() => setShowMovements(v => !v)}
-            className="flex items-center gap-2 text-sm font-bold text-gray-900 hover:text-blue-600 transition-colors w-full text-left"
-          >
-            <MapPinned size={16} className="text-blue-500" />
-            <span>이동 내역</span>
-            {movements.length > 0 && (
-              <span className="text-xs text-gray-400 font-normal">
-                ({movements.length}개 위치)
-              </span>
-            )}
-            {movementsMeta.unknownLocationCount > 0 && (
-              <span className="text-[11px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded-md font-medium">
-                위치 미상 {movementsMeta.unknownLocationCount}건
-              </span>
-            )}
-            <ChevronDown
-              size={14}
-              className={`ml-auto text-gray-400 transition-transform ${showMovements ? "rotate-180" : ""}`}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowMovements(v => !v)}
+              className="flex-1 flex items-center gap-2 text-sm font-bold text-gray-900 hover:text-blue-600 transition-colors text-left min-w-0"
+            >
+              <MapPinned size={16} className="text-blue-500 shrink-0" />
+              <span>이동 내역</span>
+              {movements.length > 0 && (
+                <span className="text-xs text-gray-400 font-normal">
+                  ({movements.length}개 위치)
+                </span>
+              )}
+              {movementsMeta.unknownLocationCount > 0 && (
+                <span className="text-[11px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded-md font-medium">
+                  위치 미상 {movementsMeta.unknownLocationCount}건
+                </span>
+              )}
+              <ChevronDown
+                size={14}
+                className={`ml-auto text-gray-400 transition-transform shrink-0 ${showMovements ? "rotate-180" : ""}`}
+              />
+            </button>
+            <CsvButton
+              onClick={handleMovementsCSV}
+              disabled={movements.length === 0}
             />
-          </button>
+          </div>
 
           {showMovements && (
             <div className="mt-4 space-y-2">
