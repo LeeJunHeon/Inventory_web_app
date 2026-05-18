@@ -14,6 +14,18 @@ interface BarcodeItem {
   memo?: string;
 }
 interface ItemOption { id: number; code: string; name: string; }
+interface UnlinkedInbound {
+  inventoryTxId: number;
+  txNo: string;
+  txDate: string;
+  qty: number;
+  remainQty: number;
+  partnerName: string;
+  locationName: string;
+  unitPrice: number | null;
+  currency: string;
+  memo: string;
+}
 
 const CATS = ["전체", "타겟", "ALD Canister", "웨이퍼", "가스", "기자재/소모품"];
 
@@ -57,6 +69,9 @@ export default function BarcodePage() {
   const [creating, setCreating]             = useState(false);
   const [createError, setCreateError]       = useState("");
   const [createSuccess, setCreateSuccess]   = useState("");
+  const [unlinkedInbounds, setUnlinkedInbounds]       = useState<UnlinkedInbound[]>([]);
+  const [selectedInboundTxId, setSelectedInboundTxId] = useState<number | null>(null);
+  const [loadingInbounds, setLoadingInbounds]         = useState(false);
   const [toast, setToast]                   = useState("");
   const [printItem, setPrintItem]           = useState<BarcodeItem | null>(null);
   const [editTarget, setEditTarget]         = useState<BarcodeItem | null>(null);
@@ -97,7 +112,26 @@ export default function BarcodePage() {
       .then(r => r.json()).then(setItemOptions)
       .catch(() => setCreateError(t.barcode.itemLoadFailed));
     setCreateItemId(null); setCreateItemCode(""); setCreateItemName("");
+    setUnlinkedInbounds([]); setSelectedInboundTxId(null);
   }, [createCategory]);
+
+  // 품목 선택 시 바코드 미연결 입고건 로딩
+  useEffect(() => {
+    if (!createItemId) {
+      setUnlinkedInbounds([]);
+      setSelectedInboundTxId(null);
+      return;
+    }
+    setLoadingInbounds(true);
+    fetch(`/api/inventory/unlinked-inbounds?itemId=${createItemId}`)
+      .then(r => r.json())
+      .then((list: UnlinkedInbound[]) => {
+        setUnlinkedInbounds(Array.isArray(list) ? list : []);
+        setSelectedInboundTxId(null);
+      })
+      .catch(() => setUnlinkedInbounds([]))
+      .finally(() => setLoadingInbounds(false));
+  }, [createItemId]);
 
   // 드롭다운 외부 클릭 닫기
   useEffect(() => {
@@ -109,26 +143,28 @@ export default function BarcodePage() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // 바코드 생성+저장
+  // 바코드 생성 + 입고건 사후 연결
   const handleCreate = async () => {
-    if (!createItemId) { setCreateError(t.barcode.selectItemError); return; }
+    if (!createItemId)        { setCreateError(t.barcode.selectItemError); return; }
+    if (!selectedInboundTxId) { setCreateError(t.barcode.selectInboundRequired); return; }
     setCreateError(""); setCreating(true);
     try {
-      const res = await fetch("/api/barcodes", {
+      const res = await fetch("/api/barcodes/link-to-inbound", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          itemId: createItemId,
-          memo: createMemo|| null,
+          inventoryTxId: selectedInboundTxId,
+          memo: createMemo || null,
         }),
       });
       const data = await res.json();
       if (!res.ok) { setCreateError(data.error || t.barcode.createFailed); return; }
 
-      setCreateSuccess(t.barcode.createSuccess(data.code));
-      setTimeout(() => setCreateSuccess(""), 3000);
+      setCreateSuccess(t.barcode.createLinkedSuccess(data.code, data.linkedTxNo));
+      setTimeout(() => setCreateSuccess(""), 4000);
       // 폼 초기화
       setCreateItemId(null); setCreateItemCode(""); setCreateItemName(""); setCreateMemo("");
+      setUnlinkedInbounds([]); setSelectedInboundTxId(null);
       fetchData();
     } catch { setCreateError(t.common.networkError); }
     finally { setCreating(false); }
@@ -422,6 +458,7 @@ export default function BarcodePage() {
       {showCreate && (
         <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 space-y-4">
           <h2 className="font-bold text-blue-900">{t.barcode.createTitle}</h2>
+          <p className="text-xs text-blue-600">{t.barcode.createNotice}</p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap lg:gap-3 gap-3">
             {/* 품목군 */}
@@ -429,7 +466,7 @@ export default function BarcodePage() {
               <label className="block text-xs font-semibold text-blue-700 mb-1">{t.barcode.catLabel}</label>
               <select value={createCategory} onChange={e => setCreateCategory(e.target.value)}
                 className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none">
-                {["타겟", "ALD Canister", "웨이퍼", "가스", "기자재/소모품"].map(c => (
+                {["웨이퍼", "가스", "기자재/소모품"].map(c => (
                   <option key={c} value={c}>{CAT_LABEL[c] || c}</option>
                 ))}
               </select>
@@ -474,6 +511,53 @@ export default function BarcodePage() {
               </div>
             )}
 
+            {/* 연결할 입고건 */}
+            <div className="w-full">
+              <label className="block text-xs font-semibold text-blue-700 mb-1">
+                {t.barcode.inboundSectionLabel}
+                <span className="text-rose-500"> *</span>
+                {unlinkedInbounds.length > 0 && (
+                  <span className="ml-2 text-blue-500">
+                    {t.barcode.inboundCountSuffix(unlinkedInbounds.length)}
+                  </span>
+                )}
+              </label>
+              {!createItemId ? (
+                <div className="px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-500">
+                  {t.barcode.inboundEmptyNoItem}
+                </div>
+              ) : loadingInbounds ? (
+                <div className="px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-500">
+                  {t.barcode.inboundLoading}
+                </div>
+              ) : unlinkedInbounds.length === 0 ? (
+                <div className="px-3 py-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
+                  {t.barcode.inboundEmpty}
+                </div>
+              ) : (
+                <div className="max-h-48 overflow-y-auto border border-blue-200 rounded-xl bg-white divide-y divide-gray-100">
+                  {unlinkedInbounds.map(ib => (
+                    <label key={ib.inventoryTxId}
+                      className={`flex items-start gap-2 px-3 py-2 cursor-pointer hover:bg-blue-50 ${
+                        selectedInboundTxId === ib.inventoryTxId ? "bg-blue-100" : ""
+                      }`}>
+                      <input type="radio" name="unlinkedInbound" className="mt-0.5"
+                        checked={selectedInboundTxId === ib.inventoryTxId}
+                        onChange={() => setSelectedInboundTxId(ib.inventoryTxId)} />
+                      <div className="text-xs leading-tight">
+                        <div className="font-semibold text-gray-800">
+                          {ib.txDate} · 전표 {ib.txNo}
+                        </div>
+                        <div className="text-gray-600">
+                          {ib.partnerName || "-"} · {ib.locationName} · 수량 {ib.qty.toLocaleString()} / 잔여 {ib.remainQty.toLocaleString()}
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* 메모 (모든 카테고리) */}
             <div className="sm:flex-1 sm:min-w-[160px] w-full">
               <label className="block text-xs font-semibold text-blue-700 mb-1">
@@ -486,9 +570,9 @@ export default function BarcodePage() {
 
             {/* 버튼 */}
             <div className="flex items-end w-full sm:w-auto">
-              <button onClick={handleCreate} disabled={creating}
+              <button onClick={handleCreate} disabled={!createItemId || !selectedInboundTxId || creating}
                 className="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:opacity-60 whitespace-nowrap">
-                <QrCode size={16} />{creating ? t.barcode.creating : t.barcode.createSave}
+                <QrCode size={16} />{creating ? t.barcode.creating : t.barcode.createAndLinkSave}
               </button>
             </div>
           </div>
