@@ -63,6 +63,7 @@ export default function AldPrecursorPage() {
   // ─── 대시보드 포트 데이터 ───
   const [ncdPorts, setNcdPorts]       = useState<PortSlot[]>([]);
   const [rayvacPorts, setRayvacPorts] = useState<PortSlot[]>([]);
+  const [allPortSlots, setAllPortSlots] = useState<PortSlot[]>([]);
 
   // ─── 포트 슬롯 편집 ───
   const [editingPort, setEditingPort] = useState<PortSlot | null>(null);
@@ -125,6 +126,7 @@ export default function AldPrecursorPage() {
       const res = await fetch("/api/ald/port-slots");
       if (!res.ok) return;
       const slots: PortSlot[] = await res.json();
+      setAllPortSlots(slots);
       setNcdPorts(slots.filter(s => s.equipmentName === "NCD-1"));
       setRayvacPorts(slots.filter(s => s.equipmentName === "Rayvac-1"));
     } catch {}
@@ -379,7 +381,7 @@ export default function AldPrecursorPage() {
     </div>
   );
 
-  const portSlots = [...ncdPorts, ...rayvacPorts];
+  const portSlots = allPortSlots;
 
   return (
     <div className="space-y-5">
