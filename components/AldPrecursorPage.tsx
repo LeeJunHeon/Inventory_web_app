@@ -61,8 +61,6 @@ export default function AldPrecursorPage() {
   const { t } = useT();
 
   // ─── 대시보드 포트 데이터 ───
-  const [ncdPorts, setNcdPorts]       = useState<PortSlot[]>([]);
-  const [rayvacPorts, setRayvacPorts] = useState<PortSlot[]>([]);
   const [allPortSlots, setAllPortSlots] = useState<PortSlot[]>([]);
 
   // ─── 포트 슬롯 편집 ───
@@ -127,8 +125,6 @@ export default function AldPrecursorPage() {
       if (!res.ok) return;
       const slots: PortSlot[] = await res.json();
       setAllPortSlots(slots);
-      setNcdPorts(slots.filter(s => s.equipmentName === "NCD-1"));
-      setRayvacPorts(slots.filter(s => s.equipmentName === "Rayvac-1"));
     } catch {}
   };
 
@@ -265,11 +261,7 @@ export default function AldPrecursorPage() {
       materialName: null,
       remainPercent: null,
     };
-    if (editingPort.equipmentName === "NCD-1") {
-      setNcdPorts(prev => prev.map(p => p.portNumber === editingPort.portNumber ? clearedSlot : p));
-    } else {
-      setRayvacPorts(prev => prev.map(p => p.portNumber === editingPort.portNumber ? clearedSlot : p));
-    }
+    setAllPortSlots(prev => prev.map(p => p.id === editingPort.id ? clearedSlot : p));
     setEditingPort(null);
     showToast("포트를 비웠습니다.");
   };
@@ -506,7 +498,7 @@ export default function AldPrecursorPage() {
         </button>
         {showDashboard && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {renderEquipmentCard("NCD ALD", "bg-blue-500", ncdPorts, (slot) => {
+            {renderEquipmentCard("NCD ALD", "bg-blue-500", allPortSlots.filter(s => s.equipmentName === "NCD-1"), (slot) => {
               setEditingPort(slot);
               setPortSelectedCanister(
                 slot.canisterId ? { id: slot.canisterId, barcodeCode: slot.canisterCode ?? "", itemCode: "", itemName: "", materialName: slot.materialName ?? "", status: "사용중", tareWeight: null, initialGrossWeight: null } : null
@@ -516,7 +508,7 @@ export default function AldPrecursorPage() {
                 .then((data: CanisterInfo[]) => setAllCanisters(data))
                 .catch(() => setAllCanisters([]));
             })}
-            {renderEquipmentCard("Rayvac ALD", "bg-purple-500", rayvacPorts, (slot) => {
+            {renderEquipmentCard("Rayvac ALD", "bg-purple-500", allPortSlots.filter(s => s.equipmentName === "Rayvac-1"), (slot) => {
               setEditingPort(slot);
               setPortSelectedCanister(
                 slot.canisterId ? { id: slot.canisterId, barcodeCode: slot.canisterCode ?? "", itemCode: "", itemName: "", materialName: slot.materialName ?? "", status: "사용중", tareWeight: null, initialGrossWeight: null } : null
