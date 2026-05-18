@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
-import { Home, Package, BarChart3, Clock, Target, QrCode, Users, LogOut, Boxes, X, Layers, Building2, Search, FileText, Droplet } from "lucide-react";
+import { Home, Package, BarChart3, Clock, Target, QrCode, Users, LogOut, Boxes, X, Layers, Building2, Search, FileText, Droplet, ArrowLeft } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 export type PageId =
@@ -144,15 +144,20 @@ export default function Sidebar({
         transition-transform duration-300 shrink-0
         ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0 lg:w-0 lg:overflow-hidden lg:border-0"}
       `}>
+        {/* 포털로 이동 */}
+        <a
+          href="https://vanam.synology.me"
+          className="flex items-center gap-2 px-5 py-3 border-b border-gray-100 text-blue-600 hover:bg-blue-50 transition-colors"
+          style={{ textDecoration: "none" }}
+        >
+          <ArrowLeft size={16} />
+          <span className="text-sm font-semibold">VanaM 포털</span>
+        </a>
+
         {/* 로고 */}
         <div className="px-5 py-5 border-b border-gray-100">
           <div className="flex items-center justify-between">
-            <a
-              href="https://vanam.synology.me"
-              title="포털로 이동"
-              className="flex items-center gap-2.5 -mx-2 px-2 py-1 rounded-lg hover:bg-gray-50 transition-colors"
-              style={{ textDecoration: "none" }}
-            >
+            <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
                 <Boxes size={18} className="text-white" />
               </div>
@@ -160,7 +165,7 @@ export default function Sidebar({
                 <h1 className="text-sm font-bold text-gray-900">{t.nav.inventorySystem}</h1>
                 <p className="text-[10px] text-gray-400">{t.nav.inventorySystemSub}</p>
               </div>
-            </a>
+            </div>
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 lg:hidden">
               <X size={18} className="text-gray-400" />
             </button>
