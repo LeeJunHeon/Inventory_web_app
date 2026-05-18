@@ -147,7 +147,12 @@ export default function Sidebar({
         {/* 로고 */}
         <div className="px-5 py-5 border-b border-gray-100">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
+            <a
+              href="https://vanam.synology.me"
+              title="포털로 이동"
+              className="flex items-center gap-2.5 -mx-2 px-2 py-1 rounded-lg hover:bg-gray-50 transition-colors"
+              style={{ textDecoration: "none" }}
+            >
               <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
                 <Boxes size={18} className="text-white" />
               </div>
@@ -155,7 +160,7 @@ export default function Sidebar({
                 <h1 className="text-sm font-bold text-gray-900">{t.nav.inventorySystem}</h1>
                 <p className="text-[10px] text-gray-400">{t.nav.inventorySystemSub}</p>
               </div>
-            </div>
+            </a>
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 lg:hidden">
               <X size={18} className="text-gray-400" />
             </button>
