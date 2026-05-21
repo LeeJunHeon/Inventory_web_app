@@ -5,6 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "https://vanam.synology.me",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Credentials": "true",
 };
 
 // GET /api/portal-summary

@@ -7,8 +7,33 @@ import type { NextRequest } from "next/server";
 // Prisma가 포함된 auth.ts는 Edge Runtime에서 실행 불가
 const { auth } = NextAuth(authConfig);
 
+// 포털에서 cross-origin으로 호출하는 endpoint
+// CORS preflight(OPTIONS) 통과 + 401 응답에도 CORS 헤더 부여 대상
+const PORTAL_ENDPOINTS = ["/api/portal-summary"];
+
+// 응답에 CORS 헤더 부여 (포털 origin인 경우만)
+function withCorsHeaders(response: NextResponse, origin: string | null): NextResponse {
+  if (origin === "https://vanam.synology.me") {
+    response.headers.set("Access-Control-Allow-Origin", origin);
+    response.headers.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+    response.headers.set("Access-Control-Allow-Headers", "Content-Type");
+    response.headers.set("Access-Control-Allow-Credentials", "true");
+  }
+  return response;
+}
+
 export default auth((req: NextRequest & { auth: any }) => {
   const { pathname } = req.nextUrl;
+  const origin = req.headers.get("origin");
+  const isPortalEndpoint = PORTAL_ENDPOINTS.some((p) => pathname === p || pathname.startsWith(p + "/"));
+
+  // CORS preflight(OPTIONS) — 포털 endpoint에 한해 즉시 204 응답 (인증 체크 건너뜀)
+  if (req.method === "OPTIONS" && isPortalEndpoint) {
+    return withCorsHeaders(
+      new NextResponse(null, { status: 204 }) as NextResponse,
+      origin
+    );
+  }
 
   // /api/auth/* 는 next-auth 내부 경로 — 항상 허용
   if (pathname.startsWith("/api/auth")) {
@@ -23,10 +48,12 @@ export default auth((req: NextRequest & { auth: any }) => {
   // /api/* 전체: 미인증 시 401 JSON 반환 (API 클라이언트 대응)
   if (pathname.startsWith("/api/")) {
     if (!req.auth?.user) {
-      return NextResponse.json(
+      const res = NextResponse.json(
         { error: "로그인이 필요합니다." },
         { status: 401 }
       );
+      // 포털 endpoint면 401에도 CORS 헤더 부여 (브라우저가 응답을 읽을 수 있게)
+      return isPortalEndpoint ? withCorsHeaders(res, origin) : res;
     }
     return NextResponse.next();
   }
