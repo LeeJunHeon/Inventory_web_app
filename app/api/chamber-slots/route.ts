@@ -130,6 +130,25 @@ export async function PUT(request: NextRequest) {
       },
     });
 
+    // 장착하려는 타겟이 다른 슬롯에 이미 들어있으면 차단 (target_unit_id @unique)
+    if (targetUnitId != null) {
+      const occupied = await prisma.chamberSlot.findFirst({
+        where: {
+          targetUnitId: Number(targetUnitId),
+          id: { not: Number(id) },
+        },
+        include: { location: true },
+      });
+      if (occupied) {
+        return NextResponse.json(
+          {
+            error: `이 타겟은 이미 '${occupied.location.name}'에 장착되어 있습니다. 먼저 해당 챔버에서 비운 뒤 다시 시도하세요.`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     const slot = await prisma.chamberSlot.update({
       where: { id: Number(id) },
       data: {

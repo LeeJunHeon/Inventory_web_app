@@ -510,7 +510,7 @@ export default function TargetUsagePage() {
           calendar: calendarPayload,
         }),
       });
-      if (!res.ok) { showToast(t.common.saveFail); return; }
+      if (!res.ok) { const e = await res.json().catch(() => ({})); showToast(e.error || t.common.saveFail); return; }
       const updated = await fetch("/api/chamber-slots").then(r => r.json());
       setChamberSlots(Array.isArray(updated) ? updated : []);
       setEditingSlot(null);
