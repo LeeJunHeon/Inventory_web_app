@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { expandBarcodeVariants } from "@/lib/barcodeUtils";
+import { createHrCalendarEvent } from "@/lib/hrCalendar";
 
 export const dynamic = "force-dynamic";
 
@@ -119,7 +120,7 @@ export async function PUT(request: NextRequest) {
     });
 
     const body = await request.json();
-    const { id, targetUnitId, note } = body;
+    const { id, targetUnitId, note, calendar } = body;
 
     const beforeSlot = await prisma.chamberSlot.findUnique({
       where: { id: Number(id) },
@@ -187,6 +188,31 @@ export async function PUT(request: NextRequest) {
           note: note || "수동 변경",
         },
       });
+    }
+
+    // 챔버2 타겟 교체 시 vanam-hr 캘린더 등록 (load/swap만, unload 제외)
+    const isReplacement =
+      beforeSlot &&
+      beforeSlot.targetUnitId !== (targetUnitId ?? null) &&
+      (targetUnitId ?? null) !== null;
+
+    const cal = calendar as
+      | { title: string; startDate: string; endDate: string }
+      | null
+      | undefined;
+
+    if (isReplacement && cal?.title && cal.startDate && cal.endDate) {
+      try {
+        const eventId = await createHrCalendarEvent(
+          cal.title,
+          cal.startDate,
+          cal.endDate
+        );
+        console.log(`HR 캘린더 등록 완료: ${cal.title} (eventId=${eventId})`);
+      } catch (err) {
+        // 슬롯 저장은 이미 성공 — 캘린더만 실패, 로그만 남김
+        console.error("HR 캘린더 등록 실패 (슬롯 저장은 정상):", err);
+      }
     }
 
     return NextResponse.json(slot);

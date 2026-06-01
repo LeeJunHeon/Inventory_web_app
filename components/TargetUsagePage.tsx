@@ -7,6 +7,7 @@ import { TARGET_STATUS_LABELS, formatWeight } from "@/lib/data";
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
 import { useT } from "@/lib/i18n";
 import { exportCSV } from "@/lib/csvUtils";
+import DatePicker from "@/components/DatePicker";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
 
 interface TargetInfo { id: number; barcodeCode: string; itemCode: string; itemName: string; materialName: string; status: string; memo: string; }
@@ -205,6 +206,8 @@ export default function TargetUsagePage() {
   const [slotSearchLoading, setSlotSearchLoading] = useState(false);
   const [showSlotCamera, setShowSlotCamera] = useState(false);
   const [editNote, setEditNote]             = useState("");
+  const [editStartDate, setEditStartDate]   = useState("");
+  const [editEndDate, setEditEndDate]       = useState("");
   const [slotSaving, setSlotSaving]         = useState(false);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3000); };
@@ -461,8 +464,40 @@ export default function TargetUsagePage() {
   };
 
   // 챔버 슬롯 수정 핸들러
+  // "Chamber 2 - " 로 시작하는 슬롯만 챔버2 (캘린더 등록 대상)
+  const isChamber2 = (slot: ChamberSlot | null): boolean =>
+    !!slot && slot.locationName.startsWith("Chamber 2 - ");
+
+  // 캘린더 제목: "Gun N - 물질명". locationName 뒤(Gun N) + itemName 괄호 안
+  const buildCalendarTitle = (locationName: string, itemName: string): string => {
+    const gun = locationName.includes(" - ")
+      ? locationName.split(" - ").slice(1).join(" - ").trim()
+      : locationName.trim();
+    const m = itemName.match(/\(([^)]+)\)/);
+    const material = m ? m[1].trim() : itemName.trim(); // 괄호 없으면 전체명(현 데이터엔 해당 없음)
+    return `${gun} - ${material}`;
+  };
+
   const handleSlotSave = async () => {
     if (!editingSlot) return;
+
+    const wantCalendar =
+      isChamber2(editingSlot) &&
+      !!slotSelectedTarget &&
+      !!editStartDate &&
+      !!editEndDate;
+
+    const calendarPayload = wantCalendar
+      ? {
+          title: buildCalendarTitle(
+            editingSlot.locationName,
+            slotSelectedTarget!.itemName
+          ),
+          startDate: editStartDate,
+          endDate: editEndDate,
+        }
+      : null;
+
     setSlotSaving(true);
     try {
       const res = await fetch("/api/chamber-slots", {
@@ -472,6 +507,7 @@ export default function TargetUsagePage() {
           id: editingSlot.id,
           targetUnitId: slotSelectedTarget?.id ?? null,
           note: editNote || null,
+          calendar: calendarPayload,
         }),
       });
       if (!res.ok) { showToast(t.common.saveFail); return; }
@@ -605,6 +641,20 @@ export default function TargetUsagePage() {
                       <p className="text-xs text-gray-500">{tu.itemName}</p>
                     </button>
                   ))}
+                </div>
+              )}
+
+              {/* 일정 기간 (챔버2 전용 — 캘린더 등록) */}
+              {isChamber2(editingSlot) && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">시작일</label>
+                    <DatePicker value={editStartDate} onChange={setEditStartDate} placeholder="시작일" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">종료일</label>
+                    <DatePicker value={editEndDate} onChange={setEditEndDate} placeholder="종료일" min={editStartDate || undefined} />
+                  </div>
                 </div>
               )}
 
@@ -818,6 +868,8 @@ export default function TargetUsagePage() {
                             : null
                         );
                         setEditNote(slot.note ?? "");
+                        setEditStartDate("");
+                        setEditEndDate("");
                       }}
                       className="text-xs text-blue-500 hover:text-blue-600 font-medium"
                     >
