@@ -464,6 +464,12 @@ export default function TargetUsagePage() {
   };
 
   // 챔버 슬롯 수정 핸들러
+  // 오늘 날짜 (YYYY-MM-DD) — 과거 날짜 선택 차단용
+  const todayStr = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  })();
+
   // "Chamber 2 - " 로 시작하는 슬롯만 챔버2 (캘린더 등록 대상)
   const isChamber2 = (slot: ChamberSlot | null): boolean =>
     !!slot && slot.locationName.startsWith("Chamber 2 - ");
@@ -480,6 +486,16 @@ export default function TargetUsagePage() {
 
   const handleSlotSave = async () => {
     if (!editingSlot) return;
+
+    // 챔버2 + 타겟 선택 상태에서 날짜를 한쪽만 입력하면 안내 후 중단
+    if (isChamber2(editingSlot) && !!slotSelectedTarget) {
+      const onlyOne =
+        (!!editStartDate && !editEndDate) || (!editStartDate && !!editEndDate);
+      if (onlyOne) {
+        showToast("캘린더 등록을 하려면 시작일과 종료일을 모두 입력하세요. (둘 다 비우면 등록 없이 저장됩니다)");
+        return;
+      }
+    }
 
     const wantCalendar =
       isChamber2(editingSlot) &&
@@ -646,14 +662,19 @@ export default function TargetUsagePage() {
 
               {/* 일정 기간 (챔버2 전용 — 캘린더 등록) */}
               {isChamber2(editingSlot) && (
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">시작일</label>
-                    <DatePicker value={editStartDate} onChange={setEditStartDate} placeholder="시작일" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">종료일</label>
-                    <DatePicker value={editEndDate} onChange={setEditEndDate} placeholder="종료일" min={editStartDate || undefined} />
+                <div className="space-y-1.5">
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    시작일과 종료일을 입력하면 Google 캘린더에 일정이 자동 생성됩니다. (둘 다 비우면 캘린더 등록 없이 저장)
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">시작일</label>
+                      <DatePicker value={editStartDate} onChange={setEditStartDate} placeholder="시작일" min={todayStr} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">종료일</label>
+                      <DatePicker value={editEndDate} onChange={setEditEndDate} placeholder="종료일" min={editStartDate || todayStr} />
+                    </div>
                   </div>
                 </div>
               )}
