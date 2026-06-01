@@ -31,6 +31,8 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       AUTH_TRUST_HOST: "true"
+      HR_CALENDAR_SYNCER_URL: ${HR_CALENDAR_SYNCER_URL}
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN}
     depends_on:
       - postgres
     networks:
