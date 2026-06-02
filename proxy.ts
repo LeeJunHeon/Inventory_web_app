@@ -9,7 +9,7 @@ const { auth } = NextAuth(authConfig);
 
 // 포털에서 cross-origin으로 호출하는 endpoint
 // CORS preflight(OPTIONS) 통과 + 401 응답에도 CORS 헤더 부여 대상
-const PORTAL_ENDPOINTS = ["/api/portal-summary"];
+const PORTAL_ENDPOINTS = ["/api/portal-summary", "/api/portal-logs"];
 
 // 응답에 CORS 헤더 부여 (포털 origin인 경우만)
 function withCorsHeaders(response: NextResponse, origin: string | null): NextResponse {
