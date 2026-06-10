@@ -40,6 +40,14 @@ export default auth((req: NextRequest & { auth: any }) => {
     return NextResponse.next();
   }
 
+  // /api/internal/* 는 머신 토큰 인증 경로 — 세션 검사 건너뜀.
+  // ⚠️ 실제 인증은 각 라우트가 requireInternalAuth(request)로 Bearer 토큰을
+  // 직접 검증한다. 여기서 통과시키는 것은 "세션 쿠키가 없다고 401하지 말라"는
+  // 뜻일 뿐, 무인증 통과가 아니다.
+  if (pathname.startsWith("/api/internal")) {
+    return NextResponse.next();
+  }
+
   // /api/chamber-slots GET 은 Python 프로그램용 — 인증 없이 허용
   if (pathname === "/api/chamber-slots" && req.method === "GET") {
     return NextResponse.next();

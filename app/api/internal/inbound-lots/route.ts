@@ -1,0 +1,84 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireInternalAuth } from "@/lib/internal-auth";
+
+export const dynamic = "force-dynamic";
+
+// GET /api/internal/inbound-lots?itemId=&locationId=&barcodeId=
+// 기존 app/api/inventory/inbound GET 로직 재사용
+//   - 입고 트랜잭션 중 txNo 있는 것
+//   - 각 txNo별 출고/불출 소모량 합산 → remainQty = qty - used
+//   - remainQty > 0 인 것만 반환
+export async function GET(request: NextRequest) {
+  const authResult = await requireInternalAuth(request);
+  if (!authResult.ok) return authResult.response;
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const itemIdParam     = searchParams.get("itemId");
+    const locationIdParam = searchParams.get("locationId");
+    const barcodeIdParam  = searchParams.get("barcodeId");
+    const txNoParam       = searchParams.get("txNo");
+
+    if (!itemIdParam || isNaN(Number(itemIdParam))) {
+      return NextResponse.json({ error: "itemId가 필요합니다." }, { status: 400 });
+    }
+    const itemId = Number(itemIdParam);
+
+    const inbounds = await prisma.inventoryTx.findMany({
+      where: txNoParam
+        ? { txType: "입고", itemId, txNo: txNoParam }
+        : {
+            txType: "입고", itemId, txNo: { not: null },
+            ...(locationIdParam ? { locationId: Number(locationIdParam) } : {}),
+            ...(barcodeIdParam  ? { barcodeId:  Number(barcodeIdParam)  } : {}),
+          },
+      include: { partner: true, location: true, item: true, barcode: true },
+      orderBy: { id: "desc" },
+    });
+
+    const consumed = await prisma.inventoryTx.groupBy({
+      by: ["refTxNo"],
+      where: {
+        txType: { in: ["출고", "불출"] },
+        refTxNo: { not: null },
+        itemId,
+      },
+      _sum: { qty: true },
+    });
+
+    const consumedMap = new Map<string, number>();
+    for (const c of consumed) {
+      if (c.refTxNo) consumedMap.set(c.refTxNo, c._sum.qty ?? 0);
+    }
+
+    const result = inbounds
+      .filter(tx => tx.txNo !== null)
+      .map(tx => {
+        const usedQty = consumedMap.get(tx.txNo!) ?? 0;
+        const remainQty = tx.qty - usedQty;
+        return {
+          txNo:         tx.txNo!,
+          txDate:       tx.txDate.toISOString().split("T")[0].replace(/-/g, "."),
+          qty:          tx.qty,
+          remainQty,
+          unitPrice:    tx.unitPrice != null ? Number(tx.unitPrice) : null,
+          currency:     tx.currency ?? "KRW",
+          partnerName:  tx.partner?.name  ?? "",
+          locationName: tx.location?.name ?? "",
+          memo:         tx.memo           ?? "",
+          barcodeId:    tx.barcodeId      ?? null,
+          targetUnitId: tx.targetUnitId   ?? null,
+          itemCode:     tx.item?.code     ?? "",
+          itemName:     tx.item?.name     ?? "",
+          barcodeCode:  tx.barcode?.code  ?? "",
+        };
+      })
+      .filter(tx => tx.remainQty > 0);
+
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error("GET /api/internal/inbound-lots error:", error);
+    return NextResponse.json({ error: "입고 이력 조회 실패" }, { status: 500 });
+  }
+}
