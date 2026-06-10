@@ -33,6 +33,7 @@ services:
       AUTH_TRUST_HOST: "true"
       HR_CALENDAR_SYNCER_URL: ${HR_CALENDAR_SYNCER_URL}
       INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN}
+      MCP_API_TOKEN: ${MCP_API_TOKEN}
     depends_on:
       - postgres
     networks:

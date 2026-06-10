@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 /**
  * MCP 서버 등 내부 시스템에서 호출하는 API용 인증 헬퍼.
  *
- * - Authorization: Bearer <token>  → process.env.INTERNAL_API_TOKEN 과 일치해야 함
+ * - Authorization: Bearer <token>  → process.env.MCP_API_TOKEN 과 일치해야 함
  * - X-Acting-User-Email             → 행위자 식별 (best-effort, 없어도 조회는 통과)
  *
  * ⚠️ 절대로 next-auth 세션이나 DISABLE_AUTH 우회를 타지 않음. 내부 API는 항상
@@ -22,14 +22,14 @@ function safeStringEqual(a: string, b: string): boolean {
 }
 
 export async function requireInternalAuth(request: Request): Promise<InternalAuthResult> {
-  const expected = process.env.INTERNAL_API_TOKEN;
+  const expected = process.env.MCP_API_TOKEN;
 
   // 토큰 자체가 서버에 설정 안 돼 있으면 절대 통과시키지 않음 (사고 방지)
   if (!expected || expected.length === 0) {
     return {
       ok: false,
       response: NextResponse.json(
-        { error: "내부 API 토큰 미설정" },
+        { error: "MCP API 토큰 미설정" },
         { status: 500 }
       ),
     };
