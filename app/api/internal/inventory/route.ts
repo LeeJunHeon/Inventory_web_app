@@ -194,9 +194,28 @@ export async function POST(request: NextRequest) {
     if ((body.txType === "출고" || body.txType === "불출") && body.refTxNo) {
       const refInbound = await prisma.inventoryTx.findUnique({
         where: { txNo: body.refTxNo },
-        select: { qty: true },
+        select: { qty: true, itemId: true, locationId: true, txType: true },
       });
       if (refInbound) {
+        // 참조 입고 무결성 검증: 입고 타입 / 품목 / 위치 일치
+        if (refInbound.txType !== "입고" && refInbound.txType !== "충진 입고") {
+          return NextResponse.json(
+            { error: "참조 전표가 입고 건이 아닙니다." },
+            { status: 400 }
+          );
+        }
+        if (refInbound.itemId !== Number(body.itemId)) {
+          return NextResponse.json(
+            { error: "참조 입고 건의 품목과 출고 품목이 일치하지 않습니다." },
+            { status: 400 }
+          );
+        }
+        if (refInbound.locationId !== Number(body.locationId)) {
+          return NextResponse.json(
+            { error: "참조 입고 건의 위치와 출고 위치가 일치하지 않습니다." },
+            { status: 400 }
+          );
+        }
         const consumed = await prisma.inventoryTx.aggregate({
           where: {
             refTxNo: body.refTxNo,
