@@ -91,7 +91,9 @@ export async function POST(request: NextRequest) {
     if (!body.txType || !VALID_TYPES.includes(body.txType)) {
       return NextResponse.json({ error: "구분은 입고/출고/불출 중 하나여야 합니다." }, { status: 400 });
     }
-    if (!body.itemId) {
+    const isOutbound = body.txType === "출고" || body.txType === "불출";
+    // 출고/불출은 refTxNo로 품목/위치를 자동 결정할 수 있으므로 itemId/locationId 필수검증을 뒤로 미룸
+    if (!isOutbound && !body.itemId) {
       return NextResponse.json({ error: "품목을 선택해주세요." }, { status: 400 });
     }
     if (!body.qty || Number(body.qty) <= 0) {
@@ -100,11 +102,28 @@ export async function POST(request: NextRequest) {
     if (!body.txDate || isNaN(new Date(body.txDate).getTime())) {
       return NextResponse.json({ error: "유효한 날짜를 입력해주세요." }, { status: 400 });
     }
-    if (!body.locationId) {
+    if (!isOutbound && !body.locationId) {
       return NextResponse.json({ error: "위치를 선택해주세요." }, { status: 400 });
     }
-    if ((body.txType === "출고" || body.txType === "불출") && !body.refTxNo) {
+    if (isOutbound && !body.refTxNo) {
       return NextResponse.json({ error: "출고/불출 시 참조 입고 전표번호가 필요합니다." }, { status: 400 });
+    }
+
+    // 출고/불출: refTxNo의 참조 입고건에서 품목/위치 자동 결정
+    if (isOutbound && body.refTxNo) {
+      const ref = await prisma.inventoryTx.findUnique({
+        where: { txNo: body.refTxNo },
+        select: { itemId: true, locationId: true, txType: true },
+      });
+      if (!ref) {
+        return NextResponse.json({ error: "참조 입고 전표를 찾을 수 없습니다." }, { status: 400 });
+      }
+      if (ref.txType !== "입고" && ref.txType !== "충진 입고") {
+        return NextResponse.json({ error: "참조 전표가 입고 건이 아닙니다." }, { status: 400 });
+      }
+      // itemId/locationId가 없으면 참조입고 값으로 채움. 있으면 그대로 두고(아래 무결성 검증이 일치 확인).
+      if (!body.itemId) body.itemId = ref.itemId;
+      if (!body.locationId) body.locationId = ref.locationId;
     }
 
     // 출고/불출 시 바코드 연결 품목 검증
