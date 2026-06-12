@@ -121,9 +121,10 @@ export async function POST(request: NextRequest) {
       if (ref.txType !== "입고" && ref.txType !== "충진 입고") {
         return NextResponse.json({ error: "참조 전표가 입고 건이 아닙니다." }, { status: 400 });
       }
-      // itemId/locationId가 없으면 참조입고 값으로 채움. 있으면 그대로 두고(아래 무결성 검증이 일치 확인).
-      if (!body.itemId) body.itemId = ref.itemId;
-      if (!body.locationId) body.locationId = ref.locationId;
+      // 출고/불출은 refTxNo(입고분)가 품목/위치의 진실. gemma가 보낸 itemId/locationId는
+      // 신뢰하지 않고 무조건 참조 입고분 값으로 덮어쓴다. (LLM이 가짜 itemId를 채워 보내도 안전)
+      body.itemId = ref.itemId;
+      body.locationId = ref.locationId;
     }
 
     // 출고/불출 시 바코드 연결 품목 검증
