@@ -99,12 +99,14 @@ export const OPERATION_SCHEMAS: OperationSchema[] = [
   {
     id: "inventory_outbound",
     label: "출고/불출",
-    description: "재고를 출고하거나 불출한다. 반드시 어느 입고분(refTxNo)에서 빼는지 지정해야 한다.",
+    description: "재고를 출고하거나 불출한다. 바코드가 있는 품목(웨이퍼/타겟/캐니스터)은 바코드로 출고하고, 바코드가 없는 품목(가스/소모품 등)은 어느 입고분(refTxNo)에서 빼는지 지정한다.",
     triggers: ["출고", "불출", "내보내기", "빼줘"],
     fields: [
       { name: "itemId",     label: "품목",        type: "id_ref", required: false, lookup: "search_items" },
+      { name: "barcodeId", label: "바코드", type: "barcode", required: false, lookup: "lookup_barcode",
+        validation: "바코드가 있는 품목(웨이퍼/타겟/캐니스터)은 사용자가 바코드(예: C-30, T-35)를 직접 말하거나, 품목명으로 목록을 보고 고른 바코드를 lookup_barcode로 조회한다. lookup_barcode가 itemId와 refTxNo를 함께 반환하므로 그 값을 사용한다. 가스/소모품 등 바코드 없는 품목은 비워둔다." },
       { name: "refTxNo",    label: "출고할 입고분", type: "text",  required: true,  lookup: "list_inbound_lots",
-        validation: "list_inbound_lots로 잔여있는 입고건 보여주고 사용자가 고른 전표번호(txNo)" },
+        validation: "바코드 품목이면 lookup_barcode가 반환한 refTxNo를 사용한다. 바코드 없는 품목이면 list_inbound_lots로 잔여있는 입고건을 보여주고 사용자가 고른 전표번호(txNo)를 쓴다." },
       { name: "qty",        label: "수량",        type: "number", required: true,
         validation: "1 이상, 고른 입고분 잔여수량 이내" },
       { name: "locationId", label: "위치",        type: "id_ref", required: false, lookup: "list_locations",
@@ -117,10 +119,10 @@ export const OPERATION_SCHEMAS: OperationSchema[] = [
     ],
     steps: [
       { api: "POST /api/internal/inventory",
-        body: ["txType", "itemId", "qty", "locationId", "refTxNo", "partnerId", "memo", "txDate"] },
+        body: ["txType", "itemId", "qty", "locationId", "refTxNo", "barcodeId", "targetUnitId", "partnerId", "memo", "txDate"] },
     ],
     cardTitle: "출고/불출 확인",
-    cardShow: ["itemId", "txType", "refTxNo", "qty", "locationId", "partnerId", "memo"],
+    cardShow: ["itemId", "txType", "barcodeId", "refTxNo", "qty", "locationId", "partnerId", "memo"],
   },
   {
     id: "inventory_inbound_canister",
