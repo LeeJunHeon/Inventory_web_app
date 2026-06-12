@@ -143,7 +143,7 @@ export const OPERATION_SCHEMAS: OperationSchema[] = [
       { api: "POST /api/internal/barcodes",
         body: ["itemId", "aldTareWeight", "aldMaterialName", "aldInitialGross"], returns: "barcodeId" },
       { api: "POST /api/internal/inventory",
-        body: ["txType=충진 입고", "itemId", "qty=1", "locationId", "barcodeId", "aldMaterialName", "aldInitialGross", "memo", "txDate"] },
+        body: ["txType=입고", "itemId", "qty=1", "locationId", "barcodeId", "memo", "txDate"] },
     ],
     cardTitle: "캐니스터 입고 확인",
     cardShow: ["itemId", "locationId", "aldMaterialName", "aldTareWeight", "aldInitialGross", "memo"],
