@@ -2,8 +2,35 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/auth-helpers";
+import { requireInternalAuth } from "@/lib/internal-auth";
 
 export const dynamic = "force-dynamic";
+
+// GET /api/internal/partners?search= — 거래처 이름 조회 (챗봇 거래처 입력용)
+export async function GET(request: Request) {
+  const auth = await requireInternalAuth(request);
+  if (!auth.ok) return auth.response;
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get("search")?.trim() || "";
+
+    const where: any = { isActive: true };
+    if (search) {
+      where.name = { contains: search, mode: "insensitive" };
+    }
+
+    const partners = await prisma.partner.findMany({
+      where,
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    });
+    return NextResponse.json(partners);
+  } catch (error) {
+    console.error("GET /api/internal/partners error:", error);
+    return NextResponse.json({ error: "거래처 조회 실패" }, { status: 500 });
+  }
+}
 
 function safeStringEqual(a: string, b: string): boolean {
   // 길이가 다르면 비교조차 하지 않음 — timingSafeEqual은 같은 길이만 허용
