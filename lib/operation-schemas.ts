@@ -178,4 +178,27 @@ export const OPERATION_SCHEMAS: OperationSchema[] = [
     cardTitle: "타겟 입고 확인",
     cardShow: ["itemId", "locationId", "memo"],
   },
+  {
+    id: "target_measure",
+    label: "타겟 사용현황(측정)",
+    description: "스퍼터 타겟을 챔버에 장착하거나 무게를 측정해 사용현황을 기록한다. 바코드(T-xxx)로 타겟을 식별한다. 타겟이 처음 사용되면 자동으로 '사용중'이 되고, 챔버 슬롯도 자동 갱신된다. (ALD 캐니스터는 이 작업이 아니라 별도의 '캐니스터 측정' 작업을 쓴다.)",
+    triggers: ["타겟 측정", "타겟 장착", "챔버에 장착", "타겟 사용현황", "타겟 무게"],
+    appliesWhen: { categoryName: "타겟" },
+    fields: [
+      { name: "barcodeId", label: "바코드", type: "barcode", required: true, lookup: "lookup_barcode",
+        validation: "사용자가 말한 타겟 바코드(예: T-36)를 그대로 쓴다. 바코드는 타겟을 식별하는 필수값이다. 바코드 없이는 진행할 수 없으니, 사용자가 바코드를 말하지 않으면 '타겟 바코드를 알려주세요'라고 묻는다." },
+      { name: "weight", label: "무게(g)", type: "number", required: false,
+        validation: "타겟의 측정 무게(그램). 측정 작업의 핵심 값이므로 사용자가 무게를 말하지 않았으면 '측정한 무게(g)를 알려주세요'라고 반드시 묻는다. 단, 사용자가 '무게 없이 챔버에 장착만 한다' 또는 '보관함에서 챔버로 옮기기만 한다'고 명확히 말한 경우에는 무게를 비워두고 진행해도 된다(이 경우 시스템이 허용 여부를 판단한다)." },
+      { name: "locationId", label: "위치", type: "id_ref", required: false, lookup: "list_locations",
+        validation: "타겟이 측정/장착되는 위치다. 챔버(예: 'Chamber 1 - Gun 1', 'Chamber 2 - Gun 1/2/3', 'Chamber K - Gun 1/2') 또는 보관함(예: 'Vault', 'Desicator 1')을 list_locations 목록에서 고른다. 중요: 챔버는 Gun(건) 단위로 나뉜다. 사용자가 'Chamber 2'처럼 챔버만 말하고 Gun을 말하지 않으면, list_locations 목록을 보고 'Chamber 2의 어느 Gun인가요? (Gun 1/2/3)'처럼 어느 Gun인지 반드시 되물어 정확한 위치를 확정한다. 위치를 말하지 않으면 '어느 위치(챔버/보관함)인가요?'라고 묻는다." },
+      { name: "reason", label: "사유", type: "text", required: false,
+        validation: "측정/장착 사유. 사용자가 말하면 적고, 안 말하면 비워둔다(선택)." },
+    ],
+    steps: [
+      { api: "POST /api/internal/target-log",
+        body: ["barcodeId", "weight", "locationId", "reason"] },
+    ],
+    cardTitle: "타겟 측정 확인",
+    cardShow: ["barcodeId", "weight", "locationId", "reason"],
+  },
 ];
