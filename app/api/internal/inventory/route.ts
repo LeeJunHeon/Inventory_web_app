@@ -88,6 +88,30 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
+    // barcodeId 정규화: 챗봇은 바코드 코드 문자열(예: "T-36")을 보낼 수 있다.
+    // 숫자가 아니면 barcode 테이블에서 code로 조회해 숫자 id로 치환한다.
+    // (이후 모든 barcodeId 사용처가 Number(body.barcodeId)로 정수를 기대하므로 여기서 한 번에 정규화)
+    if (body.barcodeId !== null && body.barcodeId !== undefined && body.barcodeId !== "") {
+      const asNum = Number(body.barcodeId);
+      if (Number.isNaN(asNum)) {
+        // 숫자로 변환 불가 → 코드 문자열로 간주하고 code로 조회
+        const foundByCode = await prisma.barcode.findFirst({
+          where: { code: String(body.barcodeId) },
+          select: { id: true },
+        });
+        if (!foundByCode) {
+          return NextResponse.json(
+            { error: `바코드 '${body.barcodeId}'를 찾을 수 없습니다.` },
+            { status: 400 }
+          );
+        }
+        body.barcodeId = foundByCode.id;
+      } else {
+        // 이미 숫자(또는 숫자 문자열) → 정수로 통일
+        body.barcodeId = asNum;
+      }
+    }
+
     if (!body.txType || !VALID_TYPES.includes(body.txType)) {
       return NextResponse.json({ error: "구분은 입고/출고/불출 중 하나여야 합니다." }, { status: 400 });
     }
