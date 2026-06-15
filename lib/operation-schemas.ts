@@ -17,6 +17,7 @@ export interface SchemaField {
   lookup?: string;
   validation?: string;
   auto?: "today" | "system_generate";
+  enumValues?: string[]; // type이 "enum"일 때 가능한 값 목록
 }
 
 export interface SchemaStep {
@@ -83,7 +84,8 @@ export const OPERATION_SCHEMAS: OperationSchema[] = [
       { name: "itemId",     label: "품목",   type: "id_ref", required: true,  lookup: "search_items" },
       { name: "qty",        label: "수량",   type: "number", required: true,  validation: "1 이상 정수" },
       { name: "partnerId",  label: "거래처", type: "id_ref", required: false, lookup: "search_partners" },
-      { name: "currency",   label: "통화",   type: "enum",   required: false, validation: "KRW 또는 USD. 기본 KRW" },
+      { name: "currency",   label: "통화",   type: "enum",   required: false, enumValues: ["KRW", "USD"],
+        validation: "KRW 또는 USD. 사용자가 달러라고 하면 USD, 안 주면 KRW(기본)." },
       { name: "locationId", label: "위치",   type: "id_ref", required: true,  lookup: "list_locations" },
       { name: "unitPrice",  label: "단가",   type: "number", required: false },
       { name: "memo",       label: "비고",   type: "text",   required: false },
@@ -112,7 +114,8 @@ export const OPERATION_SCHEMAS: OperationSchema[] = [
       { name: "locationId", label: "위치", type: "id_ref", required: false, lookup: "list_locations",
         validation: "참조 입고분의 위치와 일치해야 함. 바코드 품목이면 보통 묻지 않아도 된다." },
       { name: "txType", label: "유형", type: "enum", required: true,
-        validation: "출고 또는 불출 중 선택. 기본 출고. 캐니스터를 버리는 경우는 불출." },
+        enumValues: ["출고", "불출"],
+        validation: "반드시 '출고' 또는 '불출' 중 하나를 이 필드에 넣어라(필수). 사용자가 '출고'라고 말하면 '출고', '불출'이라고 말하면 '불출'. 어느 쪽인지 불명확하면 '출고'로 한다. 이 값을 절대 비워두지 마라." },
       { name: "disburseeUserId", label: "불출받는 사람", type: "id_ref", required: false, lookup: "search_users",
         validation: "불출(txType=불출)일 때만 의미가 있다. 사용자가 누구에게 불출하는지 사람 이름을 말하면 search_users로 조회한다. 출고일 때는 비워둔다." },
       { name: "txReasonId", label: "사유", type: "id_ref", required: false, lookup: "list_tx_reasons",
