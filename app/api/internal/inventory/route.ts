@@ -112,6 +112,26 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 출고/불출 + 바코드가 있으면: 그 바코드의 입고 전표를 직접 찾아 refTxNo로 강제한다.
+    // 바코드(개체)↔입고전표는 1:1이므로, gemma가 보낸 refTxNo(품목 기준으로 잘못 고른 값일 수 있음)를
+    // 무시하고 바코드 기준의 정확한 입고전표로 덮어쓴다. (타겟/캐니스터 불출 시 엉뚱한 입고분 선택 방지)
+    if (
+      (body.txType === "출고" || body.txType === "불출") &&
+      body.barcodeId !== null &&
+      body.barcodeId !== undefined &&
+      body.barcodeId !== ""
+    ) {
+      const barcodeInbound = await prisma.inventoryTx.findFirst({
+        where: { barcodeId: Number(body.barcodeId), txType: "입고" },
+        orderBy: { id: "desc" },
+        select: { txNo: true },
+      });
+      if (barcodeInbound?.txNo) {
+        // 바코드의 입고 전표를 refTxNo로 강제 (gemma가 보낸 값 무시)
+        body.refTxNo = barcodeInbound.txNo;
+      }
+    }
+
     if (!body.txType || !VALID_TYPES.includes(body.txType)) {
       return NextResponse.json({ error: "구분은 입고/출고/불출 중 하나여야 합니다." }, { status: 400 });
     }
