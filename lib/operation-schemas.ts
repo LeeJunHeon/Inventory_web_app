@@ -115,7 +115,7 @@ export const OPERATION_SCHEMAS: OperationSchema[] = [
         validation: "참조 입고분의 위치와 일치해야 함. 바코드 품목이면 보통 묻지 않아도 된다." },
       { name: "txType", label: "유형", type: "enum", required: true,
         enumValues: ["출고", "불출"],
-        validation: "반드시 '출고' 또는 '불출' 중 하나를 이 필드에 넣어라(필수). 사용자가 '출고'라고 말하면 '출고', '불출'이라고 말하면 '불출'을 넣는다. 사용자가 출고인지 불출인지 명확히 말하지 않았으면 마음대로 정하지 말고 '출고인가요, 불출인가요?'라고 사용자에게 되물어 확인한 뒤 진행한다. 이 값을 추측으로 채우지 마라." },
+        validation: "사용자의 말에 '출고'라는 단어가 있으면 즉시 '출고'를, '불출'이라는 단어가 있으면 즉시 '불출'을 이 필드에 넣는다. 이 경우 절대 되묻지 마라(사용자가 이미 명확히 말한 것이다). 사용자가 '출고'나 '불출' 둘 다 말하지 않고 '빼줘', '내보내줘'처럼 애매하게만 말한 경우에만, 마음대로 정하지 말고 '출고인가요, 불출인가요?'라고 한 번 되물어 확인한다. 요약: 단어가 있으면 바로 채우고 되묻지 않는다 / 단어가 없을 때만 되묻는다." },
       { name: "disburseeUserId", label: "불출받는 사람", type: "id_ref", required: false, lookup: "search_users",
         validation: "불출(txType=불출)일 때만 의미가 있다. 사용자가 누구에게 불출하는지 사람 이름을 말하면 search_users로 조회한다. 출고일 때는 비워둔다." },
       { name: "txReasonId", label: "사유", type: "id_ref", required: false, lookup: "list_tx_reasons",
