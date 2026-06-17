@@ -337,32 +337,31 @@ export default function ItemsPage() {
                 <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.items.catLabel}</th>
                 <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.items.unitLabel}</th>
                 <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.items.noteLabel}</th>
+                {catFilter === "타겟" && <>
+                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">순도</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">Copper</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">Cu 두께</th>
+                </>}
                 <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">{t.items.statusLabel}</th>
                 <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colAction}</th>
               </tr></thead>
               <tbody>
                 {items.length === 0 ? (
-                  <tr><td colSpan={7} className="px-5 py-12 text-center text-sm text-gray-400">{t.items.noData}</td></tr>
+                  <tr><td colSpan={catFilter === "타겟" ? 10 : 7} className="px-5 py-12 text-center text-sm text-gray-400">{t.items.noData}</td></tr>
                 ) : items.map(item => (
                   <tr key={item.id} className={`border-b border-gray-50 hover:bg-blue-50/30 group ${!item.isActive ? "opacity-40" : ""}`}>
                     <td className="px-5 py-3 text-sm font-mono font-semibold text-gray-900">{item.code}</td>
-                    <td className="px-5 py-3 text-sm font-medium text-gray-900">
-                      {item.name}
-                      {item.category === "타겟" && (
-                        <span className="block text-[11px] font-normal text-gray-400 mt-0.5">
-                          {[
-                            `순도 ${item.purity != null ? item.purity + "%" : "-"}`,
-                            `Cu ${item.hasCopper === "Y" ? "있음" : item.hasCopper === "N" ? "없음" : "-"}`,
-                            `Cu두께 ${item.copperThickness != null ? item.copperThickness + '"' : "-"}`,
-                          ].join(" · ")}
-                        </span>
-                      )}
-                    </td>
+                    <td className="px-5 py-3 text-sm font-medium text-gray-900">{item.name}</td>
                     <td className="px-5 py-3">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[item.category] || ""}`}>{item.category}</span>
                     </td>
                     <td className="px-5 py-3 text-sm text-gray-500">{item.unit || "-"}</td>
                     <td className="px-5 py-3 text-sm text-gray-400">{item.note || "-"}</td>
+                    {catFilter === "타겟" && <>
+                      <td className="px-5 py-3 text-sm text-gray-600">{item.purity != null ? `${item.purity}%` : "-"}</td>
+                      <td className="px-5 py-3 text-sm text-gray-600">{item.hasCopper === "Y" ? "있음" : item.hasCopper === "N" ? "없음" : "-"}</td>
+                      <td className="px-5 py-3 text-sm text-gray-600">{item.copperThickness != null ? `${item.copperThickness}"` : "-"}</td>
+                    </>}
                     <td className="px-5 py-3 text-center">
                       {item.isActive
                         ? <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">{t.barcode.active}</span>
@@ -400,7 +399,7 @@ export default function ItemsPage() {
                 </div>
                 <p className="text-sm font-medium text-gray-900">{item.name}</p>
                 <p className="text-xs text-gray-400">{[item.unit, item.note].filter(Boolean).join(" · ") || "-"}</p>
-                {item.category === "타겟" && (
+                {catFilter === "타겟" && (
                   <p className="text-[11px] text-gray-400">
                     {[
                       `순도 ${item.purity != null ? item.purity + "%" : "-"}`,
