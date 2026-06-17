@@ -14,6 +14,9 @@ interface TargetItem {
   latestLoggedAt: string | null;
   locationName: string | null;
   inboundDate: string | null;
+  purity: number | null;
+  hasCopper: string | null;
+  copperThickness: number | null;
 }
 
 const STATUS_TABS = ["전체", "미사용", "사용중", "폐기", "판매완료"] as const;
@@ -149,6 +152,9 @@ export default function TargetStatusSection() {
                   <th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">마지막 측정일</th>
                   <th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">현재 위치</th>
                   <th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">입고일</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">순도</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">Copper</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">Cu 두께</th>
                 </tr>
               </thead>
               <tbody>
@@ -169,6 +175,9 @@ export default function TargetStatusSection() {
                       </td>
                       <td className="px-5 py-3 text-sm text-gray-600">{t.locationName || "-"}</td>
                       <td className="px-5 py-3 text-xs text-gray-500">{t.inboundDate || "-"}</td>
+                      <td className="px-5 py-3 text-sm text-gray-600">{t.purity != null ? `${t.purity}%` : "-"}</td>
+                      <td className="px-5 py-3 text-sm text-gray-600">{t.hasCopper === "Y" ? "있음" : t.hasCopper === "N" ? "없음" : "-"}</td>
+                      <td className="px-5 py-3 text-sm text-gray-600">{t.copperThickness != null ? `${t.copperThickness}"` : "-"}</td>
                     </tr>
                   );
                 })}
@@ -191,6 +200,9 @@ export default function TargetStatusSection() {
                     <span>{t.latestWeight != null ? `${t.latestWeight.toFixed(3)}g` : "미측정"}</span>
                     <span>{t.locationName || "-"}</span>
                     <span>{t.inboundDate || "-"}</span>
+                    <span>{t.purity != null ? `순도 ${t.purity}%` : "-"}</span>
+                    <span>{t.hasCopper === "Y" ? "Cu 있음" : t.hasCopper === "N" ? "Cu 없음" : "-"}</span>
+                    <span>{t.copperThickness != null ? `Cu두께 ${t.copperThickness}"` : "-"}</span>
                   </div>
                 </div>
               );

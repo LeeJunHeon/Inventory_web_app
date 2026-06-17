@@ -10,12 +10,13 @@ interface ItemOption {
   id: number; code: string; name: string;
   category: string; categoryId: number;
   unit: string | null; note: string | null; isActive: boolean;
+  purity?: number | null; hasCopper?: string | null; copperThickness?: number | null;
 }
 interface CategoryOption { id: number; name: string; codePrefix: string | null; parentId: number | null; }
 
 const CATS = ["전체", "웨이퍼", "타겟", "ALD", "가스", "기자재/소모품"];
 
-const EMPTY_FORM = { code: "", name: "", categoryId: "", unit: "", note: "" };
+const EMPTY_FORM = { code: "", name: "", categoryId: "", unit: "", note: "", purity: "", hasCopper: "", copperThickness: "" };
 
 export default function ItemsPage() {
   const { t } = useT();
@@ -101,6 +102,9 @@ export default function ItemsPage() {
       categoryId: String(item.categoryId),
       unit: item.unit || "",
       note: item.note || "",
+      purity: item.purity?.toString() ?? "",
+      hasCopper: item.hasCopper ?? "",
+      copperThickness: item.copperThickness?.toString() ?? "",
     });
     setFormError("");
     setShowForm(true);
@@ -124,6 +128,9 @@ export default function ItemsPage() {
           categoryId: Number(form.categoryId),
           unit:       form.unit.trim() || null,
           note:       form.note.trim() || null,
+          purity: form.purity,
+          hasCopper: form.hasCopper,
+          copperThickness: form.copperThickness,
         }),
       });
       const data = await res.json();
@@ -146,6 +153,11 @@ export default function ItemsPage() {
       fetchItems();
     } catch { alert(t.common.networkError); }
   };
+
+  // 선택된 품목군이 "타겟"인지 판별
+  const isTarget = form.categoryId
+    ? categories.find(c => String(c.id) === String(form.categoryId))?.name === "타겟"
+    : false;
 
   return (
     <div className="space-y-5">
@@ -243,6 +255,38 @@ export default function ItemsPage() {
                 placeholder={t.items.notePlaceholder}
                 className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400" />
             </div>
+            {/* 타겟 전용 스펙 */}
+            {isTarget && (
+              <>
+                {/* 순도 */}
+                <div>
+                  <label className="block text-xs font-semibold text-blue-700 mb-1">순도 (%)</label>
+                  <input type="number" step="0.001" value={form.purity}
+                    onChange={e => setForm(f => ({ ...f, purity: e.target.value }))}
+                    placeholder="예: 99.999"
+                    className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400" />
+                </div>
+                {/* Copper 유무 */}
+                <div>
+                  <label className="block text-xs font-semibold text-blue-700 mb-1">Copper 유무</label>
+                  <select value={form.hasCopper}
+                    onChange={e => setForm(f => ({ ...f, hasCopper: e.target.value }))}
+                    className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400">
+                    <option value="">미지정</option>
+                    <option value="Y">있음</option>
+                    <option value="N">없음</option>
+                  </select>
+                </div>
+                {/* Copper 두께 */}
+                <div>
+                  <label className="block text-xs font-semibold text-blue-700 mb-1">Copper 두께 (inch)</label>
+                  <input type="number" step="0.001" value={form.copperThickness}
+                    onChange={e => setForm(f => ({ ...f, copperThickness: e.target.value }))}
+                    placeholder="예: 0.125"
+                    className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400" />
+                </div>
+              </>
+            )}
           </div>
           {formError && <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-xl">{formError}</p>}
           <div className="flex gap-2">
@@ -302,7 +346,18 @@ export default function ItemsPage() {
                 ) : items.map(item => (
                   <tr key={item.id} className={`border-b border-gray-50 hover:bg-blue-50/30 group ${!item.isActive ? "opacity-40" : ""}`}>
                     <td className="px-5 py-3 text-sm font-mono font-semibold text-gray-900">{item.code}</td>
-                    <td className="px-5 py-3 text-sm font-medium text-gray-900">{item.name}</td>
+                    <td className="px-5 py-3 text-sm font-medium text-gray-900">
+                      {item.name}
+                      {item.category === "타겟" && (item.purity != null || item.hasCopper || item.copperThickness != null) && (
+                        <span className="block text-[11px] font-normal text-gray-400 mt-0.5">
+                          {[
+                            item.purity != null ? `순도 ${item.purity}%` : null,
+                            item.hasCopper === "Y" ? "Cu 있음" : item.hasCopper === "N" ? "Cu 없음" : null,
+                            item.copperThickness != null ? `Cu두께 ${item.copperThickness}"` : null,
+                          ].filter(Boolean).join(" · ")}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-5 py-3">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[item.category] || ""}`}>{item.category}</span>
                     </td>
@@ -345,6 +400,15 @@ export default function ItemsPage() {
                 </div>
                 <p className="text-sm font-medium text-gray-900">{item.name}</p>
                 <p className="text-xs text-gray-400">{[item.unit, item.note].filter(Boolean).join(" · ") || "-"}</p>
+                {item.category === "타겟" && (item.purity != null || item.hasCopper || item.copperThickness != null) && (
+                  <p className="text-[11px] text-gray-400">
+                    {[
+                      item.purity != null ? `순도 ${item.purity}%` : null,
+                      item.hasCopper === "Y" ? "Cu 있음" : item.hasCopper === "N" ? "Cu 없음" : null,
+                      item.copperThickness != null ? `Cu두께 ${item.copperThickness}"` : null,
+                    ].filter(Boolean).join(" · ")}
+                  </p>
+                )}
               </div>
             ))}
           </div>

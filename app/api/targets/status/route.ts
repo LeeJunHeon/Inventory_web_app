@@ -13,7 +13,7 @@ export async function GET() {
     // 쿼리 1: 모든 target_unit + item + 활성 바코드 한 번에 가져오기
     const targetUnits = await prisma.targetUnit.findMany({
       include: {
-        item: true,
+        item: { include: { targetSpec: true } },
         barcodes: { where: { isActive: "Y" }, take: 1 },
       },
     });
@@ -74,6 +74,9 @@ export async function GET() {
         latestLoggedAt: latestLog?.loggedAt?.toISOString() ?? null,
         locationName: latestLog?.location?.name ?? null,
         inboundDate: inboundDateMap.get(tu.id) ?? null,
+        purity:          tu.item?.targetSpec?.purity != null ? Number(tu.item.targetSpec.purity) : null,
+        hasCopper:       tu.item?.targetSpec?.hasCopper ?? null,
+        copperThickness: tu.item?.targetSpec?.copperThickness != null ? Number(tu.item.targetSpec.copperThickness) : null,
       };
     });
 

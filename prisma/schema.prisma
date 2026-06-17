@@ -145,6 +145,7 @@ model TargetSpec {
   materialCode  String   @map("material_code") // AU, SI, SIO2, ATC 등
   purity        Decimal? @db.Decimal(6, 3)
   hasCopper     String?  @map("has_copper") // Y | N
+  copperThickness Decimal? @map("copper_thickness") @db.Decimal(5, 3)
 
   item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
 

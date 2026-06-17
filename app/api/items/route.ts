@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
     const items = await prisma.item.findMany({
       where,
-      include: { category: true },
+      include: { category: true, targetSpec: true },
       orderBy: { code: "asc" },
     });
 
@@ -49,6 +49,9 @@ export async function GET(request: NextRequest) {
       unit:        item.unit,
       minStockQty: item.minStockQty,
       note:        item.note,
+      purity:          item.targetSpec?.purity != null ? Number(item.targetSpec.purity) : null,
+      hasCopper:       item.targetSpec?.hasCopper ?? null,
+      copperThickness: item.targetSpec?.copperThickness != null ? Number(item.targetSpec.copperThickness) : null,
       isActive:    item.isActive,
     })));
   } catch (error) {
@@ -65,7 +68,7 @@ export async function POST(request: NextRequest) {
   }
   try {
     const body = await request.json();
-    const { code, name, categoryId, unit, minStockQty, note } = body;
+    const { code, name, categoryId, unit, minStockQty, note, purity, hasCopper, copperThickness } = body;
 
     if (!code?.trim() || !name?.trim() || !categoryId) {
       return NextResponse.json({ error: "품목코드, 품목명, 품목군은 필수입니다." }, { status: 400 });
@@ -87,6 +90,23 @@ export async function POST(request: NextRequest) {
       },
       include: { category: true },
     });
+
+    if (item.category.name === "타겟") {
+      const parts = item.code.split("-");                 // 예: T-3-ITO-0125
+      const diameterInch  = parseInt(parts[1], 10);
+      const materialCode  = parts[2];
+      const thicknessInch = parts[3] ? Number(parts[3]) / 1000 : null;
+      if (materialCode && !Number.isNaN(diameterInch)) {
+        await prisma.targetSpec.create({
+          data: {
+            itemId: item.id, materialCode, diameterInch, thicknessInch,
+            purity:          purity == null || purity === "" ? null : Number(purity),
+            hasCopper:       hasCopper || null,
+            copperThickness: copperThickness == null || copperThickness === "" ? null : Number(copperThickness),
+          },
+        });
+      }
+    }
 
     const sessionUserId = await getSessionUserId();
     await logActivity(sessionUserId, "CREATE", "item", item.id);
@@ -115,7 +135,7 @@ export async function PUT(request: NextRequest) {
     if (!id) return NextResponse.json({ error: "id 파라미터 필요" }, { status: 400 });
 
     const body = await request.json();
-    const { name, categoryId, unit, minStockQty, note } = body;
+    const { name, categoryId, unit, minStockQty, note, purity, hasCopper, copperThickness } = body;
 
     const beforeItem = await prisma.item.findUnique({
       where: { id: Number(id) },
@@ -133,6 +153,28 @@ export async function PUT(request: NextRequest) {
       },
       include: { category: true },
     });
+
+    if (item.category.name === "타겟" &&
+        (purity !== undefined || hasCopper !== undefined || copperThickness !== undefined)) {
+      const parts = item.code.split("-");
+      const diameterInch  = parseInt(parts[1], 10);
+      const materialCode  = parts[2];
+      const thicknessInch = parts[3] ? Number(parts[3]) / 1000 : null;
+      await prisma.targetSpec.upsert({
+        where: { itemId: item.id },
+        update: {
+          ...(purity          !== undefined && { purity:          purity == null || purity === "" ? null : Number(purity) }),
+          ...(hasCopper       !== undefined && { hasCopper:       hasCopper || null }),
+          ...(copperThickness !== undefined && { copperThickness: copperThickness == null || copperThickness === "" ? null : Number(copperThickness) }),
+        },
+        create: {
+          itemId: item.id, materialCode, diameterInch, thicknessInch,
+          purity:          purity == null || purity === "" ? null : Number(purity),
+          hasCopper:       hasCopper || null,
+          copperThickness: copperThickness == null || copperThickness === "" ? null : Number(copperThickness),
+        },
+      });
+    }
 
     const ch: string[] = [];
     if (beforeItem) {
