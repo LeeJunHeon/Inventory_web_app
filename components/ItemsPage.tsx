@@ -348,13 +348,13 @@ export default function ItemsPage() {
                     <td className="px-5 py-3 text-sm font-mono font-semibold text-gray-900">{item.code}</td>
                     <td className="px-5 py-3 text-sm font-medium text-gray-900">
                       {item.name}
-                      {item.category === "타겟" && (item.purity != null || item.hasCopper || item.copperThickness != null) && (
+                      {item.category === "타겟" && (
                         <span className="block text-[11px] font-normal text-gray-400 mt-0.5">
                           {[
-                            item.purity != null ? `순도 ${item.purity}%` : null,
-                            item.hasCopper === "Y" ? "Cu 있음" : item.hasCopper === "N" ? "Cu 없음" : null,
-                            item.copperThickness != null ? `Cu두께 ${item.copperThickness}"` : null,
-                          ].filter(Boolean).join(" · ")}
+                            `순도 ${item.purity != null ? item.purity + "%" : "-"}`,
+                            `Cu ${item.hasCopper === "Y" ? "있음" : item.hasCopper === "N" ? "없음" : "-"}`,
+                            `Cu두께 ${item.copperThickness != null ? item.copperThickness + '"' : "-"}`,
+                          ].join(" · ")}
                         </span>
                       )}
                     </td>
@@ -400,13 +400,13 @@ export default function ItemsPage() {
                 </div>
                 <p className="text-sm font-medium text-gray-900">{item.name}</p>
                 <p className="text-xs text-gray-400">{[item.unit, item.note].filter(Boolean).join(" · ") || "-"}</p>
-                {item.category === "타겟" && (item.purity != null || item.hasCopper || item.copperThickness != null) && (
+                {item.category === "타겟" && (
                   <p className="text-[11px] text-gray-400">
                     {[
-                      item.purity != null ? `순도 ${item.purity}%` : null,
-                      item.hasCopper === "Y" ? "Cu 있음" : item.hasCopper === "N" ? "Cu 없음" : null,
-                      item.copperThickness != null ? `Cu두께 ${item.copperThickness}"` : null,
-                    ].filter(Boolean).join(" · ")}
+                      `순도 ${item.purity != null ? item.purity + "%" : "-"}`,
+                      `Cu ${item.hasCopper === "Y" ? "있음" : item.hasCopper === "N" ? "없음" : "-"}`,
+                      `Cu두께 ${item.copperThickness != null ? item.copperThickness + '"' : "-"}`,
+                    ].join(" · ")}
                   </p>
                 )}
               </div>

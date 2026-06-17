@@ -299,7 +299,6 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
                       <th onClick={() => handleSort("name")} className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5 cursor-pointer select-none hover:text-blue-600">{t.status.colName}<SortIcon field="name" /></th>
                       <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.status.colBarcode}</th>
                       {cat === "웨이퍼" && <><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">{t.status.colResistivity}</th><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">{t.status.colThickness}</th></>}
-                      {cat === "타겟"   && <><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">{t.status.colPurity}</th><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">Copper</th></>}
                       {selectedLocationId === null ? (
                         <>
                           <th className="text-right text-xs font-semibold text-gray-500 px-3 py-2.5 whitespace-nowrap">{t.status.locationMain}</th>
@@ -322,7 +321,6 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
                             <td className="px-5 py-3 text-sm font-medium text-gray-900">{item.name}</td>
                             <td className="px-5 py-3 text-xs font-mono text-gray-400">{item.barcodes?.join(", ") || "-"}</td>
                             {cat === "웨이퍼" && <><td className="px-5 py-3 text-sm text-gray-500">{item.attrs?.["저항"] || "-"}</td><td className="px-5 py-3 text-sm text-gray-500">{item.attrs?.["두께"] || "-"}</td></>}
-                            {cat === "타겟"   && <><td className="px-5 py-3 text-sm text-gray-500">{item.attrs?.["순도"] || "-"}</td><td className="px-5 py-3 text-sm text-gray-500">{item.attrs?.["Copper"] || "-"}</td></>}
                             {selectedLocationId === null ? (
                               <>
                                 <td className="px-3 py-3 text-sm text-right text-gray-600">{item.locationQty?.[1] ?? 0}</td>
