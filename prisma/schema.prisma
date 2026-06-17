@@ -106,6 +106,7 @@ model Item {
   unit        String?
   minStockQty Int     @default(0) @map("min_stock_qty")
   note        String?
+  monitorVolumeDays Int? @map("monitor_volume_days")
 
   category     ItemCategory  @relation(fields: [categoryId], references: [id])
   waferSpec    WaferSpec?
