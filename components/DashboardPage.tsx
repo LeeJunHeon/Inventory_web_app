@@ -67,7 +67,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
       icon: TrendingDown,
       color: "text-rose-600",
       bg: "bg-rose-50",
-      onClick: () => onNavigate?.("inventory", null, { type: "출고", date: today }),
+      onClick: () => onNavigate?.("inventory", null, { type: "전체", date: today }),
     },
     {
       label: t.dashboard.shortage,

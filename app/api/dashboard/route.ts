@@ -26,7 +26,7 @@ export async function GET() {
     });
 
     const todayIn = todayTxs.filter((t) => t.txType === "입고");
-    const todayOut = todayTxs.filter((t) => t.txType === "출고");
+    const todayOut = todayTxs.filter((t) => t.txType === "출고" || t.txType === "불출");
 
     // 재고 부족 품목 수 — item.minStockQty 기준
     const itemsWithMin = await prisma.item.findMany({

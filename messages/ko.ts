@@ -535,7 +535,7 @@ export const ko = {
   dashboard: {
     subtitle: "재고 현황을 한눈에 확인하세요",
     todayIn: "오늘 입고",
-    todayOut: "오늘 출고",
+    todayOut: "오늘 출고 및 불출",
     shortage: "재고 부족 품목",
     checkNeeded: "확인 필요",
     totalItems: "총 품목",
