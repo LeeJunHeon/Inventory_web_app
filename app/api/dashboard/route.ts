@@ -15,10 +15,12 @@ export async function GET() {
       isEmployee = u?.role === "employee";
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // KST(한국) 기준 오늘 날짜의 UTC 자정으로 경계 설정
+    // txDate가 'YYYY-MM-DD'를 new Date()로 UTC 자정에 저장하므로 그에 맞춘다.
+    // 서버 TZ가 UTC든 KST든 동일하게 동작한다.
+    const kstDateStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" }); // "YYYY-MM-DD"
+    const today = new Date(`${kstDateStr}T00:00:00.000Z`);
+    const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
     // 오늘 입고/출고/불출 집계
     const todayTxs = await prisma.inventoryTx.findMany({
