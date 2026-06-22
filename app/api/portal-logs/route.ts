@@ -3,13 +3,6 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "https://vanam.synology.me",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-  "Access-Control-Allow-Credentials": "true",
-};
-
 const TABLE_LABEL: Record<string, string> = {
   inventory_tx: "재고 관리",
   target_log:   "타겟 사용현황",
@@ -49,13 +42,9 @@ export async function GET(request: NextRequest) {
       occurredAt: log.createdAt.toISOString(),
     }));
 
-    return NextResponse.json(data, { headers: corsHeaders });
+    return NextResponse.json(data);
   } catch (error) {
     console.error("GET /api/portal-logs error:", error);
-    return NextResponse.json([], { headers: corsHeaders });
+    return NextResponse.json([]);
   }
-}
-
-export async function OPTIONS() {
-  return new Response(null, { status: 204, headers: corsHeaders });
 }

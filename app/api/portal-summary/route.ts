@@ -3,14 +3,6 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-// CORS 헤더 — 포털에서만 호출 허용
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "https://vanam.synology.me",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-  "Access-Control-Allow-Credentials": "true",
-};
-
 // GET /api/portal-summary
 // 포털의 AppCardGrid가 호출 — 재고관리 요약 정보 제공
 export async function GET() {
@@ -35,19 +27,12 @@ export async function GET() {
         todayUse,   // 오늘 불출 건수
         // 하위호환: 기존 todayTxCount = 입고+출고+불출 합
         todayTxCount: todayIn + todayOut + todayUse,
-      },
-      { headers: corsHeaders }
+      }
     );
   } catch (error) {
     console.error("GET /api/portal-summary error:", error);
     return NextResponse.json(
-      { totalItems: 0, todayIn: 0, todayOut: 0, todayUse: 0, todayTxCount: 0 },
-      { headers: corsHeaders }
+      { totalItems: 0, todayIn: 0, todayOut: 0, todayUse: 0, todayTxCount: 0 }
     );
   }
-}
-
-// CORS preflight
-export async function OPTIONS() {
-  return new Response(null, { status: 204, headers: corsHeaders });
 }
