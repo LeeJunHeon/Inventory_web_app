@@ -23,7 +23,11 @@ function withCorsHeaders(response: NextResponse, origin: string | null): NextRes
 }
 
 export default auth((req: NextRequest & { auth: any }) => {
-  const { pathname } = req.nextUrl;
+  const __basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+  const pathname =
+    __basePath && req.nextUrl.pathname.startsWith(__basePath)
+      ? req.nextUrl.pathname.slice(__basePath.length) || "/"
+      : req.nextUrl.pathname;
   const origin = req.headers.get("origin");
   const isPortalEndpoint = PORTAL_ENDPOINTS.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
