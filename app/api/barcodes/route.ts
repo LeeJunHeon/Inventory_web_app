@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 import { expandBarcodeVariants } from "@/lib/barcodeUtils";
+import { barcodePrefixFor } from "@/lib/barcodePrefix";
 
 // GET /api/barcodes — 바코드 목록 조회
 export async function GET(request: NextRequest) {
@@ -139,8 +140,7 @@ export async function POST(request: NextRequest) {
     }
 
     // BarcodeSeq를 이용한 순번 자동 생성
-    const CATEGORY_PREFIX: Record<string, string> = { "타겟": "T", "웨이퍼": "W", "가스": "G", "기자재": "E", "ALD Canister": "C" };
-    const prefix = CATEGORY_PREFIX[item.category.name] ?? item.category.name.charAt(0).toUpperCase();
+    const prefix = barcodePrefixFor(item.category.name);
     const seq = await prisma.barcodeSeq.upsert({
       where:  { prefix },
       update: { lastNo: { increment: 1 } },

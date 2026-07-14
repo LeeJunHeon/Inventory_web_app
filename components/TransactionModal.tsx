@@ -328,6 +328,12 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
               }
             })
             .catch(() => {});
+        } else if (bc.ambiguous) {
+          // 이 바코드에 입고건이 여러 개 물려 있어 서버가 자동 연결을 거부함.
+          // 어느 입고분에서 출고할지 직접 선택하도록 입고건 선택 모달을 띄운다.
+          setError(`이 바코드에 연결된 입고건이 ${bc.inboundCount}개입니다. 어느 입고분에서 출고하는지 직접 선택하세요.`);
+          inboundModalBarcodeId.current = bc.barcodeId;
+          setShowInboundSelect(true);
         }
       } else {
         // 입고: 정확한 바코드 조회 (출고/불출과 동일한 lookup API 사용)

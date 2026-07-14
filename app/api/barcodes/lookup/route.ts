@@ -38,12 +38,15 @@ export async function GET(request: NextRequest) {
 
     const item = barcode.item ?? barcode.targetUnit?.item ?? null;
 
-    // 해당 바코드의 가장 최근 입고 트랜잭션 조회
-    const lastInbound = await prisma.inventoryTx.findFirst({
+    // 해당 바코드에 연결된 입고 트랜잭션 조회
+    // 입고건이 정확히 1건일 때만 자동 연결. 2건 이상(레거시 다중 연결)이면
+    // 조용히 최근 것을 고르지 않고 null 반환 → 프론트에서 직접 선택하게 함.
+    const inbounds = await prisma.inventoryTx.findMany({
       where: { barcodeId: barcode.id, txType: "입고" },
       orderBy: { id: "desc" },
       select: { txNo: true },
     });
+    const refTxNo = inbounds.length === 1 ? inbounds[0].txNo : null;
 
     return NextResponse.json({
       barcodeId:    barcode.id,
@@ -52,7 +55,9 @@ export async function GET(request: NextRequest) {
       itemName:     item?.name     ?? "",
       category:     item?.category?.name ?? "",
       targetUnitId: barcode.targetUnitId ?? null,
-      refTxNo:      lastInbound?.txNo ?? null,
+      refTxNo,
+      inboundCount: inbounds.length,
+      ambiguous:    inbounds.length > 1,
     });
   } catch (error) {
     console.error("GET /api/barcodes/lookup error:", error);

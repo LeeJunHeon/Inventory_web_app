@@ -272,41 +272,47 @@ export async function POST(request: NextRequest) {
         where: { txNo: body.refTxNo },
         select: { qty: true, itemId: true, locationId: true, txType: true },
       });
-      if (refInbound) {
-        // 참조 입고 무결성 검증: 입고 타입 / 품목 / 위치 일치
-        if (refInbound.txType !== "입고" && refInbound.txType !== "충진 입고") {
-          return NextResponse.json(
-            { error: "참조 전표가 입고 건이 아닙니다." },
-            { status: 400 }
-          );
-        }
-        if (refInbound.itemId !== Number(body.itemId)) {
-          return NextResponse.json(
-            { error: "참조 입고 건의 품목과 출고 품목이 일치하지 않습니다." },
-            { status: 400 }
-          );
-        }
-        if (refInbound.locationId !== Number(body.locationId)) {
-          return NextResponse.json(
-            { error: "참조 입고 건의 위치와 출고 위치가 일치하지 않습니다." },
-            { status: 400 }
-          );
-        }
-        const consumed = await prisma.inventoryTx.aggregate({
-          where: {
-            refTxNo: body.refTxNo,
-            txType: { in: ["출고", "불출"] },
-          },
-          _sum: { qty: true },
-        });
-        const usedQty = consumed._sum.qty ?? 0;
-        const remainQty = refInbound.qty - usedQty;
-        if (Number(body.qty) > remainQty) {
-          return NextResponse.json(
-            { error: `수량 초과: 해당 입고건의 잔여수량은 ${remainQty}개입니다. (요청: ${body.qty}개)` },
-            { status: 400 }
-          );
-        }
+      // 존재하지 않는 참조 전표를 가리키면(예: ref_tx_no="7" vs 실제 tx_no="07")
+      // 아래 무결성 검증들이 조용히 스킵되므로 명시적으로 거부한다.
+      if (!refInbound) {
+        return NextResponse.json(
+          { error: `참조 입고 전표(${body.refTxNo})를 찾을 수 없습니다.` },
+          { status: 400 }
+        );
+      }
+      // 참조 입고 무결성 검증: 입고 타입 / 품목 / 위치 일치
+      if (refInbound.txType !== "입고" && refInbound.txType !== "충진 입고") {
+        return NextResponse.json(
+          { error: "참조 전표가 입고 건이 아닙니다." },
+          { status: 400 }
+        );
+      }
+      if (refInbound.itemId !== Number(body.itemId)) {
+        return NextResponse.json(
+          { error: "참조 입고 건의 품목과 출고 품목이 일치하지 않습니다." },
+          { status: 400 }
+        );
+      }
+      if (refInbound.locationId !== Number(body.locationId)) {
+        return NextResponse.json(
+          { error: "참조 입고 건의 위치와 출고 위치가 일치하지 않습니다." },
+          { status: 400 }
+        );
+      }
+      const consumed = await prisma.inventoryTx.aggregate({
+        where: {
+          refTxNo: body.refTxNo,
+          txType: { in: ["출고", "불출"] },
+        },
+        _sum: { qty: true },
+      });
+      const usedQty = consumed._sum.qty ?? 0;
+      const remainQty = refInbound.qty - usedQty;
+      if (Number(body.qty) > remainQty) {
+        return NextResponse.json(
+          { error: `수량 초과: 해당 입고건의 잔여수량은 ${remainQty}개입니다. (요청: ${body.qty}개)` },
+          { status: 400 }
+        );
       }
     }
 
@@ -332,19 +338,24 @@ export async function POST(request: NextRequest) {
         where:  { txNo: body.refTxNo },
         select: { unitPrice: true, amount: true, currency: true, exchangeRateAtEntry: true, qty: true, locationId: true },
       });
-      if (refTx && refTx.locationId !== Number(body.locationId)) {
+      // 위 무결성 검증 블록에서 이미 존재를 확인했지만, 방어적으로 한 번 더 거부한다.
+      if (!refTx) {
+        return NextResponse.json(
+          { error: `참조 입고 전표(${body.refTxNo})를 찾을 수 없습니다.` },
+          { status: 400 }
+        );
+      }
+      if (refTx.locationId !== Number(body.locationId)) {
         return NextResponse.json(
           { error: `입고 위치(${refTx.locationId === 1 ? "본사" : "공덕"})와 출고 위치가 다릅니다. 입고된 위치에서만 출고/불출이 가능합니다.` },
           { status: 400 }
         );
       }
-      if (refTx) {
-        resolvedCurrency = refTx.currency ?? "KRW";
-        resolvedExchangeRate = refTx.exchangeRateAtEntry != null ? Number(refTx.exchangeRateAtEntry) : null;
-        if (refTx.unitPrice != null) {
-          resolvedUnitPrice = Number(refTx.unitPrice);
-          resolvedAmount = Number(refTx.unitPrice) * Number(body.qty);
-        }
+      resolvedCurrency = refTx.currency ?? "KRW";
+      resolvedExchangeRate = refTx.exchangeRateAtEntry != null ? Number(refTx.exchangeRateAtEntry) : null;
+      if (refTx.unitPrice != null) {
+        resolvedUnitPrice = Number(refTx.unitPrice);
+        resolvedAmount = Number(refTx.unitPrice) * Number(body.qty);
       }
     }
 

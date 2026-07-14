@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, getSessionUserId, logActivity } from "@/lib/auth-helpers";
+import { barcodePrefixFor } from "@/lib/barcodePrefix";
 
 export const dynamic = "force-dynamic";
 
@@ -45,15 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 카테고리별 prefix 결정
-    const CATEGORY_PREFIX: Record<string, string> = {
-      "타겟": "T",
-      "웨이퍼": "W",
-      "가스": "G",
-      "기자재": "E",
-      "기자재/소모품": "E",   // ← 실제 DB 카테고리명 매핑
-      "ALD Canister": "C",
-    };
-    const prefix = CATEGORY_PREFIX[categoryName] ?? categoryName.charAt(0).toUpperCase();
+    const prefix = barcodePrefixFor(categoryName);
 
     const sessionUserId = await getSessionUserId();
 
