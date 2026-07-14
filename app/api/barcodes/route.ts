@@ -207,14 +207,7 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        // 3. barcode 생성 (C prefix)
-        const seq = await tx.barcodeSeq.upsert({
-          where:  { prefix: "C" },
-          update: { lastNo: { increment: 1 } },
-          create: { prefix: "C", lastNo: 1 },
-        });
-        const newCode = `C-${seq.lastNo}`;
-
+        // 3. barcode 생성 (바깥 스코프에서 이미 채번한 newCode 사용 — 이중 채번 방지)
         const barcode = await tx.barcode.create({
           data: {
             code:         newCode,
