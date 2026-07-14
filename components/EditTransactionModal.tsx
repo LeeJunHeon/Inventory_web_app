@@ -1,9 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, Printer } from "lucide-react";
 import { InventoryItem, TYPE_COLORS } from "@/lib/data";
 import { useT } from "@/lib/i18n";
 import InboundSelectModal, { InboundTx } from "@/components/InboundSelectModal";
+import BarcodeLabelModal from "@/components/BarcodeLabelModal";
 
 interface LocationOption { id: number; name: string; }
 
@@ -36,6 +37,7 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
   const [txReasons, setTxReasons]   = useState<{ id: number; name: string }[]>([]);
   const [saving, setSaving]       = useState(false);
   const [error, setError]         = useState("");
+  const [showLabelModal, setShowLabelModal] = useState(false);
 
   // currency 변경 시 환율 자동 조회
   useEffect(() => {
@@ -140,6 +142,23 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
             <label className="block text-sm font-semibold text-gray-700 mb-1">{t.tx.itemLabel}</label>
             <input readOnly value={`${item.name} (${item.code})`}
               className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
+          </div>
+
+          {/* 바코드 (읽기 전용) + 라벨 재출력 */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">{t.tx.barcodeReadonlyLabel}</label>
+            {item.barcode ? (
+              <div className="flex gap-2">
+                <input readOnly disabled value={item.barcode}
+                  className="flex-1 min-w-0 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-600 font-mono" />
+                <button type="button" onClick={() => setShowLabelModal(true)}
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap">
+                  <Printer size={15} />{t.tx.printLabel}
+                </button>
+              </div>
+            ) : (
+              <p className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-400">{t.tx.noBarcodeLinked}</p>
+            )}
           </div>
 
           {/* 구분 */}
@@ -351,6 +370,16 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
             setShowInboundSelect(false);
           }}
           onClose={() => setShowInboundSelect(false)}
+        />
+      )}
+      {showLabelModal && item.barcode && (
+        <BarcodeLabelModal
+          code={item.barcode}
+          itemCode={item.code}
+          itemName={item.name}
+          memo={item.barcodeMemo}
+          overlayZ="z-[80]"
+          onClose={() => setShowLabelModal(false)}
         />
       )}
     </div>

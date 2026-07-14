@@ -78,7 +78,7 @@ export const OPERATION_SCHEMAS: OperationSchema[] = [
   {
     id: "inventory_inbound",
     label: "입고",
-    description: "일반 품목(가스/소모품/웨이퍼 등)을 입고한다. 타겟·ALD Canister는 별도 작업.",
+    description: "일반 품목(가스/소모품 등)을 입고한다. 웨이퍼·타겟·ALD Canister는 별도 작업.",
     triggers: ["입고", "들어왔어", "재고 추가"],
     fields: [
       { name: "itemId",     label: "품목",   type: "id_ref", required: true,  lookup: "search_items" },
@@ -177,6 +177,32 @@ export const OPERATION_SCHEMAS: OperationSchema[] = [
     ],
     cardTitle: "타겟 입고 확인",
     cardShow: ["itemId", "locationId", "memo"],
+  },
+  {
+    id: "inventory_inbound_wafer",
+    label: "웨이퍼 입고",
+    description: "웨이퍼를 입고한다. 입고 로트 바코드(W-xxx)는 시스템이 자동 생성한다.",
+    triggers: ["웨이퍼 입고", "웨이퍼 들어왔어"],
+    appliesWhen: { categoryName: "웨이퍼" },
+    fields: [
+      { name: "itemId",     label: "품목(웨이퍼)", type: "id_ref", required: true,  lookup: "search_items" },
+      { name: "qty",        label: "수량",         type: "number", required: true,  validation: "1 이상 정수 (웨이퍼는 여러 장 입고 가능)" },
+      { name: "locationId", label: "위치",         type: "id_ref", required: true,  lookup: "list_locations" },
+      { name: "partnerId",  label: "거래처",       type: "id_ref", required: false, lookup: "search_partners" },
+      { name: "currency",   label: "통화",         type: "enum",   required: false, enumValues: ["KRW", "USD"],
+        validation: "KRW 또는 USD. 사용자가 달러라고 하면 USD, 원이라고 하거나 통화를 말하지 않으면 KRW(기본)." },
+      { name: "unitPrice",  label: "단가",         type: "number", required: false },
+      { name: "memo",       label: "비고",         type: "text",   required: false },
+      { name: "barcodeId",  label: "바코드",       type: "barcode", required: true, auto: "system_generate" },
+      { name: "txDate",     label: "입고일",       type: "date",   required: true, auto: "today" },
+    ],
+    steps: [
+      { api: "POST /api/internal/barcodes", body: ["itemId"], returns: "barcodeId" },
+      { api: "POST /api/internal/inventory",
+        body: ["txType=입고", "itemId", "qty", "locationId", "unitPrice", "currency", "partnerId", "barcodeId", "memo", "txDate"] },
+    ],
+    cardTitle: "웨이퍼 입고 확인",
+    cardShow: ["itemId", "qty", "locationId", "unitPrice", "currency", "partnerId", "memo"],
   },
   {
     id: "target_measure",

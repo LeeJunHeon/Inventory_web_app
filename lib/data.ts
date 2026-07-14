@@ -16,6 +16,7 @@ export interface InventoryItem {
   handler: string;
   memo: string;
   barcode: string;
+  barcodeMemo: string | null;
   location: string;
   locationId: number;
   refTxNo: string | null;

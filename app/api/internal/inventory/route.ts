@@ -222,57 +222,56 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 타겟 바코드 중복 입고 방지
+    // 바코드 중복 입고 방지 (전 카테고리, 바코드=입고 로트 1:1)
     if (body.txType === "입고" && body.barcodeId) {
       const barcode = await prisma.barcode.findUnique({
         where: { id: Number(body.barcodeId) },
-        include: { item: { include: { category: true } } },
+        select: { code: true },
       });
-      const isTargetOrCanister =
-        barcode?.item?.category?.name === "타겟" ||
-        barcode?.item?.category?.name === "ALD Canister";
-      if (isTargetOrCanister) {
+      if (barcode) {
         const existingInbound = await prisma.inventoryTx.findFirst({
           where: { barcodeId: Number(body.barcodeId), txType: "입고" },
+          select: { txNo: true },
         });
         if (existingInbound) {
           return NextResponse.json(
-            { error: `해당 바코드(${barcode.code})는 이미 입고된 이력이 있습니다. 바코드당 1회만 입고 가능합니다.` },
+            { error: `해당 바코드(${barcode.code})는 이미 입고 전표 ${existingInbound.txNo}에 사용되었습니다. 새 입고에는 [생성] 버튼으로 새 바코드를 만드세요.` },
             { status: 400 }
           );
         }
       }
     }
 
-    // 타겟 입고 시 바코드 필수 + targetUnitId 연결 검증
+    // 입고 시 바코드/타겟유닛 필수 검증 (카테고리별)
+    // 바코드 필수: 타겟 / ALD Canister / 웨이퍼 (입고 로트 1:1)
+    // targetUnit 연결 필수: 타겟 / ALD Canister 전용 (웨이퍼는 targetUnitId=null이므로 제외)
     if (body.txType === "입고") {
       const item = await prisma.item.findUnique({
         where: { id: Number(body.itemId) },
         include: { category: true },
       });
-      const isTargetLike =
-        item?.category?.name === "타겟" ||
-        item?.category?.name === "ALD Canister";
-      if (isTargetLike) {
-        // 바코드 없이 입고 시도 차단
-        if (!body.barcodeId) {
+      const catName = item?.category?.name;
+      const needsBarcode    = catName === "타겟" || catName === "ALD Canister" || catName === "웨이퍼";
+      const needsTargetUnit = catName === "타겟" || catName === "ALD Canister";
+
+      // 바코드 없이 입고 시도 차단
+      if (needsBarcode && !body.barcodeId) {
+        return NextResponse.json(
+          { error: `${catName} 품목은 반드시 바코드를 생성/스캔하여 입고해야 합니다.` },
+          { status: 400 }
+        );
+      }
+      // 바코드는 있지만 targetUnitId가 없는 경우 (타겟/ALD 전용, 웨이퍼는 여기 안 들어옴)
+      if (needsTargetUnit && !body.targetUnitId) {
+        const barcode = await prisma.barcode.findUnique({
+          where: { id: Number(body.barcodeId) },
+          select: { targetUnitId: true, code: true },
+        });
+        if (!barcode?.targetUnitId) {
           return NextResponse.json(
-            { error: `${item!.category!.name} 품목은 반드시 바코드를 스캔하여 입고해야 합니다.` },
+            { error: `바코드(${barcode?.code})에 연결된 정보가 없습니다. 바코드를 다시 생성해주세요.` },
             { status: 400 }
           );
-        }
-        // 바코드는 있지만 targetUnitId가 없는 경우
-        if (!body.targetUnitId) {
-          const barcode = await prisma.barcode.findUnique({
-            where: { id: Number(body.barcodeId) },
-            select: { targetUnitId: true, code: true },
-          });
-          if (!barcode?.targetUnitId) {
-            return NextResponse.json(
-              { error: `바코드(${barcode?.code})에 연결된 정보가 없습니다. 바코드를 다시 생성해주세요.` },
-              { status: 400 }
-            );
-          }
         }
       }
     }

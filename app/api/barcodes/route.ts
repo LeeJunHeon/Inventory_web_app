@@ -304,17 +304,52 @@ export async function DELETE(request: NextRequest) {
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id 파라미터 필요" }, { status: 400 });
 
-    const barcode = await prisma.barcode.findUnique({ where: { id: Number(id) } });
+    const barcode = await prisma.barcode.findUnique({
+      where: { id: Number(id) },
+      select: { id: true, targetUnitId: true },
+    });
     if (!barcode) return NextResponse.json({ error: "바코드를 찾을 수 없습니다." }, { status: 404 });
 
-    // 연결된 재고 트랜잭션에서 참조 해제
+    const sessionUserId = await getSessionUserId();
+
+    // 연결된 target_unit이 있으면 고아 정리 판단:
+    // 그 target_unit에 target_log·inventory_tx 이력이 전혀 없으면(생성 취소 등)
+    // barcode + ald_canister_spec + target_unit을 원자적으로 함께 삭제한다.
+    if (barcode.targetUnitId) {
+      const tuId = barcode.targetUnitId;
+      const [logCount, txCount] = await Promise.all([
+        prisma.targetLog.count({ where: { targetUnitId: tuId } }),
+        prisma.inventoryTx.count({ where: { targetUnitId: tuId } }),
+      ]);
+
+      if (logCount === 0 && txCount === 0) {
+        await prisma.$transaction(async (tx) => {
+          // 바코드 참조 해제 후 삭제
+          await tx.inventoryTx.updateMany({
+            where: { barcodeId: Number(id) },
+            data:  { barcodeId: null },
+          });
+          await tx.barcode.delete({ where: { id: Number(id) } });
+          // ald_canister_spec은 있을 때만 삭제
+          await tx.aldCanisterSpec.deleteMany({ where: { targetUnitId: tuId } });
+          await tx.targetUnit.delete({ where: { id: tuId } });
+        });
+
+        await logActivity(
+          sessionUserId, "DELETE", "barcode", Number(id),
+          `연결 target_unit(${tuId}) 이력 없어 함께 정리 삭제`
+        );
+        return NextResponse.json({ message: "바코드가 삭제되었습니다. (연결 정보 정리됨)" });
+      }
+    }
+
+    // 이력이 있거나 target_unit 미연결 → 바코드만 삭제 (이력 보존)
     await prisma.inventoryTx.updateMany({
       where: { barcodeId: Number(id) },
       data:  { barcodeId: null },
     });
     await prisma.barcode.delete({ where: { id: Number(id) } });
 
-    const sessionUserId = await getSessionUserId();
     await logActivity(sessionUserId, "DELETE", "barcode", Number(id));
 
     return NextResponse.json({ message: "바코드가 삭제되었습니다." });

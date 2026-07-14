@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { X, List, Loader2, Plus, Camera } from "lucide-react";
+import { X, List, Loader2, Plus, Camera, Printer } from "lucide-react";
 import { TYPE_COLORS, CATEGORY_COLORS } from "@/lib/data";
 import InboundSelectModal, { type InboundTx } from "./InboundSelectModal";
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
+import BarcodeLabelModal from "./BarcodeLabelModal";
 import { useT } from "@/lib/i18n";
 import DatePicker           from "./DatePicker";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
@@ -131,6 +132,10 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const [showInboundSelect, setShowInboundSelect] = useState(false);
   const [selectedInbound, setSelectedInbound] = useState<SelectedInbound | null>(null);
 
+  // 바코드 생성 직후 라벨 출력 안내
+  const [createdBarcode, setCreatedBarcode] = useState<{ code: string; itemCode: string; itemName: string; memo: string | null } | null>(null);
+  const [showLabelModal, setShowLabelModal] = useState(false);
+
   // 위치별 재고 수량
   const [stockMap, setStockMap] = useState<Map<number, number>>(new Map());
 
@@ -195,6 +200,8 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       setBarcodeCreateMaterial("");
       setBarcodeCreating(false);
       setBarcodeCreateError("");
+      setCreatedBarcode(null);
+      setShowLabelModal(false);
     }
   }, [isOpen]);
 
@@ -283,6 +290,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
     setError("");
     setSelectedInbound(null);
     setRefTxNo(null);
+    setCreatedBarcode(null);
     setIsBarcodeLooking(true);
     try {
       if (type === "출고" || type === "불출") {
@@ -403,12 +411,18 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       // 생성된 바코드를 자동으로 입력란에 채우고 조회
       setBarcodeInput(data.code);
       justCreatedBarcodeId.current = data.id;
+      // 라벨 안내 배너용 정보 (조회로 상태가 덮이기 전 메모 캡처)
+      const createdMemo = barcodeCreateMaterial || null;
+      const createdItemCode = itemCode;
+      const createdItemName = itemName;
       setAldMaterialName("");
       setAldTareWeight("");
       setAldInitialGross("");
       setShowBarcodeCreate(false);
       setBarcodeCreateMaterial("");
       await handleBarcodeLookup(data.code);
+      // handleBarcodeLookup이 setCreatedBarcode(null)로 초기화하므로 조회 이후에 설정
+      setCreatedBarcode({ code: data.code, itemCode: createdItemCode, itemName: createdItemName, memo: createdMemo });
     } catch { setBarcodeCreateError(t.common.networkError); }
     finally { setBarcodeCreating(false); }
   };
@@ -446,6 +460,12 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         setError("충진 후 Gross Weight를 입력해야 합니다.");
         return;
       }
+    }
+    // 웨이퍼 입고: 바코드(입고 로트) 필수
+    if (category === "웨이퍼" && type === "입고" && !barcodeId) {
+      setError(t.tx.waferBarcodeRequired);
+      barcodeInputRef.current?.focus();
+      return;
     }
     // 출고/불출 시 바코드 필수 검증
     if ((type === "출고" || type === "불출") && !barcodeId) {
@@ -530,6 +550,17 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       onSelect={handleInboundSelect}
       onClose={() => setShowInboundSelect(false)}
     />
+    {/* 바코드 생성 직후 라벨 출력 모달 (바코드 선택기 z-[60]보다 위) */}
+    {showLabelModal && createdBarcode && (
+      <BarcodeLabelModal
+        code={createdBarcode.code}
+        itemCode={createdBarcode.itemCode}
+        itemName={createdBarcode.itemName}
+        memo={createdBarcode.memo}
+        overlayZ="z-[80]"
+        onClose={() => setShowLabelModal(false)}
+      />
+    )}
     {/* 바코드 선택기 팝업 */}
     {showBarcodeSelector && (
       <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
@@ -629,6 +660,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                   setBarcodeCreateMaterial("");
                   setBarcodeCreateError("");
                   setShowCameraScanner(false);
+                  setCreatedBarcode(null); setShowLabelModal(false);
                 }}
                   className={`flex-1 py-2 sm:py-2.5 rounded-xl text-sm font-semibold transition-all ${
                     type === tp
@@ -720,6 +752,16 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
               />
             )}
             <p className="mt-1.5 text-xs text-gray-400">{t.tx.barcodeHint}</p>
+            {/* 바코드 생성 직후 라벨 출력 안내 배너 */}
+            {createdBarcode && (
+              <div className="mt-2 flex items-center justify-between gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
+                <span className="text-xs font-medium text-emerald-700">{t.tx.barcodeCreatedBanner(createdBarcode.code)}</span>
+                <button type="button" onClick={() => setShowLabelModal(true)}
+                  className="flex items-center gap-1 shrink-0 text-xs px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition-colors">
+                  <Printer size={13} />{t.tx.printLabel}
+                </button>
+              </div>
+            )}
             {/* 타겟 ID 연결 안내 */}
             {targetUnitId && (
               <span className="inline-flex items-center mt-1.5 gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700">
@@ -978,6 +1020,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                             // 직접 선택 시 바코드/타겟/입고참조 해제
                             setBarcodeInput("");
                             setBarcodeId(null); setTargetUnitId(null); setRefTxNo(null); setSelectedInbound(null);
+                            setCreatedBarcode(null); setShowLabelModal(false);
                             setShowItemSelector(false);
                             // 출고/불출: 입고 참조 선택 자동 오픈
                             if (type === "출고" || type === "불출") { inboundModalBarcodeId.current = barcodeId; setShowInboundSelect(true); }
