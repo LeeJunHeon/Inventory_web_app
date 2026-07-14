@@ -106,9 +106,9 @@ export const OPERATION_SCHEMAS: OperationSchema[] = [
     fields: [
       { name: "itemId", label: "품목", type: "id_ref", required: false, lookup: "search_items" },
       { name: "barcodeId", label: "바코드", type: "barcode", required: false, lookup: "lookup_barcode",
-        validation: "바코드가 있는 품목(웨이퍼/타겟/캐니스터)은 사용자가 바코드(예: C-30, T-35)를 직접 말하거나 품목명으로 목록을 보고 고른다. 바코드를 lookup_barcode로 조회하면 itemId와 refTxNo를 함께 반환하므로 그 값을 쓴다. 가스/소모품 등 바코드 없는 품목은 비워둔다." },
+        validation: "바코드가 있는 품목(웨이퍼/타겟/캐니스터)은 사용자가 바코드(예: C-30, T-35)를 직접 말하거나 품목명으로 목록을 보고 고른다. 바코드를 lookup_barcode로 조회하면 itemId와 refTxNo를 함께 반환하므로 그 값을 쓴다. 단 lookup_barcode 응답의 ambiguous가 true이면 refTxNo가 null이다(이 바코드에 입고건이 여러 개 연결됨). 이 경우 절대 임의로 정하지 말고, list_inbound_lots로 잔여 있는 입고건을 보여주고 사용자에게 어느 입고분에서 출고할지 반드시 물어본다. 가스/소모품 등 바코드 없는 품목은 비워둔다." },
       { name: "refTxNo", label: "출고할 입고분", type: "text", required: true, lookup: "list_inbound_lots",
-        validation: "바코드 품목이면 lookup_barcode가 반환한 refTxNo를 그대로 쓴다(다시 묻지 않는다). 바코드 없는 품목이면 list_inbound_lots로 잔여있는 입고건을 보여주고 사용자가 고른 전표번호(txNo)를 쓴다." },
+        validation: "바코드 품목이면 lookup_barcode가 반환한 refTxNo를 그대로 쓴다. 단 lookup_barcode 응답의 ambiguous가 true이면 refTxNo가 null이다. 이 경우 절대 임의로 정하지 말고, list_inbound_lots로 잔여 있는 입고건을 보여주고 사용자에게 어느 입고분에서 출고할지 반드시 물어본다. 바코드 없는 품목이면 list_inbound_lots로 잔여있는 입고건을 보여주고 사용자가 고른 전표번호(txNo)를 쓴다." },
       { name: "qty", label: "수량", type: "number", required: true,
         validation: "1 이상, 고른 입고분 잔여수량 이내. 타겟·캐니스터는 항상 1." },
       { name: "locationId", label: "위치", type: "id_ref", required: false, lookup: "list_locations",

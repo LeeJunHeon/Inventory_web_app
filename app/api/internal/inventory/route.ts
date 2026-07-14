@@ -112,24 +112,47 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 출고/불출 + 바코드가 있으면: 그 바코드의 입고 전표를 직접 찾아 refTxNo로 강제한다.
-    // 바코드(개체)↔입고전표는 1:1이므로, gemma가 보낸 refTxNo(품목 기준으로 잘못 고른 값일 수 있음)를
-    // 무시하고 바코드 기준의 정확한 입고전표로 덮어쓴다. (타겟/캐니스터 불출 시 엉뚱한 입고분 선택 방지)
+    // 출고/불출 + 바코드가 있으면: 그 바코드에 연결된 입고 전표를 확인해 refTxNo를 결정한다.
+    // 대부분의 바코드(타겟/ALD/신규 웨이퍼)는 입고전표와 1:1이지만, 레거시 데이터에는
+    // 바코드 1개에 입고건이 여러 개(최대 6개) 물려 있는 경우가 있다. 이때 findFirst로
+    // 최신 입고건을 골라 덮어쓰면 호출자가 명시적으로 고른 refTxNo가 조용히 뭉개진다.
+    // → 입고건이 정확히 1건일 때만 덮어쓰고, 2건 이상이면 호출자가 보낸 refTxNo를 존중하되
+    //   그 값이 실제로 이 바코드에 연결된 입고건인지 검증한다.
     if (
       (body.txType === "출고" || body.txType === "불출") &&
       body.barcodeId !== null &&
       body.barcodeId !== undefined &&
       body.barcodeId !== ""
     ) {
-      const barcodeInbound = await prisma.inventoryTx.findFirst({
+      const barcodeInbounds = await prisma.inventoryTx.findMany({
         where: { barcodeId: Number(body.barcodeId), txType: "입고" },
         orderBy: { id: "desc" },
         select: { txNo: true },
       });
-      if (barcodeInbound?.txNo) {
-        // 바코드의 입고 전표를 refTxNo로 강제 (gemma가 보낸 값 무시)
-        body.refTxNo = barcodeInbound.txNo;
+
+      if (barcodeInbounds.length === 1) {
+        // 1:1 (타겟/ALD/신규 웨이퍼 바코드) → 바코드 기준으로 강제 (기존 동작 유지)
+        body.refTxNo = barcodeInbounds[0].txNo!;
+      } else if (barcodeInbounds.length > 1) {
+        // 레거시 다중 연결 → 자동 추측 금지. 호출자가 보낸 refTxNo를 존중하되,
+        // 그 refTxNo가 실제로 이 바코드에 연결된 입고건인지 검증한다.
+        const valid = barcodeInbounds.some(t => t.txNo === body.refTxNo);
+        if (!body.refTxNo) {
+          return NextResponse.json({
+            error: `이 바코드에는 입고건이 ${barcodeInbounds.length}개 연결되어 있습니다. ` +
+                   `어느 입고분에서 출고할지 refTxNo를 지정해야 합니다. ` +
+                   `(후보: ${barcodeInbounds.map(t => t.txNo).join(", ")})`,
+          }, { status: 400 });
+        }
+        if (!valid) {
+          return NextResponse.json({
+            error: `refTxNo(${body.refTxNo})가 이 바코드에 연결된 입고건이 아닙니다. ` +
+                   `(후보: ${barcodeInbounds.map(t => t.txNo).join(", ")})`,
+          }, { status: 400 });
+        }
+        // valid → body.refTxNo 그대로 사용 (덮어쓰지 않음)
       }
+      // length === 0 → 아무것도 안 함. 아래 기존 검증 로직이 처리
     }
 
     if (!body.txType || !VALID_TYPES.includes(body.txType)) {
