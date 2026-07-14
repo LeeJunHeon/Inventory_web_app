@@ -105,6 +105,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Tare Weight는 필수입니다." }, { status: 400 });
     }
 
+    // itemId 필수: 품목 연결 없는 고아 캐니스터 생성 방지
+    if (!body.itemId || isNaN(Number(body.itemId))) {
+      return NextResponse.json({ error: "itemId는 필수입니다." }, { status: 400 });
+    }
+    const item = await prisma.item.findUnique({
+      where: { id: Number(body.itemId) },
+      include: { category: true },
+    });
+    if (!item) return NextResponse.json({ error: "품목을 찾을 수 없습니다." }, { status: 404 });
+    if (item.category.name !== "ALD Canister") {
+      return NextResponse.json({ error: "ALD Canister 품목만 등록할 수 있습니다." }, { status: 400 });
+    }
+
     // C prefix 바코드 순번 채번
     const seq = await prisma.barcodeSeq.upsert({
       where:  { prefix: "C" },
@@ -117,7 +130,7 @@ export async function POST(request: NextRequest) {
       // 1. target_unit 생성 (category = 'ald')
       const targetUnit = await tx.targetUnit.create({
         data: {
-          itemId:   body.itemId ? Number(body.itemId) : null,
+          itemId:   item.id,
           status:   "미사용",
           category: "ald",
           note:     memo || null,
@@ -138,6 +151,7 @@ export async function POST(request: NextRequest) {
       const barcode = await tx.barcode.create({
         data: {
           code:         newCode,
+          itemId:       item.id,
           targetUnitId: targetUnit.id,
           isActive:     "Y",
           memo:         memo || null,
