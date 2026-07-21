@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 
+// 품목코드에서 타겟 스펙 파생 (파싱 실패 시 안전 기본값)
+function parseTargetSpecFromCode(code: string) {
+  const parts = code.split("-");
+  const diaRaw = parseInt(parts[1], 10);
+  const thkRaw = parts[3] ? Number(parts[3]) / 1000 : NaN;
+  return {
+    diameterInch: Number.isNaN(diaRaw) ? 0 : diaRaw,       // 사각/비표준 타겟 → 0
+    materialCode: parts[2] || "UNKNOWN",
+    thicknessInch: Number.isNaN(thkRaw) ? null : thkRaw,   // '3M' 등 파싱 불가 → null
+  };
+}
+
 // GET /api/items
 export async function GET(request: NextRequest) {
   try {
@@ -92,20 +104,15 @@ export async function POST(request: NextRequest) {
     });
 
     if (item.category.name === "타겟") {
-      const parts = item.code.split("-");                 // 예: T-3-ITO-0125
-      const diameterInch  = parseInt(parts[1], 10);
-      const materialCode  = parts[2];
-      const thicknessInch = parts[3] ? Number(parts[3]) / 1000 : null;
-      if (materialCode && !Number.isNaN(diameterInch)) {
-        await prisma.targetSpec.create({
-          data: {
-            itemId: item.id, materialCode, diameterInch, thicknessInch,
-            purity:          purity == null || purity === "" ? null : Number(purity),
-            hasCopper:       hasCopper || null,
-            copperThickness: copperThickness == null || copperThickness === "" ? null : Number(copperThickness),
-          },
-        });
-      }
+      const { diameterInch, materialCode, thicknessInch } = parseTargetSpecFromCode(item.code);
+      await prisma.targetSpec.create({
+        data: {
+          itemId: item.id, materialCode, diameterInch, thicknessInch,
+          purity:          purity == null || purity === "" ? null : Number(purity),
+          hasCopper:       hasCopper || null,
+          copperThickness: copperThickness == null || copperThickness === "" ? null : Number(copperThickness),
+        },
+      });
     }
 
     const sessionUserId = await getSessionUserId();
@@ -156,10 +163,7 @@ export async function PUT(request: NextRequest) {
 
     if (item.category.name === "타겟" &&
         (purity !== undefined || hasCopper !== undefined || copperThickness !== undefined)) {
-      const parts = item.code.split("-");
-      const diameterInch  = parseInt(parts[1], 10);
-      const materialCode  = parts[2];
-      const thicknessInch = parts[3] ? Number(parts[3]) / 1000 : null;
+      const { diameterInch, materialCode, thicknessInch } = parseTargetSpecFromCode(item.code);
       await prisma.targetSpec.upsert({
         where: { itemId: item.id },
         update: {
