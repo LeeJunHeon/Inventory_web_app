@@ -121,8 +121,8 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
           <div>
             <h2 className="text-lg font-bold text-gray-900">{t.tx.editRecord}</h2>
             {item.createdAt && (
@@ -136,7 +136,7 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
           </button>
         </div>
 
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-4 flex-1 overflow-y-auto">
           {/* 품목명 (읽기 전용) */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">{t.tx.itemLabel}</label>
@@ -347,7 +347,7 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
           {error && <p className="text-sm text-red-500">{error}</p>}
         </div>
 
-        <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+        <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl shrink-0">
           <button onClick={onClose}
             className="px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50">
             {t.common.cancel}
