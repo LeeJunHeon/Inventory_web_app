@@ -157,7 +157,10 @@ export default function InventoryPage({
     const filename = `${t.inventory.csvFilename}_${dateStr}.csv`;
     exportCSV(t.inventory.csvHeaders, items.map(i => [
       i.txNo || "", i.id, i.date, i.type, i.category, i.code, i.name,
-      i.qty, i.price, i.amount, i.partner, i.userName ?? "", i.barcode, i.memo,
+      i.qty, i.price, i.amount, i.currency, i.exchangeRateAtEntry ?? "",
+      i.location, i.partner, i.txReason ?? "", i.userName ?? "",
+      i.barcode, i.barcodeMemo ?? "", i.refTxNo ?? "", i.itemSpec ?? "",
+      i.memo, i.createdAt ?? "",
     ]), filename);
   };
 
@@ -291,6 +294,7 @@ export default function InventoryPage({
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colItem}</th>
                     <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("qty")}><div className="flex items-center justify-end gap-1">{t.inventory.colQty} <SortIcon field="qty" /></div></th>
                     {!isEmployee && <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("amount")}><div className="flex items-center justify-end gap-1">{t.inventory.colAmount} <SortIcon field="amount" /></div></th>}
+                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colLocation}</th>
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colPartner}</th>
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colRegistrant}</th>
                     <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colAction}</th>
@@ -298,7 +302,7 @@ export default function InventoryPage({
                 </thead>
                 <tbody>
                   {items.length === 0 ? (
-                    <tr><td colSpan={12} className="px-5 py-12 text-center text-sm text-gray-400">{t.common.noData}</td></tr>
+                    <tr><td colSpan={isEmployee ? 12 : 13} className="px-5 py-12 text-center text-sm text-gray-400">{t.common.noData}</td></tr>
                   ) : items.map((item) => (
                     <tr key={item.id}
                       className="border-b border-gray-50 hover:bg-blue-50/30 transition-colors"
@@ -343,6 +347,7 @@ export default function InventoryPage({
                           formatPrice(item.amount)
                         )}
                       </td>}
+                      <td className="px-5 py-3.5 text-sm text-gray-600 whitespace-nowrap">{item.location || "-"}</td>
                       <td className="px-5 py-3.5 text-sm text-gray-600">{item.partner}</td>
                       <td className="px-5 py-3.5 text-sm text-gray-500">{item.userName ?? "-"}</td>
                       <td className="px-5 py-3.5">
@@ -440,6 +445,7 @@ export default function InventoryPage({
                     <div className="flex items-center gap-4">
                       <div><p className="text-[10px] text-gray-400">{t.inventory.colQty}</p><p className="text-sm font-bold text-gray-900">{formatQty(item.qty)}</p></div>
                       {!isEmployee && <div><p className="text-[10px] text-gray-400">{t.inventory.colAmount}</p><p className="text-sm text-gray-600">{formatPrice(item.amount)}</p></div>}
+                      <div><p className="text-[10px] text-gray-400">{t.inventory.colLocation}</p><p className="text-sm text-gray-600 whitespace-nowrap">{item.location || "-"}</p></div>
                       <div><p className="text-[10px] text-gray-400">{t.inventory.colPartner}</p><p className="text-sm text-gray-600 max-w-[120px] truncate">{item.partner || "-"}</p></div>
                       {item.userName && <div><p className="text-[10px] text-gray-400">{t.inventory.colRegistrant}</p><p className="text-sm text-gray-500 max-w-[80px] truncate">{item.userName}</p></div>}
                     </div>
@@ -453,6 +459,7 @@ export default function InventoryPage({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div><p className="text-[10px] text-gray-400">{t.inventory.colQty}</p><p className="text-sm font-bold text-gray-900">{formatQty(item.qty)}</p></div>
+                        <div><p className="text-[10px] text-gray-400">{t.inventory.colLocation}</p><p className="text-sm text-gray-600 whitespace-nowrap">{item.location || "-"}</p></div>
                         <div><p className="text-[10px] text-gray-400">{t.inventory.colPartner}</p><p className="text-sm text-gray-600 max-w-[120px] truncate">{item.partner || "-"}</p></div>
                         {item.userName && <div><p className="text-[10px] text-gray-400">{t.inventory.colRegistrant}</p><p className="text-sm text-gray-500 max-w-[80px] truncate">{item.userName}</p></div>}
                       </div>

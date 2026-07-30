@@ -24,6 +24,7 @@ export interface InventoryItem {
   barcodeId: number | null;
   partnerId: number | null;
   txReasonId: number | null;
+  txReason: string;
   userName: string | null;
   itemSpec: string | null;
   createdAt: string | null;

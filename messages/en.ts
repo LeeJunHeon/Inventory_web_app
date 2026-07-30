@@ -101,6 +101,7 @@ export const en: Messages = {
     colItem: "Item",
     colQty: "Qty",
     colAmount: "Amount",
+    colLocation: "Location",
     colPartner: "Partner",
     colRegistrant: "By",
     colAction: "Action",
@@ -112,7 +113,7 @@ export const en: Messages = {
     perPage: (n: number) => `${n} / page`,
     sum: "Sum",
     csvFilename: "inventory",
-    csvHeaders: ["Tx No.","ID","Date","Type","Category","Item Code","Item Name","Qty","Unit Price","Amount","Partner","Registrant","Barcode","Memo"],
+    csvHeaders: ["Tx No.","ID","Date","Type","Category","Item Code","Item Name","Qty","Unit Price","Amount","Currency","Entry Rate","Location","Partner","Reason","Registrant","Barcode","Barcode Memo","Ref Tx No.","Item Spec","Memo","Created At"],
   },
   period: {
     subtitle: "Search inbound/outbound records by date range",

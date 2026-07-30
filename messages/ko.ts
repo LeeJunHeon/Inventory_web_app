@@ -99,6 +99,7 @@ export const ko = {
     colItem: "품목",
     colQty: "수량",
     colAmount: "금액",
+    colLocation: "위치",
     colPartner: "거래처",
     colRegistrant: "등록자",
     colAction: "작업",
@@ -110,7 +111,7 @@ export const ko = {
     perPage: (n: number) => `${n}개씩`,
     sum: "합계",
     csvFilename: "재고내역",
-    csvHeaders: ["전표번호","ID","날짜","구분","품목군","품목코드","품목명","수량","단가","금액","거래처","등록자","바코드","메모"],
+    csvHeaders: ["전표번호","ID","날짜","구분","품목군","품목코드","품목명","수량","단가","금액","통화","등록시환율","위치","거래처","사유","등록자","바코드","바코드메모","참조전표","품목스펙","메모","등록시각"],
   },
   period: {
     subtitle: "기간을 지정하여 입출고 내역을 조회합니다",
