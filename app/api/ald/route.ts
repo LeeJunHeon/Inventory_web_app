@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -89,91 +88,5 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/ald
-// Canister 신규 생성: target_unit + ald_canister_spec + barcode(C-xxx) 동시 생성
-export async function POST(request: NextRequest) {
-  const authResult = await requireAuth();
-  if ("error" in authResult) {
-    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
-  }
-
-  try {
-    const body = await request.json();
-    const { materialName, tareWeight, initialGrossWeight, memo } = body;
-
-    if (!tareWeight) {
-      return NextResponse.json({ error: "Tare Weight는 필수입니다." }, { status: 400 });
-    }
-
-    // itemId 필수: 품목 연결 없는 고아 캐니스터 생성 방지
-    if (!body.itemId || isNaN(Number(body.itemId))) {
-      return NextResponse.json({ error: "itemId는 필수입니다." }, { status: 400 });
-    }
-    const item = await prisma.item.findUnique({
-      where: { id: Number(body.itemId) },
-      include: { category: true },
-    });
-    if (!item) return NextResponse.json({ error: "품목을 찾을 수 없습니다." }, { status: 404 });
-    if (item.category.name !== "ALD Canister") {
-      return NextResponse.json({ error: "ALD Canister 품목만 등록할 수 있습니다." }, { status: 400 });
-    }
-
-    // C prefix 바코드 순번 채번
-    const seq = await prisma.barcodeSeq.upsert({
-      where:  { prefix: "C" },
-      update: { lastNo: { increment: 1 } },
-      create: { prefix: "C", lastNo: 1 },
-    });
-    const newCode = `C-${seq.lastNo}`;
-
-    const result = await prisma.$transaction(async (tx) => {
-      // 1. target_unit 생성 (category = 'ald')
-      const targetUnit = await tx.targetUnit.create({
-        data: {
-          itemId:   item.id,
-          status:   "미사용",
-          category: "ald",
-          note:     memo || null,
-        },
-      });
-
-      // 2. ald_canister_spec 생성
-      await tx.aldCanisterSpec.create({
-        data: {
-          targetUnitId:       targetUnit.id,
-          tareWeight:         Number(tareWeight),
-          materialName:       materialName || null,
-          initialGrossWeight: initialGrossWeight ? Number(initialGrossWeight) : null,
-        },
-      });
-
-      // 3. barcode 생성
-      const barcode = await tx.barcode.create({
-        data: {
-          code:         newCode,
-          itemId:       item.id,
-          targetUnitId: targetUnit.id,
-          isActive:     "Y",
-          memo:         memo || null,
-        },
-      });
-
-      return { targetUnit, barcode };
-    });
-
-    const sessionUserId = await getSessionUserId();
-    await logActivity(sessionUserId, "CREATE", "target_unit", result.targetUnit.id,
-      `ALD Canister 생성: ${newCode} / 물질: ${materialName || "-"}`);
-
-    return NextResponse.json({
-      id:           result.targetUnit.id,
-      barcodeCode:  newCode,
-      materialName: materialName || "",
-      status:       "미사용",
-      tareWeight:   Number(tareWeight),
-    }, { status: 201 });
-  } catch (error) {
-    console.error("POST /api/ald error:", error);
-    return NextResponse.json({ error: "Canister 생성 실패", detail: String(error) }, { status: 500 });
-  }
-}
+// Canister 신규 생성은 재고관리 신규입고 + /api/barcodes 경로로 일원화되어 있다.
+// (입고 tx 없이 유닛만 만들던 POST 핸들러는 원장 누락 경로여서 제거)
