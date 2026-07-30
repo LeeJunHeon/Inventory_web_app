@@ -19,6 +19,8 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
 
   const [date, setDate]           = useState(item.date.replace(/\./g, "-"));
   const [type, setType]           = useState(item.type);
+  // 사용중/폐기는 참조 체인의 기준점이라 구분 변경이 서버에서 차단된다
+  const isTypeLocked = item.type === "사용중" || item.type === "폐기";
   const [quantity, setQuantity]   = useState(String(item.qty));
   const [unitPrice, setUnitPrice] = useState(String(item.price));
   const [currency, setCurrency]   = useState(item.currency ?? "KRW");
@@ -166,14 +168,19 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
             <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tx.typeLabel}</label>
             <div className="flex gap-2">
               {(["입고", "출고", "불출"] as const).map((tp) => (
-                <button key={tp} onClick={() => setType(tp)}
-                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                <button key={tp} onClick={() => setType(tp)} disabled={isTypeLocked}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
                     type === tp
                       ? `${TYPE_COLORS[tp].bg} ${TYPE_COLORS[tp].text} ${TYPE_COLORS[tp].border} border-2`
                       : "bg-gray-50 text-gray-500 border-2 border-transparent"
                   }`}>{tp}</button>
               ))}
             </div>
+            {isTypeLocked && (
+              <p className="mt-1.5 text-xs text-gray-500">
+                {item.type} 건은 구분을 변경할 수 없습니다. 삭제 후 새로 등록해 주세요.
+              </p>
+            )}
           </div>
 
           {/* 날짜 */}

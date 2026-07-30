@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { LOT_CONSUME_TYPES } from "@/lib/txTypes";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/inventory/unlinked-inbounds?itemId={id}
-// 바코드 미연결(barcodeId IS NULL) 입고건 중 잔여수량(qty - 출고/불출 합계)이 양수인 건만 반환
+// 바코드 미연결(barcodeId IS NULL) 입고건 중 잔여수량(qty - 출고/불출/사용중/폐기 합계)이 양수인 건만 반환
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -27,11 +28,11 @@ export async function GET(request: NextRequest) {
       orderBy: { id: "desc" },
     });
 
-    // 출고/불출에서 각 입고 txNo별 소모량 합산
+    // 출고/불출/사용중/폐기에서 각 입고 txNo별 소모량 합산
     const consumed = await prisma.inventoryTx.groupBy({
       by: ["refTxNo"],
       where: {
-        txType: { in: ["출고", "불출"] },
+        txType: { in: LOT_CONSUME_TYPES },
         refTxNo: { not: null },
         itemId,
       },

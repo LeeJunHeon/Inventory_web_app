@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireInternalAuth } from "@/lib/internal-auth";
+import { STOCK_MINUS_TYPES, getStockMinusDisposals, sumDisposalsByItem } from "@/lib/txTypes";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/internal/stock?itemId=&locationId=
 // 단일 품목 현재고 조회. status route의 계산식과 동일:
-//   currentQty = sum(입고 qty) - sum(출고+불출 qty)
+//   currentQty = sum(입고 qty) - sum(출고+불출+사용중 qty) - sum(보유차감 대상 폐기 qty)
 // locationId 지정 시 해당 위치로 한정.
 export async function GET(request: NextRequest) {
   const authResult = await requireInternalAuth(request);
@@ -37,12 +38,19 @@ export async function GET(request: NextRequest) {
         _sum: { qty: true },
       }),
       prisma.inventoryTx.aggregate({
-        where: { itemId, txType: { in: ["출고", "불출"] }, ...locationFilter },
+        where: { itemId, txType: { in: STOCK_MINUS_TYPES }, ...locationFilter },
         _sum: { qty: true },
       }),
     ]);
 
-    const currentQty = (inSum._sum.qty ?? 0) - (outSum._sum.qty ?? 0);
+    const disposalQty = sumDisposalsByItem(
+      await getStockMinusDisposals({
+        itemIds: [itemId],
+        ...(locationIdParam ? { locationId: Number(locationIdParam) } : {}),
+      })
+    ).get(itemId) ?? 0;
+
+    const currentQty = (inSum._sum.qty ?? 0) - (outSum._sum.qty ?? 0) - disposalQty;
 
     return NextResponse.json({
       itemId:   item.id,

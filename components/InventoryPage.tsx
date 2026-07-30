@@ -71,6 +71,8 @@ export default function InventoryPage({
     "입고": t.inventory.typeIn,
     "출고": t.inventory.typeOut,
     "불출": t.inventory.typeDis,
+    "사용중": t.inventory.typeUsing,
+    "폐기": t.inventory.typeDispose,
   };
 
   // 품목군 필터 표시 레이블 맵 (value는 한국어 유지)

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, getSessionUser, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 import { buildInventoryTxDetail, formatInventoryTxDetail } from "@/lib/logDetail";
+import { LOT_CONSUME_TYPES } from "@/lib/txTypes";
 
 function buildItemSpec(ws: {
   waferType?: string | null; diameterInch?: number | null;
@@ -20,7 +21,10 @@ function buildItemSpec(ws: {
   return parts.length > 0 ? parts.join(" | ") : null;
 }
 
-const VALID_TYPES = ["입고", "출고", "불출", "충진 입고"];
+const VALID_TYPES = ["입고", "출고", "불출", "충진 입고", "사용중", "폐기"];
+
+/** 참조 전표(refTxNo)가 반드시 있어야 하는 유형 */
+const REF_REQUIRED_TYPES = ["출고", "불출", "사용중", "폐기"];
 
 // GET /api/inventory
 export async function GET(request: NextRequest) {
@@ -175,7 +179,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     if (!body.txType || !VALID_TYPES.includes(body.txType)) {
-      return NextResponse.json({ error: "구분은 입고/출고/불출 중 하나여야 합니다." }, { status: 400 });
+      return NextResponse.json({ error: "구분은 입고/출고/불출/사용중/폐기 중 하나여야 합니다." }, { status: 400 });
     }
     if (!body.itemId) {
       return NextResponse.json({ error: "품목을 선택해주세요." }, { status: 400 });
@@ -189,12 +193,12 @@ export async function POST(request: NextRequest) {
     if (!body.locationId) {
       return NextResponse.json({ error: "위치를 선택해주세요." }, { status: 400 });
     }
-    if ((body.txType === "출고" || body.txType === "불출") && !body.refTxNo) {
-      return NextResponse.json({ error: "출고/불출 시 참조 입고 전표번호가 필요합니다." }, { status: 400 });
+    if (REF_REQUIRED_TYPES.includes(body.txType) && !body.refTxNo) {
+      return NextResponse.json({ error: "출고/불출/사용중/폐기 시 참조 전표번호가 필요합니다." }, { status: 400 });
     }
 
-    // 출고/불출 시 바코드 연결 품목 검증
-    if ((body.txType === "출고" || body.txType === "불출") && !body.barcodeId) {
+    // 출고/불출/사용중/폐기 시 바코드 연결 품목 검증
+    if (REF_REQUIRED_TYPES.includes(body.txType) && !body.barcodeId) {
       const barcodeCount = await prisma.barcode.count({
         where: { itemId: Number(body.itemId), isActive: "Y" },
       });
@@ -275,8 +279,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 출고/불출 수량 초과 방지
-    if ((body.txType === "출고" || body.txType === "불출") && body.refTxNo) {
+    // 참조 무결성 + 수량 초과 방지
+    // - 출고/불출/사용중: 입고·충진 입고만 참조 (품목/위치 일치, 로트 잔여 이내)
+    // - 폐기: (a) 입고 참조 = 미개봉 재고 직접 폐기 → 위와 동일
+    //         (b) 사용중 참조 = 다 쓴 것 버림 → 사용중 건의 잔여 이내
+    if (REF_REQUIRED_TYPES.includes(body.txType) && body.refTxNo) {
       const refInbound = await prisma.inventoryTx.findUnique({
         where: { txNo: body.refTxNo },
         select: { qty: true, itemId: true, locationId: true, txType: true },
@@ -285,41 +292,75 @@ export async function POST(request: NextRequest) {
       // 아래 무결성 검증들이 조용히 스킵되므로 명시적으로 거부한다.
       if (!refInbound) {
         return NextResponse.json(
-          { error: `참조 입고 전표(${body.refTxNo})를 찾을 수 없습니다.` },
+          { error: `참조 전표(${body.refTxNo})를 찾을 수 없습니다.` },
           { status: 400 }
         );
       }
-      // 참조 입고 무결성 검증: 입고 타입 / 품목 / 위치 일치
-      if (refInbound.txType !== "입고" && refInbound.txType !== "충진 입고") {
+
+      const isInboundRef = refInbound.txType === "입고" || refInbound.txType === "충진 입고";
+
+      if (body.txType === "폐기" && refInbound.txType === "사용중") {
+        // (b) 사용중 건 폐기 — 보유수량은 사용중 시점에 이미 차감되었으므로 여기서 또 깎지 않는다
+        if (refInbound.itemId !== Number(body.itemId)) {
+          return NextResponse.json(
+            { error: "참조 사용중 건의 품목과 폐기 품목이 일치하지 않습니다." },
+            { status: 400 }
+          );
+        }
+        if (refInbound.locationId !== Number(body.locationId)) {
+          return NextResponse.json(
+            { error: "참조 사용중 건의 위치와 폐기 위치가 일치하지 않습니다." },
+            { status: 400 }
+          );
+        }
+        const disposed = await prisma.inventoryTx.aggregate({
+          where: { refTxNo: body.refTxNo, txType: "폐기" },
+          _sum: { qty: true },
+        });
+        const remainQty = refInbound.qty - (disposed._sum.qty ?? 0);
+        if (Number(body.qty) > remainQty) {
+          return NextResponse.json(
+            { error: `수량 초과: 해당 사용중 건의 폐기 가능 수량은 ${remainQty}개입니다. (요청: ${body.qty}개)` },
+            { status: 400 }
+          );
+        }
+      } else if (isInboundRef) {
+        // 참조 입고 무결성 검증: 품목 / 위치 일치
+        if (refInbound.itemId !== Number(body.itemId)) {
+          return NextResponse.json(
+            { error: "참조 입고 건의 품목과 출고 품목이 일치하지 않습니다." },
+            { status: 400 }
+          );
+        }
+        if (refInbound.locationId !== Number(body.locationId)) {
+          return NextResponse.json(
+            { error: "참조 입고 건의 위치와 출고 위치가 일치하지 않습니다." },
+            { status: 400 }
+          );
+        }
+        const consumed = await prisma.inventoryTx.aggregate({
+          where: {
+            refTxNo: body.refTxNo,
+            txType: { in: LOT_CONSUME_TYPES },
+          },
+          _sum: { qty: true },
+        });
+        const usedQty = consumed._sum.qty ?? 0;
+        const remainQty = refInbound.qty - usedQty;
+        if (Number(body.qty) > remainQty) {
+          return NextResponse.json(
+            { error: `수량 초과: 해당 입고건의 잔여수량은 ${remainQty}개입니다. (요청: ${body.qty}개)` },
+            { status: 400 }
+          );
+        }
+      } else if (body.txType === "폐기") {
+        return NextResponse.json(
+          { error: "폐기는 입고 건 또는 사용중 건만 참조할 수 있습니다." },
+          { status: 400 }
+        );
+      } else {
         return NextResponse.json(
           { error: "참조 전표가 입고 건이 아닙니다." },
-          { status: 400 }
-        );
-      }
-      if (refInbound.itemId !== Number(body.itemId)) {
-        return NextResponse.json(
-          { error: "참조 입고 건의 품목과 출고 품목이 일치하지 않습니다." },
-          { status: 400 }
-        );
-      }
-      if (refInbound.locationId !== Number(body.locationId)) {
-        return NextResponse.json(
-          { error: "참조 입고 건의 위치와 출고 위치가 일치하지 않습니다." },
-          { status: 400 }
-        );
-      }
-      const consumed = await prisma.inventoryTx.aggregate({
-        where: {
-          refTxNo: body.refTxNo,
-          txType: { in: ["출고", "불출"] },
-        },
-        _sum: { qty: true },
-      });
-      const usedQty = consumed._sum.qty ?? 0;
-      const remainQty = refInbound.qty - usedQty;
-      if (Number(body.qty) > remainQty) {
-        return NextResponse.json(
-          { error: `수량 초과: 해당 입고건의 잔여수량은 ${remainQty}개입니다. (요청: ${body.qty}개)` },
           { status: 400 }
         );
       }
@@ -336,13 +377,14 @@ export async function POST(request: NextRequest) {
     }, 0);
     const newTxNo = String(lastNo + 1);
 
-    // 출고/불출 시 참조 입고 건 가격 자동 복사
+    // 출고/불출/사용중/폐기 시 참조 건 가격 자동 복사
+    // (사용중이 입고에서 복사하므로 폐기→사용중 체인으로 가격이 이어진다)
     let resolvedUnitPrice = body.unitPrice || null;
     let resolvedAmount = body.amount || null;
     let resolvedCurrency = body.currency ?? "KRW";
     let resolvedExchangeRate = body.currency === "USD" ? (body.exchangeRateAtEntry ?? null) : null;
 
-    if ((body.txType === "출고" || body.txType === "불출") && body.refTxNo) {
+    if (REF_REQUIRED_TYPES.includes(body.txType) && body.refTxNo) {
       const refTx = await prisma.inventoryTx.findUnique({
         where:  { txNo: body.refTxNo },
         select: { unitPrice: true, amount: true, currency: true, exchangeRateAtEntry: true, qty: true, locationId: true },
@@ -350,13 +392,13 @@ export async function POST(request: NextRequest) {
       // 위 무결성 검증 블록에서 이미 존재를 확인했지만, 방어적으로 한 번 더 거부한다.
       if (!refTx) {
         return NextResponse.json(
-          { error: `참조 입고 전표(${body.refTxNo})를 찾을 수 없습니다.` },
+          { error: `참조 전표(${body.refTxNo})를 찾을 수 없습니다.` },
           { status: 400 }
         );
       }
       if (refTx.locationId !== Number(body.locationId)) {
         return NextResponse.json(
-          { error: `입고 위치(${refTx.locationId === 1 ? "본사" : "공덕"})와 출고 위치가 다릅니다. 입고된 위치에서만 출고/불출이 가능합니다.` },
+          { error: `참조 건의 위치(${refTx.locationId === 1 ? "본사" : "공덕"})와 요청 위치가 다릅니다. 참조 건과 같은 위치에서만 처리할 수 있습니다.` },
           { status: 400 }
         );
       }
@@ -369,7 +411,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 불출처 처리: disburseeUserId로 user 조회 후 partner 매칭
-    let finalPartnerId = body.txType === "불출" ? null : (body.partnerId || null);
+    // 사용중/폐기는 사내 처리이므로 거래처가 없다.
+    const noPartnerType =
+      body.txType === "불출" || body.txType === "사용중" || body.txType === "폐기";
+    let finalPartnerId = noPartnerType ? null : (body.partnerId || null);
     if (body.txType === "불출" && body.disburseeUserId) {
       const disburseeUser = await prisma.user.findUnique({
         where: { id: Number(body.disburseeUserId) },
@@ -516,6 +561,59 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 폐기 시: 연결된 타겟유닛 폐기 처리 + 바코드 비활성화 + 슬롯 비우기
+    if (body.txType === "폐기" && body.barcodeId) {
+      const bc = await prisma.barcode.findUnique({
+        where: { id: Number(body.barcodeId) },
+        include: { targetUnit: true },
+      });
+      if (bc?.targetUnitId && bc.targetUnit) {
+        const tuId = bc.targetUnitId;
+        // 이미 폐기 상태면 상태/일시는 건드리지 않는다 (최초 폐기 시각 보존)
+        if (bc.targetUnit.status !== "폐기") {
+          await prisma.targetUnit.update({
+            where: { id: tuId },
+            data: { status: "폐기", disposedAt: new Date() },
+          });
+        }
+        await prisma.barcode.update({
+          where: { id: Number(body.barcodeId) },
+          data: { isActive: "N" },
+        });
+
+        if (bc.targetUnit.category === "ald") {
+          await prisma.aldPortSlot.updateMany({
+            where: { targetUnitId: tuId },
+            data: { targetUnitId: null, loadedAt: null },
+          });
+        } else {
+          // 스퍼터 타겟: 챔버에 장착돼 있었다면 비우고 unload 이력 기록
+          const disposedSlots = await prisma.chamberSlot.findMany({
+            where: { targetUnitId: tuId },
+            select: { locationId: true },
+          });
+          if (disposedSlots.length > 0) {
+            await prisma.chamberSlot.updateMany({
+              where: { targetUnitId: tuId },
+              data: { targetUnitId: null, loadedAt: null },
+            });
+            for (const s of disposedSlots) {
+              await prisma.chamberSlotLog.create({
+                data: {
+                  locationId: s.locationId,
+                  targetUnitId: null,
+                  previousTargetUnitId: tuId,
+                  action: "unload",
+                  changedById: sessionUserId ?? null,
+                  note: "폐기 처리로 자동 비움",
+                },
+              });
+            }
+          }
+        }
+      }
+    }
+
     // activity_log 기록 (등록 시점 내용을 detail에 스냅샷)
     await logActivity(sessionUserId, "CREATE", "inventory_tx", tx.id, await buildInventoryTxDetail(tx.id));
 
@@ -542,7 +640,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
 
     if (body.txType !== undefined && !VALID_TYPES.includes(body.txType)) {
-      return NextResponse.json({ error: "구분은 입고/출고/불출 중 하나여야 합니다." }, { status: 400 });
+      return NextResponse.json({ error: "구분은 입고/출고/불출/사용중/폐기 중 하나여야 합니다." }, { status: 400 });
     }
     if (body.qty !== undefined && Number(body.qty) <= 0) {
       return NextResponse.json({ error: "수량은 1 이상이어야 합니다." }, { status: 400 });
@@ -592,6 +690,18 @@ export async function PUT(request: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "출고/불출 건은 입고로 변경할 수 없습니다. 삭제 후 새로 등록해 주세요." },
+        { status: 400 }
+      );
+    }
+
+    // ④ 사용중/폐기는 참조 체인의 기준점이므로 구분 변경 자체를 차단
+    const USING_DISPOSE = ["사용중", "폐기"];
+    if (
+      body.txType && body.txType !== before.txType &&
+      (USING_DISPOSE.includes(before.txType) || USING_DISPOSE.includes(body.txType))
+    ) {
+      return NextResponse.json(
+        { error: "사용중/폐기 건은 구분을 변경할 수 없습니다. 삭제 후 새로 등록해 주세요." },
         { status: 400 }
       );
     }
@@ -695,8 +805,13 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // ① 입고/충진 입고건이면: 출고/불출이 참조 중인지 확인
-    if (beforeDelete.txType === "입고" || beforeDelete.txType === "충진 입고") {
+    // ① 입고/충진 입고/사용중 건이면: 이를 참조하는 거래가 있는지 확인
+    //    (사용중을 참조한 폐기가 남아 있으면 사용중 삭제를 막는다)
+    if (
+      beforeDelete.txType === "입고" ||
+      beforeDelete.txType === "충진 입고" ||
+      beforeDelete.txType === "사용중"
+    ) {
       const refCount = await prisma.inventoryTx.count({
         where: {
           refTxNo: beforeDelete.txNo,
@@ -706,14 +821,15 @@ export async function DELETE(request: NextRequest) {
       if (refCount > 0) {
         return NextResponse.json(
           {
-            error: `이 입고 거래를 참조하는 출고/불출 거래가 ${refCount}건 있습니다. 먼저 해당 거래를 삭제해 주세요.`,
+            error: `이 거래를 참조하는 거래가 ${refCount}건 있습니다. 먼저 해당 거래를 삭제해 주세요.`,
           },
           { status: 400 }
         );
       }
 
       // ② 입고건과 연결된 target_unit에 측정/사용 이력이 있는지 확인
-      if (beforeDelete.barcode?.targetUnitId) {
+      //    (사용중 건은 측정 이력에서 파생된 것이므로 이 검사 대상이 아니다)
+      if (beforeDelete.txType !== "사용중" && beforeDelete.barcode?.targetUnitId) {
         const logCount = await prisma.targetLog.count({
           where: { targetUnitId: beforeDelete.barcode.targetUnitId },
         });

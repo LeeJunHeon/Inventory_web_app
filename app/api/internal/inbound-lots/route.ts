@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireInternalAuth } from "@/lib/internal-auth";
+import { LOT_CONSUME_TYPES } from "@/lib/txTypes";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/internal/inbound-lots?itemId=&locationId=&barcodeId=
 // 기존 app/api/inventory/inbound GET 로직 재사용
 //   - 입고 트랜잭션 중 txNo 있는 것
-//   - 각 txNo별 출고/불출 소모량 합산 → remainQty = qty - used
+//   - 각 txNo별 출고/불출/사용중/폐기 소모량 합산 → remainQty = qty - used
 //   - remainQty > 0 인 것만 반환
 export async function GET(request: NextRequest) {
   const authResult = await requireInternalAuth(request);
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
     const consumed = await prisma.inventoryTx.groupBy({
       by: ["refTxNo"],
       where: {
-        txType: { in: ["출고", "불출"] },
+        txType: { in: LOT_CONSUME_TYPES },
         refTxNo: { not: null },
         itemId,
       },

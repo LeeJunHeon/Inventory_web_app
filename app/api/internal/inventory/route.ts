@@ -3,6 +3,7 @@ import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/auth-helpers";
 import { buildInventoryTxDetail } from "@/lib/logDetail";
+import { LOT_CONSUME_TYPES } from "@/lib/txTypes";
 
 const VALID_TYPES = ["입고", "출고", "불출", "충진 입고"];
 
@@ -306,7 +307,7 @@ export async function POST(request: NextRequest) {
         const consumed = await prisma.inventoryTx.aggregate({
           where: {
             refTxNo: body.refTxNo,
-            txType: { in: ["출고", "불출"] },
+            txType: { in: LOT_CONSUME_TYPES },
           },
           _sum: { qty: true },
         });

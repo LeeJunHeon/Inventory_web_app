@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { createDisposalTxForTarget } from "@/lib/txTypes";
 
 // PUT /api/targets/[id] — 타겟 상태 변경
 export async function PUT(
@@ -39,6 +40,15 @@ export async function PUT(
         where: { targetUnitId: id },
         data:  { isActive: "N" },
       });
+    }
+
+    const actorId = session.user.email
+      ? (await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } }))?.id ?? null
+      : null;
+
+    // 폐기로 전이된 경우에만 재고 원장에 폐기 tx 자동 기록 (이미 있으면 스킵)
+    if (status === "폐기" && beforeTu?.status !== "폐기") {
+      await createDisposalTxForTarget({ targetUnitId: id, userId: actorId });
     }
 
     if (session.user.email) {

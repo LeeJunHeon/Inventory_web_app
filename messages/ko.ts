@@ -79,6 +79,8 @@ export const ko = {
     typeIn: "입고",
     typeOut: "출고",
     typeDis: "불출",
+    typeUsing: "사용중",
+    typeDispose: "폐기",
     catAll: "전체",
     catWafer: "웨이퍼",
     catTarget: "타겟",
@@ -132,6 +134,10 @@ export const ko = {
     csvHeaders: ["날짜","구분","품목군","품목코드","품목명","수량","단가","금액","거래처","담당자","바코드","메모"],
   },
   tx: {
+    usingRefLabel: "폐기할 사용중 건",
+    directDisposeLabel: "재고 직접 폐기",
+    usingDisposeLabel: "사용중 건 폐기",
+    aldNoUsing: "ALD Canister는 사용중 처리 대상이 아닙니다",
     partnerLoadFailed: "거래처 목록을 불러오지 못했습니다. 페이지를 새로고침 해주세요.",
     locationLoadFailed: "위치 목록을 불러오지 못했습니다. 페이지를 새로고침 해주세요.",
     itemLoadFailed: "품목 목록을 불러오지 못했습니다.",
@@ -215,6 +221,8 @@ export const ko = {
     noBarcodes: "해당 바코드가 없습니다",
   },
   tracing: {
+    usingLabel: "사용중",
+    disposeLabel: "폐기",
     subtitle: "품목코드, 품목명, 바코드로 입출고 전체 이력을 추적합니다",
     sfAll: "전체",
     sfItemCode: "품목코드",

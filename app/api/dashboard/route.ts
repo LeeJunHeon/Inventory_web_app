@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { STOCK_MINUS_TYPES, getStockMinusDisposals, sumDisposalsByItem } from "@/lib/txTypes";
 
 export async function GET() {
   try {
@@ -56,15 +57,18 @@ export async function GET() {
 
       const outSums = await prisma.inventoryTx.groupBy({
         by: ["itemId"],
-        where: { itemId: { in: itemIds }, txType: { in: ["출고", "불출"] } },
+        where: { itemId: { in: itemIds }, txType: { in: STOCK_MINUS_TYPES } },
         _sum: { qty: true },
       });
+
+      const disposalMap = sumDisposalsByItem(await getStockMinusDisposals({ itemIds }));
 
       const inMap = new Map(inSums.map((s) => [s.itemId, s._sum.qty || 0]));
       const outMap = new Map(outSums.map((s) => [s.itemId, s._sum.qty || 0]));
 
       for (const item of itemsWithMin) {
-        const current = (inMap.get(item.id) || 0) - (outMap.get(item.id) || 0);
+        const current =
+          (inMap.get(item.id) || 0) - (outMap.get(item.id) || 0) - (disposalMap.get(item.id) || 0);
         if (current < (item.minStockQty ?? 0)) {
           shortageCount++;
           shortageItems.push({
@@ -90,15 +94,16 @@ export async function GET() {
       }),
       prisma.inventoryTx.groupBy({
         by: ["itemId"],
-        where: { txType: { in: ["출고", "불출"] } },
+        where: { txType: { in: STOCK_MINUS_TYPES } },
         _sum: { qty: true },
       }),
     ]);
+    const allDisposalMap = sumDisposalsByItem(await getStockMinusDisposals({}));
     const allInMap2  = new Map(allInTxs.map(s  => [s.itemId, s._sum.qty || 0]));
     const allOutMap2 = new Map(allOutTxs.map(s => [s.itemId, s._sum.qty || 0]));
-    const allTxItemIds = [...new Set([...allInMap2.keys(), ...allOutMap2.keys()])];
+    const allTxItemIds = [...new Set([...allInMap2.keys(), ...allOutMap2.keys(), ...allDisposalMap.keys()])];
     const inStockItems = allTxItemIds.filter(
-      id => (allInMap2.get(id) || 0) - (allOutMap2.get(id) || 0) > 0
+      id => (allInMap2.get(id) || 0) - (allOutMap2.get(id) || 0) - (allDisposalMap.get(id) || 0) > 0
     ).length;
 
     // 위치별 현황 집계
@@ -117,14 +122,15 @@ export async function GET() {
         }),
         prisma.inventoryTx.groupBy({
           by: ["itemId"],
-          where: { locationId: loc.id, txType: { in: ["출고", "불출"] } },
+          where: { locationId: loc.id, txType: { in: STOCK_MINUS_TYPES } },
           _sum: { qty: true },
         }),
       ]);
 
+      const locDisposalMap = sumDisposalsByItem(await getStockMinusDisposals({ locationId: loc.id }));
       const inMap  = new Map(locIn.map(s  => [s.itemId, s._sum.qty || 0]));
       const outMap = new Map(locOut.map(s => [s.itemId, s._sum.qty || 0]));
-      const allIds = [...new Set([...inMap.keys(), ...outMap.keys()])];
+      const allIds = [...new Set([...inMap.keys(), ...outMap.keys(), ...locDisposalMap.keys()])];
 
       if (allIds.length === 0) {
         return { locationId: loc.id, locationName: loc.name, totalItems: 0, shortageCount: 0 };
@@ -139,7 +145,8 @@ export async function GET() {
       let locTotal = 0;
       let locShortage = 0;
       for (const itemId of allIds) {
-        const current = (inMap.get(itemId) || 0) - (outMap.get(itemId) || 0);
+        const current =
+          (inMap.get(itemId) || 0) - (outMap.get(itemId) || 0) - (locDisposalMap.get(itemId) || 0);
         if (current > 0) locTotal++;
         const min = minMap.get(itemId);
         if (min && min > 0 && current < min) {

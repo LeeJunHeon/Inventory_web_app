@@ -3,7 +3,7 @@ export interface InventoryItem {
   id: number;
   txNo: string;
   date: string;
-  type: "입고" | "출고" | "불출" | "충진 입고";
+  type: "입고" | "출고" | "불출" | "충진 입고" | "사용중" | "폐기";
   category: string;
   code: string;
   name: string;
@@ -55,7 +55,7 @@ export interface TargetLog {
 
 // ──────── 상수 ────────
 export const CATEGORIES = ["전체", "웨이퍼", "타겟", "ALD Canister", "가스", "기자재/소모품"];
-export const TYPES = ["전체", "입고", "출고", "불출", "사용중"];
+export const TYPES = ["전체", "입고", "출고", "불출", "사용중", "폐기"];
 
 export const TYPE_COLORS: Record<string, { bg: string; text: string; border: string; dot: string }> = {
   "입고": { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", dot: "bg-blue-500" },
@@ -63,6 +63,7 @@ export const TYPE_COLORS: Record<string, { bg: string; text: string; border: str
   "출고": { bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200", dot: "bg-rose-500" },
   "불출": { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", dot: "bg-amber-500" },
   "사용중": { bg: "bg-teal-50", text: "text-teal-700", border: "border-teal-200", dot: "bg-teal-500" },
+  "폐기": { bg: "bg-gray-100", text: "text-gray-600", border: "border-gray-200", dot: "bg-gray-400" },
 };
 
 export const CATEGORY_COLORS: Record<string, string> = {

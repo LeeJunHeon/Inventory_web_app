@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, ArrowDownCircle, ArrowUpCircle, Share2, ChevronRight, Loader2, Tag, X, Download } from "lucide-react";
+import { Search, ArrowDownCircle, ArrowUpCircle, Share2, ChevronRight, Loader2, Tag, X, Download, PlayCircle, Trash2 } from "lucide-react";
 import { CATEGORY_COLORS } from "@/lib/data";
 import { useSession } from "next-auth/react";
 import { useT } from "@/lib/i18n";
@@ -9,7 +9,7 @@ import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
 import { exportXLSX } from "@/lib/xlsxUtils";
 
 interface BarcodeInfo  { id: number; code: string; isActive: string; }
-interface TxCount      { inbound: number; outbound: number; disburse: number; }
+interface TxCount      { inbound: number; outbound: number; disburse: number; using?: number; disposal?: number; }
 interface SearchResult {
   itemId: number; itemCode: string; itemName: string; category: string;
   barcodes: BarcodeInfo[]; txCount: TxCount; currentQty: number;
@@ -207,6 +207,16 @@ export default function StockTracingPage() {
                 <span className="flex items-center gap-1 text-amber-600">
                   <Share2 size={12} />{t.tracing.disburseLabel} {item.txCount.disburse}{t.tracing.countUnit}
                 </span>
+                {!!item.txCount.using && (
+                  <span className="flex items-center gap-1 text-teal-600">
+                    <PlayCircle size={12} />{t.tracing.usingLabel} {item.txCount.using}{t.tracing.countUnit}
+                  </span>
+                )}
+                {!!item.txCount.disposal && (
+                  <span className="flex items-center gap-1 text-gray-500">
+                    <Trash2 size={12} />{t.tracing.disposeLabel} {item.txCount.disposal}{t.tracing.countUnit}
+                  </span>
+                )}
                 <span className="ml-auto font-semibold text-emerald-700">
                   {t.tracing.stockLabel} {item.currentQty}{t.tracing.qtyUnit}
                 </span>

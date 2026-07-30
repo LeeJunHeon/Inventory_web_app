@@ -81,6 +81,8 @@ export const en: Messages = {
     typeIn: "Inbound",
     typeOut: "Outbound",
     typeDis: "Disburse",
+    typeUsing: "In Use",
+    typeDispose: "Dispose",
     catAll: "All",
     catWafer: "Wafer",
     catTarget: "Target",
@@ -134,6 +136,10 @@ export const en: Messages = {
     csvHeaders: ["Date","Type","Category","Item Code","Item Name","Qty","Unit Price","Amount","Partner","Handler","Barcode","Memo"],
   },
   tx: {
+    usingRefLabel: "In-use record to dispose",
+    directDisposeLabel: "Dispose from stock",
+    usingDisposeLabel: "Dispose used item",
+    aldNoUsing: "In Use is not applicable to ALD canisters",
     partnerLoadFailed: "Failed to load partners. Please refresh.",
     locationLoadFailed: "Failed to load locations. Please refresh.",
     itemLoadFailed: "Failed to load items.",
@@ -217,6 +223,8 @@ export const en: Messages = {
     noBarcodes: "No barcodes found",
   },
   tracing: {
+    usingLabel: "In Use",
+    disposeLabel: "Disposed",
     subtitle: "Trace full transaction history by item code, name, or barcode",
     sfAll: "All",
     sfItemCode: "Item Code",

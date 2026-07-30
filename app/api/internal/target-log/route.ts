@@ -159,6 +159,13 @@ export async function POST(request: NextRequest) {
           where: { targetUnitId, isActive: "Y" },
           select: { id: true },
         });
+        // 이 바코드의 입고 전표를 참조로 걸어 로트 잔여를 소진시킨다 (장착 타겟 오출고 차단)
+        const inboundTx = bc
+          ? await tx.inventoryTx.findFirst({
+              where: { barcodeId: bc.id, txType: "입고" },
+              select: { txNo: true },
+            })
+          : null;
         const allTxNos = await tx.inventoryTx.findMany({
           where: { txNo: { not: null } },
           select: { txNo: true },
@@ -179,6 +186,7 @@ export async function POST(request: NextRequest) {
             locationId: body.locationId ? Number(body.locationId) : 1,
             qty: 1,
             userId: actingUserId,
+            refTxNo: inboundTx?.txNo ?? null,
             memo: "타겟 사용 시작 - 자동 기록",
           },
         });

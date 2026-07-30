@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { LOT_CONSUME_TYPES } from "@/lib/txTypes";
 
 export const dynamic = "force-dynamic";
 
@@ -30,11 +31,11 @@ export async function GET(request: NextRequest) {
       orderBy: { id: "desc" },
     });
 
-    // 출고/불출에서 각 입고 txNo별 소모량 합산
+    // 출고/불출/사용중/폐기에서 각 입고 txNo별 소모량 합산
     const consumed = await prisma.inventoryTx.groupBy({
       by: ["refTxNo"],
       where: {
-        txType: { in: ["출고", "불출"] },
+        txType: { in: LOT_CONSUME_TYPES },
         refTxNo: { not: null },
         itemId,
       },

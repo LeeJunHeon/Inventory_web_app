@@ -5,6 +5,21 @@ import { useSession } from "next-auth/react";
 import { X, List, Loader2, Plus, Camera, Printer } from "lucide-react";
 import { TYPE_COLORS, CATEGORY_COLORS } from "@/lib/data";
 import InboundSelectModal, { type InboundTx } from "./InboundSelectModal";
+
+type TxTypeOption = "입고" | "출고" | "불출" | "사용중" | "폐기";
+
+/** 참조 전표가 필요한 유형 (서버 REF_REQUIRED_TYPES와 동일) */
+const REF_TYPES: TxTypeOption[] = ["출고", "불출", "사용중", "폐기"];
+
+interface UsingLot {
+  txNo: string;
+  txDate: string;
+  qty: number;
+  remainQty: number;
+  locationId: number;
+  locationName: string;
+  barcodeCode: string;
+}
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
 import BarcodeLabelModal from "./BarcodeLabelModal";
 import { useT } from "@/lib/i18n";
@@ -62,7 +77,10 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const isMobile = typeof navigator !== "undefined" &&
     (navigator.maxTouchPoints > 0 || /Mobi|Android/i.test(navigator.userAgent));
 
-  const [type, setType]         = useState<"입고" | "출고" | "불출">("입고");
+  const [type, setType]         = useState<TxTypeOption>("입고");
+  // 폐기 경로: "직접" = 미개봉 재고 폐기(입고 참조), "사용중" = 다 쓴 것 폐기(사용중 참조)
+  const [disposeMode, setDisposeMode] = useState<"직접" | "사용중">("직접");
+  const [usingLots, setUsingLots]     = useState<UsingLot[]>([]);
   const [category, setCategory] = useState("웨이퍼");
 
   const [date, setDate]             = useState(new Date().toISOString().split("T")[0]);
@@ -205,6 +223,17 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
     }
   }, [isOpen]);
 
+  // 폐기(사용중 경로): 해당 품목의 폐기 가능한 사용중 건 목록 로드
+  useEffect(() => {
+    if (type !== "폐기" || disposeMode !== "사용중" || !itemId) { setUsingLots([]); return; }
+    let alive = true;
+    fetch(`/api/inventory/using-lots?itemId=${itemId}`)
+      .then(r => r.ok ? r.json() : [])
+      .then((rows: UsingLot[]) => { if (alive) setUsingLots(Array.isArray(rows) ? rows : []); })
+      .catch(() => { if (alive) setUsingLots([]); });
+    return () => { alive = false; };
+  }, [type, disposeMode, itemId]);
+
   // isOpen 또는 locationId 변경 시 재고 수량 조회
   useEffect(() => {
     if (!isOpen) return;
@@ -293,13 +322,38 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
     setCreatedBarcode(null);
     setIsBarcodeLooking(true);
     try {
-      if (type === "출고" || type === "불출") {
+      if (REF_TYPES.includes(type)) {
         const res = await fetch(`/api/barcodes/lookup?code=${encodeURIComponent(lookupCode)}`);
         const bc = await res.json();
         if (!res.ok) { setError(bc.error || t.tx.barcodeLookupFailed); barcodeInputRef.current?.focus(); return; }
+
+        // 폐기: 이 바코드에 아직 폐기되지 않은 '사용중' 건이 있으면 그것을 참조한다(사용 후 폐기).
+        // 없으면 아래 입고 참조 경로로 떨어져 '재고 직접 폐기'가 된다.
+        let usingRef: { txNo: string; locationId: number } | null = null;
+        if (type === "폐기") {
+          try {
+            const params = new URLSearchParams({
+              searchField: "바코드", search: lookupCode, type: "사용중", limit: "5",
+            });
+            const ures = await fetch(`/api/inventory?${params}`);
+            const ujson = await ures.json();
+            const rows: any[] = ujson.data ?? [];
+            if (rows.length > 0) {
+              // 사용중 건 중 아직 폐기 잔여가 남은 것을 using-lots로 확인
+              const lots: UsingLot[] = await fetch(
+                `/api/inventory/using-lots?itemId=${rows[0].itemId}`
+              ).then(r => r.ok ? r.json() : []).catch(() => []);
+              const open = lots.find(l => rows.some(r => r.txNo === l.txNo));
+              if (open) usingRef = { txNo: open.txNo, locationId: open.locationId };
+            }
+          } catch { /* 조회 실패 시 직접 폐기 경로로 진행 */ }
+        }
+        setDisposeMode(usingRef ? "사용중" : "직접");
+
         setBarcodeId(bc.barcodeId);
         setTargetUnitId(bc.targetUnitId ?? null);
-        setRefTxNo(bc.refTxNo ?? null);
+        setRefTxNo(usingRef ? usingRef.txNo : (bc.refTxNo ?? null));
+        if (usingRef) setLocationId(usingRef.locationId);
         if (bc.category && bc.category !== category) {
           // setCategory → category useEffect가 setItemCode/setItemName을 "" 로 초기화함
           // await 이후에 덮어써야 하므로 setItemCode/setItemName은 아래로 이동
@@ -316,7 +370,10 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         setItemCode(bc.itemCode);
         setItemName(bc.itemName);
         // refTxNo가 있으면 inbound API 호출해서 selectedInbound 자동 채우기
-        if (bc.refTxNo) {
+        // (사용중 건을 참조하는 폐기는 입고 로트가 아니므로 제외)
+        if (usingRef) {
+          setSelectedInbound(null);
+        } else if (bc.refTxNo) {
           const itemIdToUse = bc.itemId ?? itemId;
           fetch(`/api/inventory/inbound?itemId=${itemIdToUse}&txNo=${encodeURIComponent(bc.refTxNo)}`)
             .then(r => r.json())
@@ -434,13 +491,18 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const handleSave = async () => {
     if (!itemId)                            { setError(t.tx.selectItem);  barcodeInputRef.current?.focus(); return; }
     if (!quantity || Number(quantity) <= 0) { setError(t.tx.enterQty);   barcodeInputRef.current?.focus(); return; }
-    // 출고/불출 시 참조 입고건 필수
-    if ((type === "출고" || type === "불출") && !refTxNo) {
+    // 출고/불출/사용중/폐기 시 참조 전표 필수
+    if (REF_TYPES.includes(type) && !refTxNo) {
       setError(t.tx.selectInbound);
       return;
     }
-    // 수량 초과 시 저장 차단
-    if ((type === "출고" || type === "불출") && selectedInbound) {
+    // ALD Canister는 사용중 처리 대상이 아님
+    if (category === "ALD Canister" && type === "사용중") {
+      setError(t.tx.aldNoUsing);
+      return;
+    }
+    // 수량 초과 시 저장 차단 (사용중 건을 참조한 폐기는 selectedInbound가 없다)
+    if (REF_TYPES.includes(type) && selectedInbound) {
       if (Number(quantity) > selectedInbound.remainQty) {
         setError(t.tx.qtyExceeded(selectedInbound.remainQty));
         barcodeInputRef.current?.focus(); return;
@@ -467,8 +529,8 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       barcodeInputRef.current?.focus();
       return;
     }
-    // 출고/불출 시 바코드 필수 검증
-    if ((type === "출고" || type === "불출") && !barcodeId) {
+    // 출고/불출/사용중/폐기 시 바코드 필수 검증
+    if (REF_TYPES.includes(type) && !barcodeId) {
       try {
         const res = await fetch(`/api/barcodes?itemId=${itemId}&activeOnly=true`);
         const data = await res.json();
@@ -494,7 +556,8 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           qty:       Number(quantity),
           unitPrice: Number(unitPrice) || null,
           amount:    amount || null,
-          partnerId: type === "불출" ? null : (partnerId || null),
+          partnerId: (type === "불출" || type === "사용중" || type === "폐기")
+            ? null : (partnerId || null),
           txReasonId: txReasonId || null,
           disburseeUserId: type === "불출" ? (disburseeId || null) : null,
           memo:      memo || null,
@@ -643,10 +706,11 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tx.typeLabel}</label>
             <div className="flex gap-2">
-              {(["입고", "출고", "불출"] as const).map((tp) => (
+              {(["입고", "출고", "불출", "사용중", "폐기"] as const).map((tp) => (
                 <button key={tp} onClick={() => {
                   cancelCreatedBarcode();
                   setType(tp);
+                  setDisposeMode("직접"); setUsingLots([]);
                   setItemId(null); setItemCode(""); setItemName("");
                   setBarcodeInput(""); setBarcodeId(null); setTargetUnitId(null);
                   setRefTxNo(null); setSelectedInbound(null);
@@ -662,13 +726,16 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                   setShowCameraScanner(false);
                   setCreatedBarcode(null); setShowLabelModal(false);
                 }}
-                  className={`flex-1 py-2 sm:py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                  className={`flex-1 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
                     type === tp
                       ? `${TYPE_COLORS[tp].bg} ${TYPE_COLORS[tp].text} ${TYPE_COLORS[tp].border} border-2 shadow-sm`
                       : "bg-gray-50 text-gray-500 border-2 border-transparent hover:bg-gray-100"
                   }`}>{tp}</button>
               ))}
             </div>
+            {category === "ALD Canister" && type === "사용중" && (
+              <p className="mt-1.5 text-xs text-amber-600">{t.tx.aldNoUsing}</p>
+            )}
           </div>
 
           {/* 날짜 */}
@@ -870,10 +937,55 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 </div>
               </div>
             )}
-            {/* 출고/불출: 입고 참조 선택 */}
-            {(type === "출고" || type === "불출") && (
-              <div className="mt-2">
-                {selectedInbound ? (
+            {/* 출고/불출/사용중/폐기: 참조 전표 선택 */}
+            {REF_TYPES.includes(type) && (
+              <div className="mt-2 space-y-2">
+                {/* 폐기 경로 선택 */}
+                {type === "폐기" && (
+                  <div className="flex gap-2">
+                    {(["직접", "사용중"] as const).map(m => (
+                      <button key={m} type="button"
+                        onClick={() => {
+                          setDisposeMode(m);
+                          setRefTxNo(null); setSelectedInbound(null); setError("");
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                          disposeMode === m
+                            ? "bg-gray-800 text-white"
+                            : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+                        }`}>
+                        {m === "직접" ? t.tx.directDisposeLabel : t.tx.usingDisposeLabel}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {type === "폐기" && disposeMode === "사용중" ? (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">
+                      {t.tx.usingRefLabel}
+                    </label>
+                    <select
+                      value={refTxNo ?? ""}
+                      onChange={e => {
+                        const lot = usingLots.find(l => l.txNo === e.target.value);
+                        setRefTxNo(lot?.txNo ?? null);
+                        if (lot) setLocationId(lot.locationId);
+                      }}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">-</option>
+                      {usingLots.map(l => (
+                        <option key={l.txNo} value={l.txNo}>
+                          #{l.txNo} · {l.txDate}{l.barcodeCode ? ` · ${l.barcodeCode}` : ""} · {t.tx.remainQty(l.remainQty)}{l.locationName ? ` · ${l.locationName}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                    {itemId && usingLots.length === 0 && (
+                      <p className="mt-1 text-xs text-gray-400">{t.common.noData}</p>
+                    )}
+                  </div>
+                ) : selectedInbound ? (
                   <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2">
                     <div className="flex-1 text-xs space-y-0.5">
                       <div className="flex items-center gap-2">
@@ -1130,8 +1242,8 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
             </p>
           )}
 
-          {/* 거래처 — 입고/출고만 표시 */}
-          {type !== "불출" && (
+          {/* 거래처 — 입고/출고만 표시 (불출/사용중/폐기는 사내 처리라 거래처 없음) */}
+          {type !== "불출" && type !== "사용중" && type !== "폐기" && (
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tx.partnerLabel}</label>
               <select value={partnerId ?? ""} onChange={e => {

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUserId, logActivity } from "@/lib/auth-helpers";
 import { expandBarcodeVariants } from "@/lib/barcodeUtils";
 import { buildTargetLogDetail } from "@/lib/logDetail";
+import { createDisposalTxForTarget } from "@/lib/txTypes";
 
 // GET /api/targets?barcode=T-0187&page=1&limit=50
 export async function GET(request: NextRequest) {
@@ -245,6 +246,13 @@ export async function POST(request: NextRequest) {
             where: { targetUnitId: body.targetUnitId, isActive: "Y" },
             select: { id: true },
           });
+          // 이 바코드의 입고 전표를 참조로 걸어 로트 잔여를 소진시킨다 (장착 타겟 오출고 차단)
+          const inboundTx = bc
+            ? await tx.inventoryTx.findFirst({
+                where: { barcodeId: bc.id, txType: "입고" },
+                select: { txNo: true },
+              })
+            : null;
           const allTxNos = await tx.inventoryTx.findMany({
             where: { txNo: { not: null } },
             select: { txNo: true },
@@ -265,6 +273,7 @@ export async function POST(request: NextRequest) {
               locationId: body.locationId ? Number(body.locationId) : 1,
               qty: 1,
               userId: sessionUserId,
+              refTxNo: inboundTx?.txNo ?? null,
               memo: "타겟 사용 시작 - 자동 기록",
             },
           });
@@ -371,6 +380,13 @@ export async function POST(request: NextRequest) {
           });
         }
       }
+
+      // 재고 원장에도 폐기 tx 자동 기록 (이미 있으면 스킵)
+      await createDisposalTxForTarget({
+        targetUnitId: body.targetUnitId,
+        locationId:   body.locationId ? Number(body.locationId) : null,
+        userId:       sessionUserId ?? null,
+      });
     }
 
     // activity_log 기록 (등록 시점 내용을 detail에 스냅샷)
