@@ -99,6 +99,7 @@ export const ko = {
     colItem: "품목",
     colQty: "수량",
     colAmount: "금액",
+    exactMatch: "정확히 일치",
     colLocation: "위치",
     colPartner: "거래처",
     colRegistrant: "등록자",

@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
     const category  = searchParams.get("category")  || "";
     const startDate = searchParams.get("startDate") || "";
     const endDate   = searchParams.get("endDate")   || "";
+    const exact     = searchParams.get("exact") === "true";
 
     const andConditions: any[] = [];
 
@@ -58,22 +59,29 @@ export async function GET(request: NextRequest) {
     }
 
     const searchField = searchParams.get("searchField") || "전체";
+    // exact=true면 품목명/품목코드/거래처도 정확히 일치로 검색 (바코드는 항상 equals)
+    const textMatch = (value: string) =>
+      exact
+        ? { equals: value, mode: "insensitive" as const }
+        : { contains: value, mode: "insensitive" as const };
     if (search) {
       if (searchField === "품목명") {
-        andConditions.push({ item: { name: { contains: search, mode: "insensitive" } } });
+        andConditions.push({ item: { name: textMatch(search) } });
       } else if (searchField === "품목코드") {
-        andConditions.push({ item: { code: { contains: search, mode: "insensitive" } } });
+        andConditions.push({ item: { code: textMatch(search) } });
       } else if (searchField === "바코드") {
         andConditions.push({ barcode: { code: { equals: search, mode: "insensitive" } } });
       } else if (searchField === "거래처") {
-        andConditions.push({ partner: { name: { contains: search, mode: "insensitive" } } });
+        andConditions.push({ partner: { name: textMatch(search) } });
       } else {
         andConditions.push({
           OR: [
-            { item: { name: { contains: search, mode: "insensitive" } } },
-            { item: { code: { contains: search, mode: "insensitive" } } },
-            { barcode: { code: { contains: search, mode: "insensitive" } } },
-            { partner: { name: { contains: search, mode: "insensitive" } } },
+            { item: { name: textMatch(search) } },
+            { item: { code: textMatch(search) } },
+            { barcode: { code: exact
+              ? { equals: search, mode: "insensitive" as const }
+              : { contains: search, mode: "insensitive" as const } } },
+            { partner: { name: textMatch(search) } },
           ],
         });
       }

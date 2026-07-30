@@ -101,6 +101,7 @@ export const en: Messages = {
     colItem: "Item",
     colQty: "Qty",
     colAmount: "Amount",
+    exactMatch: "Exact match",
     colLocation: "Location",
     colPartner: "Partner",
     colRegistrant: "By",

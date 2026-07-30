@@ -35,6 +35,7 @@ export default function InventoryPage({
   const [loading, setLoading]           = useState(true);
   const [search, setSearch]             = useState("");
   const [searchField, setSearchField]   = useState("전체");
+  const [exactMatch, setExactMatch]     = useState(false);
   const [typeFilter, setTypeFilter]     = useState(initialTypeFilter ?? "전체");
   const [categoryFilter, setCategoryFilter] = useState("전체");
   const [startDate, setStartDate]           = useState(initialStartDate ?? "");
@@ -88,6 +89,7 @@ export default function InventoryPage({
       const params = new URLSearchParams();
       if (search)               params.set("search", search);
       if (search && searchField !== "전체") params.set("searchField", searchField);
+      if (search && exactMatch) params.set("exact", "true");
       if (typeFilter !== "전체")    params.set("type", typeFilter);
       if (categoryFilter !== "전체") params.set("category", categoryFilter);
       if (startDate) params.set("startDate", startDate);
@@ -104,7 +106,7 @@ export default function InventoryPage({
       setTotal(json.total);
     } catch { setToast(t.common.loadFail); setTimeout(() => setToast(""), 3000); }
     finally { setLoading(false); }
-  }, [search, searchField, typeFilter, categoryFilter, startDate, endDate, locationFilter, page, limit, sortField, sortDir, t]);
+  }, [search, searchField, exactMatch, typeFilter, categoryFilter, startDate, endDate, locationFilter, page, limit, sortField, sortDir, t]);
 
   useEffect(() => {
     const timer = setTimeout(fetchData, 300);
@@ -214,6 +216,12 @@ export default function InventoryPage({
                 value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
             </div>
+            <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer shrink-0 whitespace-nowrap">
+              <input type="checkbox" checked={exactMatch}
+                onChange={e => { setExactMatch(e.target.checked); setPage(1); }}
+                className="rounded" />
+              {t.inventory.exactMatch}
+            </label>
           </div>
           <button onClick={() => setShowFilters(!showFilters)}
             className="sm:hidden flex items-center gap-1 px-3 py-2.5 bg-gray-50 text-gray-600 rounded-xl text-sm font-medium">
