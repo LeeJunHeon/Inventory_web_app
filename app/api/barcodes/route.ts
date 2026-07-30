@@ -117,6 +117,14 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// activity_log detail 스냅샷 (등록/삭제 시점 내용 보존)
+function barcodeDetail(bc: { code: string; item?: { name: string } | null }): string {
+  return [
+    bc.code,
+    bc.item ? `품목:${bc.item.name}` : null,
+  ].filter(Boolean).join(" | ");
+}
+
 // POST /api/barcodes — 바코드 생성
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
@@ -172,7 +180,7 @@ export async function POST(request: NextRequest) {
       });
 
       const sessionUserId = await getSessionUserId();
-      await logActivity(sessionUserId, "CREATE", "barcode", result.id);
+      await logActivity(sessionUserId, "CREATE", "barcode", result.id, barcodeDetail(result));
 
       return NextResponse.json({
         id:       result.id,
@@ -239,7 +247,7 @@ export async function POST(request: NextRequest) {
     });
 
     const sessionUserId = await getSessionUserId();
-    await logActivity(sessionUserId, "CREATE", "barcode", barcode.id);
+    await logActivity(sessionUserId, "CREATE", "barcode", barcode.id, barcodeDetail(barcode));
 
     return NextResponse.json({
       id:       barcode.id,
@@ -306,11 +314,18 @@ export async function DELETE(request: NextRequest) {
 
     const barcode = await prisma.barcode.findUnique({
       where: { id: Number(id) },
-      select: { id: true, targetUnitId: true },
+      select: {
+        id: true, code: true, targetUnitId: true,
+        item: { select: { name: true } },
+      },
     });
     if (!barcode) return NextResponse.json({ error: "바코드를 찾을 수 없습니다." }, { status: 404 });
 
     const sessionUserId = await getSessionUserId();
+
+    // 삭제 전 스냅샷 (실패해도 로그 기록은 진행)
+    let deleteDetail: string | undefined;
+    try { deleteDetail = barcodeDetail(barcode); } catch { deleteDetail = undefined; }
 
     // 연결된 target_unit이 있으면 고아 정리 판단:
     // 그 target_unit에 target_log·inventory_tx 이력이 전혀 없으면(생성 취소 등)
@@ -337,7 +352,8 @@ export async function DELETE(request: NextRequest) {
 
         await logActivity(
           sessionUserId, "DELETE", "barcode", Number(id),
-          `연결 target_unit(${tuId}) 이력 없어 함께 정리 삭제`
+          [deleteDetail, `연결 target_unit(${tuId}) 이력 없어 함께 정리 삭제`]
+            .filter(Boolean).join(" | ")
         );
         return NextResponse.json({ message: "바코드가 삭제되었습니다. (연결 정보 정리됨)" });
       }
@@ -350,7 +366,7 @@ export async function DELETE(request: NextRequest) {
     });
     await prisma.barcode.delete({ where: { id: Number(id) } });
 
-    await logActivity(sessionUserId, "DELETE", "barcode", Number(id));
+    await logActivity(sessionUserId, "DELETE", "barcode", Number(id), deleteDetail);
 
     return NextResponse.json({ message: "바코드가 삭제되었습니다." });
   } catch (error) {

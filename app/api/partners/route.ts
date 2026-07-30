@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 
+// activity_log detail 스냅샷 (등록/삭제 시점 내용 보존)
+function partnerDetail(p: {
+  name: string; managerName: string | null; contact: string | null;
+}): string {
+  return [
+    p.name,
+    p.managerName ? `담당자:${p.managerName}` : null,
+    p.contact     ? `연락처:${p.contact}` : null,
+  ].filter(Boolean).join(" | ");
+}
+
 // GET /api/partners
 export async function GET(request: NextRequest) {
   try {
@@ -59,7 +70,7 @@ export async function POST(request: NextRequest) {
     });
 
     const sessionUserId = await getSessionUserId();
-    await logActivity(sessionUserId, "CREATE", "partner", partner.id);
+    await logActivity(sessionUserId, "CREATE", "partner", partner.id, partnerDetail(partner));
 
     return NextResponse.json({
       id: partner.id, name: partner.name,
@@ -137,10 +148,17 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "거래 내역이 있어 삭제할 수 없습니다." }, { status: 409 });
     }
 
+    // 삭제 전 스냅샷 확보 (실패해도 로그 기록은 진행)
+    let deleteDetail: string | undefined;
+    try {
+      const before = await prisma.partner.findUnique({ where: { id: Number(id) } });
+      if (before) deleteDetail = partnerDetail(before);
+    } catch { deleteDetail = undefined; }
+
     await prisma.partner.delete({ where: { id: Number(id) } });
 
     const sessionUserId = await getSessionUserId();
-    await logActivity(sessionUserId, "DELETE", "partner", Number(id));
+    await logActivity(sessionUserId, "DELETE", "partner", Number(id), deleteDetail);
 
     return NextResponse.json({ message: "거래처가 삭제되었습니다." });
   } catch (error) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/auth-helpers";
+import { buildInventoryTxDetail } from "@/lib/logDetail";
 
 const VALID_TYPES = ["입고", "출고", "불출", "충진 입고"];
 
@@ -506,8 +507,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // activity_log 기록
-    await logActivity(actingUserId, "CREATE", "inventory_tx", tx.id);
+    // activity_log 기록 (등록 시점 내용을 detail에 스냅샷)
+    await logActivity(actingUserId, "CREATE", "inventory_tx", tx.id, await buildInventoryTxDetail(tx.id));
 
     return NextResponse.json(tx, { status: 201 });
   } catch (error) {

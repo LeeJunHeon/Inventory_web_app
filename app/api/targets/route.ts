@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId, logActivity } from "@/lib/auth-helpers";
 import { expandBarcodeVariants } from "@/lib/barcodeUtils";
+import { buildTargetLogDetail } from "@/lib/logDetail";
 
 // GET /api/targets?barcode=T-0187&page=1&limit=50
 export async function GET(request: NextRequest) {
@@ -372,9 +373,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // activity_log 기록
+    // activity_log 기록 (등록 시점 내용을 detail에 스냅샷)
     const logUserId = sessionUserId ?? null;
-    await logActivity(logUserId, "CREATE", "target_log", log.id);
+    await logActivity(logUserId, "CREATE", "target_log", log.id, await buildTargetLogDetail(log.id));
 
     return NextResponse.json(log, { status: 201 });
   } catch (error) {

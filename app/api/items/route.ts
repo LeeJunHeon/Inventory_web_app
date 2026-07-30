@@ -14,6 +14,18 @@ function parseTargetSpecFromCode(code: string) {
   };
 }
 
+// activity_log detail 스냅샷 (등록/삭제 시점 내용 보존)
+function itemDetail(item: {
+  code: string; name: string; unit: string | null;
+  category?: { name: string } | null;
+}): string {
+  return [
+    `${item.code} ${item.name}`,
+    item.category ? `품목군:${item.category.name}` : null,
+    item.unit     ? `단위:${item.unit}` : null,
+  ].filter(Boolean).join(" | ");
+}
+
 // GET /api/items
 export async function GET(request: NextRequest) {
   try {
@@ -116,7 +128,7 @@ export async function POST(request: NextRequest) {
     }
 
     const sessionUserId = await getSessionUserId();
-    await logActivity(sessionUserId, "CREATE", "item", item.id);
+    await logActivity(sessionUserId, "CREATE", "item", item.id, itemDetail(item));
 
     return NextResponse.json({
       id: item.id, code: item.code, name: item.name,
@@ -219,10 +231,20 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "거래 내역이 있어 삭제할 수 없습니다." }, { status: 409 });
     }
 
+    // 삭제 전 스냅샷 확보 (실패해도 로그 기록은 진행)
+    let deleteDetail: string | undefined;
+    try {
+      const before = await prisma.item.findUnique({
+        where: { id: Number(id) },
+        include: { category: true },
+      });
+      if (before) deleteDetail = itemDetail(before);
+    } catch { deleteDetail = undefined; }
+
     await prisma.item.delete({ where: { id: Number(id) } });
 
     const sessionUserId = await getSessionUserId();
-    await logActivity(sessionUserId, "DELETE", "item", Number(id));
+    await logActivity(sessionUserId, "DELETE", "item", Number(id), deleteDetail);
 
     return NextResponse.json({ message: "품목이 삭제되었습니다." });
   } catch (error) {

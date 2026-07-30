@@ -20,6 +20,11 @@ const ACTION_LABEL: Record<string, string> = {
   DELETE: "삭제",
 };
 
+/** all=true 조회 시 안전 상한 */
+const ALL_MAX = 50000;
+/** detail이 없는 과거 로그를 라이브 조회로 보완하는 최대 건수 (로그당 1쿼리 = N+1) */
+const ENRICH_MAX = 2000;
+
 // GET /api/logs
 export async function GET(request: NextRequest) {
   try {
@@ -32,6 +37,8 @@ export async function GET(request: NextRequest) {
     const page      = Math.max(1, parseInt(searchParams.get("page")  || "1",  10));
     const limit     = Math.max(1, parseInt(searchParams.get("limit") || "50", 10));
     const skip      = (page - 1) * limit;
+    // all=true → 페이지네이션 없이 필터 조건 전체 (CSV 내보내기용, 안전 상한 적용)
+    const all       = searchParams.get("all") === "true";
 
     const andConditions: any[] = [];
     if (startDate) andConditions.push({ createdAt: { gte: new Date(startDate) } });
@@ -42,14 +49,17 @@ export async function GET(request: NextRequest) {
 
     const where = andConditions.length > 0 ? { AND: andConditions } : {};
 
+    const skipTake: { skip: number; take: number } = all
+      ? { skip: 0, take: ALL_MAX }
+      : { skip, take: limit };
+
     const [total, logs, users] = await Promise.all([
       prisma.activityLog.count({ where }),
       prisma.activityLog.findMany({
         where,
         include: { user: { select: { id: true, name: true } } },
         orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
+        ...skipTake,
       }),
       prisma.user.findMany({
         where:   { isActive: "Y" },
@@ -58,16 +68,22 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
-    // 각 로그에 상세 정보 추가
+    // 각 로그에 상세 정보 추가.
+    // 기록 시점 스냅샷(log.detail)이 있으면 그대로 쓰고, 없는 과거 로그만 라이브 조회로 보완한다.
+    const enrichLive = logs.length <= ENRICH_MAX;
+
     const enriched = await Promise.all(
       logs.map(async (log) => {
         let detail = "";
         try {
-          if (log.tableName === "inventory_tx") {
+          if (log.detail) {
+            detail = log.detail;
+          } else if (!enrichLive) {
+            // 대량 조회(CSV 전체 등)에서는 N+1 라이브 조회를 생략
+            detail = `ID: ${log.recordId}`;
+          } else if (log.tableName === "inventory_tx") {
             if (log.action === "DELETE") {
               detail = `전표 ID: ${log.recordId}`;
-            } else if (log.action === "UPDATE" && log.detail) {
-              detail = log.detail;
             } else {
               const tx = await prisma.inventoryTx.findUnique({
                 where:   { id: log.recordId },
@@ -78,116 +94,89 @@ export async function GET(request: NextRequest) {
               }
             }
           } else if (log.tableName === "target_log") {
-            if (log.action === "UPDATE" && log.detail) {
-              detail = log.detail;
-            } else {
-              const tl = await prisma.targetLog.findUnique({
-                where:   { id: log.recordId },
-                include: {
-                  targetUnit: {
-                    include: {
-                      barcodes: { where: { isActive: "Y" }, take: 1 },
-                      item:     true,
-                    },
+            const tl = await prisma.targetLog.findUnique({
+              where:   { id: log.recordId },
+              include: {
+                targetUnit: {
+                  include: {
+                    barcodes: { where: { isActive: "Y" }, take: 1 },
+                    item:     true,
                   },
                 },
-              });
-              if (tl) {
-                const bc   = tl.targetUnit?.barcodes[0]?.code || "";
-                const name = tl.targetUnit?.item?.name        || "";
-                const wt   = tl.weight ? ` ${Number(tl.weight).toFixed(3)}g` : "";
-                detail = `[${tl.logType}] ${bc} ${name}${wt}`.trim();
-              }
+              },
+            });
+            if (tl) {
+              const bc   = tl.targetUnit?.barcodes[0]?.code || "";
+              const name = tl.targetUnit?.item?.name        || "";
+              const wt   = tl.weight ? ` ${Number(tl.weight).toFixed(3)}g` : "";
+              detail = `[${tl.logType}] ${bc} ${name}${wt}`.trim();
             }
+
           } else if (log.tableName === "partner") {
-            if (log.action === "UPDATE" && log.detail) {
-              detail = log.detail;
-            } else {
-              try {
-                const p = await prisma.partner.findUnique({ where: { id: log.recordId } });
-                detail = p ? p.name : `ID: ${log.recordId}`;
-              } catch { detail = `ID: ${log.recordId}`; }
-            }
+            try {
+              const p = await prisma.partner.findUnique({ where: { id: log.recordId } });
+              detail = p ? p.name : `ID: ${log.recordId}`;
+            } catch { detail = `ID: ${log.recordId}`; }
 
           } else if (log.tableName === "item") {
-            if (log.action === "UPDATE" && log.detail) {
-              detail = log.detail;
-            } else {
-              try {
-                const it = await prisma.item.findUnique({ where: { id: log.recordId } });
-                detail = it ? `${it.code} ${it.name}` : `ID: ${log.recordId}`;
-              } catch { detail = `ID: ${log.recordId}`; }
-            }
+            try {
+              const it = await prisma.item.findUnique({ where: { id: log.recordId } });
+              detail = it ? `${it.code} ${it.name}` : `ID: ${log.recordId}`;
+            } catch { detail = `ID: ${log.recordId}`; }
 
           } else if (log.tableName === "barcode") {
-            if (log.action === "UPDATE" && log.detail) {
-              detail = log.detail;
-            } else {
-              try {
-                const bc = await prisma.barcode.findUnique({
-                  where: { id: log.recordId },
-                  include: { item: true },
-                });
-                detail = bc ? `${bc.code} (${bc.item?.name ?? "-"})` : `ID: ${log.recordId}`;
-              } catch { detail = `ID: ${log.recordId}`; }
-            }
+            try {
+              const bc = await prisma.barcode.findUnique({
+                where: { id: log.recordId },
+                include: { item: true },
+              });
+              detail = bc ? `${bc.code} (${bc.item?.name ?? "-"})` : `ID: ${log.recordId}`;
+            } catch { detail = `ID: ${log.recordId}`; }
 
           } else if (log.tableName === "user") {
-            if (log.action === "UPDATE" && log.detail) {
-              detail = log.detail;
-            } else {
-              try {
-                const u = await prisma.user.findUnique({ where: { id: log.recordId } });
-                detail = u ? `${u.name} (${u.email ?? "-"})` : `ID: ${log.recordId}`;
-              } catch { detail = `ID: ${log.recordId}`; }
-            }
+            try {
+              const u = await prisma.user.findUnique({ where: { id: log.recordId } });
+              detail = u ? `${u.name} (${u.email ?? "-"})` : `ID: ${log.recordId}`;
+            } catch { detail = `ID: ${log.recordId}`; }
 
           } else if (log.tableName === "target_unit") {
             try {
-              if (log.action === "UPDATE" && log.detail) {
-                detail = log.detail;
+              const tu = await prisma.targetUnit.findUnique({
+                where: { id: log.recordId },
+                include: {
+                  barcodes: { where: { isActive: "Y" }, take: 1 },
+                  item: true,
+                },
+              });
+              if (tu) {
+                const bc = tu.barcodes[0]?.code ?? "";
+                detail = `${bc ? bc + " " : ""}${tu.item?.name ?? ""} → ${tu.status}`;
               } else {
-                const tu = await prisma.targetUnit.findUnique({
-                  where: { id: log.recordId },
-                  include: {
-                    barcodes: { where: { isActive: "Y" }, take: 1 },
-                    item: true,
-                  },
-                });
-                if (tu) {
-                  const bc = tu.barcodes[0]?.code ?? "";
-                  detail = `${bc ? bc + " " : ""}${tu.item?.name ?? ""} → ${tu.status}`;
-                } else {
-                  detail = `ID: ${log.recordId}`;
-                }
+                detail = `ID: ${log.recordId}`;
               }
             } catch { detail = `ID: ${log.recordId}`; }
 
           } else if (log.tableName === "chamber_slot") {
             try {
-              if (log.action === "UPDATE" && log.detail) {
-                detail = log.detail;
-              } else {
-                const cs = await prisma.chamberSlot.findUnique({
-                  where: { id: log.recordId },
-                  include: {
-                    location: true,
-                    targetUnit: {
-                      include: {
-                        barcodes: { where: { isActive: "Y" }, take: 1 },
-                        item: true,
-                      },
+              const cs = await prisma.chamberSlot.findUnique({
+                where: { id: log.recordId },
+                include: {
+                  location: true,
+                  targetUnit: {
+                    include: {
+                      barcodes: { where: { isActive: "Y" }, take: 1 },
+                      item: true,
                     },
                   },
-                });
-                if (cs) {
-                  const loc  = cs.location?.name ?? "";
-                  const bc   = cs.targetUnit?.barcodes[0]?.code ?? "";
-                  const name = cs.targetUnit?.item?.name ?? "비어있음";
-                  detail = `${loc} → ${bc ? bc + " " : ""}${name}`;
-                } else {
-                  detail = `ID: ${log.recordId}`;
-                }
+                },
+              });
+              if (cs) {
+                const loc  = cs.location?.name ?? "";
+                const bc   = cs.targetUnit?.barcodes[0]?.code ?? "";
+                const name = cs.targetUnit?.item?.name ?? "비어있음";
+                detail = `${loc} → ${bc ? bc + " " : ""}${name}`;
+              } else {
+                detail = `ID: ${log.recordId}`;
               }
             } catch { detail = `ID: ${log.recordId}`; }
           }

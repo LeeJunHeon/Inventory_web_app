@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, Fragment } from "react";
-import { Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { Download, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import DatePicker from "./DatePicker";
 import { useT } from "@/lib/i18n";
 import { exportCSV } from "@/lib/csvUtils";
@@ -22,6 +22,16 @@ interface LogEntry {
 interface UserOption {
   id: number;
   name: string;
+}
+
+interface SummaryRow {
+  userId: number | null;
+  userName: string;
+  create: number;
+  update: number;
+  delete: number;
+  total: number;
+  lastActivity: string | null;
 }
 
 const ACTION_COLORS: Record<string, string> = {
@@ -84,6 +94,11 @@ export default function LogPage() {
   const [users, setUsers]         = useState<UserOption[]>([]);
   const [expandedLogId, setExpandedLogId] = useState<number | null>(null);
 
+  // 사용자별 활동 요약 (기간 필터만 반영)
+  const [summary, setSummary]         = useState<SummaryRow[]>([]);
+  const [summaryOpen, setSummaryOpen] = useState(true);
+  const [exporting, setExporting]     = useState(false);
+
   const totalPages = Math.max(1, Math.ceil(total / PAGE_LIMIT));
 
   const fetchLogs = useCallback(async (p: number = 1) => {
@@ -116,22 +131,55 @@ export default function LogPage() {
     fetchLogs(1);
   }, [fetchLogs]);
 
+  // 사용자별 요약: 기간이 바뀔 때만 재조회 (작업자/액션/테이블 필터와는 무관)
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (startDate) params.set("startDate", startDate);
+    if (endDate)   params.set("endDate",   endDate);
+    fetch(`/api/logs/summary?${params}`)
+      .then(r => r.json())
+      .then(json => setSummary(json.data ?? []))
+      .catch(() => setSummary([]));
+  }, [startDate, endDate]);
+
   const handlePageChange = (p: number) => {
     setPage(p);
     fetchLogs(p);
   };
 
-  // CSV 내보내기
-  const handleExport = () => {
-    if (logs.length === 0) return;
-    exportCSV(t.logs.csvHeaders, logs.map(l => [
-      new Date(l.createdAt).toLocaleString("ko-KR"),
-      l.userName,
-      l.tableLabel,
-      l.actionLabel,
-      String(l.recordId),
-      l.detail,
-    ]), `activity_log_${new Date().toISOString().slice(0, 10)}.csv`);
+  // CSV 내보내기 — 현재 페이지가 아니라 현재 필터 조건 전체를 다시 조회해서 내보낸다
+  const handleExport = async () => {
+    if (logs.length === 0 || exporting) return;
+    setExporting(true);
+    try {
+      const params = new URLSearchParams();
+      if (startDate) params.set("startDate", startDate);
+      if (endDate)   params.set("endDate",   endDate);
+      if (userId)    params.set("userId",    userId);
+      if (action)    params.set("action",    action);
+      if (tableName) params.set("tableName", tableName);
+      params.set("all", "true");
+
+      const res  = await fetch(`/api/logs?${params}`);
+      const json = await res.json();
+      const rows: LogEntry[] = json.data ?? [];
+      if (rows.length === 0) return;
+
+      exportCSV(t.logs.csvHeaders, rows.map(l => [
+        l.id,
+        new Date(l.createdAt).toLocaleString("ko-KR"),
+        l.userName,
+        l.userId ?? "",
+        l.actionLabel,
+        l.tableLabel,
+        String(l.recordId),
+        l.detail,
+      ]), `activity_log_${new Date().toISOString().slice(0, 10)}.csv`);
+    } catch {
+      /* 내보내기 실패는 무시 */
+    } finally {
+      setExporting(false);
+    }
   };
 
   const toggleAction = (v: string) => setAction(prev => prev === v ? "" : v);
@@ -147,7 +195,7 @@ export default function LogPage() {
         </div>
         <button
           onClick={handleExport}
-          disabled={logs.length === 0}
+          disabled={logs.length === 0 || exporting}
           className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           <Download size={15} />CSV
@@ -218,6 +266,70 @@ export default function LogPage() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* 사용자별 활동 요약 (행 클릭 → 작업자 필터 연동) */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <button
+          onClick={() => setSummaryOpen(v => !v)}
+          className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+        >
+          <span className="text-sm font-bold text-gray-800">{t.logs.summaryTitle}</span>
+          <ChevronDown
+            size={16}
+            className={`text-gray-400 transition-transform ${summaryOpen ? "rotate-180" : ""}`}
+          />
+        </button>
+        {summaryOpen && (
+          summary.length === 0 ? (
+            <p className="px-4 pb-4 text-xs text-gray-400">{t.logs.noData}</p>
+          ) : (
+            <div className="overflow-x-auto border-t border-gray-100">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100">
+                    <th className="text-left  px-4 py-2 text-xs font-semibold text-gray-500">{t.logs.colUser}</th>
+                    <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500">{t.logs.colCreate}</th>
+                    <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500">{t.logs.colUpdate}</th>
+                    <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500">{t.logs.colDelete}</th>
+                    <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500">{t.logs.colTotal}</th>
+                    <th className="text-left  px-4 py-2 text-xs font-semibold text-gray-500">{t.logs.colLastActivity}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {summary.map(row => {
+                    const selectable = row.userId != null;
+                    const selected   = selectable && userId === String(row.userId);
+                    return (
+                      <tr
+                        key={row.userId ?? "none"}
+                        onClick={() => {
+                          if (!selectable) return;
+                          setUserId(prev => prev === String(row.userId) ? "" : String(row.userId));
+                        }}
+                        className={`transition-colors ${selectable ? "cursor-pointer hover:bg-gray-50" : ""} ${selected ? "bg-blue-50" : ""}`}
+                      >
+                        <td className="px-4 py-2 font-medium text-gray-800">{row.userName}</td>
+                        <td className="px-4 py-2 text-right text-emerald-600">{row.create}</td>
+                        <td className="px-4 py-2 text-right text-blue-600">{row.update}</td>
+                        <td className="px-4 py-2 text-right text-rose-600">{row.delete}</td>
+                        <td className="px-4 py-2 text-right font-semibold text-gray-800">{row.total}</td>
+                        <td className="px-4 py-2 text-xs text-gray-500 whitespace-nowrap">
+                          {row.lastActivity
+                            ? new Date(row.lastActivity).toLocaleString("ko-KR", {
+                                year: "numeric", month: "2-digit", day: "2-digit",
+                                hour: "2-digit", minute: "2-digit",
+                              })
+                            : "-"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )
+        )}
       </div>
 
       {/* 결과 수 */}

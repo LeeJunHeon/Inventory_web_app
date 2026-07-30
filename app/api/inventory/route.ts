@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, getSessionUser, getSessionUserId, logActivity } from "@/lib/auth-helpers";
+import { buildInventoryTxDetail, formatInventoryTxDetail } from "@/lib/logDetail";
 
 function buildItemSpec(ws: {
   waferType?: string | null; diameterInch?: number | null;
@@ -515,8 +516,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // activity_log 기록
-    await logActivity(sessionUserId, "CREATE", "inventory_tx", tx.id);
+    // activity_log 기록 (등록 시점 내용을 detail에 스냅샷)
+    await logActivity(sessionUserId, "CREATE", "inventory_tx", tx.id, await buildInventoryTxDetail(tx.id));
 
     return NextResponse.json(tx, { status: 201 });
   } catch (error) {
@@ -675,11 +676,15 @@ export async function DELETE(request: NextRequest) {
 
     const sessionUserId = await getSessionUserId();
 
-    // 삭제 전 거래 정보 조회
+    // 삭제 전 거래 정보 조회 (삭제되면 복원 불가 → 로그 스냅샷용 관계까지 함께 로드)
     const beforeDelete = await prisma.inventoryTx.findUnique({
       where: { id: Number(id) },
       include: {
-        barcode: { select: { id: true, code: true, targetUnitId: true } },
+        barcode:  { select: { id: true, code: true, targetUnitId: true } },
+        item:     true,
+        partner:  true,
+        location: true,
+        user:     true,
       },
     });
 
@@ -723,10 +728,16 @@ export async function DELETE(request: NextRequest) {
       }
     }
 
+    // 삭제 전에 스냅샷 문자열을 굳혀 둔다 (구성 실패해도 로그 기록은 진행)
+    let deleteDetail: string | undefined;
+    try {
+      deleteDetail = formatInventoryTxDetail(beforeDelete);
+    } catch { deleteDetail = undefined; }
+
     await prisma.inventoryTx.delete({ where: { id: Number(id) } });
 
     // activity_log 기록
-    await logActivity(sessionUserId, "DELETE", "inventory_tx", Number(id));
+    await logActivity(sessionUserId, "DELETE", "inventory_tx", Number(id), deleteDetail);
 
     return NextResponse.json({ message: "삭제 완료" });
   } catch (error) {

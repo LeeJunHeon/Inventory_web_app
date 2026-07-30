@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/auth-helpers";
+import { buildTargetLogDetail } from "@/lib/logDetail";
 
 function safeStringEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
@@ -233,7 +234,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    await logActivity(actingUserId, "CREATE", "target_log", log.id);
+    await logActivity(actingUserId, "CREATE", "target_log", log.id, await buildTargetLogDetail(log.id));
 
     return NextResponse.json({ id: log.id, targetUnitId, message: "측정이 기록되었습니다." }, { status: 201 });
   } catch (error) {
