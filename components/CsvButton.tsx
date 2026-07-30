@@ -7,7 +7,7 @@ interface CsvButtonProps {
   label?: string;
 }
 
-export default function CsvButton({ onClick, disabled = false, label = "CSV" }: CsvButtonProps) {
+export default function CsvButton({ onClick, disabled = false, label = "Excel" }: CsvButtonProps) {
   return (
     <button
       onClick={onClick}

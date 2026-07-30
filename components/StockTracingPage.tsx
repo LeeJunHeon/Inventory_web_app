@@ -6,7 +6,7 @@ import { CATEGORY_COLORS } from "@/lib/data";
 import { useSession } from "next-auth/react";
 import { useT } from "@/lib/i18n";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
-import { exportCSV } from "@/lib/csvUtils";
+import { exportXLSX } from "@/lib/xlsxUtils";
 
 interface BarcodeInfo  { id: number; code: string; isActive: string; }
 interface TxCount      { inbound: number; outbound: number; disburse: number; }
@@ -54,7 +54,7 @@ export default function StockTracingPage() {
   const [txHistory, setTxHistory]           = useState<TxRecord[]>([]);
   const handleExportCSV = () => {
     if (!txHistory || txHistory.length === 0) return;
-    exportCSV(
+    exportXLSX(
       ["날짜", "구분", "전표번호", "거래처/사유", "수량", "단가", "바코드"],
       txHistory.map((tx: any) => [
         tx.txDate, tx.txType, tx.txNo ?? "",
@@ -62,8 +62,9 @@ export default function StockTracingPage() {
         tx.qty, tx.unitPrice ?? "", tx.barcodeCode ?? "",
       ]),
       selectedItem
-        ? `재고추적_${selectedItem.itemCode}_${new Date().toISOString().split("T")[0]}.csv`
-        : `재고추적_${new Date().toISOString().split("T")[0]}.csv`
+        ? `재고추적_${selectedItem.itemCode}_${new Date().toISOString().split("T")[0]}.xlsx`
+        : `재고추적_${new Date().toISOString().split("T")[0]}.xlsx`,
+      "재고추적"
     );
   };
   const [loading, setLoading]               = useState(false);
@@ -344,7 +345,7 @@ export default function StockTracingPage() {
                   <span>{t.tracing.summaryTotal} {txHistory.length}{t.tracing.countUnit}</span>
                   <button onClick={handleExportCSV} disabled={!txHistory || txHistory.length === 0}
                     className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                    <Download size={15} />CSV
+                    <Download size={15} />Excel
                   </button>
                   <span className="text-blue-600">{t.tracing.inboundLabel} {txHistory.filter(tx => tx.txType === "입고").reduce((s, tx) => s + tx.qty, 0).toLocaleString()}</span>
                   <span className="text-rose-500">{t.tracing.outboundLabel} {txHistory.filter(tx => tx.txType === "출고").reduce((s, tx) => s + tx.qty, 0).toLocaleString()}</span>

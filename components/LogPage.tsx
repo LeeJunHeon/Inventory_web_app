@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, Fragment } from "react";
 import { Download, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import DatePicker from "./DatePicker";
 import { useT } from "@/lib/i18n";
-import { exportCSV } from "@/lib/csvUtils";
+import { exportXLSX } from "@/lib/xlsxUtils";
 
 interface LogEntry {
   id: number;
@@ -165,7 +165,7 @@ export default function LogPage() {
       const rows: LogEntry[] = json.data ?? [];
       if (rows.length === 0) return;
 
-      exportCSV(t.logs.csvHeaders, rows.map(l => [
+      exportXLSX(t.logs.csvHeaders, rows.map(l => [
         l.id,
         new Date(l.createdAt).toLocaleString("ko-KR"),
         l.userName,
@@ -174,7 +174,7 @@ export default function LogPage() {
         l.tableLabel,
         String(l.recordId),
         l.detail,
-      ]), `activity_log_${new Date().toISOString().slice(0, 10)}.csv`);
+      ]), `activity_log_${new Date().toISOString().slice(0, 10)}.xlsx`, "활동로그");
     } catch {
       /* 내보내기 실패는 무시 */
     } finally {
@@ -198,7 +198,7 @@ export default function LogPage() {
           disabled={logs.length === 0 || exporting}
           className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
-          <Download size={15} />CSV
+          <Download size={15} />Excel
         </button>
       </div>
 

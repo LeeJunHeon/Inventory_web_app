@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Search, Plus, Edit, Trash2, Loader2, X, Check, Download } from "lucide-react";
 import { CATEGORY_COLORS } from "@/lib/data";
 import { useT } from "@/lib/i18n";
-import { exportCSV } from "@/lib/csvUtils";
+import { exportXLSX } from "@/lib/xlsxUtils";
 
 interface ItemOption {
   id: number; code: string; name: string;
@@ -31,13 +31,14 @@ export default function ItemsPage() {
   const [items, setItems]                   = useState<ItemOption[]>([]);
   const handleExportCSV = () => {
     if (!items || items.length === 0) return;
-    exportCSV(
+    exportXLSX(
       ["품목코드", "품목명", "품목군", "단위", "최소수량", "비고"],
       items.map((item: any) => [
         item.code, item.name, item.category?.name ?? item.category ?? "",
         item.unit ?? "", item.minQty ?? 0, item.note ?? "",
       ]),
-      `품목관리_${new Date().toISOString().split("T")[0]}.csv`
+      `품목관리_${new Date().toISOString().split("T")[0]}.xlsx`,
+      "품목"
     );
   };
   const [categories, setCategories]         = useState<CategoryOption[]>([]);
@@ -177,7 +178,7 @@ export default function ItemsPage() {
         <div className="flex items-center gap-2">
           <button onClick={handleExportCSV} disabled={!items || items.length === 0}
             className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-            <Download size={15} />CSV
+            <Download size={15} />Excel
           </button>
           <button onClick={openCreate}
             className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-blue-500 rounded-xl hover:bg-blue-600 shadow-sm">

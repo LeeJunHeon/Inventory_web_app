@@ -5,7 +5,7 @@ import { Search, Plus, Trash2, Copy, QrCode, Check, X, Loader2, Printer, Pencil,
 import { CATEGORY_COLORS } from "@/lib/data";
 import { useT } from "@/lib/i18n";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
-import { exportCSV } from "@/lib/csvUtils";
+import { exportXLSX } from "@/lib/xlsxUtils";
 import BarcodeLabelModal from "@/components/BarcodeLabelModal";
 
 interface BarcodeItem {
@@ -44,13 +44,14 @@ export default function BarcodePage() {
   const [barcodes, setBarcodes]         = useState<BarcodeItem[]>([]);
   const handleExportCSV = () => {
     if (!barcodes || barcodes.length === 0) return;
-    exportCSV(
+    exportXLSX(
       ["ID", "바코드", "품목코드", "품목명", "품목군", "타겟ID", "활성여부", "메모"],
       barcodes.map(b => [
         b.id, b.code, b.itemCode, b.itemName, b.category,
         b.targetUnitId ?? "", b.isActive, b.memo ?? "",
       ]),
-      `바코드_${new Date().toISOString().split("T")[0]}.csv`
+      `바코드_${new Date().toISOString().split("T")[0]}.xlsx`,
+      "바코드"
     );
   };
   const [loading, setLoading]           = useState(true);
@@ -459,7 +460,7 @@ export default function BarcodePage() {
           </div>
           <button onClick={handleExportCSV} disabled={!barcodes || barcodes.length === 0}
             className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-            <Download size={15} />CSV
+            <Download size={15} />Excel
           </button>
         </div>
       </div>

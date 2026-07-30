@@ -6,7 +6,7 @@ import CsvButton from "@/components/CsvButton";
 import { TARGET_STATUS_LABELS, formatWeight } from "@/lib/data";
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
 import { useT } from "@/lib/i18n";
-import { exportCSV } from "@/lib/csvUtils";
+import { exportXLSX } from "@/lib/xlsxUtils";
 import DatePicker from "@/components/DatePicker";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
 
@@ -115,7 +115,7 @@ export default function TargetUsagePage() {
 
   const handleExportCSV = () => {
     if (!logs || logs.length === 0) return;
-    exportCSV(
+    exportXLSX(
       ["타임스탬프", "구분", "무게(g)", "품목명", "바코드", "위치", "사유", "작업자"],
       logs.map((log: any) => [
         log.timestamp, log.type, log.weight ?? "",
@@ -123,15 +123,16 @@ export default function TargetUsagePage() {
         log.reason, log.userName,
       ]),
       selectedTarget
-        ? `타겟사용현황_${selectedTarget.barcodeCode}_${new Date().toISOString().split("T")[0]}.csv`
-        : `타겟사용현황_전체_${new Date().toISOString().split("T")[0]}.csv`
+        ? `타겟사용현황_${selectedTarget.barcodeCode}_${new Date().toISOString().split("T")[0]}.xlsx`
+        : `타겟사용현황_전체_${new Date().toISOString().split("T")[0]}.xlsx`,
+      "타겟사용이력"
     );
   };
 
   // 이동 내역 CSV (현재 표시되는 segments 전체)
   const handleMovementsCSV = () => {
     if (!selectedTarget || movements.length === 0) return;
-    exportCSV(
+    exportXLSX(
       ["위치", "시작일", "종료일", "측정횟수", "첫 무게(g)", "마지막 무게(g)"],
       movements.map(seg => [
         seg.locationName || "(위치 미상)",
@@ -141,7 +142,8 @@ export default function TargetUsagePage() {
         seg.firstWeight != null ? seg.firstWeight.toFixed(3) : "",
         seg.lastWeight != null ? seg.lastWeight.toFixed(3) : "",
       ]),
-      `타겟이동내역_${selectedTarget.barcodeCode}_${new Date().toISOString().split("T")[0]}.csv`
+      `타겟이동내역_${selectedTarget.barcodeCode}_${new Date().toISOString().split("T")[0]}.xlsx`,
+      "타겟이동내역"
     );
   };
 
@@ -154,7 +156,7 @@ export default function TargetUsagePage() {
       const allLogs = Array.isArray(data.logs) ? data.logs : [];
       if (allLogs.length === 0) return;
 
-      exportCSV(
+      exportXLSX(
         ["변경시각", "액션", "이전 바코드", "이전 품목", "현재 바코드", "현재 품목", "작업자", "메모"],
         allLogs.map((log: any) => [
           new Date(log.changedAt).toLocaleString("ko-KR"),
@@ -166,7 +168,8 @@ export default function TargetUsagePage() {
           log.changedBy ?? "",
           log.note ?? "",
         ]),
-        `챔버이력_${historySlot.locationName}_${new Date().toISOString().split("T")[0]}.csv`
+        `챔버이력_${historySlot.locationName}_${new Date().toISOString().split("T")[0]}.xlsx`,
+        "챔버이력"
       );
     } catch (err) {
       console.error("handleHistoryCSV error:", err);

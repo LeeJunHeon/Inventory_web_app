@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react";
 import DatePicker from "./DatePicker";
 import { TYPE_COLORS, CATEGORY_COLORS, formatPrice, formatQty, InventoryItem } from "@/lib/data";
 import { useT } from "@/lib/i18n";
-import { exportCSV } from "@/lib/csvUtils";
+import { exportXLSX } from "@/lib/xlsxUtils";
 
 // 이번 달 1일 ~ 오늘 기본값
 function getDefaultDates() {
@@ -92,10 +92,10 @@ export default function PeriodPage() {
 
   const handleCSV = () => {
     if (items.length === 0) { alert(t.inventory.noExportData); return; }
-    exportCSV(t.period.csvHeaders, items.map(i => [
+    exportXLSX(t.period.csvHeaders, items.map(i => [
       i.date, i.type, i.category, i.code, i.name,
       i.qty, i.price, i.amount, i.partner, i.handler, i.barcode, i.memo,
-    ]), `${t.period.csvFilename}_${startDate}_${endDate}.csv`);
+    ]), `${t.period.csvFilename}_${startDate}_${endDate}.xlsx`, "기간별조회");
   };
 
   const summary = {

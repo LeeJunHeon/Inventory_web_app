@@ -9,7 +9,7 @@ import EditTransactionModal from "./EditTransactionModal";
 import CsvButton            from "@/components/CsvButton";
 import DatePicker           from "./DatePicker";
 import { useT } from "@/lib/i18n";
-import { exportCSV } from "@/lib/csvUtils";
+import { exportXLSX } from "@/lib/xlsxUtils";
 
 interface LocationOption { id: number; name: string; }
 
@@ -156,14 +156,14 @@ export default function InventoryPage({
     if (items.length === 0) { setToast(t.inventory.noExportData); setTimeout(() => setToast(""), 3000); return; }
     const now      = new Date();
     const dateStr  = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}`;
-    const filename = `${t.inventory.csvFilename}_${dateStr}.csv`;
-    exportCSV(t.inventory.csvHeaders, items.map(i => [
+    const filename = `${t.inventory.csvFilename}_${dateStr}.xlsx`;
+    exportXLSX(t.inventory.csvHeaders, items.map(i => [
       i.txNo || "", i.id, i.date, i.type, i.category, i.code, i.name,
       i.qty, i.price, i.amount, i.currency, i.exchangeRateAtEntry ?? "",
       i.location, i.partner, i.txReason ?? "", i.userName ?? "",
       i.barcode, i.barcodeMemo ?? "", i.refTxNo ?? "", i.itemSpec ?? "",
       i.memo, i.createdAt ?? "",
-    ]), filename);
+    ]), filename, "재고관리");
   };
 
   const SortIcon = ({ field }: { field: string }) => {

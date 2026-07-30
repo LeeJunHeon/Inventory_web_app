@@ -6,7 +6,7 @@ import { CATEGORY_COLORS } from "@/lib/data";
 import TargetStatusSection from "@/components/TargetStatusSection";
 import { useT } from "@/lib/i18n";
 import type { Messages } from "@/messages/ko";
-import { exportCSV } from "@/lib/csvUtils";
+import { exportXLSX } from "@/lib/xlsxUtils";
 
 interface LocationOption { id: number; name: string; }
 
@@ -133,7 +133,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
 
   const handleExportCSV = () => {
     if (!filtered || filtered.length === 0) return;
-    exportCSV(
+    exportXLSX(
       ["품목코드", "품목명", "품목군", "바코드", "본사", "공덕", "합계", "최소수량", "수급상태"],
       filtered.map(item => [
         item.code, item.name, item.category,
@@ -144,7 +144,8 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
         item.requiredQty,
         getSupplyLevel(item.currentQty, item.requiredQty, t).label,
       ]),
-      `보유현황_${new Date().toISOString().split("T")[0]}.csv`
+      `보유현황_${new Date().toISOString().split("T")[0]}.xlsx`,
+      "보유현황"
     );
   };
 
@@ -198,7 +199,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
           )}
           <button onClick={handleExportCSV} disabled={!filtered || filtered.length === 0}
             className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-            <Download size={15} />CSV
+            <Download size={15} />Excel
           </button>
         </div>
       </div>
