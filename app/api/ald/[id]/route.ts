@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, getSessionUserId, logActivity } from "@/lib/auth-helpers";
+import { createDisposalTxForTarget } from "@/lib/txTypes";
 
 // GET /api/ald/[id]
 export async function GET(
@@ -99,6 +100,16 @@ export async function PUT(
     });
 
     const sessionUserId = await getSessionUserId();
+
+    // 폐기로 전이된 경우에만 재고 원장에 폐기 tx 자동 기록
+    // (locationId는 함수가 사용중/입고 참조에서 결정 · 중복 방지 내장)
+    if (status === "폐기" && before.status !== "폐기") {
+      await createDisposalTxForTarget({
+        targetUnitId: Number(id),
+        userId:       sessionUserId ?? null,
+      });
+    }
+
     const changes: string[] = [];
     if (status !== undefined && before.status !== status)
       changes.push(`상태: ${before.status} → ${status}`);
