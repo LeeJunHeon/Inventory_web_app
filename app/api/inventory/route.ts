@@ -26,6 +26,10 @@ const VALID_TYPES = ["입고", "출고", "불출", "충진 입고", "사용중",
 /** 참조 전표(refTxNo)가 반드시 있어야 하는 유형 */
 const REF_REQUIRED_TYPES = ["출고", "불출", "사용중", "폐기"];
 
+/** 재고 원장에 허용되는 위치 — 본사(1)/공덕(2)만.
+ *  챔버·Vault 등 세부 물리 위치는 target_log·chamber_slot·ald_port_slot의 영역이다. */
+const VALID_LOCATION_IDS = [1, 2];
+
 // GET /api/inventory
 export async function GET(request: NextRequest) {
   try {
@@ -192,6 +196,9 @@ export async function POST(request: NextRequest) {
     }
     if (!body.locationId) {
       return NextResponse.json({ error: "위치를 선택해주세요." }, { status: 400 });
+    }
+    if (!VALID_LOCATION_IDS.includes(Number(body.locationId))) {
+      return NextResponse.json({ error: "위치는 본사 또는 공덕만 선택할 수 있습니다." }, { status: 400 });
     }
     if (REF_REQUIRED_TYPES.includes(body.txType) && !body.refTxNo) {
       return NextResponse.json({ error: "출고/불출/사용중/폐기 시 참조 전표번호가 필요합니다." }, { status: 400 });
@@ -647,6 +654,9 @@ export async function PUT(request: NextRequest) {
     }
     if (body.txDate !== undefined && isNaN(new Date(body.txDate).getTime())) {
       return NextResponse.json({ error: "유효한 날짜를 입력해주세요." }, { status: 400 });
+    }
+    if (body.locationId !== undefined && !VALID_LOCATION_IDS.includes(Number(body.locationId))) {
+      return NextResponse.json({ error: "위치는 본사 또는 공덕만 선택할 수 있습니다." }, { status: 400 });
     }
 
     const sessionUserId = await getSessionUserId();

@@ -7,6 +7,10 @@ import { LOT_CONSUME_TYPES } from "@/lib/txTypes";
 
 const VALID_TYPES = ["입고", "출고", "불출", "충진 입고"];
 
+/** 재고 원장에 허용되는 위치 — 본사(1)/공덕(2)만.
+ *  챔버·Vault 등 세부 물리 위치는 target_log·chamber_slot·ald_port_slot의 영역이다. */
+const VALID_LOCATION_IDS = [1, 2];
+
 function safeStringEqual(a: string, b: string): boolean {
   // 길이가 다르면 비교조차 하지 않음 — timingSafeEqual은 같은 길이만 허용
   if (a.length !== b.length) return false;
@@ -194,6 +198,14 @@ export async function POST(request: NextRequest) {
       // 신뢰하지 않고 무조건 참조 입고분 값으로 덮어쓴다. (LLM이 가짜 itemId를 채워 보내도 안전)
       body.itemId = ref.itemId;
       body.locationId = ref.locationId;
+    }
+
+    // 최종 확정된 위치가 원장 허용 위치인지 검증 (출고/불출은 위에서 입고건 위치로 덮어써 이미 1/2)
+    if (!VALID_LOCATION_IDS.includes(Number(body.locationId))) {
+      return NextResponse.json(
+        { error: "위치는 본사 또는 공덕만 선택할 수 있습니다." },
+        { status: 400 }
+      );
     }
 
     // 출고/불출 시 바코드 연결 품목 검증

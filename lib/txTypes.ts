@@ -56,7 +56,6 @@ export function sumDisposalsByItemAtLocation(
  */
 export async function createDisposalTxForTarget(opts: {
   targetUnitId: number;
-  locationId?: number | null;
   userId?: number | null;
 }): Promise<void> {
   const existing = await prisma.inventoryTx.findFirst({
@@ -90,11 +89,8 @@ export async function createDisposalTxForTarget(opts: {
       });
 
   const refTxNo = usingTx?.txNo ?? inboundTx?.txNo ?? null;
-  // 입고를 참조하는 폐기는 보유수량을 실제로 깎으므로, 그 입고와 같은 위치여야 원장이 어긋나지 않는다.
-  // 사용중을 참조하는 폐기는 보유를 깎지 않으므로 로그의 위치를 그대로 쓴다.
-  const locationId = inboundTx
-    ? inboundTx.locationId
-    : (opts.locationId ?? usingTx?.locationId ?? 1);
+  // 원장 위치는 재고가 있던 곳(사용중→입고 체인)을 따른다. 폐기가 일어난 물리 위치는 target_log가 보관.
+  const locationId = usingTx?.locationId ?? inboundTx?.locationId ?? 1;
 
   const allTxNos = await prisma.inventoryTx.findMany({
     where:  { txNo: { not: null } },

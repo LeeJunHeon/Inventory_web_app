@@ -392,7 +392,6 @@ export async function POST(request: NextRequest) {
       // 재고 원장에도 폐기 tx 자동 기록 (이미 있으면 스킵)
       await createDisposalTxForTarget({
         targetUnitId: body.targetUnitId,
-        locationId:   body.locationId ? Number(body.locationId) : null,
         userId:       sessionUserId ?? null,
       });
     }
