@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "@/components/Providers";
+import PortalChatLauncher from "@/components/PortalChatLauncher";
 import Script from "next/script";
 
 export const metadata: Metadata = {
@@ -41,6 +42,7 @@ export default function RootLayout({
       </head>
       <body style={{ fontFamily: "'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif" }}>
         <Providers>{children}</Providers>
+        <PortalChatLauncher />
       </body>
     </html>
   );
