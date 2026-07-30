@@ -487,6 +487,7 @@ export const ko = {
     weightRequiredPlaceholder: "필수 입력 (예: 182.450)",
     locationLabel: "사용/보관처",
     locationPlaceholder: "선택하세요",
+    chamberStartHint: "챔버를 선택하면 '사용중'으로 전환됩니다 (보관함/미선택은 계측만 기록)",
     reasonLabel: "사유",
     reasonPlaceholder: "예: 공정 후 측정",
     saveWeight: "측정값 저장",

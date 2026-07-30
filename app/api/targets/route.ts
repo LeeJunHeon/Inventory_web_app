@@ -224,8 +224,16 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // 위치 구분 상수 — 전이 게이트와 아래 chamber_slot 블록이 공유
+    const STORAGE_IDS_SLOT = [3, 4];
+    const CHAMBER_IDS_SLOT = [5, 6, 7, 8, 9, 10];
+
     // 미사용 → 사용중 자동 상태 전이 + inventory_tx 자동 기록
+    // 챔버로 장착하는 측정일 때만 전이한다. 도착 검수용 계측(보관함/위치 미선택)은
+    // target_log만 남기고 상태·재고를 건드리지 않는다(판매 예정 신품 보호).
     if (isMeasure) {
+      const measureLocId = body.locationId ? Number(body.locationId) : null;
+      const isChamberMeasure = measureLocId !== null && CHAMBER_IDS_SLOT.includes(measureLocId);
       const tu = await prisma.targetUnit.findUnique({
         where: { id: body.targetUnitId },
         select: { status: true, itemId: true, category: true },
@@ -236,7 +244,7 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
-      if (tu?.status === "미사용") {
+      if (tu?.status === "미사용" && isChamberMeasure) {
         await prisma.$transaction(async (tx) => {
           await tx.targetUnit.update({
             where: { id: body.targetUnitId },
@@ -250,7 +258,7 @@ export async function POST(request: NextRequest) {
           const inboundTx = bc
             ? await tx.inventoryTx.findFirst({
                 where: { barcodeId: bc.id, txType: "입고" },
-                select: { txNo: true },
+                select: { txNo: true, locationId: true },
               })
             : null;
           const allTxNos = await tx.inventoryTx.findMany({
@@ -270,7 +278,9 @@ export async function POST(request: NextRequest) {
               itemId: tu.itemId!,
               targetUnitId: body.targetUnitId,
               barcodeId: bc?.id ?? null,
-              locationId: body.locationId ? Number(body.locationId) : 1,
+              // 재고 원장은 재고가 있던 위치에서 차감돼야 본사/공덕 분리 집계가 맞는다.
+              // (측정 위치는 target_log·chamber_slot이 이미 기록)
+              locationId: inboundTx?.locationId ?? 1,
               qty: 1,
               userId: sessionUserId,
               refTxNo: inboundTx?.txNo ?? null,
@@ -281,9 +291,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // chamber_slot 자동 업데이트 + 이력 기록
-    const STORAGE_IDS_SLOT = [3, 4];
-    const CHAMBER_IDS_SLOT = [5, 6, 7, 8, 9, 10];
+    // chamber_slot 자동 업데이트 + 이력 기록 (상수는 위 전이 블록과 공유)
     const newLocationId = body.locationId ? Number(body.locationId) : null;
 
     if (newLocationId && CHAMBER_IDS_SLOT.includes(newLocationId)) {

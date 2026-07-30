@@ -489,6 +489,7 @@ export const en: Messages = {
     weightRequiredPlaceholder: "Required (e.g. 182.450)",
     locationLabel: "Location",
     locationPlaceholder: "Select",
+    chamberStartHint: "Selecting a chamber marks the target as In Use (storage/blank = measurement only)",
     reasonLabel: "Reason",
     reasonPlaceholder: "e.g. Post-process measurement",
     saveWeight: "Save Measurement",

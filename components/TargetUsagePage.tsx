@@ -1145,6 +1145,7 @@ export default function TargetUsagePage() {
                     <option key={loc.id} value={loc.id}>{loc.name}</option>
                   ))}
                 </select>
+                <p className="text-xs text-gray-400 mt-1">{t.target.chamberStartHint}</p>
               </div>
               <div>
                 <label className="block text-xs text-gray-400 mb-1"><span className="inline-flex items-center gap-1"><FileText size={12} />{t.target.reasonLabel}</span></label>

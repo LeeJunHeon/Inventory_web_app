@@ -149,7 +149,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    if (tu?.status === "미사용") {
+    // 챔버로 장착하는 측정일 때만 전이 (보관함/위치 미전달은 계측만 기록)
+    const isChamberMeasure = currLocationId !== null && CHAMBER_IDS.includes(currLocationId);
+    if (tu?.status === "미사용" && isChamberMeasure) {
       await prisma.$transaction(async (tx) => {
         await tx.targetUnit.update({
           where: { id: targetUnitId },
@@ -163,7 +165,7 @@ export async function POST(request: NextRequest) {
         const inboundTx = bc
           ? await tx.inventoryTx.findFirst({
               where: { barcodeId: bc.id, txType: "입고" },
-              select: { txNo: true },
+              select: { txNo: true, locationId: true },
             })
           : null;
         const allTxNos = await tx.inventoryTx.findMany({
@@ -183,7 +185,8 @@ export async function POST(request: NextRequest) {
             itemId: tu.itemId!,
             targetUnitId,
             barcodeId: bc?.id ?? null,
-            locationId: body.locationId ? Number(body.locationId) : 1,
+            // 재고 원장은 재고가 있던 위치에서 차감돼야 위치별 집계가 맞는다
+            locationId: inboundTx?.locationId ?? 1,
             qty: 1,
             userId: actingUserId,
             refTxNo: inboundTx?.txNo ?? null,
