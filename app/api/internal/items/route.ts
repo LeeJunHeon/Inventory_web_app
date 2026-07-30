@@ -3,6 +3,7 @@ import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { requireInternalAuth } from "@/lib/internal-auth";
 import { logActivity } from "@/lib/auth-helpers";
+import { formatItemDetail } from "@/lib/logDetail";
 
 export const dynamic = "force-dynamic";
 
@@ -168,7 +169,7 @@ export async function POST(request: NextRequest) {
       include: { category: true },
     });
 
-    await logActivity(actingUserId, "CREATE", "item", item.id);
+    await logActivity(actingUserId, "CREATE", "item", item.id, formatItemDetail(item));
 
     return NextResponse.json({
       id: item.id, code: item.code, name: item.name,

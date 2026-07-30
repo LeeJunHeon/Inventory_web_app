@@ -1,17 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, getSessionUserId, logActivity } from "@/lib/auth-helpers";
-
-// activity_log detail 스냅샷 (등록/삭제 시점 내용 보존)
-function partnerDetail(p: {
-  name: string; managerName: string | null; contact: string | null;
-}): string {
-  return [
-    p.name,
-    p.managerName ? `담당자:${p.managerName}` : null,
-    p.contact     ? `연락처:${p.contact}` : null,
-  ].filter(Boolean).join(" | ");
-}
+import { formatPartnerDetail, partnerHeader } from "@/lib/logDetail";
 
 // GET /api/partners
 export async function GET(request: NextRequest) {
@@ -70,7 +60,7 @@ export async function POST(request: NextRequest) {
     });
 
     const sessionUserId = await getSessionUserId();
-    await logActivity(sessionUserId, "CREATE", "partner", partner.id, partnerDetail(partner));
+    await logActivity(sessionUserId, "CREATE", "partner", partner.id, formatPartnerDetail(partner));
 
     return NextResponse.json({
       id: partner.id, name: partner.name,
@@ -116,9 +106,12 @@ export async function PUT(request: NextRequest) {
       if (contact !== undefined && (beforeP.contact ?? "") !== (contact ?? "")) ch.push(`연락처: ${beforeP.contact || "-"} → ${contact || "-"}`);
       if (email !== undefined && (beforeP.email ?? "") !== (email ?? "")) ch.push(`이메일: ${beforeP.email || "-"} → ${email || "-"}`);
     }
-    if (ch.length > 0) {
+    if (ch.length > 0 && beforeP) {
       const sessionUserId = await getSessionUserId();
-      await logActivity(sessionUserId, "UPDATE", "partner", Number(id), ch.join(" | "));
+      await logActivity(
+        sessionUserId, "UPDATE", "partner", Number(id),
+        `${partnerHeader(beforeP)} ${ch.join(" | ")}`
+      );
     }
 
     return NextResponse.json({
@@ -152,7 +145,7 @@ export async function DELETE(request: NextRequest) {
     let deleteDetail: string | undefined;
     try {
       const before = await prisma.partner.findUnique({ where: { id: Number(id) } });
-      if (before) deleteDetail = partnerDetail(before);
+      if (before) deleteDetail = formatPartnerDetail(before);
     } catch { deleteDetail = undefined; }
 
     await prisma.partner.delete({ where: { id: Number(id) } });

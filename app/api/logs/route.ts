@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { buildInventoryTxDetail, formatTargetLogDetail } from "@/lib/logDetail";
 
 export const dynamic = "force-dynamic";
 
@@ -85,13 +86,8 @@ export async function GET(request: NextRequest) {
             if (log.action === "DELETE") {
               detail = `전표 ID: ${log.recordId}`;
             } else {
-              const tx = await prisma.inventoryTx.findUnique({
-                where:   { id: log.recordId },
-                include: { item: true },
-              });
-              if (tx) {
-                detail = `[${tx.txType}] ${tx.item.name} × ${tx.qty}`;
-              }
+              // 스냅샷을 남기기 전에 기록된 과거 로그 — 기록 시점과 같은 포맷터로 복원
+              detail = (await buildInventoryTxDetail(log.recordId)) ?? "";
             }
           } else if (log.tableName === "target_log") {
             const tl = await prisma.targetLog.findUnique({
@@ -103,14 +99,10 @@ export async function GET(request: NextRequest) {
                     item:     true,
                   },
                 },
+                location: true,
               },
             });
-            if (tl) {
-              const bc   = tl.targetUnit?.barcodes[0]?.code || "";
-              const name = tl.targetUnit?.item?.name        || "";
-              const wt   = tl.weight ? ` ${Number(tl.weight).toFixed(3)}g` : "";
-              detail = `[${tl.logType}] ${bc} ${name}${wt}`.trim();
-            }
+            if (tl) detail = formatTargetLogDetail(tl);
 
           } else if (log.tableName === "partner") {
             try {

@@ -183,7 +183,10 @@ export async function PUT(request: NextRequest) {
 
       if (ch.length > 0) {
         await prisma.activityLog.create({
-          data: { userId: user.id, action: "UPDATE", tableName: "chamber_slot", recordId: Number(id), detail: ch.join(" | ") },
+          data: {
+            userId: user.id, action: "UPDATE", tableName: "chamber_slot", recordId: Number(id),
+            detail: `[${beforeSlot.location?.name ?? "-"}] ${ch.join(" | ")}`,
+          },
         });
       }
     }

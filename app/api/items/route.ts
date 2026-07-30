@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, getSessionUserId, logActivity } from "@/lib/auth-helpers";
+import { formatItemDetail, itemHeader } from "@/lib/logDetail";
 
 // 품목코드에서 타겟 스펙 파생 (파싱 실패 시 안전 기본값)
 function parseTargetSpecFromCode(code: string) {
@@ -12,18 +13,6 @@ function parseTargetSpecFromCode(code: string) {
     materialCode: parts[2] || "UNKNOWN",
     thicknessInch: Number.isNaN(thkRaw) ? null : thkRaw,   // '3M' 등 파싱 불가 → null
   };
-}
-
-// activity_log detail 스냅샷 (등록/삭제 시점 내용 보존)
-function itemDetail(item: {
-  code: string; name: string; unit: string | null;
-  category?: { name: string } | null;
-}): string {
-  return [
-    `${item.code} ${item.name}`,
-    item.category ? `품목군:${item.category.name}` : null,
-    item.unit     ? `단위:${item.unit}` : null,
-  ].filter(Boolean).join(" | ");
 }
 
 // GET /api/items
@@ -128,7 +117,7 @@ export async function POST(request: NextRequest) {
     }
 
     const sessionUserId = await getSessionUserId();
-    await logActivity(sessionUserId, "CREATE", "item", item.id, itemDetail(item));
+    await logActivity(sessionUserId, "CREATE", "item", item.id, formatItemDetail(item));
 
     return NextResponse.json({
       id: item.id, code: item.code, name: item.name,
@@ -198,9 +187,12 @@ export async function PUT(request: NextRequest) {
       if (unit !== undefined && (beforeItem.unit ?? "") !== (unit ?? "")) ch.push(`단위: ${beforeItem.unit || "-"} → ${unit || "-"}`);
       if (note !== undefined && (beforeItem.note ?? "") !== (note ?? "")) ch.push(`비고: ${beforeItem.note || "-"} → ${note || "-"}`);
     }
-    if (ch.length > 0) {
+    if (ch.length > 0 && beforeItem) {
       const sessionUserId = await getSessionUserId();
-      await logActivity(sessionUserId, "UPDATE", "item", Number(id), ch.join(" | "));
+      await logActivity(
+        sessionUserId, "UPDATE", "item", Number(id),
+        `${itemHeader(beforeItem)} ${ch.join(" | ")}`
+      );
     }
 
     return NextResponse.json({
@@ -238,7 +230,7 @@ export async function DELETE(request: NextRequest) {
         where: { id: Number(id) },
         include: { category: true },
       });
-      if (before) deleteDetail = itemDetail(before);
+      if (before) deleteDetail = formatItemDetail(before);
     } catch { deleteDetail = undefined; }
 
     await prisma.item.delete({ where: { id: Number(id) } });

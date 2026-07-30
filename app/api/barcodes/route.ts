@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, getSessionUserId, logActivity } from "@/lib/auth-helpers";
+import { formatBarcodeDetail, barcodeHeader } from "@/lib/logDetail";
 import { expandBarcodeVariants } from "@/lib/barcodeUtils";
 import { barcodePrefixFor } from "@/lib/barcodePrefix";
 
@@ -117,14 +118,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// activity_log detail 스냅샷 (등록/삭제 시점 내용 보존)
-function barcodeDetail(bc: { code: string; item?: { name: string } | null }): string {
-  return [
-    bc.code,
-    bc.item ? `품목:${bc.item.name}` : null,
-  ].filter(Boolean).join(" | ");
-}
-
 // POST /api/barcodes — 바코드 생성
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
@@ -180,7 +173,7 @@ export async function POST(request: NextRequest) {
       });
 
       const sessionUserId = await getSessionUserId();
-      await logActivity(sessionUserId, "CREATE", "barcode", result.id, barcodeDetail(result));
+      await logActivity(sessionUserId, "CREATE", "barcode", result.id, formatBarcodeDetail(result));
 
       return NextResponse.json({
         id:       result.id,
@@ -247,7 +240,7 @@ export async function POST(request: NextRequest) {
     });
 
     const sessionUserId = await getSessionUserId();
-    await logActivity(sessionUserId, "CREATE", "barcode", barcode.id, barcodeDetail(barcode));
+    await logActivity(sessionUserId, "CREATE", "barcode", barcode.id, formatBarcodeDetail(barcode));
 
     return NextResponse.json({
       id:       barcode.id,
@@ -274,7 +267,10 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     if (!body.id) return NextResponse.json({ error: "id가 필요합니다." }, { status: 400 });
 
-    const beforeBc = await prisma.barcode.findUnique({ where: { id: body.id } });
+    const beforeBc = await prisma.barcode.findUnique({
+      where:   { id: body.id },
+      include: { item: true },
+    });
 
     const barcode = await prisma.barcode.update({
       where: { id: body.id },
@@ -292,7 +288,10 @@ export async function PATCH(request: NextRequest) {
       if (body.memo !== undefined && (beforeBc.memo ?? "") !== (body.memo ?? "")) ch.push(`메모: ${beforeBc.memo || "-"} → ${body.memo || "-"}`);
     }
     const sessionUserId = await getSessionUserId();
-    await logActivity(sessionUserId, "UPDATE", "barcode", barcode.id, ch.length > 0 ? ch.join(" | ") : undefined);
+    await logActivity(
+      sessionUserId, "UPDATE", "barcode", barcode.id,
+      ch.length > 0 && beforeBc ? `${barcodeHeader(beforeBc)} ${ch.join(" | ")}` : undefined
+    );
 
     return NextResponse.json(barcode);
   } catch (error) {
@@ -325,7 +324,7 @@ export async function DELETE(request: NextRequest) {
 
     // 삭제 전 스냅샷 (실패해도 로그 기록은 진행)
     let deleteDetail: string | undefined;
-    try { deleteDetail = barcodeDetail(barcode); } catch { deleteDetail = undefined; }
+    try { deleteDetail = formatBarcodeDetail(barcode); } catch { deleteDetail = undefined; }
 
     // 연결된 target_unit이 있으면 고아 정리 판단:
     // 그 target_unit에 target_log·inventory_tx 이력이 전혀 없으면(생성 취소 등)

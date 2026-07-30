@@ -93,3 +93,62 @@ export async function buildTargetLogDetail(logId: number): Promise<string | unde
     return undefined;
   }
 }
+
+// ── 마스터 데이터 스냅샷 (CREATE/DELETE detail) ────────
+export function formatItemDetail(item: {
+  code: string; name: string; unit: string | null;
+  category?: { name: string } | null;
+}): string {
+  return join([
+    `${item.code} ${item.name}`,
+    item.category ? `품목군:${item.category.name}` : null,
+    item.unit     ? `단위:${item.unit}` : null,
+  ]);
+}
+
+export function formatPartnerDetail(p: {
+  name: string; managerName: string | null; contact: string | null;
+}): string {
+  return join([
+    p.name,
+    p.managerName ? `담당자:${p.managerName}` : null,
+    p.contact     ? `연락처:${p.contact}` : null,
+  ]);
+}
+
+export function formatBarcodeDetail(bc: {
+  code: string; item?: { name: string } | null;
+}): string {
+  return join([
+    bc.code,
+    bc.item ? `품목:${bc.item.name}` : null,
+  ]);
+}
+
+// ── UPDATE 로그용 대상 헤더 ────────────────────────────
+// diff 문자열만으로는 "무엇이" 바뀌었는지 알 수 없으므로 앞에 대상을 붙인다.
+// 모두 순수 함수 — 호출부가 이미 조회해 둔 before 객체를 그대로 받는다(추가 쿼리 금지).
+
+export function inventoryTxHeader(tx: {
+  txNo?: string | null; item?: { name: string; code: string } | null;
+}): string {
+  return `[${tx.item?.name ?? ""}(${tx.item?.code ?? ""}) · 전표${tx.txNo ?? "-"}]`;
+}
+
+export function itemHeader(i: { code: string; name: string }): string {
+  return `[${i.code} ${i.name}]`;
+}
+
+export function partnerHeader(p: { name: string }): string {
+  return `[${p.name}]`;
+}
+
+export function barcodeHeader(b: { code: string; item?: { name: string } | null }): string {
+  return `[${b.code}${b.item?.name ? ` · ${b.item.name}` : ""}]`;
+}
+
+export function targetUnitHeader(tu: {
+  barcodes?: { code: string }[]; item?: { name: string } | null;
+}): string {
+  return `[${tu.barcodes?.[0]?.code ?? ""} ${tu.item?.name ?? ""}]`.replace("[ ", "[").trim();
+}

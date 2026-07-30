@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, getSessionUser, getSessionUserId, logActivity } from "@/lib/auth-helpers";
-import { buildInventoryTxDetail, formatInventoryTxDetail } from "@/lib/logDetail";
+import { buildInventoryTxDetail, formatInventoryTxDetail, inventoryTxHeader } from "@/lib/logDetail";
 import { LOT_CONSUME_TYPES } from "@/lib/txTypes";
 
 function buildItemSpec(ws: {
@@ -759,7 +759,9 @@ export async function PUT(request: NextRequest) {
         _changes.push(`바코드: ${before.barcode?.code ?? "-"} → ${afterBarcode?.code ?? String(body.barcodeId)}`);
       }
     }
-    const _detail = _changes.length > 0 ? _changes.join(" | ") : undefined;
+    const _detail = _changes.length > 0
+      ? `${inventoryTxHeader(before)} ${_changes.join(" | ")}`
+      : undefined;
     if (_detail) {
       await logActivity(sessionUserId, "UPDATE", "inventory_tx", Number(id), _detail);
     }

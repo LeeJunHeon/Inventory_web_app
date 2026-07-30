@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { getSessionUserId, logActivity } from "@/lib/auth-helpers";
 import { STOCK_MINUS_TYPES, getStockMinusDisposals, sumDisposalsByItem, sumDisposalsByItemAtLocation } from "@/lib/txTypes";
+import { itemHeader } from "@/lib/logDetail";
 
 export const dynamic = "force-dynamic";
 
@@ -144,14 +145,26 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "수량은 0 이상의 숫자여야 합니다." }, { status: 400 });
     }
 
+    // 변경 전 값 확보 (diff 기록용)
+    const beforeItem = await prisma.item.findUnique({
+      where:  { id: Number(itemId) },
+      select: { code: true, name: true, minStockQty: true },
+    });
+
     const item = await prisma.item.update({
       where:  { id: Number(itemId) },
       data:   { minStockQty: qty },
       select: { id: true, minStockQty: true },
     });
 
-    const sessionUserId = await getSessionUserId();
-    await logActivity(sessionUserId, "UPDATE", "item", Number(itemId));
+    // 값이 실제로 바뀐 경우에만 기록
+    if (beforeItem && beforeItem.minStockQty !== qty) {
+      const sessionUserId = await getSessionUserId();
+      await logActivity(
+        sessionUserId, "UPDATE", "item", Number(itemId),
+        `${itemHeader(beforeItem)} 최소수량: ${beforeItem.minStockQty} → ${qty}`
+      );
+    }
 
     return NextResponse.json(item);
   } catch (error) {

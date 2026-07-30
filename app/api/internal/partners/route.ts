@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/auth-helpers";
+import { formatPartnerDetail } from "@/lib/logDetail";
 import { requireInternalAuth } from "@/lib/internal-auth";
 
 export const dynamic = "force-dynamic";
@@ -135,7 +136,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    await logActivity(actingUserId, "CREATE", "partner", partner.id);
+    await logActivity(actingUserId, "CREATE", "partner", partner.id, formatPartnerDetail(partner));
 
     return NextResponse.json({
       id: partner.id, name: partner.name,

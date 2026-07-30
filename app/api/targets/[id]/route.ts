@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { createDisposalTxForTarget } from "@/lib/txTypes";
+import { logActivity } from "@/lib/auth-helpers";
+import { targetUnitHeader } from "@/lib/logDetail";
 
 // PUT /api/targets/[id] — 타겟 상태 변경
 export async function PUT(
@@ -18,12 +20,14 @@ export async function PUT(
     const body = await request.json();
     const { status, note } = body;
 
-    const target = await prisma.targetUnit.findUnique({ where: { id } });
-    if (!target) {
+    // 변경 전 상태 + 로그 헤더용 관계를 한 번에 조회 (404 판정과 diff에 함께 사용)
+    const beforeTu = await prisma.targetUnit.findUnique({
+      where:   { id },
+      include: { barcodes: { take: 1, orderBy: { id: "asc" } }, item: true },
+    });
+    if (!beforeTu) {
       return NextResponse.json({ error: "타겟을 찾을 수 없습니다." }, { status: 404 });
     }
-
-    const beforeTu = await prisma.targetUnit.findUnique({ where: { id } });
 
     const updated = await prisma.targetUnit.update({
       where: { id },
@@ -51,20 +55,18 @@ export async function PUT(
       await createDisposalTxForTarget({ targetUnitId: id, userId: actorId });
     }
 
-    if (session.user.email) {
-      const actor = await prisma.user.findUnique({ where: { email: session.user.email }, select: { id: true } });
-      if (actor) await prisma.activityLog.create({
-        data: { userId: actor.id, action: "UPDATE", tableName: "target_unit", recordId: id,
-          detail: (() => {
-            const ch: string[] = [];
-            if (beforeTu) {
-              if (status !== undefined && beforeTu.status !== status) ch.push(`상태: ${beforeTu.status} → ${status}`);
-              if (note !== undefined && (beforeTu.note ?? "") !== (note ?? "")) ch.push(`메모: ${beforeTu.note || "-"} → ${note || "-"}`);
-            }
-            return ch.length > 0 ? ch.join(" | ") : undefined;
-          })() || undefined,
-        },
-      });
+    // activity_log 기록 (변경된 필드가 있을 때만)
+    const ch: string[] = [];
+    if (status !== undefined && beforeTu.status !== status)
+      ch.push(`상태: ${beforeTu.status} → ${status}`);
+    if (note !== undefined && (beforeTu.note ?? "") !== (note ?? ""))
+      ch.push(`메모: ${beforeTu.note || "-"} → ${note || "-"}`);
+
+    if (ch.length > 0) {
+      await logActivity(
+        actorId, "UPDATE", "target_unit", id,
+        `${targetUnitHeader(beforeTu)} ${ch.join(" | ")}`
+      );
     }
 
     return NextResponse.json(updated);

@@ -68,7 +68,7 @@ export async function PUT(request: NextRequest) {
     for (const u of users) {
       const beforeUser = await prisma.user.findUnique({
         where: { id: u.id },
-        select: { role: true, isActive: true },
+        select: { name: true, role: true, isActive: true },
       });
 
       await prisma.user.update({
@@ -114,7 +114,10 @@ export async function PUT(request: NextRequest) {
         }
         if (ch.length > 0) {
           await prisma.activityLog.create({
-            data: { userId: actorId, action: "UPDATE", tableName: "user", recordId: u.id, detail: ch.join(" | ") },
+            data: {
+              userId: actorId, action: "UPDATE", tableName: "user", recordId: u.id,
+              detail: `[${beforeUser?.name ?? `ID:${u.id}`}] ${ch.join(" | ")}`,
+            },
           });
         }
       }

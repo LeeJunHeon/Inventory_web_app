@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 import { createDisposalTxForTarget } from "@/lib/txTypes";
+import { targetUnitHeader } from "@/lib/logDetail";
 
 // GET /api/ald/[id]
 export async function GET(
@@ -61,6 +62,7 @@ export async function PUT(
 
     const before = await prisma.targetUnit.findUnique({
       where: { id: Number(id) },
+      include: { barcodes: { take: 1, orderBy: { id: "asc" } }, item: true },
     });
     if (!before) {
       return NextResponse.json({ error: "Canister를 찾을 수 없습니다." }, { status: 404 });
@@ -119,7 +121,10 @@ export async function PUT(
       changes.push(`물질명 → ${materialName}`);
 
     if (changes.length > 0)
-      await logActivity(sessionUserId, "UPDATE", "target_unit", Number(id), changes.join(" | "));
+      await logActivity(
+        sessionUserId, "UPDATE", "target_unit", Number(id),
+        `${targetUnitHeader(before)} ${changes.join(" | ")}`
+      );
 
     return NextResponse.json(updated);
   } catch (error) {

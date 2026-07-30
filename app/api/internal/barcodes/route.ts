@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/auth-helpers";
+import { formatBarcodeDetail } from "@/lib/logDetail";
 import { barcodePrefixFor } from "@/lib/barcodePrefix";
 
 export const dynamic = "force-dynamic";
@@ -133,7 +134,7 @@ export async function POST(request: NextRequest) {
         return barcode;
       });
 
-      await logActivity(actingUserId, "CREATE", "barcode", result.id);
+      await logActivity(actingUserId, "CREATE", "barcode", result.id, formatBarcodeDetail(result));
 
       return NextResponse.json({
         id:       result.id,
@@ -199,7 +200,7 @@ export async function POST(request: NextRequest) {
       include: { item: { include: { category: true } }, targetUnit: true },
     });
 
-    await logActivity(actingUserId, "CREATE", "barcode", barcode.id);
+    await logActivity(actingUserId, "CREATE", "barcode", barcode.id, formatBarcodeDetail(barcode));
 
     return NextResponse.json({
       id:       barcode.id,
