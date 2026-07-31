@@ -17,11 +17,12 @@ interface TargetItem {
   purity: number | null;
   hasCopper: string | null;
   copperThickness: number | null;
+  siteLocationId?: number;
 }
 
 const STATUS_TABS = ["전체", "미사용", "사용중", "폐기", "판매완료"] as const;
 
-export default function TargetStatusSection() {
+export default function TargetStatusSection({ selectedLocationId = null }: { selectedLocationId?: number | null }) {
   const [items, setItems] = useState<TargetItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -32,7 +33,9 @@ export default function TargetStatusSection() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/targets/status");
+      const params = new URLSearchParams();
+      if (selectedLocationId != null) params.set("locationId", String(selectedLocationId));
+      const res = await fetch(`/api/targets/status?${params.toString()}`);
       if (!res.ok) throw new Error("fetch failed");
       const data = await res.json();
       setItems(data);
@@ -41,7 +44,7 @@ export default function TargetStatusSection() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedLocationId]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 

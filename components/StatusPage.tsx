@@ -273,7 +273,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
       </div>
 
       {[...CATS, "ALD Canister"].filter((cat) => selectedCategory === "전체" || selectedCategory === cat).map((cat) => {
-        if (cat === "타겟") return <TargetStatusSection key={cat} />;
+        if (cat === "타겟") return <TargetStatusSection key={cat} selectedLocationId={selectedLocationId} />;
         const catItems = sortedItems.filter((i) => i.category === cat);
         if (catItems.length === 0 && search) return null;
         return (

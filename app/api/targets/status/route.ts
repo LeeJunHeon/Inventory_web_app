@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 const STATUS_ORDER: Record<string, number> = {
@@ -8,8 +8,12 @@ const STATUS_ORDER: Record<string, number> = {
   "판매완료": 3,
 };
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const raw = new URL(request.url).searchParams.get("locationId");
+    const n = raw ? Number(raw) : NaN;
+    const locFilter = n === 1 || n === 2 ? n : null; // 1/2 외 값·미전달이면 필터 없음
+
     // 쿼리 1: 모든 target_unit + item + 활성 바코드 한 번에 가져오기
     const targetUnits = await prisma.targetUnit.findMany({
       include: {
@@ -46,23 +50,27 @@ export async function GET() {
         txType: "입고",
         targetUnitId: { in: ids },
       },
-      select: { targetUnitId: true, txDate: true },
+      select: { targetUnitId: true, txDate: true, locationId: true },
       orderBy: { txDate: "desc" },
     });
 
     // 타겟별 가장 최근 입고일 Map
     const inboundDateMap = new Map<number, string>();
+    const inboundLocMap = new Map<number, number>();
     for (const tx of allInboundTxs) {
       if (tx.targetUnitId && !inboundDateMap.has(tx.targetUnitId)) {
         inboundDateMap.set(
           tx.targetUnitId,
           tx.txDate.toISOString().split("T")[0]
         );
+        if (tx.locationId != null) {
+          inboundLocMap.set(tx.targetUnitId, tx.locationId);
+        }
       }
     }
 
     // 3개의 Map을 합쳐서 최종 결과 조립
-    const result = targetUnits.map((tu) => {
+    let result = targetUnits.map((tu) => {
       const latestLog = latestLogMap.get(tu.id) ?? null;
       return {
         id: tu.id,
@@ -74,11 +82,16 @@ export async function GET() {
         latestLoggedAt: latestLog?.loggedAt?.toISOString() ?? null,
         locationName: latestLog?.location?.name ?? null,
         inboundDate: inboundDateMap.get(tu.id) ?? null,
+        siteLocationId: inboundLocMap.get(tu.id) ?? 1,
         purity:          tu.item?.targetSpec?.purity != null ? Number(tu.item.targetSpec.purity) : null,
         hasCopper:       tu.item?.targetSpec?.hasCopper ?? null,
         copperThickness: tu.item?.targetSpec?.copperThickness != null ? Number(tu.item.targetSpec.copperThickness) : null,
       };
     });
+
+    if (locFilter) {
+      result = result.filter((r) => r.siteLocationId === locFilter);
+    }
 
     result.sort((a, b) => {
       const sa = STATUS_ORDER[a.status] ?? 99;
