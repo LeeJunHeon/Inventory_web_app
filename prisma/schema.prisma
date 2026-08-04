@@ -289,6 +289,9 @@ model ChamberSlot {
 }
 
 // ── 활동 로그 ──
+// ⚠️ snapshot 컬럼은 마이그레이션 없이 아래 SQL을 DB에서 직접 실행해 추가할 것:
+//    ALTER TABLE activity_log ADD COLUMN IF NOT EXISTS snapshot TEXT;
+//    (prisma migrate 금지 — 스키마 반영은 `npx prisma generate` 만 실행)
 model ActivityLog {
   id        Int      @id @default(autoincrement())
   userId    Int?     @map("user_id")
@@ -296,6 +299,7 @@ model ActivityLog {
   tableName String   @map("table_name")
   recordId  Int      @map("record_id")
   detail    String?
+  snapshot  String? // 삭제/수정 직전 원문(JSON) — 복원 판정 및 사후 추적용
   createdAt DateTime @default(now()) @map("created_at")
 
   user User? @relation(fields: [userId], references: [id])

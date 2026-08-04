@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, getSessionUser, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 import { buildInventoryTxDetail, formatInventoryTxDetail, inventoryTxHeader } from "@/lib/logDetail";
-import { LOT_CONSUME_TYPES } from "@/lib/txTypes";
+import { LOT_CONSUME_TYPES, recordAutoTransition, resolveAutoTransitionRevert } from "@/lib/txTypes";
 
 function buildItemSpec(ws: {
   waferType?: string | null; diameterInch?: number | null;
@@ -22,6 +22,93 @@ function buildItemSpec(ws: {
 }
 
 const VALID_TYPES = ["입고", "출고", "불출", "충진 입고", "사용중", "폐기"];
+
+/** activity_log.snapshot 에 굳혀 둘 inventory_tx 스칼라 컬럼 전체 */
+function txRowSnapshot(row: {
+  id: number; txNo: string | null; txDate: Date; txType: string;
+  itemId: number; targetUnitId: number | null; qty: number;
+  unitPrice: unknown; amount: unknown; partnerId: number | null;
+  txReasonId: number | null; locationId: number | null; userId: number | null;
+  memo: string | null; refTxNo: string | null; barcodeId: number | null;
+  currency: string | null; exchangeRateAtEntry: unknown; createdAt: Date | null;
+}): Record<string, unknown> {
+  return {
+    id: row.id, txNo: row.txNo, txDate: row.txDate, txType: row.txType,
+    itemId: row.itemId, targetUnitId: row.targetUnitId, qty: row.qty,
+    unitPrice: row.unitPrice, amount: row.amount, partnerId: row.partnerId,
+    txReasonId: row.txReasonId, locationId: row.locationId, userId: row.userId,
+    memo: row.memo, refTxNo: row.refTxNo, barcodeId: row.barcodeId,
+    currency: row.currency, exchangeRateAtEntry: row.exchangeRateAtEntry,
+    createdAt: row.createdAt,
+  };
+}
+
+/**
+ * 참조 전표(refTxNo) 무결성 검증 — 품목/위치 일치 + 잔여수량 이내.
+ * POST(신규)와 PUT(수정)에서 공유한다. 위반 시 사용자 메시지를, 통과 시 null을 반환.
+ * excludeTxId: 수정 시 자기 자신의 기존 qty를 소비량에서 제외하기 위한 id.
+ */
+async function validateRefIntegrity(opts: {
+  txType: string;
+  itemId: number;
+  locationId: number;
+  qty: number;
+  refTxNo: string;
+  excludeTxId?: number;
+}): Promise<string | null> {
+  const { txType, itemId, locationId, qty, refTxNo, excludeTxId } = opts;
+  const exclude = excludeTxId ? { NOT: { id: excludeTxId } } : {};
+
+  const refInbound = await prisma.inventoryTx.findUnique({
+    where: { txNo: refTxNo },
+    select: { qty: true, itemId: true, locationId: true, txType: true },
+  });
+  // 존재하지 않는 참조 전표를 가리키면(예: ref_tx_no="7" vs 실제 tx_no="07")
+  // 아래 무결성 검증들이 조용히 스킵되므로 명시적으로 거부한다.
+  if (!refInbound) return `참조 전표(${refTxNo})를 찾을 수 없습니다.`;
+
+  const isInboundRef = refInbound.txType === "입고" || refInbound.txType === "충진 입고";
+
+  if (txType === "폐기" && refInbound.txType === "사용중") {
+    // 사용중 건 폐기 — 보유수량은 사용중 시점에 이미 차감되었으므로 여기서 또 깎지 않는다
+    if (refInbound.itemId !== itemId) {
+      return "참조 사용중 건의 품목과 폐기 품목이 일치하지 않습니다.";
+    }
+    if (refInbound.locationId !== locationId) {
+      return "참조 사용중 건의 위치와 폐기 위치가 일치하지 않습니다.";
+    }
+    const disposed = await prisma.inventoryTx.aggregate({
+      where: { refTxNo, txType: "폐기", ...exclude },
+      _sum: { qty: true },
+    });
+    const remainQty = refInbound.qty - (disposed._sum.qty ?? 0);
+    if (qty > remainQty) {
+      return `수량 초과: 해당 사용중 건의 폐기 가능 수량은 ${remainQty}개입니다. (요청: ${qty}개)`;
+    }
+    return null;
+  }
+
+  if (isInboundRef) {
+    if (refInbound.itemId !== itemId) {
+      return "참조 입고 건의 품목과 출고 품목이 일치하지 않습니다.";
+    }
+    if (refInbound.locationId !== locationId) {
+      return "참조 입고 건의 위치와 출고 위치가 일치하지 않습니다.";
+    }
+    const consumed = await prisma.inventoryTx.aggregate({
+      where: { refTxNo, txType: { in: LOT_CONSUME_TYPES }, ...exclude },
+      _sum: { qty: true },
+    });
+    const remainQty = refInbound.qty - (consumed._sum.qty ?? 0);
+    if (qty > remainQty) {
+      return `수량 초과: 해당 입고건의 잔여수량은 ${remainQty}개입니다. (요청: ${qty}개)`;
+    }
+    return null;
+  }
+
+  if (txType === "폐기") return "폐기는 입고 건 또는 사용중 건만 참조할 수 있습니다.";
+  return "참조 전표가 입고 건이 아닙니다.";
+}
 
 /** 참조 전표(refTxNo)가 반드시 있어야 하는 유형 */
 const REF_REQUIRED_TYPES = ["출고", "불출", "사용중", "폐기"];
@@ -291,84 +378,40 @@ export async function POST(request: NextRequest) {
     // - 폐기: (a) 입고 참조 = 미개봉 재고 직접 폐기 → 위와 동일
     //         (b) 사용중 참조 = 다 쓴 것 버림 → 사용중 건의 잔여 이내
     if (REF_REQUIRED_TYPES.includes(body.txType) && body.refTxNo) {
-      const refInbound = await prisma.inventoryTx.findUnique({
-        where: { txNo: body.refTxNo },
-        select: { qty: true, itemId: true, locationId: true, txType: true },
+      const refError = await validateRefIntegrity({
+        txType:     body.txType,
+        itemId:     Number(body.itemId),
+        locationId: Number(body.locationId),
+        qty:        Number(body.qty),
+        refTxNo:    body.refTxNo,
       });
-      // 존재하지 않는 참조 전표를 가리키면(예: ref_tx_no="7" vs 실제 tx_no="07")
-      // 아래 무결성 검증들이 조용히 스킵되므로 명시적으로 거부한다.
-      if (!refInbound) {
+      if (refError) return NextResponse.json({ error: refError }, { status: 400 });
+    }
+
+    // ALD Canister 불출 사전 확인 — 폐기·바코드 비활성화·슬롯 비우기가 함께 일어나고
+    // 자동 복원이 불가능하므로, 프론트 확인만 믿지 않고 서버에서 반드시 검사한다.
+    if (body.txType === "불출" && body.barcodeId && body.confirmAldDispose !== true) {
+      const bcCat = await prisma.barcode.findUnique({
+        where:  { id: Number(body.barcodeId) },
+        select: {
+          targetUnitId: true,
+          item: { select: { category: { select: { name: true } } } },
+        },
+      });
+      if (bcCat?.item?.category?.name === "ALD Canister" && bcCat.targetUnitId) {
         return NextResponse.json(
-          { error: `참조 전표(${body.refTxNo})를 찾을 수 없습니다.` },
-          { status: 400 }
-        );
-      }
-
-      const isInboundRef = refInbound.txType === "입고" || refInbound.txType === "충진 입고";
-
-      if (body.txType === "폐기" && refInbound.txType === "사용중") {
-        // (b) 사용중 건 폐기 — 보유수량은 사용중 시점에 이미 차감되었으므로 여기서 또 깎지 않는다
-        if (refInbound.itemId !== Number(body.itemId)) {
-          return NextResponse.json(
-            { error: "참조 사용중 건의 품목과 폐기 품목이 일치하지 않습니다." },
-            { status: 400 }
-          );
-        }
-        if (refInbound.locationId !== Number(body.locationId)) {
-          return NextResponse.json(
-            { error: "참조 사용중 건의 위치와 폐기 위치가 일치하지 않습니다." },
-            { status: 400 }
-          );
-        }
-        const disposed = await prisma.inventoryTx.aggregate({
-          where: { refTxNo: body.refTxNo, txType: "폐기" },
-          _sum: { qty: true },
-        });
-        const remainQty = refInbound.qty - (disposed._sum.qty ?? 0);
-        if (Number(body.qty) > remainQty) {
-          return NextResponse.json(
-            { error: `수량 초과: 해당 사용중 건의 폐기 가능 수량은 ${remainQty}개입니다. (요청: ${body.qty}개)` },
-            { status: 400 }
-          );
-        }
-      } else if (isInboundRef) {
-        // 참조 입고 무결성 검증: 품목 / 위치 일치
-        if (refInbound.itemId !== Number(body.itemId)) {
-          return NextResponse.json(
-            { error: "참조 입고 건의 품목과 출고 품목이 일치하지 않습니다." },
-            { status: 400 }
-          );
-        }
-        if (refInbound.locationId !== Number(body.locationId)) {
-          return NextResponse.json(
-            { error: "참조 입고 건의 위치와 출고 위치가 일치하지 않습니다." },
-            { status: 400 }
-          );
-        }
-        const consumed = await prisma.inventoryTx.aggregate({
-          where: {
-            refTxNo: body.refTxNo,
-            txType: { in: LOT_CONSUME_TYPES },
+          {
+            error:        "확인이 필요합니다.",
+            needsConfirm: "aldDispose",
+            message:      "ALD Canister를 불출하면 다음이 함께 처리됩니다.",
+            effects: [
+              "캐니스터 상태가 '폐기'로 변경됩니다",
+              "바코드가 비활성화됩니다",
+              "장착된 포트 슬롯이 비워집니다",
+            ],
+            warning: "이 작업은 자동으로 되돌릴 수 없습니다.",
           },
-          _sum: { qty: true },
-        });
-        const usedQty = consumed._sum.qty ?? 0;
-        const remainQty = refInbound.qty - usedQty;
-        if (Number(body.qty) > remainQty) {
-          return NextResponse.json(
-            { error: `수량 초과: 해당 입고건의 잔여수량은 ${remainQty}개입니다. (요청: ${body.qty}개)` },
-            { status: 400 }
-          );
-        }
-      } else if (body.txType === "폐기") {
-        return NextResponse.json(
-          { error: "폐기는 입고 건 또는 사용중 건만 참조할 수 있습니다." },
-          { status: 400 }
-        );
-      } else {
-        return NextResponse.json(
-          { error: "참조 전표가 입고 건이 아닙니다." },
-          { status: 400 }
+          { status: 409 }
         );
       }
     }
@@ -435,7 +478,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const tx = await prisma.inventoryTx.create({
+    // 거래 생성과 그로 인한 자동 상태 전이는 반드시 한 트랜잭션 안에서 끝낸다.
+    // (중간 실패 시 "거래는 있는데 상태는 안 바뀐"/"상태만 바뀐" 불일치가 생기므로)
+    type PendingTransition = {
+      targetUnitId: number; from: string; to: string; extra: Record<string, unknown>;
+    };
+
+    const { tx, pending } = await prisma.$transaction(async (db) => {
+      const pending: PendingTransition[] = [];
+      const created = await db.inventoryTx.create({
       data: {
         txNo:         newTxNo,
         txDate:       new Date(body.txDate),
@@ -457,14 +508,14 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // 충진 입고 시: ald_canister_spec 물질명 업데이트
+    // 충진 입고 시: ald_canister_spec 물질명 업데이트 + 상태 → 사용중
     if (body.txType === "충진 입고" && body.barcodeId) {
-      const fillBc = await prisma.barcode.findUnique({
+      const fillBc = await db.barcode.findUnique({
         where:  { id: Number(body.barcodeId) },
         select: { targetUnitId: true },
       });
       if (fillBc?.targetUnitId) {
-        await prisma.aldCanisterSpec.updateMany({
+        await db.aldCanisterSpec.updateMany({
           where: { targetUnitId: fillBc.targetUnitId },
           data:  {
             materialName:       body.aldMaterialName || null,
@@ -473,22 +524,24 @@ export async function POST(request: NextRequest) {
             updatedAt: new Date(),
           },
         });
-        await prisma.targetUnit.update({
+        // 전이 직전 상태를 from으로 확보한 뒤 전이
+        const fillBefore = await db.targetUnit.findUnique({
+          where:  { id: fillBc.targetUnitId },
+          select: { status: true },
+        });
+        await db.targetUnit.update({
           where: { id: fillBc.targetUnitId },
           data:  { status: "사용중" },
         });
+        if (fillBefore && fillBefore.status !== "사용중") {
+          pending.push({
+            targetUnitId: fillBc.targetUnitId,
+            from: fillBefore.status, to: "사용중", extra: {},
+          });
+        }
 
         // 충진 입고 → target_log + ald_log_detail 생성 (ALD 탭 이력에 표시)
-        const allTxNosForLog = await prisma.inventoryTx.findMany({
-          where: { txNo: { not: null } },
-          select: { txNo: true },
-        });
-        const lastNoForLog = allTxNosForLog.reduce((max, t) => {
-          const n = parseInt(t.txNo ?? "", 10);
-          return isNaN(n) ? max : Math.max(max, n);
-        }, 0);
-
-        const fillLog = await prisma.targetLog.create({
+        const fillLog = await db.targetLog.create({
           data: {
             targetUnitId: fillBc.targetUnitId,
             logType:      "측정",
@@ -497,11 +550,11 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        const fillSpec = await prisma.aldCanisterSpec.findUnique({
+        const fillSpec = await db.aldCanisterSpec.findUnique({
           where: { targetUnitId: fillBc.targetUnitId },
         });
 
-        await prisma.aldLogDetail.create({
+        await db.aldLogDetail.create({
           data: {
             targetLogId:        fillLog.id,
             logSubType:         "충진",
@@ -522,19 +575,23 @@ export async function POST(request: NextRequest) {
 
     // 출고 시: 타겟이 미사용 상태이면 판매완료로 자동 전이
     if (body.txType === "출고" && body.barcodeId) {
-      const bc = await prisma.barcode.findUnique({
+      const bc = await db.barcode.findUnique({
         where: { id: Number(body.barcodeId) },
         select: { targetUnitId: true },
       });
       if (bc?.targetUnitId) {
-        const tu = await prisma.targetUnit.findUnique({
+        const tu = await db.targetUnit.findUnique({
           where: { id: bc.targetUnitId },
           select: { status: true },
         });
         if (tu?.status === "미사용") {
-          await prisma.targetUnit.update({
+          await db.targetUnit.update({
             where: { id: bc.targetUnitId },
             data: { status: "판매완료" },
+          });
+          pending.push({
+            targetUnitId: bc.targetUnitId,
+            from: "미사용", to: "판매완료", extra: {},
           });
         }
       }
@@ -542,7 +599,7 @@ export async function POST(request: NextRequest) {
 
     // 불출 시: ALD Canister이면 폐기 자동 처리 + 포트 슬롯 비우기
     if (body.txType === "불출" && body.barcodeId) {
-      const bc = await prisma.barcode.findUnique({
+      const bc = await db.barcode.findUnique({
         where: { id: Number(body.barcodeId) },
         include: {
           item: { include: { category: true } },
@@ -550,22 +607,48 @@ export async function POST(request: NextRequest) {
         },
       });
       if (bc?.item?.category?.name === "ALD Canister" && bc.targetUnitId) {
+        const fromStatus = bc.targetUnit?.status ?? "";
         // 상태 → 폐기
-        await prisma.targetUnit.update({
+        await db.targetUnit.update({
           where: { id: bc.targetUnitId },
           data: { status: "폐기", disposedAt: new Date() },
         });
         // 바코드 비활성화
-        await prisma.barcode.update({
+        await db.barcode.update({
           where: { id: Number(body.barcodeId) },
           data: { isActive: "N" },
         });
         // 포트 슬롯 자동 비우기
-        await prisma.aldPortSlot.updateMany({
+        await db.aldPortSlot.updateMany({
           where: { targetUnitId: bc.targetUnitId },
           data: { targetUnitId: null, loadedAt: null },
         });
+        pending.push({
+          targetUnitId: bc.targetUnitId,
+          from: fromStatus, to: "폐기",
+          extra: {
+            barcodeDeactivated: true,
+            barcodeId: Number(body.barcodeId),
+            portSlotCleared: true,
+          },
+        });
       }
+    }
+
+      return { tx: created, pending };
+    });
+
+    // 전이 기록은 커밋이 확정된 뒤에 남긴다 (롤백된 전이를 기록하지 않기 위함)
+    for (const p of pending) {
+      await recordAutoTransition({
+        userId:       sessionUserId,
+        targetUnitId: p.targetUnitId,
+        from:         p.from,
+        to:           p.to,
+        byTxNo:       newTxNo,
+        byTxType:     body.txType,
+        extra:        p.extra,
+      });
     }
 
     // 폐기 시: 연결된 타겟유닛 폐기 처리 + 바코드 비활성화 + 슬롯 비우기
@@ -716,6 +799,84 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // ── 정합성 가드 ⑤~⑨ ─────────────────────────────────
+    // 수정 후 실제로 적용될 값들 (body에 없으면 기존 값 유지)
+    const nextTxType     = body.txType     ?? before.txType;
+    const nextItemId     = body.itemId     !== undefined ? Number(body.itemId)     : before.itemId;
+    const nextLocationId = body.locationId !== undefined ? Number(body.locationId) : before.locationId;
+    const nextQty        = body.qty        !== undefined ? Number(body.qty)        : before.qty;
+    const nextRefTxNo    = body.refTxNo    !== undefined ? (body.refTxNo ?? null)  : before.refTxNo;
+    const isInboundType  = nextTxType === "입고" || nextTxType === "충진 입고";
+
+    // ⑤ 이미 소비된 수량 아래로 입고 수량을 줄이면 원장이 음수가 된다
+    if (isInboundType && body.qty !== undefined && before.txNo) {
+      const consumedAgg = await prisma.inventoryTx.aggregate({
+        where: { refTxNo: before.txNo, txType: { in: LOT_CONSUME_TYPES } },
+        _sum:  { qty: true },
+      });
+      const consumed = consumedAgg._sum.qty ?? 0;
+      if (nextQty < consumed) {
+        return NextResponse.json(
+          { error: `이 입고건은 이미 ${consumed}개가 사용되었습니다. 수량을 ${consumed}개 미만으로 줄일 수 없습니다. 먼저 연결된 출고/불출/사용중/폐기 건을 삭제해 주세요.` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // ⑥ 자식(참조 건)이 있는 입고건의 위치를 바꾸면 참조 건과 위치가 어긋난다.
+    //    자식이 0건이면 자유롭게 변경 가능 — 기존 보정 작업을 막지 않는다.
+    if (
+      isInboundType && body.locationId !== undefined &&
+      Number(body.locationId) !== before.locationId && before.txNo
+    ) {
+      const childCount = await prisma.inventoryTx.count({
+        where: { refTxNo: before.txNo, NOT: { id: Number(id) } },
+      });
+      if (childCount > 0) {
+        return NextResponse.json(
+          { error: `이 입고건을 참조하는 거래가 ${childCount}건 있습니다. 위치를 변경하면 참조 건과 불일치가 발생합니다. 먼저 참조 거래를 정리해 주세요.` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // ⑦ 출고/불출/사용중/폐기의 위치는 참조 건과 반드시 같아야 한다
+    if (
+      REF_REQUIRED_TYPES.includes(nextTxType) && nextRefTxNo &&
+      body.locationId !== undefined
+    ) {
+      const refLoc = await prisma.inventoryTx.findUnique({
+        where:  { txNo: nextRefTxNo },
+        select: { locationId: true, location: { select: { name: true } } },
+      });
+      if (refLoc && refLoc.locationId !== Number(body.locationId)) {
+        return NextResponse.json(
+          { error: `참조 건의 위치(${refLoc.location?.name ?? refLoc.locationId})와 달라집니다. 같은 위치에서만 처리할 수 있습니다.` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // ⑧⑨ 수량 증가 / 참조 전표 변경 / 품목·위치 변경 시 POST와 동일한 무결성 검증.
+    //     자기 자신의 기존 qty 는 소비량에서 제외한다(excludeTxId).
+    const refAffecting =
+      body.qty        !== undefined ||
+      body.refTxNo    !== undefined ||
+      body.itemId     !== undefined ||
+      body.locationId !== undefined ||
+      body.txType     !== undefined;
+    if (REF_REQUIRED_TYPES.includes(nextTxType) && nextRefTxNo && refAffecting && nextLocationId != null) {
+      const refError = await validateRefIntegrity({
+        txType:      nextTxType,
+        itemId:      nextItemId,
+        locationId:  nextLocationId,
+        qty:         nextQty,
+        refTxNo:     nextRefTxNo,
+        excludeTxId: Number(id),
+      });
+      if (refError) return NextResponse.json({ error: refError }, { status: 400 });
+    }
+
     const tx = await prisma.inventoryTx.update({
       where: { id: Number(id) },
       data: {
@@ -773,7 +934,11 @@ export async function PUT(request: NextRequest) {
       ? `${inventoryTxHeader(before)} ${_changes.join(" | ")}`
       : undefined;
     if (_detail) {
-      await logActivity(sessionUserId, "UPDATE", "inventory_tx", Number(id), _detail);
+      // ⑩ 변경 전 행 전체를 snapshot으로 굳혀 둔다
+      await logActivity(
+        sessionUserId, "UPDATE", "inventory_tx", Number(id), _detail,
+        txRowSnapshot(before)
+      );
     }
 
     return NextResponse.json(tx);
@@ -862,10 +1027,83 @@ export async function DELETE(request: NextRequest) {
       deleteDetail = formatInventoryTxDetail(beforeDelete);
     } catch { deleteDetail = undefined; }
 
+    const rowSnapshot = txRowSnapshot(beforeDelete);
+
+    // ③ 이 거래가 타겟/캐니스터 상태를 자동 전이시켰다면, 안전하게 되돌릴 수 있을 때만 삭제한다.
+    //    틀린 복원을 하느니 차단한다 — 판정이 애매하면 409.
+    const TRANSITION_TYPES = ["출고", "불출", "충진 입고"];
+    const transitionTuId =
+      beforeDelete.targetUnitId ?? beforeDelete.barcode?.targetUnitId ?? null;
+
+    if (TRANSITION_TYPES.includes(beforeDelete.txType) && transitionTuId) {
+      const resolved = beforeDelete.txNo
+        ? await resolveAutoTransitionRevert({ targetUnitId: transitionTuId, txNo: beforeDelete.txNo })
+        : ({ ok: false, reason: "전표번호가 없어 전이 기록을 찾을 수 없습니다" } as const);
+
+      if (!resolved.ok) {
+        const cur = await prisma.targetUnit.findUnique({
+          where:  { id: transitionTuId },
+          select: { status: true },
+        });
+        return NextResponse.json(
+          {
+            error:   "이 거래는 타겟/캐니스터 상태를 변경했으나 안전하게 되돌릴 수 없습니다.",
+            blocked: true,
+            reason:  resolved.reason,
+            currentStatus: cur?.status ?? null,
+            suggestion: "타겟 상태를 직접 확인하고 필요하면 수동으로 변경한 뒤 다시 시도해 주세요.",
+          },
+          { status: 409 }
+        );
+      }
+
+      const revertTo = resolved.revertTo;
+      const revertBarcodeId =
+        resolved.extra.barcodeDeactivated === true
+          ? (typeof resolved.extra.barcodeId === "number" ? resolved.extra.barcodeId : beforeDelete.barcodeId)
+          : null;
+
+      await prisma.$transaction(async (db) => {
+        await db.inventoryTx.delete({ where: { id: Number(id) } });
+        await db.targetUnit.update({
+          where: { id: transitionTuId },
+          data: {
+            status: revertTo,
+            // 폐기로 되돌아가는 경우가 아니면 폐기 일시를 지운다
+            disposedAt: revertTo === "폐기" ? undefined : null,
+          },
+        });
+        if (revertBarcodeId) {
+          await db.barcode.update({
+            where: { id: revertBarcodeId },
+            data:  { isActive: "Y" },
+          });
+        }
+      });
+
+      await logActivity(
+        sessionUserId, "DELETE", "inventory_tx", Number(id),
+        [deleteDetail, `상태 복원: ${resolved.extra.to ?? "-"} → ${revertTo}`]
+          .filter(Boolean).join(" | "),
+        { ...rowSnapshot, _reverted: true, _revertedTo: revertTo }
+      );
+
+      // 포트 슬롯은 물리적 장착 상태이므로 소프트웨어가 임의로 되돌리지 않는다
+      return NextResponse.json({
+        message:
+          resolved.extra.portSlotCleared === true
+            ? "삭제 완료 (상태 복원됨). 포트 슬롯은 자동 복원되지 않습니다. ALD 탭에서 직접 확인해 주세요."
+            : "삭제 완료 (상태 복원됨)",
+        revertedTo: revertTo,
+      });
+    }
+
     await prisma.inventoryTx.delete({ where: { id: Number(id) } });
 
-    // activity_log 기록
-    await logActivity(sessionUserId, "DELETE", "inventory_tx", Number(id), deleteDetail);
+    // activity_log 기록 (삭제 원문 전체를 snapshot으로 보존)
+    await logActivity(
+      sessionUserId, "DELETE", "inventory_tx", Number(id), deleteDetail, rowSnapshot
+    );
 
     return NextResponse.json({ message: "삭제 완료" });
   } catch (error) {

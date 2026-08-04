@@ -70,11 +70,26 @@ export async function logActivity(
   action: "CREATE" | "UPDATE" | "DELETE",
   tableName: string,
   recordId: number,
-  detail?: string
+  detail?: string,
+  snapshot?: unknown
 ): Promise<void> {
   try {
+    // Prisma Decimal / Date / BigInt 는 기본 직렬화가 불가능하거나 손실되므로 replacer로 평탄화
+    const snapshotJson =
+      snapshot === undefined
+        ? null
+        : JSON.stringify(snapshot, (_k, v) =>
+            typeof v === "bigint" ? v.toString()
+            : v instanceof Date ? v.toISOString()
+            : (v && typeof v === "object" && "toNumber" in v) ? Number(v)
+            : v
+          );
     await prisma.activityLog.create({
-      data: { userId: userId ?? null, action, tableName, recordId, detail: detail ?? null },
+      data: {
+        userId: userId ?? null, action, tableName, recordId,
+        detail: detail ?? null,
+        snapshot: snapshotJson,
+      },
     });
   } catch (error) {
     console.error("logActivity failed:", { action, tableName, recordId }, error);

@@ -101,6 +101,9 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const [memo, setMemo]             = useState("");
   const [saving, setSaving]         = useState(false);
   const [error, setError]           = useState("");
+  const [aldConfirm, setAldConfirm] = useState<
+    { message: string; effects: string[]; warning: string } | null
+  >(null);
 
   const [txReasonId, setTxReasonId] = useState<number | null>(null);
   const [txReasonOptions, setTxReasonOptions] = useState<TxReasonOption[]>([]);
@@ -207,7 +210,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       setLocationId(1);
       setCurrency("KRW");
       setExchangeRateAtEntry(null);
-      setMemo(""); setError(""); setShowItemSelector(false); setItemSelectorSearch("");
+      setMemo(""); setError(""); setAldConfirm(null); setShowItemSelector(false); setItemSelectorSearch("");
       setShowBarcodeSelector(false); setBarcodeSelectorSearch(""); setBarcodeSelectorList([]);
       setWaferSpec(null);
       setShowInboundSelect(false); setSelectedInbound(null);
@@ -488,7 +491,8 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const amount = Number(quantity || 0) * Number(unitPrice || 0);
 
   // 저장
-  const handleSave = async () => {
+  // confirmAldDispose: ALD 불출 확인 모달에서 "확인하고 불출"을 누른 재요청인지 여부
+  const handleSave = async (confirmAldDispose = false) => {
     if (!itemId)                            { setError(t.tx.selectItem);  barcodeInputRef.current?.focus(); return; }
     if (!quantity || Number(quantity) <= 0) { setError(t.tx.enterQty);   barcodeInputRef.current?.focus(); return; }
     // 출고/불출/사용중/폐기 시 참조 전표 필수
@@ -567,6 +571,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           currency:     currency,
           exchangeRateAtEntry: currency === "USD" ? exchangeRateAtEntry : null,
           locationId:   locationId,
+          ...(confirmAldDispose ? { confirmAldDispose: true } : {}),
           ...(category === "ALD Canister" && {
             aldMaterialName: aldMaterialName || null,
             aldTareWeight:   aldTareWeight   ? parseFloat(aldTareWeight) : null,
@@ -576,8 +581,18 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       });
       if (!res.ok) {
         const d = await res.json();
+        // 서버가 ALD 캐니스터 폐기 동반 처리를 확인받으라고 되돌려준 경우
+        if (res.status === 409 && d?.needsConfirm === "aldDispose") {
+          setAldConfirm({
+            message: d.message || "",
+            effects: Array.isArray(d.effects) ? d.effects : [],
+            warning: d.warning || "",
+          });
+          return;
+        }
         setError(d.error || t.common.saveFail); barcodeInputRef.current?.focus(); return;
       }
+      setAldConfirm(null);
       onSuccess?.();
       justCreatedBarcodeId.current = null;
       setAldMaterialName("");
@@ -605,6 +620,45 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
 
   return (
     <>
+    {/* ALD Canister 불출 확인 모달 — 폐기·바코드 비활성화가 함께 일어나므로 명시적 확인 */}
+    {aldConfirm && (
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-gray-900">{t.inventory.aldDisposeTitle}</h3>
+            <button onClick={() => setAldConfirm(null)} className="p-1 rounded hover:bg-gray-100">
+              <X size={18} />
+            </button>
+          </div>
+          <p className="text-sm text-gray-700 mb-3">
+            {aldConfirm.message || t.inventory.aldDisposeDesc}
+          </p>
+          <ul className="mb-3 space-y-1 list-disc list-inside">
+            {aldConfirm.effects.map((e, i) => (
+              <li key={i} className="text-sm text-gray-600">{e}</li>
+            ))}
+          </ul>
+          <p className="text-sm font-semibold text-rose-600 bg-rose-50 px-3 py-2 rounded-xl mb-4">
+            {aldConfirm.warning || t.inventory.aldDisposeWarn}
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setAldConfirm(null)}
+              className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200"
+            >
+              {t.common.cancel}
+            </button>
+            <button
+              onClick={() => { setAldConfirm(null); handleSave(true); }}
+              disabled={saving}
+              className="flex-1 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 disabled:opacity-50"
+            >
+              {t.inventory.aldDisposeConfirm}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     {/* 입고 참조 선택 모달 */}
     <InboundSelectModal
       isOpen={showInboundSelect}
@@ -1341,7 +1395,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
             className="px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
             {t.common.cancel}
           </button>
-          <button onClick={handleSave} disabled={saving}
+          <button onClick={() => handleSave()} disabled={saving}
             className="px-5 py-2.5 text-sm font-bold text-white bg-blue-500 rounded-xl hover:bg-blue-600 transition-colors shadow-sm disabled:opacity-60">
             {saving ? t.common.saving : t.common.save}
           </button>

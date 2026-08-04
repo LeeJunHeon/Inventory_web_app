@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Search, Plus, Edit, Trash2, ArrowUpDown, ArrowDown, ArrowUp, ChevronDown, Loader2 } from "lucide-react";
+import { Search, Plus, Edit, Trash2, ArrowUpDown, ArrowDown, ArrowUp, ChevronDown, Loader2, X } from "lucide-react";
 import { CATEGORIES, TYPES, TYPE_COLORS, CATEGORY_COLORS, formatPrice, formatQty, InventoryItem } from "@/lib/data";
 import { useSession } from "next-auth/react";
 import TransactionModal     from "./TransactionModal";
@@ -12,6 +12,12 @@ import { useT } from "@/lib/i18n";
 import { exportXLSX } from "@/lib/xlsxUtils";
 
 interface LocationOption { id: number; name: string; }
+interface BlockedDeleteInfo {
+  error: string;
+  reason: string;
+  currentStatus: string | null;
+  suggestion: string;
+}
 
 const SEARCH_FIELDS_KO = ["전체", "품목명", "품목코드", "바코드", "거래처"];
 
@@ -53,6 +59,7 @@ export default function InventoryPage({
   const [limit, setLimit]               = useState(50);
   const [total, setTotal]               = useState(0);
   const [hoveredId, setHoveredId]       = useState<number | null>(null);
+  const [blockedDelete, setBlockedDelete] = useState<BlockedDeleteInfo | null>(null);
 
   const { t, lang } = useT();
 
@@ -148,8 +155,25 @@ export default function InventoryPage({
     if (!confirm(t.inventory.deleteConfirm)) return;
     try {
       const res = await fetch(`/api/inventory?id=${id}`, { method: "DELETE" });
-      if (res.ok) { fetchData(); setToast(t.inventory.deleted); setTimeout(() => setToast(""), 3000); }
-      else { const d = await res.json(); setToast(d.error || t.common.saveFail); setTimeout(() => setToast(""), 3000); }
+      if (res.ok) {
+        const d = await res.json().catch(() => ({}));
+        fetchData();
+        setToast(d?.message || t.inventory.deleted);
+        setTimeout(() => setToast(""), 5000);
+        return;
+      }
+      const d = await res.json();
+      // 상태 복원이 불가능해 서버가 막은 경우 — 토스트로는 사유가 전달되지 않으므로 모달로 안내
+      if (res.status === 409 && d?.blocked) {
+        setBlockedDelete({
+          error:         d.error || "",
+          reason:        d.reason || "",
+          currentStatus: d.currentStatus ?? null,
+          suggestion:    d.suggestion || "",
+        });
+        return;
+      }
+      setToast(d.error || t.common.saveFail); setTimeout(() => setToast(""), 3000);
     } catch { setToast(t.common.networkError); setTimeout(() => setToast(""), 3000); }
   };
 
@@ -175,6 +199,39 @@ export default function InventoryPage({
 
   return (
     <div className="space-y-4 sm:space-y-5">
+      {/* 삭제 차단 안내 모달 (상태 복원 불가) */}
+      {blockedDelete && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-rose-600">{t.inventory.deleteBlockedTitle}</h3>
+              <button onClick={() => setBlockedDelete(null)} className="p-1 rounded hover:bg-gray-100">
+                <X size={18} />
+              </button>
+            </div>
+            <p className="text-sm text-rose-700 bg-rose-50 px-3 py-2 rounded-xl mb-3">
+              {blockedDelete.error}
+            </p>
+            {blockedDelete.reason && (
+              <p className="text-sm text-gray-700 mb-2">{blockedDelete.reason}</p>
+            )}
+            {blockedDelete.currentStatus && (
+              <div className="flex items-center justify-between text-sm px-3 py-1.5 bg-gray-50 rounded-lg mb-3">
+                <span className="text-gray-600">{t.inventory.deleteBlockedStatus}</span>
+                <span className="font-semibold text-gray-900">{blockedDelete.currentStatus}</span>
+              </div>
+            )}
+            <p className="text-xs text-gray-500 mb-4">{blockedDelete.suggestion}</p>
+            <button
+              onClick={() => setBlockedDelete(null)}
+              className="w-full py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200"
+            >
+              {t.common.close}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 토스트 */}
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 bg-gray-900 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-lg">
