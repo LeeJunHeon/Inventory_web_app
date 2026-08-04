@@ -7,6 +7,7 @@ import Sidebar, { PageId } from "@/components/Sidebar";
 import DashboardPage    from "@/components/DashboardPage";
 import InventoryPage    from "@/components/InventoryPage";
 import StatusPage       from "@/components/StatusPage";
+import type { StockFilter } from "@/components/StatusPage";
 import PeriodPage       from "@/components/PeriodPage";
 import TargetUsagePage  from "@/components/TargetUsagePage";
 import AldPrecursorPage from "@/components/AldPrecursorPage";
@@ -65,7 +66,7 @@ export default function Home() {
   const [showNotif, setShowNotif]     = useState(false);
   const [perms, setPerms]             = useState<Perms | null>(null);
   const [statusLocationId, setStatusLocationId] = useState<number | null>(null);
-  const [statusStockFilter, setStatusStockFilter] = useState<"전체" | "보유중" | "미보유" | "부족">("전체");
+  const [statusStockFilter, setStatusStockFilter] = useState<StockFilter>("전체");
   const [inventoryInitialFilter, setInventoryInitialFilter] = useState<{ type?: string; date?: string } | null>(null);
 
   const userName = session?.user?.name ?? "로딩중...";

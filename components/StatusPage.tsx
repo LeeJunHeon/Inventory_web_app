@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Search, AlertTriangle, CheckCircle, AlertCircle, Loader2, Check, X, ChevronUp, ChevronDown, ChevronsUpDown, Download } from "lucide-react";
 import { CATEGORY_COLORS } from "@/lib/data";
 import TargetStatusSection from "@/components/TargetStatusSection";
+import type { TargetItem } from "@/components/TargetStatusSection";
 import { useT } from "@/lib/i18n";
 import type { Messages } from "@/messages/ko";
 import { exportXLSX } from "@/lib/xlsxUtils";
@@ -28,9 +29,21 @@ function getSupplyLevel(current: number, required: number, t: Messages) {
 
 const CATS = ["웨이퍼", "타겟", "가스", "기자재/소모품"];
 
+/** 품목 단위 상태(보유중/미보유/부족)와 개체 단위 상태(미사용/사용중/…)를 한 축으로 합친 필터 */
+export type StockFilter =
+  | "전체" | "보유중" | "미보유" | "부족"
+  | "미사용" | "사용중" | "폐기" | "판매완료";
+
+const STOCK_FILTERS: StockFilter[] = [
+  "전체", "보유중", "미보유", "부족", "미사용", "사용중", "폐기", "판매완료",
+];
+
+/** 개체 단위 상태만 고르는 칩 — 품목(item) 섹션에는 해당 사항이 없다 */
+const UNIT_ONLY_FILTERS: StockFilter[] = ["미사용", "사용중", "폐기", "판매완료"];
+
 interface StatusPageProps {
   initialLocationId?: number | null;
-  initialStockFilter?: "전체" | "보유중" | "미보유" | "부족";
+  initialStockFilter?: StockFilter;
 }
 
 export default function StatusPage({ initialLocationId, initialStockFilter }: StatusPageProps) {
@@ -44,17 +57,26 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
   const [editValue, setEditValue]           = useState("");
   const [savingId, setSavingId]             = useState<number | null>(null);
   const [toast, setToast]                   = useState("");
-  const [stockFilter, setStockFilter]       = useState<"전체" | "보유중" | "미보유" | "부족">(initialStockFilter ?? "전체");
+  const [stockFilter, setStockFilter]       = useState<StockFilter>(initialStockFilter ?? "전체");
+  const [exactMatch, setExactMatch]         = useState(false);
+  const [targetUnits, setTargetUnits]       = useState<TargetItem[]>([]);
+  const [aldUnits, setAldUnits]             = useState<TargetItem[]>([]);
+  const [unitsLoading, setUnitsLoading]     = useState(true);
+  const [unitsError, setUnitsError]         = useState("");
   const [sortField, setSortField]           = useState<"name" | "code" | "category" | "currentQty" | "requiredQty">("name");
   const [sortDir, setSortDir]               = useState<"asc" | "desc">("asc");
 
   const { t } = useT();
 
-  const STOCK_FILTER_LABEL: Record<string, string> = {
+  const STOCK_FILTER_LABEL: Record<StockFilter, string> = {
     "전체": t.status.sfAll,
     "보유중": t.status.sfInStock,
     "미보유": t.status.sfOutStock,
     "부족": t.status.sfShortage,
+    "미사용": t.status.sfUnused,
+    "사용중": t.status.sfInUse,
+    "폐기": t.status.sfDisposed,
+    "판매완료": t.status.sfSold,
   };
   const CAT_LABEL_MAP: Record<string, string> = {
     "전체": t.status.catAll,
@@ -67,13 +89,33 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
 
   const fetchData = useCallback(async () => {
     setLoading(true);
+    setUnitsLoading(true);
+    setUnitsError("");
     try {
       const params = new URLSearchParams();
       if (selectedLocationId !== null) params.set("locationId", String(selectedLocationId));
-      const res = await fetch(`/api/status?${params}`);
-      if (res.ok) setItems(await res.json());
-    } catch { setToast(t.common.loadFail); setTimeout(() => setToast(""), 3000); }
-    finally { setLoading(false); }
+      const unitParams = (cat: "sputter" | "ald") => {
+        const p = new URLSearchParams(params);
+        p.set("unitCategory", cat);
+        return p;
+      };
+      const [statusRes, targetRes, aldRes] = await Promise.all([
+        fetch(`/api/status?${params}`),
+        fetch(`/api/targets/status?${unitParams("sputter")}`),
+        fetch(`/api/targets/status?${unitParams("ald")}`),
+      ]);
+      if (statusRes.ok) setItems(await statusRes.json());
+      if (targetRes.ok && aldRes.ok) {
+        setTargetUnits(await targetRes.json());
+        setAldUnits(await aldRes.json());
+      } else {
+        setUnitsError("데이터를 불러올 수 없습니다.");
+      }
+    } catch {
+      setToast(t.common.loadFail); setTimeout(() => setToast(""), 3000);
+      setUnitsError("데이터를 불러올 수 없습니다.");
+    }
+    finally { setLoading(false); setUnitsLoading(false); }
   }, [selectedLocationId, t]);
 
   useEffect(() => {
@@ -124,18 +166,62 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
       : <ChevronDown size={12} className="text-blue-600 inline ml-0.5" />;
   };
 
+  // ── 통합 검색 ────────────────────────────────────────
+  const match = (v?: string | null) => {
+    if (!search.trim()) return true;
+    const q = search.trim().toLowerCase();
+    const s = (v ?? "").toLowerCase();
+    return exactMatch ? s === q : s.includes(q);
+  };
+  const matchAny = (vals: (string | null | undefined)[]) =>
+    !search.trim() || vals.some(v => match(v));
+
+  // 품목(item) 단위 섹션은 개체 품목군을 포함하지 않는다 — 표의 성격이 다르다
+  const isUnitCategory = (c: string) => c === "타겟" || c === "ALD Canister";
+
   const filtered = items.filter((item) => {
-    const q = search.toLowerCase();
-    const matchSearch = !search || item.name.toLowerCase().includes(q) || item.code.toLowerCase().includes(q) || (item.barcodes?.some(b => b.toLowerCase().includes(q)) ?? false);
+    if (isUnitCategory(item.category)) return false;
+    const matchSearch = matchAny([item.code, item.name, ...(item.barcodes ?? [])]);
     const matchCat    = selectedCategory === "전체" || item.category === selectedCategory;
     return matchSearch && matchCat;
   });
 
+  // ── 통합 상태 필터 매핑 ──────────────────────────────
+  const passItem = (item: StockItem, f: StockFilter) => {
+    if (f === "전체")   return true;
+    if (f === "보유중") return item.currentQty > 0;
+    if (f === "미보유") return item.currentQty === 0;
+    if (f === "부족")   return item.requiredQty > 0 && item.currentQty < item.requiredQty;
+    return false; // 개체 전용 상태 — 품목에는 해당 없음
+  };
+  const passUnit = (u: TargetItem, f: StockFilter) => {
+    if (f === "전체")   return true;
+    if (f === "보유중") return u.status === "미사용" || u.status === "사용중";
+    if (f === "미보유") return u.status === "폐기" || u.status === "판매완료";
+    if (f === "부족")   return false; // 개체에는 필요수량 개념이 없다
+    return u.status === f;
+  };
+
+  const searchedTargets = targetUnits.filter(u =>
+    matchAny([u.barcodeCode, u.itemCode, u.itemName]));
+  const searchedAld = aldUnits.filter(u =>
+    matchAny([u.barcodeCode, u.itemCode, u.itemName, u.materialName]));
+
+  // 품목군 탭이 특정 섹션을 가리고 있으면 카운트에서도 제외해 화면과 숫자를 일치시킨다
+  const targetsVisible = selectedCategory === "전체" || selectedCategory === "타겟";
+  const aldVisible     = selectedCategory === "전체" || selectedCategory === "ALD Canister";
+
+  /** 칩 옆 숫자 = 비타겟 품목 수 + 타겟 개체 수 + ALD 개체 수 */
+  const countFor = (f: StockFilter) =>
+    filtered.filter(i => passItem(i, f)).length +
+    (targetsVisible ? searchedTargets.filter(u => passUnit(u, f)).length : 0) +
+    (aldVisible     ? searchedAld.filter(u => passUnit(u, f)).length     : 0);
+
   const handleExportCSV = () => {
-    if (!filtered || filtered.length === 0) return;
+    if (!filteredItems || filteredItems.length === 0) return;
     exportXLSX(
       ["품목코드", "품목명", "품목군", "바코드", "본사", "공덕", "합계", "최소수량", "수급상태"],
-      filtered.map(item => [
+      filteredItems.map(item => [
         item.code, item.name, item.category,
         (item.barcodes ?? []).join(" / "),
         item.locationQty?.[1] ?? 0,
@@ -149,12 +235,9 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
     );
   };
 
-  const filteredItems = filtered.filter(item => {
-    if (stockFilter === "보유중") return item.currentQty > 0;
-    if (stockFilter === "미보유") return item.currentQty === 0;
-    if (stockFilter === "부족") return item.requiredQty > 0 && item.currentQty < item.requiredQty;
-    return true;
-  });
+  const filteredItems = filtered.filter(item => passItem(item, stockFilter));
+  const filteredTargets = searchedTargets.filter(u => passUnit(u, stockFilter));
+  const filteredAld     = searchedAld.filter(u => passUnit(u, stockFilter));
 
   const sortedItems = [...filteredItems].sort((a, b) => {
     const v = sortDir === "asc" ? 1 : -1;
@@ -197,7 +280,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
               <span className="text-sm font-semibold text-rose-700">{t.status.shortageAlert(shortageCount)}</span>
             </div>
           )}
-          <button onClick={handleExportCSV} disabled={!filtered || filtered.length === 0}
+          <button onClick={handleExportCSV} disabled={filteredItems.length === 0}
             className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
             <Download size={15} />Excel
           </button>
@@ -233,24 +316,27 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
         </div>
       )}
 
-      {/* 보유상태 필터 */}
+      {/* 통합 상태 필터 (품목 상태 + 개체 상태) */}
       <div className="flex gap-2 mb-3 flex-wrap">
-        {(["전체", "보유중", "미보유", "부족"] as const).map(f => (
-          <button
-            key={f}
-            onClick={() => setStockFilter(f)}
-            className={`px-3 py-1 rounded-full text-sm border transition-colors ${
-              stockFilter === f
-                ? f === "부족" ? "bg-rose-500 text-white border-rose-500" : "bg-blue-600 text-white border-blue-600"
-                : "bg-white text-gray-600 border-gray-300 hover:border-blue-400"
-            }`}
-          >
-            {STOCK_FILTER_LABEL[f]}
-            {f === "보유중" && <span className="ml-1 text-xs opacity-75">({items.filter(i=>i.currentQty>0).length})</span>}
-            {f === "미보유" && <span className="ml-1 text-xs opacity-75">({items.filter(i=>i.currentQty===0).length})</span>}
-            {f === "부족" && <span className="ml-1 text-xs opacity-75">({items.filter(i=>i.requiredQty>0&&i.currentQty<i.requiredQty).length})</span>}
-          </button>
-        ))}
+        {STOCK_FILTERS.map(f => {
+          const selectedColor =
+            f === "부족"     ? "bg-rose-500 text-white border-rose-500"
+            : f === "폐기"     ? "bg-gray-500 text-white border-gray-500"
+            : f === "판매완료" ? "bg-purple-600 text-white border-purple-600"
+            : "bg-blue-600 text-white border-blue-600";
+          return (
+            <button
+              key={f}
+              onClick={() => setStockFilter(f)}
+              className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                stockFilter === f ? selectedColor : "bg-white text-gray-600 border-gray-300 hover:border-blue-400"
+              }`}
+            >
+              {STOCK_FILTER_LABEL[f]}
+              <span className="ml-1 text-xs opacity-75">({countFor(f)})</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* 검색 + 품목군 필터 */}
@@ -261,6 +347,11 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
             <input type="text" placeholder={t.status.searchPlaceholder} value={search} onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
           </div>
+          <label className="flex items-center gap-1.5 text-sm text-gray-600 whitespace-nowrap cursor-pointer">
+            <input type="checkbox" checked={exactMatch} onChange={(e) => setExactMatch(e.target.checked)}
+              className="rounded" />
+            {t.status.exactMatch}
+          </label>
           <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1 overflow-x-auto">
             {["전체", ...CATS, "ALD Canister"].map((cat) => (
               <button key={cat} onClick={() => setSelectedCategory(cat)}
@@ -273,7 +364,25 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
       </div>
 
       {[...CATS, "ALD Canister"].filter((cat) => selectedCategory === "전체" || selectedCategory === cat).map((cat) => {
-        if (cat === "타겟") return <TargetStatusSection key={cat} selectedLocationId={selectedLocationId} />;
+        // 개체 단위 섹션 — "부족"은 개체에 해당 개념이 없으므로 섹션 자체를 감춘다
+        if (cat === "타겟") {
+          if (stockFilter === "부족") return null;
+          if (search.trim() && filteredTargets.length === 0) return null;
+          return (
+            <TargetStatusSection key={cat} variant="target" items={filteredTargets}
+              loading={unitsLoading} error={unitsError} />
+          );
+        }
+        if (cat === "ALD Canister") {
+          if (stockFilter === "부족") return null;
+          if (search.trim() && filteredAld.length === 0) return null;
+          return (
+            <TargetStatusSection key={cat} variant="ald" items={filteredAld}
+              loading={unitsLoading} error={unitsError} />
+          );
+        }
+        // 품목 단위 섹션 — 개체 전용 상태 필터일 때는 렌더링하지 않는다
+        if (UNIT_ONLY_FILTERS.includes(stockFilter)) return null;
         const catItems = sortedItems.filter((i) => i.category === cat);
         if (catItems.length === 0 && search) return null;
         return (

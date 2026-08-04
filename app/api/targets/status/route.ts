@@ -10,15 +10,22 @@ const STATUS_ORDER: Record<string, number> = {
 
 export async function GET(request: NextRequest) {
   try {
-    const raw = new URL(request.url).searchParams.get("locationId");
+    const searchParams = new URL(request.url).searchParams;
+    const raw = searchParams.get("locationId");
     const n = raw ? Number(raw) : NaN;
     const locFilter = n === 1 || n === 2 ? n : null; // 1/2 외 값·미전달이면 필터 없음
 
-    // 쿼리 1: 모든 target_unit + item + 활성 바코드 한 번에 가져오기
+    // 유닛 분류 — 기본값 sputter(스퍼터 타겟). ald를 명시해야 캐니스터가 나온다.
+    const unitCategory = searchParams.get("unitCategory") === "ald" ? "ald" : "sputter";
+    const isAld = unitCategory === "ald";
+
+    // 쿼리 1: 해당 분류의 target_unit + item + 활성 바코드 한 번에 가져오기
     const targetUnits = await prisma.targetUnit.findMany({
+      where: { category: unitCategory },
       include: {
         item: { include: { targetSpec: true } },
         barcodes: { where: { isActive: "Y" }, take: 1 },
+        aldCanisterSpec: true,
       },
     });
 
@@ -86,6 +93,14 @@ export async function GET(request: NextRequest) {
         purity:          tu.item?.targetSpec?.purity != null ? Number(tu.item.targetSpec.purity) : null,
         hasCopper:       tu.item?.targetSpec?.hasCopper ?? null,
         copperThickness: tu.item?.targetSpec?.copperThickness != null ? Number(tu.item.targetSpec.copperThickness) : null,
+        // ALD 캐니스터 전용 필드 (sputter 응답에는 넣지 않는다)
+        ...(isAld ? {
+          materialName:       tu.aldCanisterSpec?.materialName ?? null,
+          tareWeight:         tu.aldCanisterSpec?.tareWeight != null
+            ? Number(tu.aldCanisterSpec.tareWeight) : null,
+          initialGrossWeight: tu.aldCanisterSpec?.initialGrossWeight != null
+            ? Number(tu.aldCanisterSpec.initialGrossWeight) : null,
+        } : {}),
       };
     });
 
