@@ -328,7 +328,8 @@ export async function DELETE(request: NextRequest) {
     const barcode = await prisma.barcode.findUnique({
       where: { id: bcId },
       select: {
-        id: true, code: true, targetUnitId: true,
+        id: true, code: true, itemId: true, targetUnitId: true,
+        isActive: true, memo: true,
         item: { select: { code: true, name: true } },
       },
     });
@@ -381,6 +382,17 @@ export async function DELETE(request: NextRequest) {
     }
 
     // (c) 이력 0건 → 정리 삭제 허용
+    // 삭제되면 복원할 수 없으므로 원문(바코드 + 연결 target_unit 스칼라)을 먼저 굳혀 둔다
+    const tuSnapshot = tuId
+      ? await prisma.targetUnit.findUnique({
+          where:  { id: tuId },
+          select: {
+            id: true, itemId: true, status: true, category: true,
+            createdAt: true, disposedAt: true, note: true,
+          },
+        })
+      : null;
+
     await prisma.$transaction(async (tx) => {
       if (tuId) {
         await tx.aldCanisterSpec.deleteMany({ where: { targetUnitId: tuId } });
@@ -404,7 +416,19 @@ export async function DELETE(request: NextRequest) {
         tuId ? `target_unit:${tuId}` : null,
         "이력 0건 확인 후 정리 삭제",
         `counts:${counts}`,
-      ].filter(Boolean).join(" | ")
+      ].filter(Boolean).join(" | "),
+      {
+        barcode: {
+          id: barcode.id, code: barcode.code, itemId: barcode.itemId,
+          targetUnitId: barcode.targetUnitId, isActive: barcode.isActive,
+          memo: barcode.memo,
+        },
+        targetUnit: tuSnapshot,
+        counts: {
+          tx: txByBarcode, scan: scanByBarcode, txByUnit,
+          log: logByUnit, spec: specByUnit, port: portSlot, chamber: chamberSlot,
+        },
+      }
     );
 
     return NextResponse.json({ message: "바코드가 삭제되었습니다." });

@@ -635,6 +635,77 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 폐기 시: 연결된 타겟유닛 폐기 처리 + 바코드 비활성화 + 슬롯 비우기
+    if (body.txType === "폐기" && body.barcodeId) {
+      const bc = await db.barcode.findUnique({
+        where: { id: Number(body.barcodeId) },
+        include: { targetUnit: true },
+      });
+      if (bc?.targetUnitId && bc.targetUnit) {
+        const tuId = bc.targetUnitId;
+        const fromStatus = bc.targetUnit.status;
+        // 이미 폐기 상태면 상태/일시는 건드리지 않는다 (최초 폐기 시각 보존)
+        const statusChanged = fromStatus !== "폐기";
+        if (statusChanged) {
+          await db.targetUnit.update({
+            where: { id: tuId },
+            data: { status: "폐기", disposedAt: new Date() },
+          });
+        }
+        await db.barcode.update({
+          where: { id: Number(body.barcodeId) },
+          data: { isActive: "N" },
+        });
+
+        let chamberSlotCleared = false;
+        if (bc.targetUnit.category === "ald") {
+          await db.aldPortSlot.updateMany({
+            where: { targetUnitId: tuId },
+            data: { targetUnitId: null, loadedAt: null },
+          });
+        } else {
+          // 스퍼터 타겟: 챔버에 장착돼 있었다면 비우고 unload 이력 기록
+          const disposedSlots = await db.chamberSlot.findMany({
+            where: { targetUnitId: tuId },
+            select: { locationId: true },
+          });
+          if (disposedSlots.length > 0) {
+            await db.chamberSlot.updateMany({
+              where: { targetUnitId: tuId },
+              data: { targetUnitId: null, loadedAt: null },
+            });
+            for (const s of disposedSlots) {
+              await db.chamberSlotLog.create({
+                data: {
+                  locationId: s.locationId,
+                  targetUnitId: null,
+                  previousTargetUnitId: tuId,
+                  action: "unload",
+                  changedById: sessionUserId ?? null,
+                  note: "폐기 처리로 자동 비움",
+                },
+              });
+            }
+            chamberSlotCleared = true;
+          }
+        }
+
+        // 상태가 실제로 바뀐 경우에만 전이로 기록한다 (이미 폐기였다면 되돌릴 것이 없음)
+        if (statusChanged) {
+          pending.push({
+            targetUnitId: tuId,
+            from: fromStatus, to: "폐기",
+            extra: {
+              barcodeDeactivated: true,
+              barcodeId: Number(body.barcodeId),
+              portSlotCleared: bc.targetUnit.category === "ald",
+              chamberSlotCleared,
+            },
+          });
+        }
+      }
+    }
+
       return { tx: created, pending };
     });
 
@@ -649,59 +720,6 @@ export async function POST(request: NextRequest) {
         byTxType:     body.txType,
         extra:        p.extra,
       });
-    }
-
-    // 폐기 시: 연결된 타겟유닛 폐기 처리 + 바코드 비활성화 + 슬롯 비우기
-    if (body.txType === "폐기" && body.barcodeId) {
-      const bc = await prisma.barcode.findUnique({
-        where: { id: Number(body.barcodeId) },
-        include: { targetUnit: true },
-      });
-      if (bc?.targetUnitId && bc.targetUnit) {
-        const tuId = bc.targetUnitId;
-        // 이미 폐기 상태면 상태/일시는 건드리지 않는다 (최초 폐기 시각 보존)
-        if (bc.targetUnit.status !== "폐기") {
-          await prisma.targetUnit.update({
-            where: { id: tuId },
-            data: { status: "폐기", disposedAt: new Date() },
-          });
-        }
-        await prisma.barcode.update({
-          where: { id: Number(body.barcodeId) },
-          data: { isActive: "N" },
-        });
-
-        if (bc.targetUnit.category === "ald") {
-          await prisma.aldPortSlot.updateMany({
-            where: { targetUnitId: tuId },
-            data: { targetUnitId: null, loadedAt: null },
-          });
-        } else {
-          // 스퍼터 타겟: 챔버에 장착돼 있었다면 비우고 unload 이력 기록
-          const disposedSlots = await prisma.chamberSlot.findMany({
-            where: { targetUnitId: tuId },
-            select: { locationId: true },
-          });
-          if (disposedSlots.length > 0) {
-            await prisma.chamberSlot.updateMany({
-              where: { targetUnitId: tuId },
-              data: { targetUnitId: null, loadedAt: null },
-            });
-            for (const s of disposedSlots) {
-              await prisma.chamberSlotLog.create({
-                data: {
-                  locationId: s.locationId,
-                  targetUnitId: null,
-                  previousTargetUnitId: tuId,
-                  action: "unload",
-                  changedById: sessionUserId ?? null,
-                  note: "폐기 처리로 자동 비움",
-                },
-              });
-            }
-          }
-        }
-      }
     }
 
     // activity_log 기록 (등록 시점 내용을 detail에 스냅샷)
@@ -1031,13 +1049,17 @@ export async function DELETE(request: NextRequest) {
 
     // ③ 이 거래가 타겟/캐니스터 상태를 자동 전이시켰다면, 안전하게 되돌릴 수 있을 때만 삭제한다.
     //    틀린 복원을 하느니 차단한다 — 판정이 애매하면 409.
-    const TRANSITION_TYPES = ["출고", "불출", "충진 입고"];
+    const TRANSITION_TYPES = ["출고", "불출", "충진 입고", "폐기"];
     const transitionTuId =
       beforeDelete.targetUnitId ?? beforeDelete.barcode?.targetUnitId ?? null;
 
     if (TRANSITION_TYPES.includes(beforeDelete.txType) && transitionTuId) {
       const resolved = beforeDelete.txNo
-        ? await resolveAutoTransitionRevert({ targetUnitId: transitionTuId, txNo: beforeDelete.txNo })
+        ? await resolveAutoTransitionRevert({
+            targetUnitId: transitionTuId,
+            txNo:         beforeDelete.txNo,
+            byTxType:     beforeDelete.txType,
+          })
         : ({ ok: false, reason: "전표번호가 없어 전이 기록을 찾을 수 없습니다" } as const);
 
       if (!resolved.ok) {
@@ -1055,6 +1077,17 @@ export async function DELETE(request: NextRequest) {
           },
           { status: 409 }
         );
+      }
+
+      // 전이가 애초에 없었던 거래 — 상태를 건드리지 않고 거래만 삭제한다
+      if ("noTransition" in resolved) {
+        await prisma.inventoryTx.delete({ where: { id: Number(id) } });
+        await logActivity(
+          sessionUserId, "DELETE", "inventory_tx", Number(id),
+          [deleteDetail, "상태 전이 없음 확인"].filter(Boolean).join(" | "),
+          rowSnapshot
+        );
+        return NextResponse.json({ message: "삭제 완료" });
       }
 
       const revertTo = resolved.revertTo;
@@ -1088,12 +1121,16 @@ export async function DELETE(request: NextRequest) {
         { ...rowSnapshot, _reverted: true, _revertedTo: revertTo }
       );
 
-      // 포트 슬롯은 물리적 장착 상태이므로 소프트웨어가 임의로 되돌리지 않는다
+      // 챔버/포트 슬롯은 물리적 장착 상태이므로 소프트웨어가 임의로 되돌리지 않는다
+      const notices = ["삭제 완료 (상태 복원됨)"];
+      if (resolved.extra.portSlotCleared === true) {
+        notices.push("포트 슬롯은 자동 복원되지 않습니다. ALD 탭에서 직접 확인해 주세요.");
+      }
+      if (resolved.extra.chamberSlotCleared === true) {
+        notices.push("챔버 슬롯은 자동 복원되지 않습니다. 타겟 사용현황 탭에서 직접 확인해 주세요.");
+      }
       return NextResponse.json({
-        message:
-          resolved.extra.portSlotCleared === true
-            ? "삭제 완료 (상태 복원됨). 포트 슬롯은 자동 복원되지 않습니다. ALD 탭에서 직접 확인해 주세요."
-            : "삭제 완료 (상태 복원됨)",
+        message: notices.join(" "),
         revertedTo: revertTo,
       });
     }

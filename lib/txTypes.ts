@@ -82,17 +82,29 @@ export async function recordAutoTransition(opts: {
 
 export type AutoTransitionRevert =
   | { ok: true;  revertTo: string; extra: Record<string, unknown> }
+  | { ok: true;  noTransition: true }
   | { ok: false; reason: string };
+
+/** 거래 유형별로 자동 전이가 만들어 낼 수 있는 결과 상태 */
+const EXPECTED_RESULT: Record<string, string> = {
+  "출고":      "판매완료",
+  "불출":      "폐기",
+  "충진 입고": "사용중",
+  "폐기":      "폐기",
+};
 
 /**
  * 거래 삭제 시 자동 전이를 되돌릴 수 있는지 판정한다. 판정만 하고 UPDATE는 하지 않는다.
  * (a)~(e) 다섯 조건을 모두 통과해야만 ok:true.
+ * 전이 기록이 아예 없고 현재 상태가 이 거래의 결과값도 아니라면 애초에 전이가
+ * 없었던 것이므로 noTransition(복원 불필요, 삭제만 허용)으로 통과시킨다.
  */
 export async function resolveAutoTransitionRevert(opts: {
   targetUnitId: number;
   txNo: string;
+  byTxType: string;
 }): Promise<AutoTransitionRevert> {
-  const { targetUnitId, txNo } = opts;
+  const { targetUnitId, txNo, byTxType } = opts;
 
   // (a) 이 전표가 만든 전이 기록 찾기
   const log = await prisma.activityLog.findFirst({
@@ -106,7 +118,23 @@ export async function resolveAutoTransitionRevert(opts: {
     select: { id: true, snapshot: true },
   });
   if (!log) {
-    return { ok: false, reason: "이 거래의 상태 전이 기록이 없습니다" };
+    // 기록이 없다 = (i) 전이가 애초에 없었거나 (ii) 기록이 유실됐거나.
+    // 현재 상태가 이 거래가 만들 수 있는 결과값이 아니라면 (i)로 확증할 수 있다.
+    const expected = EXPECTED_RESULT[byTxType];
+    const cur = await prisma.targetUnit.findUnique({
+      where:  { id: targetUnitId },
+      select: { status: true },
+    });
+    if (!cur) {
+      return { ok: false, reason: "연결된 타겟/캐니스터를 찾을 수 없습니다" };
+    }
+    if (expected === undefined || cur.status !== expected) {
+      return { ok: true, noTransition: true };
+    }
+    return {
+      ok: false,
+      reason: "이 거래의 상태 전이 기록이 없습니다. 현재 상태가 이 거래의 결과와 같아 안전하게 되돌릴 수 없습니다",
+    };
   }
 
   // (b) 스냅샷 해석
