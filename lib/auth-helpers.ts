@@ -58,7 +58,13 @@ export async function getSessionUserId(): Promise<number | null> {
   return user?.id ?? null;
 }
 
-/** 활동 로그 기록 헬퍼. userId가 null이면 아무것도 하지 않음 */
+/**
+ * 활동 로그 기록 헬퍼.
+ *
+ * userId를 특정하지 못해도(미로그인·조회 실패) user_id=null 로 반드시 기록한다.
+ * activity_log.user_id 는 nullable 이므로 스키마 변경 없이 가능.
+ * 로그 기록 실패가 본 작업을 롤백시키면 안 되므로 절대 throw 하지 않는다.
+ */
 export async function logActivity(
   userId: number | null,
   action: "CREATE" | "UPDATE" | "DELETE",
@@ -66,8 +72,11 @@ export async function logActivity(
   recordId: number,
   detail?: string
 ): Promise<void> {
-  if (!userId) return;
-  await prisma.activityLog.create({
-    data: { userId, action, tableName, recordId, detail: detail ?? null },
-  });
+  try {
+    await prisma.activityLog.create({
+      data: { userId: userId ?? null, action, tableName, recordId, detail: detail ?? null },
+    });
+  } catch (error) {
+    console.error("logActivity failed:", { action, tableName, recordId }, error);
+  }
 }

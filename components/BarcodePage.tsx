@@ -14,6 +14,12 @@ interface BarcodeItem {
   memo?: string;
 }
 interface ItemOption { id: number; code: string; name: string; }
+interface BlockedDeleteInfo {
+  barcode: BarcodeItem;
+  error: string;
+  detail: Record<string, number>;
+  suggestion: string;
+}
 interface UnlinkedInbound {
   inventoryTxId: number;
   txNo: string;
@@ -34,6 +40,14 @@ export default function BarcodePage() {
   const SEARCH_TYPE_LABEL: Record<string, string> = {
     "전체": t.barcode.sfAll, "바코드": t.barcode.sfBarcode,
     "품목코드": t.barcode.sfItemCode, "품목명": t.barcode.sfItemName,
+  };
+  // 서버가 내려주는 detail 키 → 표시 라벨
+  const BLOCKED_LABEL: Record<string, string> = {
+    "입출고기록": t.barcode.deleteBlockedTx,
+    "스캔기록":   t.barcode.deleteBlockedScan,
+    "측정기록":   t.barcode.deleteBlockedLog,
+    "챔버슬롯":   t.barcode.deleteBlockedSlot,
+    "포트슬롯":   t.barcode.deleteBlockedSlot,
   };
   const CAT_LABEL: Record<string, string> = {
     "전체": t.barcode.catAll, "타겟": t.barcode.catTarget,
@@ -84,6 +98,8 @@ export default function BarcodePage() {
   const [sortDir, setSortDir]               = useState<"asc" | "desc">("desc");
   const [hoveredId, setHoveredId]           = useState<number | null>(null);
   const [searchType, setSearchType]         = useState<"전체" | "바코드" | "품목코드" | "품목명">("전체");
+  const [blockedInfo, setBlockedInfo]       = useState<BlockedDeleteInfo | null>(null);
+  const [deactivating, setDeactivating]     = useState(false);
   const itemDropRef = useRef<HTMLDivElement>(null);
 
   const fetchData = useCallback(async () => {
@@ -171,19 +187,103 @@ export default function BarcodePage() {
     finally { setCreating(false); }
   };
 
-  // 바코드 삭제
+  // 바코드 삭제 (이력이 있으면 서버가 409 + blocked로 막고, 전용 모달로 안내)
   const handleDelete = async (b: BarcodeItem) => {
-    if (!confirm(t.barcode.deleteConfirm(b.code))) return;
+    if (!confirm(`${t.barcode.deleteConfirm(b.code)}\n${t.barcode.deleteIrreversible}`)) return;
     try {
       const res = await fetch(`/api/barcodes?id=${b.id}`, { method: "DELETE" });
       const data = await res.json();
-      if (!res.ok) { alert(data.error || t.barcode.deleteFailed); return; }
+      if (!res.ok) {
+        if (res.status === 409 && data?.blocked) {
+          setBlockedInfo({
+            barcode:    b,
+            error:      data.error || t.barcode.deleteBlockedReason,
+            detail:     data.detail || {},
+            suggestion: data.suggestion || t.barcode.deleteBlockedHint,
+          });
+          return;
+        }
+        alert(data.error || t.barcode.deleteFailed);
+        return;
+      }
       fetchData();
     } catch { alert(t.common.networkError); }
   };
 
+  // 차단 모달의 "비활성화하기" — 기존 PATCH isActive:"N" 재사용
+  const handleDeactivate = async (b: BarcodeItem) => {
+    setDeactivating(true);
+    try {
+      const res = await fetch("/api/barcodes", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: b.id, isActive: "N" }),
+      });
+      if (!res.ok) throw new Error();
+      setBlockedInfo(null);
+      fetchData();
+    } catch {
+      alert(t.barcode.editSaveFailed);
+    } finally {
+      setDeactivating(false);
+    }
+  };
+
   return (
     <div className="space-y-5">
+      {/* 삭제 차단 안내 모달 */}
+      {blockedInfo && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-rose-600">{t.barcode.deleteBlockedTitle}</h3>
+              <button onClick={() => setBlockedInfo(null)} className="p-1 rounded hover:bg-gray-100">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="text-sm font-mono font-semibold text-gray-900 mb-1">
+              {blockedInfo.barcode.code}
+            </div>
+            <div className="text-xs text-gray-500 mb-3">
+              {blockedInfo.barcode.itemCode} · {blockedInfo.barcode.itemName}
+            </div>
+            <p className="text-sm text-rose-700 bg-rose-50 px-3 py-2 rounded-xl mb-3">
+              {blockedInfo.error}
+            </p>
+            {Object.entries(blockedInfo.detail).filter(([, n]) => Number(n) > 0).length > 0 && (
+              <ul className="mb-3 space-y-1">
+                {Object.entries(blockedInfo.detail)
+                  .filter(([, n]) => Number(n) > 0)
+                  .map(([k, n]) => (
+                    <li key={k} className="flex items-center justify-between text-sm px-3 py-1.5 bg-gray-50 rounded-lg">
+                      <span className="text-gray-600">{BLOCKED_LABEL[k] || k}</span>
+                      <span className="font-semibold text-gray-900">{n}</span>
+                    </li>
+                  ))}
+              </ul>
+            )}
+            <p className="text-xs text-gray-500 mb-4">{blockedInfo.suggestion}</p>
+            <div className="flex gap-2">
+              {blockedInfo.barcode.isActive === "Y" && (
+                <button
+                  onClick={() => handleDeactivate(blockedInfo.barcode)}
+                  disabled={deactivating}
+                  className="flex-1 py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 disabled:opacity-50"
+                >
+                  {deactivating ? t.common.saving : t.barcode.deactivateBtn}
+                </button>
+              )}
+              <button
+                onClick={() => setBlockedInfo(null)}
+                className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200"
+              >
+                {t.common.close}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 바코드 수정 모달 */}
       {editTarget && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50">

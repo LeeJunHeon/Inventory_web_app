@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/auth-helpers";
-import { formatBarcodeDetail } from "@/lib/logDetail";
+import { formatBarcodeDetail, formatAldBarcodeDetail } from "@/lib/logDetail";
 import { barcodePrefixFor } from "@/lib/barcodePrefix";
 
 export const dynamic = "force-dynamic";
@@ -182,6 +182,18 @@ export async function POST(request: NextRequest) {
 
         return { targetUnit, barcode };
       });
+
+      await logActivity(
+        actingUserId, "CREATE", "barcode", result.barcode.id,
+        formatAldBarcodeDetail({
+          code:         result.barcode.code,
+          itemCode:     item.code,
+          itemName:     item.name,
+          targetUnitId: result.targetUnit.id,
+          tareWeight:   body.aldTareWeight ?? null,
+          materialName: body.aldMaterialName ?? null,
+        })
+      );
 
       return NextResponse.json(
         { id: result.barcode.id, code: result.barcode.code, targetUnitId: result.targetUnit.id },

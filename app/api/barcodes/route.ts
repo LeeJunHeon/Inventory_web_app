@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, getSessionUserId, logActivity } from "@/lib/auth-helpers";
-import { formatBarcodeDetail, barcodeHeader } from "@/lib/logDetail";
+import { formatBarcodeDetail, formatAldBarcodeDetail, barcodeHeader } from "@/lib/logDetail";
 import { expandBarcodeVariants } from "@/lib/barcodeUtils";
 import { barcodePrefixFor } from "@/lib/barcodePrefix";
 
@@ -222,6 +222,19 @@ export async function POST(request: NextRequest) {
         return { targetUnit, barcode };
       });
 
+      const sessionUserId = await getSessionUserId();
+      await logActivity(
+        sessionUserId, "CREATE", "barcode", result.barcode.id,
+        formatAldBarcodeDetail({
+          code:         result.barcode.code,
+          itemCode:     item.code,
+          itemName:     item.name,
+          targetUnitId: result.targetUnit.id,
+          tareWeight:   body.aldTareWeight ?? null,
+          materialName: body.aldMaterialName ?? null,
+        })
+      );
+
       return NextResponse.json(
         { id: result.barcode.id, code: result.barcode.code, targetUnitId: result.targetUnit.id },
         { status: 201 }
@@ -311,61 +324,88 @@ export async function DELETE(request: NextRequest) {
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "id 파라미터 필요" }, { status: 400 });
 
+    const bcId = Number(id);
     const barcode = await prisma.barcode.findUnique({
-      where: { id: Number(id) },
+      where: { id: bcId },
       select: {
         id: true, code: true, targetUnitId: true,
-        item: { select: { name: true } },
+        item: { select: { code: true, name: true } },
       },
     });
     if (!barcode) return NextResponse.json({ error: "바코드를 찾을 수 없습니다." }, { status: 404 });
 
     const sessionUserId = await getSessionUserId();
+    const tuId = barcode.targetUnitId;
 
-    // 삭제 전 스냅샷 (실패해도 로그 기록은 진행)
-    let deleteDetail: string | undefined;
-    try { deleteDetail = formatBarcodeDetail(barcode); } catch { deleteDetail = undefined; }
-
-    // 연결된 target_unit이 있으면 고아 정리 판단:
-    // 그 target_unit에 target_log·inventory_tx 이력이 전혀 없으면(생성 취소 등)
-    // barcode + ald_canister_spec + target_unit을 원자적으로 함께 삭제한다.
-    if (barcode.targetUnitId) {
-      const tuId = barcode.targetUnitId;
-      const [logCount, txCount] = await Promise.all([
-        prisma.targetLog.count({ where: { targetUnitId: tuId } }),
-        prisma.inventoryTx.count({ where: { targetUnitId: tuId } }),
+    // ── 삭제 전 영향 범위 조사 (병렬) ──────────────────────
+    const [txByBarcode, scanByBarcode, txByUnit, logByUnit, specByUnit, portSlot, chamberSlot] =
+      await Promise.all([
+        prisma.inventoryTx.count({ where: { barcodeId: bcId } }),
+        prisma.barcodeScan.count({ where: { barcodeId: bcId } }),
+        tuId ? prisma.inventoryTx.count({ where: { targetUnitId: tuId } })    : Promise.resolve(0),
+        tuId ? prisma.targetLog.count({ where: { targetUnitId: tuId } })      : Promise.resolve(0),
+        tuId ? prisma.aldCanisterSpec.count({ where: { targetUnitId: tuId } }): Promise.resolve(0),
+        tuId ? prisma.aldPortSlot.count({ where: { targetUnitId: tuId } })    : Promise.resolve(0),
+        tuId ? prisma.chamberSlot.count({ where: { targetUnitId: tuId } })    : Promise.resolve(0),
       ]);
 
-      if (logCount === 0 && txCount === 0) {
-        await prisma.$transaction(async (tx) => {
-          // 바코드 참조 해제 후 삭제
-          await tx.inventoryTx.updateMany({
-            where: { barcodeId: Number(id) },
-            data:  { barcodeId: null },
-          });
-          await tx.barcode.delete({ where: { id: Number(id) } });
-          // ald_canister_spec은 있을 때만 삭제
-          await tx.aldCanisterSpec.deleteMany({ where: { targetUnitId: tuId } });
-          await tx.targetUnit.delete({ where: { id: tuId } });
-        });
-
-        await logActivity(
-          sessionUserId, "DELETE", "barcode", Number(id),
-          [deleteDetail, `연결 target_unit(${tuId}) 이력 없어 함께 정리 삭제`]
-            .filter(Boolean).join(" | ")
-        );
-        return NextResponse.json({ message: "바코드가 삭제되었습니다. (연결 정보 정리됨)" });
-      }
+    // (a) 이력이 하나라도 있으면 삭제 거부 — 과거 거래의 바코드 연결을 끊지 않는다
+    if (txByBarcode > 0 || scanByBarcode > 0 || txByUnit > 0 || logByUnit > 0) {
+      return NextResponse.json(
+        {
+          error:   "거래 이력이 있는 바코드는 삭제할 수 없습니다.",
+          blocked: true,
+          detail: {
+            입출고기록: txByBarcode + txByUnit,
+            스캔기록:   scanByBarcode,
+            측정기록:   logByUnit,
+          },
+          suggestion:
+            "이력을 보존해야 하므로 삭제 대신 '비활성화'를 사용하세요. 정말 삭제해야 한다면 연결된 거래를 먼저 삭제해 주세요.",
+        },
+        { status: 409 }
+      );
     }
 
-    // 이력이 있거나 target_unit 미연결 → 바코드만 삭제 (이력 보존)
-    await prisma.inventoryTx.updateMany({
-      where: { barcodeId: Number(id) },
-      data:  { barcodeId: null },
-    });
-    await prisma.barcode.delete({ where: { id: Number(id) } });
+    // (b) 챔버/포트에 장착 중이면 삭제 거부
+    if (portSlot > 0 || chamberSlot > 0) {
+      return NextResponse.json(
+        {
+          error:   "현재 챔버/포트에 장착되어 있습니다. 먼저 슬롯에서 내려주세요.",
+          blocked: true,
+          detail:  { 챔버슬롯: chamberSlot, 포트슬롯: portSlot },
+          suggestion: "슬롯에서 내린 뒤 다시 시도하거나, 삭제 대신 '비활성화'를 사용하세요.",
+        },
+        { status: 409 }
+      );
+    }
 
-    await logActivity(sessionUserId, "DELETE", "barcode", Number(id), deleteDetail);
+    // (c) 이력 0건 → 정리 삭제 허용
+    await prisma.$transaction(async (tx) => {
+      if (tuId) {
+        await tx.aldCanisterSpec.deleteMany({ where: { targetUnitId: tuId } });
+      }
+      await tx.barcode.delete({ where: { id: bcId } });
+      if (tuId) {
+        await tx.targetUnit.delete({ where: { id: tuId } });
+      }
+    });
+
+    const counts = JSON.stringify({
+      tx: txByBarcode, scan: scanByBarcode,
+      txByUnit, log: logByUnit, spec: specByUnit,
+      port: portSlot, chamber: chamberSlot,
+    });
+    await logActivity(
+      sessionUserId, "DELETE", "barcode", bcId,
+      [
+        barcode.code,
+        `품목:${[barcode.item?.code, barcode.item?.name].filter(Boolean).join(" ") || "-"}`,
+        tuId ? `target_unit:${tuId}` : null,
+        "이력 0건 확인 후 정리 삭제",
+        `counts:${counts}`,
+      ].filter(Boolean).join(" | ")
+    );
 
     return NextResponse.json({ message: "바코드가 삭제되었습니다." });
   } catch (error) {

@@ -125,6 +125,32 @@ export function formatBarcodeDetail(bc: {
   ]);
 }
 
+/**
+ * ALD Canister 바코드 발급 CREATE detail.
+ * 예: `C-47 | 품목:CAN-N-7-1P NCD Canister-7 (1 port) | target_unit:154 | 공병무게:미입력 | 물질명:-`
+ */
+export function formatAldBarcodeDetail(a: {
+  code: string;
+  itemCode?: string | null;
+  itemName?: string | null;
+  targetUnitId: number;
+  tareWeight?: number | string | null;
+  materialName?: string | null;
+}): string {
+  const item = [a.itemCode, a.itemName].filter(Boolean).join(" ");
+  const tare =
+    a.tareWeight != null && a.tareWeight !== ""
+      ? `${Number(a.tareWeight).toFixed(3)}g`
+      : "미입력";
+  return join([
+    a.code,
+    `품목:${item || "-"}`,
+    `target_unit:${a.targetUnitId}`,
+    `공병무게:${tare}`,
+    `물질명:${a.materialName || "-"}`,
+  ]);
+}
+
 // ── UPDATE 로그용 대상 헤더 ────────────────────────────
 // diff 문자열만으로는 "무엇이" 바뀌었는지 알 수 없으므로 앞에 대상을 붙인다.
 // 모두 순수 함수 — 호출부가 이미 조회해 둔 before 객체를 그대로 받는다(추가 쿼리 금지).
