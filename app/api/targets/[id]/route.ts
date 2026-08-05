@@ -21,8 +21,10 @@ export async function PUT(
     const { status, note } = body;
 
     // 변경 전 상태 + 로그 헤더용 관계를 한 번에 조회 (404 판정과 diff에 함께 사용)
-    const beforeTu = await prisma.targetUnit.findUnique({
-      where:   { id },
+    // 타겟 전용 경로 — ALD 캐니스터를 이 API로 조작하지 못하도록 분류까지 확인한다
+    // (캐니스터는 /api/ald/[id] 담당)
+    const beforeTu = await prisma.targetUnit.findFirst({
+      where:   { id, category: "sputter" },
       include: { barcodes: { take: 1, orderBy: { id: "asc" } }, item: true },
     });
     if (!beforeTu) {

@@ -107,9 +107,13 @@ export async function GET(request: NextRequest) {
     }
 
     // 바코드 미지정: 전체 타겟 로그 (페이지네이션 적용)
+    // target_log는 sputter/ald가 공유하는 테이블이므로 분류로 좁힌다.
+    // (count와 findMany에 동일한 where를 써야 총건수와 페이지가 어긋나지 않는다)
+    const logWhere = { targetUnit: { category: "sputter" } };
     const [total, logs] = await Promise.all([
-      prisma.targetLog.count(),
+      prisma.targetLog.count({ where: logWhere }),
       prisma.targetLog.findMany({
+        where: logWhere,
         orderBy: { loggedAt: "desc" },
         skip,
         take: limit,
