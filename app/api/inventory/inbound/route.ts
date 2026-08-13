@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { LOT_CONSUME_TYPES } from "@/lib/txTypes";
+import { LOT_CONSUME_TYPES, MOVE_IN } from "@/lib/txTypes";
 
 export const dynamic = "force-dynamic";
 
@@ -21,9 +21,9 @@ export async function GET(request: NextRequest) {
     // 입고 트랜잭션 조회 (txNo 있는 것만)
     const inbounds = await prisma.inventoryTx.findMany({
       where: txNoParam
-        ? { txType: "입고", itemId, txNo: txNoParam }
+        ? { txType: { in: ["입고", MOVE_IN] }, itemId, txNo: txNoParam }
         : {
-            txType: "입고", itemId, txNo: { not: null },
+            txType: { in: ["입고", MOVE_IN] }, itemId, txNo: { not: null },
             ...(locationIdParam ? { locationId: Number(locationIdParam) } : {}),
             ...(barcodeIdParam  ? { barcodeId:  Number(barcodeIdParam)  } : {}),
           },
@@ -60,6 +60,7 @@ export async function GET(request: NextRequest) {
           unitPrice:    tx.unitPrice != null ? Number(tx.unitPrice) : null,
           currency:     tx.currency ?? "KRW",
           partnerName:  tx.partner?.name  ?? "",
+          locationId:   tx.locationId,
           locationName: tx.location?.name ?? "",
           memo:         tx.memo           ?? "",
           barcodeId:    tx.barcodeId      ?? null,

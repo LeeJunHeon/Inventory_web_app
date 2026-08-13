@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getStockMinusDisposals, sumDisposalsByItem } from "@/lib/txTypes";
+import { getStockMinusDisposals, sumDisposalsByItem, MOVE_IN, MOVE_OUT } from "@/lib/txTypes";
 
 export const dynamic = "force-dynamic";
 
@@ -52,9 +52,15 @@ export async function GET(request: NextRequest) {
       const disburse = item.inventoryTxs.filter(t => t.txType === "불출");
       const using    = item.inventoryTxs.filter(t => t.txType === "사용중");
       const disposal = item.inventoryTxs.filter(t => t.txType === "폐기");
+      // 이동은 품목 총량에는 영향이 없다(입/출이 상쇄) — 건수·흐름 표시용
+      const moveIn   = item.inventoryTxs.filter(t => t.txType === MOVE_IN);
+      const moveOut  = item.inventoryTxs.filter(t => t.txType === MOVE_OUT);
 
-      const totalIn  = inbound.reduce((s, t) => s + t.qty, 0);
+      const totalIn  =
+        inbound.reduce((s, t) => s + t.qty, 0) +
+        moveIn.reduce((s, t) => s + t.qty, 0);
       const totalOut =
+        moveOut.reduce((s, t) => s + t.qty, 0) +
         outbound.reduce((s, t) => s + t.qty, 0) +
         disburse.reduce((s, t) => s + t.qty, 0) +
         using.reduce((s, t) => s + t.qty, 0) +
@@ -72,6 +78,8 @@ export async function GET(request: NextRequest) {
           disburse: disburse.length,
           using:    using.length,
           disposal: disposal.length,
+          moveIn:   moveIn.length,
+          moveOut:  moveOut.length,
         },
         currentQty: totalIn - totalOut,
       };

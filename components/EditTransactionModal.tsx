@@ -19,8 +19,10 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
 
   const [date, setDate]           = useState(item.date.replace(/\./g, "-"));
   const [type, setType]           = useState(item.type);
-  // 사용중/폐기는 참조 체인의 기준점이라 구분 변경이 서버에서 차단된다
-  const isTypeLocked = item.type === "사용중" || item.type === "폐기";
+  // 사용중/폐기는 참조 체인의 기준점이라 구분 변경이 서버에서 차단된다.
+  // 이동출고/이동입고는 쌍 전표라 수정 자체가 서버에서 차단된다.
+  const isMoveTx     = item.type === "이동출고" || item.type === "이동입고";
+  const isTypeLocked = item.type === "사용중" || item.type === "폐기" || isMoveTx;
   const [quantity, setQuantity]   = useState(String(item.qty));
   const [unitPrice, setUnitPrice] = useState(String(item.price));
   const [currency, setCurrency]   = useState(item.currency ?? "KRW");
@@ -178,7 +180,9 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
             </div>
             {isTypeLocked && (
               <p className="mt-1.5 text-xs text-gray-500">
-                {item.type} 건은 구분을 변경할 수 없습니다. 삭제 후 새로 등록해 주세요.
+                {isMoveTx
+                  ? `${item.type} 건은 수정할 수 없습니다. 삭제 후 다시 등록해 주세요.`
+                  : `${item.type} 건은 구분을 변경할 수 없습니다. 삭제 후 새로 등록해 주세요.`}
               </p>
             )}
           </div>

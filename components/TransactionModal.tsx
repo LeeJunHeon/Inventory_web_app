@@ -6,10 +6,11 @@ import { X, List, Loader2, Plus, Camera, Printer } from "lucide-react";
 import { TYPE_COLORS, CATEGORY_COLORS } from "@/lib/data";
 import InboundSelectModal, { type InboundTx } from "./InboundSelectModal";
 
-type TxTypeOption = "입고" | "출고" | "불출" | "사용중" | "폐기";
+type TxTypeOption = "입고" | "출고" | "불출" | "사용중" | "폐기" | "이동";
 
 /** 참조 전표가 필요한 유형 (서버 REF_REQUIRED_TYPES와 동일) */
-const REF_TYPES: TxTypeOption[] = ["출고", "불출", "사용중", "폐기"];
+// "이동"도 원본 입고 로트를 반드시 참조한다 (서버는 이동 전용 경로로 검증)
+const REF_TYPES: TxTypeOption[] = ["출고", "불출", "사용중", "폐기", "이동"];
 
 interface UsingLot {
   txNo: string;
@@ -54,6 +55,8 @@ interface SelectedInbound {
   txNo: string;
   txDate: string;
   remainQty: number;
+  /** 원본 로트의 위치 = 이동 시 출발지 */
+  locationId?: number;
   barcodeId: number | null;
   targetUnitId: number | null;
   partnerName: string;
@@ -394,12 +397,17 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                   txNo:         found.txNo,
                   txDate:       found.txDate,
                   remainQty:    found.remainQty,
+                  locationId:   found.locationId,
                   barcodeId:    found.barcodeId,
                   targetUnitId: found.targetUnitId,
                   partnerName:  found.partnerName,
                   itemCode:     found.itemCode     ?? "",
                   barcodeCode:  found.barcodeCode  ?? "",
                 });
+                // 이동: 원본 로트 위치가 출발지 → 반대편을 도착지로 자동 설정
+                if (type === "이동" && found.locationId) {
+                  setLocationId(found.locationId === 1 ? 2 : 1);
+                }
               }
             })
             .catch(() => {});
@@ -451,6 +459,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       txNo: inbound.txNo,
       txDate: inbound.txDate,
       remainQty: inbound.remainQty,
+      locationId: inbound.locationId,
       barcodeId: inbound.barcodeId,
       targetUnitId: inbound.targetUnitId,
       partnerName: inbound.partnerName,
@@ -459,6 +468,10 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
     });
     if (inbound.barcodeId)    setBarcodeId(inbound.barcodeId);
     if (inbound.targetUnitId) setTargetUnitId(inbound.targetUnitId);
+    // 이동: 원본 로트의 위치가 출발지 → 반대편을 도착지로 자동 설정 (본사=1/공덕=2)
+    if (type === "이동" && inbound.locationId) {
+      setLocationId(inbound.locationId === 1 ? 2 : 1);
+    }
   };
 
   // 인라인 바코드 생성
@@ -511,7 +524,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
     if (!quantity || Number(quantity) <= 0) { setError(t.tx.enterQty);   barcodeInputRef.current?.focus(); return; }
     // 출고/불출/사용중/폐기 시 참조 전표 필수
     if (REF_TYPES.includes(type) && !refTxNo) {
-      setError(t.tx.selectInbound);
+      setError(type === "이동" ? t.tx.moveSelectLot : t.tx.selectInbound);
       return;
     }
     // ALD Canister는 사용중 처리 대상이 아님
@@ -574,7 +587,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           qty:       Number(quantity),
           unitPrice: Number(unitPrice) || null,
           amount:    amount || null,
-          partnerId: (type === "불출" || type === "사용중" || type === "폐기")
+          partnerId: (type === "불출" || type === "사용중" || type === "폐기" || type === "이동")
             ? null : (partnerId || null),
           txReasonId: txReasonId || null,
           disburseeUserId: type === "불출" ? (disburseeId || null) : null,
@@ -775,8 +788,8 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           {/* 구분 */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tx.typeLabel}</label>
-            <div className="flex gap-2">
-              {(["입고", "출고", "불출", "사용중", "폐기"] as const).map((tp) => (
+            <div className="grid grid-cols-3 gap-2">
+              {(["입고", "출고", "불출", "사용중", "폐기", "이동"] as const).map((tp) => (
                 <button key={tp} onClick={() => {
                   cancelCreatedBarcode();
                   setType(tp);
@@ -796,7 +809,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                   setShowCameraScanner(false);
                   setCreatedBarcode(null); setShowLabelModal(false);
                 }}
-                  className={`flex-1 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
+                  className={`py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
                     type === tp
                       ? `${TYPE_COLORS[tp].bg} ${TYPE_COLORS[tp].text} ${TYPE_COLORS[tp].border} border-2 shadow-sm`
                       : "bg-gray-50 text-gray-500 border-2 border-transparent hover:bg-gray-100"
@@ -1286,17 +1299,21 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
               <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} placeholder="0"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
             </div>
+            {type !== "이동" && (
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tx.unitPriceLabel}</label>
               <input type="text" value={unitPrice} onChange={e => setUnitPrice(e.target.value)}
                 placeholder={currency === "USD" ? "$0.00" : "₩0"}
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
             </div>
+            )}
+            {type !== "이동" && (
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tx.amountLabel}</label>
               <input type="text" value={amount ? (currency === "USD" ? `$${amount.toLocaleString()}` : `₩${amount.toLocaleString()}`) : ""} readOnly placeholder={t.tx.autoCalc}
                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
             </div>
+            )}
           </div>
 
           {currency === "USD" && (
@@ -1314,14 +1331,14 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           )}
 
           {/* 잔여수량 초과 경고 */}
-          {(type === "출고" || type === "불출") && selectedInbound && quantity && Number(quantity) > selectedInbound.remainQty && (
+          {(type === "출고" || type === "불출" || type === "이동") && selectedInbound && quantity && Number(quantity) > selectedInbound.remainQty && (
             <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl">
               {t.tx.qtyWarning(quantity, selectedInbound.remainQty)}
             </p>
           )}
 
           {/* 거래처 — 입고/출고만 표시 (불출/사용중/폐기는 사내 처리라 거래처 없음) */}
-          {type !== "불출" && type !== "사용중" && type !== "폐기" && (
+          {type !== "불출" && type !== "사용중" && type !== "폐기" && type !== "이동" && (
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tx.partnerLabel}</label>
               <select value={partnerId ?? ""} onChange={e => {
@@ -1388,19 +1405,34 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
             </>
           )}
 
-          {/* 위치 */}
+          {/* 위치 — 이동일 때는 '도착지'(출발지는 원본 로트가 결정) */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              {t.tx.locationLabel} <span className="text-rose-500">*</span>
+              {type === "이동" ? t.tx.moveDestLabel : t.tx.locationLabel} <span className="text-rose-500">*</span>
             </label>
             <select
               value={locationId}
               onChange={e => setLocationId(Number(e.target.value))}
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
               {locationOptions.map(loc => (
-                <option key={loc.id} value={loc.id}>{loc.name}</option>
+                <option
+                  key={loc.id}
+                  value={loc.id}
+                  disabled={type === "이동" && selectedInbound?.locationId === loc.id}
+                >
+                  {loc.name}
+                </option>
               ))}
             </select>
+            {type === "이동" && selectedInbound?.locationId && (
+              <p className="mt-2 text-xs text-violet-700 bg-violet-50 border border-violet-200 px-3 py-2 rounded-xl">
+                {t.tx.moveSummary(
+                  locationOptions.find(l => l.id === selectedInbound.locationId)?.name ?? "-",
+                  locationOptions.find(l => l.id === locationId)?.name ?? "-",
+                  Number(quantity || 0)
+                )}
+              </p>
+            )}
           </div>
 
           {/* 비고 */}

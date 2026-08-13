@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { getSessionUserId, logActivity } from "@/lib/auth-helpers";
-import { STOCK_MINUS_TYPES, getStockMinusDisposals, sumDisposalsByItem, sumDisposalsByItemAtLocation } from "@/lib/txTypes";
+import { STOCK_PLUS_TYPES, STOCK_MINUS_TYPES, getStockMinusDisposals, sumDisposalsByItem, sumDisposalsByItemAtLocation } from "@/lib/txTypes";
 import { itemHeader } from "@/lib/logDetail";
 
 export const dynamic = "force-dynamic";
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     // 배치 쿼리: 품목별 입고 합계
     const inSums = await prisma.inventoryTx.groupBy({
       by: ["itemId"],
-      where: { itemId: { in: itemIds }, txType: "입고", ...locationFilter },
+      where: { itemId: { in: itemIds }, txType: { in: STOCK_PLUS_TYPES }, ...locationFilter },
       _sum: { qty: true },
     });
 
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
       const [loc1In, loc1Out, loc2In, loc2Out] = await Promise.all([
         prisma.inventoryTx.groupBy({
           by: ["itemId"],
-          where: { itemId: { in: itemIds }, txType: "입고", locationId: 1 },
+          where: { itemId: { in: itemIds }, txType: { in: STOCK_PLUS_TYPES }, locationId: 1 },
           _sum: { qty: true },
         }),
         prisma.inventoryTx.groupBy({
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
         }),
         prisma.inventoryTx.groupBy({
           by: ["itemId"],
-          where: { itemId: { in: itemIds }, txType: "입고", locationId: 2 },
+          where: { itemId: { in: itemIds }, txType: { in: STOCK_PLUS_TYPES }, locationId: 2 },
           _sum: { qty: true },
         }),
         prisma.inventoryTx.groupBy({

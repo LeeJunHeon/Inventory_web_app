@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { expandBarcodeVariants } from "@/lib/barcodeUtils";
 import { requireInternalAuth } from "@/lib/internal-auth";
+import { MOVE_IN } from "@/lib/txTypes";
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
     // 입고건이 정확히 1건일 때만 자동 연결. 2건 이상(레거시 다중 연결)이면
     // 조용히 최근 것을 고르지 않고 null 반환.
     const inbounds = await prisma.inventoryTx.findMany({
-      where: { barcodeId: barcode.id, txType: "입고" },
+      where: { barcodeId: barcode.id, txType: { in: ["입고", MOVE_IN] } },
       orderBy: { id: "desc" },
       select: { txNo: true },
     });

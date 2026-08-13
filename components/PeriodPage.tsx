@@ -51,6 +51,9 @@ export default function PeriodPage() {
     "불출": t.inventory.typeDis,
     "사용중": t.inventory.typeUsing,
     "폐기": t.inventory.typeDispose,
+    "이동": t.inventory.typeMove,
+    "이동출고": t.inventory.typeMoveOut,
+    "이동입고": t.inventory.typeMoveIn,
   };
 
   useEffect(() => {
@@ -106,6 +109,8 @@ export default function PeriodPage() {
     불출: { count: 0, qty: 0, krwAmount: 0, usdAmount: 0 },
     사용중: { count: 0, qty: 0, krwAmount: 0, usdAmount: 0 },
     폐기: { count: 0, qty: 0, krwAmount: 0, usdAmount: 0 },
+    이동출고: { count: 0, qty: 0, krwAmount: 0, usdAmount: 0 },
+    이동입고: { count: 0, qty: 0, krwAmount: 0, usdAmount: 0 },
   };
   items.forEach((item) => {
     const s = summary[item.type as keyof typeof summary];
@@ -121,7 +126,7 @@ export default function PeriodPage() {
   });
 
   const CATEGORY_LIST = ["타겟", "ALD Canister", "웨이퍼", "가스", "기자재/소모품"];
-  const TYPE_LIST = ["입고", "출고", "불출", "사용중", "폐기"] as const;
+  const TYPE_LIST = ["입고", "출고", "불출", "사용중", "폐기", "이동출고", "이동입고"] as const;
 
   const categoryBreakdown: Record<string, Record<string, { count: number; qty: number; amount: number }>> = {};
   CATEGORY_LIST.forEach(cat => {
@@ -131,6 +136,8 @@ export default function PeriodPage() {
       불출: { count: 0, qty: 0, amount: 0 },
       사용중: { count: 0, qty: 0, amount: 0 },
       폐기: { count: 0, qty: 0, amount: 0 },
+      이동출고: { count: 0, qty: 0, amount: 0 },
+      이동입고: { count: 0, qty: 0, amount: 0 },
     };
   });
   items.forEach(item => {
@@ -189,7 +196,7 @@ export default function PeriodPage() {
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1.5">{t.period.typeLabel}</label>
               <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1 overflow-x-auto">
-                {["전체", "입고", "출고", "불출", "사용중", "폐기"].map(type => (
+                {["전체", "입고", "출고", "불출", "사용중", "폐기", "이동"].map(type => (
                   <button
                     key={type}
                     onClick={() => setTypeFilter(type)}
@@ -233,7 +240,7 @@ export default function PeriodPage() {
 
       {searched && (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {TYPE_LIST.map((type) => (
               <div key={type} className={`rounded-2xl border p-4 transition-all ${
                 typeFilter === "전체" || typeFilter === type

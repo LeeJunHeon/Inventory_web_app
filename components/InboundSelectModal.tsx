@@ -12,6 +12,7 @@ export interface InboundTx {
   currency: string;
   partnerName: string;
   locationName: string;
+  locationId?: number;
   memo: string;
   barcodeId: number | null;
   targetUnitId: number | null;

@@ -3,7 +3,7 @@ export interface InventoryItem {
   id: number;
   txNo: string;
   date: string;
-  type: "입고" | "출고" | "불출" | "충진 입고" | "사용중" | "폐기";
+  type: "입고" | "출고" | "불출" | "충진 입고" | "사용중" | "폐기" | "이동출고" | "이동입고";
   category: string;
   code: string;
   name: string;
@@ -55,7 +55,8 @@ export interface TargetLog {
 
 // ──────── 상수 ────────
 export const CATEGORIES = ["전체", "웨이퍼", "타겟", "ALD Canister", "가스", "기자재/소모품"];
-export const TYPES = ["전체", "입고", "출고", "불출", "사용중", "폐기"];
+// "이동"은 목록 필터용 별칭 — 이동출고/이동입고 둘 다에 매칭된다.
+export const TYPES = ["전체", "입고", "출고", "불출", "사용중", "폐기", "이동"];
 
 export const TYPE_COLORS: Record<string, { bg: string; text: string; border: string; dot: string }> = {
   "입고": { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", dot: "bg-blue-500" },
@@ -64,6 +65,9 @@ export const TYPE_COLORS: Record<string, { bg: string; text: string; border: str
   "불출": { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", dot: "bg-amber-500" },
   "사용중": { bg: "bg-teal-50", text: "text-teal-700", border: "border-teal-200", dot: "bg-teal-500" },
   "폐기": { bg: "bg-gray-100", text: "text-gray-600", border: "border-gray-200", dot: "bg-gray-400" },
+  "이동":     { bg: "bg-violet-50", text: "text-violet-700", border: "border-violet-200", dot: "bg-violet-500" },
+  "이동출고": { bg: "bg-violet-50", text: "text-violet-700", border: "border-violet-200", dot: "bg-violet-500" },
+  "이동입고": { bg: "bg-violet-50", text: "text-violet-700", border: "border-violet-200", dot: "bg-violet-400" },
 };
 
 export const CATEGORY_COLORS: Record<string, string> = {

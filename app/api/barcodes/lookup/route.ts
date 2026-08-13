@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { expandBarcodeVariants } from "@/lib/barcodeUtils";
+import { MOVE_IN } from "@/lib/txTypes";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +30,7 @@ async function buildBarcodeResponse(barcode: BarcodeWithRelations) {
   // 입고건이 정확히 1건일 때만 자동 연결. 2건 이상(레거시 다중 연결)이면
   // 조용히 최근 것을 고르지 않고 null 반환 → 프론트에서 직접 선택하게 함.
   const inbounds = await prisma.inventoryTx.findMany({
-    where: { barcodeId: barcode.id, txType: "입고" },
+    where: { barcodeId: barcode.id, txType: { in: ["입고", MOVE_IN] } },
     orderBy: { id: "desc" },
     select: { txNo: true },
   });

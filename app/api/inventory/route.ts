@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, getSessionUser, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 import { buildInventoryTxDetail, formatInventoryTxDetail, inventoryTxHeader } from "@/lib/logDetail";
-import { LOT_CONSUME_TYPES, recordAutoTransition, resolveAutoTransitionRevert } from "@/lib/txTypes";
+import { LOT_CONSUME_TYPES, MOVE_IN, MOVE_OUT, recordAutoTransition, resolveAutoTransitionRevert } from "@/lib/txTypes";
 
 function buildItemSpec(ws: {
   waferType?: string | null; diameterInch?: number | null;
@@ -21,7 +21,9 @@ function buildItemSpec(ws: {
   return parts.length > 0 ? parts.join(" | ") : null;
 }
 
-const VALID_TYPES = ["입고", "출고", "불출", "충진 입고", "사용중", "폐기"];
+// "이동"은 클라이언트가 보내는 별칭 — 서버가 이동출고/이동입고 두 행으로 변환한다.
+// 이동출고/이동입고는 직접 제출을 막기 위해 여기에 넣지 않는다.
+const VALID_TYPES = ["입고", "출고", "불출", "충진 입고", "사용중", "폐기", "이동"];
 
 /** activity_log.snapshot 에 굳혀 둘 inventory_tx 스칼라 컬럼 전체 */
 function txRowSnapshot(row: {
@@ -67,7 +69,8 @@ async function validateRefIntegrity(opts: {
   // 아래 무결성 검증들이 조용히 스킵되므로 명시적으로 거부한다.
   if (!refInbound) return `참조 전표(${refTxNo})를 찾을 수 없습니다.`;
 
-  const isInboundRef = refInbound.txType === "입고" || refInbound.txType === "충진 입고";
+  const isInboundRef =
+    refInbound.txType === "입고" || refInbound.txType === "충진 입고" || refInbound.txType === MOVE_IN;
 
   if (txType === "폐기" && refInbound.txType === "사용중") {
     // 사용중 건 폐기 — 보유수량은 사용중 시점에 이미 차감되었으므로 여기서 또 깎지 않는다
@@ -131,7 +134,10 @@ export async function GET(request: NextRequest) {
     const andConditions: any[] = [];
 
     if (type && type !== "전체") {
-      andConditions.push({ txType: type });
+      // "이동"은 목록 필터용 별칭 — 쌍 전표 둘 다 매칭
+      andConditions.push(
+        type === "이동" ? { txType: { in: [MOVE_OUT, MOVE_IN] } } : { txType: type }
+      );
     }
 
     if (startDate || endDate) {
@@ -269,8 +275,15 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
+    // 이동 쌍 전표는 서버만 만든다 — 클라이언트 직접 제출 차단
+    if (body.txType === MOVE_OUT || body.txType === MOVE_IN) {
+      return NextResponse.json(
+        { error: "이동출고/이동입고는 직접 등록할 수 없습니다. 구분 '이동'으로 등록하세요." },
+        { status: 400 }
+      );
+    }
     if (!body.txType || !VALID_TYPES.includes(body.txType)) {
-      return NextResponse.json({ error: "구분은 입고/출고/불출/사용중/폐기 중 하나여야 합니다." }, { status: 400 });
+      return NextResponse.json({ error: "구분은 입고/출고/불출/사용중/폐기/이동 중 하나여야 합니다." }, { status: 400 });
     }
     if (!body.itemId) {
       return NextResponse.json({ error: "품목을 선택해주세요." }, { status: 400 });
@@ -287,6 +300,75 @@ export async function POST(request: NextRequest) {
     if (!VALID_LOCATION_IDS.includes(Number(body.locationId))) {
       return NextResponse.json({ error: "위치는 본사 또는 공덕만 선택할 수 있습니다." }, { status: 400 });
     }
+    // ── 이동 전용 검증 ─────────────────────────────────
+    // REF_REQUIRED_TYPES 경로에 태우지 않는다: 그 경로의 가격복사 블록은
+    // "참조 건과 같은 위치"를 요구하는데, 이동은 정의상 위치가 달라야 한다.
+    type MoveSource = {
+      txNo: string | null; txType: string; itemId: number; locationId: number;
+      qty: number; barcodeId: number | null; targetUnitId: number | null;
+      unitPrice: unknown; currency: string | null; exchangeRateAtEntry: unknown;
+    };
+    let moveSource: MoveSource | null = null;
+
+    if (body.txType === "이동") {
+      if (!body.refTxNo) {
+        return NextResponse.json(
+          { error: "이동할 원본 로트(참조 전표)를 선택해주세요." },
+          { status: 400 }
+        );
+      }
+      const src = await prisma.inventoryTx.findUnique({
+        where:  { txNo: body.refTxNo },
+        select: {
+          txNo: true, txType: true, itemId: true, locationId: true, qty: true,
+          barcodeId: true, targetUnitId: true,
+          unitPrice: true, currency: true, exchangeRateAtEntry: true,
+        },
+      });
+      if (!src) {
+        return NextResponse.json(
+          { error: `참조 전표(${body.refTxNo})를 찾을 수 없습니다.` },
+          { status: 400 }
+        );
+      }
+      if (src.txType !== "입고" && src.txType !== "충진 입고" && src.txType !== MOVE_IN) {
+        return NextResponse.json(
+          { error: "이동은 입고 로트만 참조할 수 있습니다." },
+          { status: 400 }
+        );
+      }
+      if (src.itemId !== Number(body.itemId)) {
+        return NextResponse.json(
+          { error: "참조 입고 건의 품목과 이동 품목이 일치하지 않습니다." },
+          { status: 400 }
+        );
+      }
+      if (Number(body.locationId) === src.locationId) {
+        return NextResponse.json(
+          { error: "출발지와 도착지가 같습니다. 다른 위치를 선택하세요." },
+          { status: 400 }
+        );
+      }
+      const consumed = await prisma.inventoryTx.aggregate({
+        where: { refTxNo: body.refTxNo, txType: { in: LOT_CONSUME_TYPES } },
+        _sum:  { qty: true },
+      });
+      const remainQty = src.qty - (consumed._sum.qty ?? 0);
+      if (Number(body.qty) > remainQty) {
+        return NextResponse.json(
+          { error: `수량 초과: 해당 로트의 잔여수량은 ${remainQty}개입니다. (요청: ${body.qty}개)` },
+          { status: 400 }
+        );
+      }
+      if (body.barcodeId && src.barcodeId !== Number(body.barcodeId)) {
+        return NextResponse.json(
+          { error: "스캔한 바코드가 원본 로트의 바코드와 다릅니다." },
+          { status: 400 }
+        );
+      }
+      moveSource = src;
+    }
+
     if (REF_REQUIRED_TYPES.includes(body.txType) && !body.refTxNo) {
       return NextResponse.json({ error: "출고/불출/사용중/폐기 시 참조 전표번호가 필요합니다." }, { status: 400 });
     }
@@ -426,6 +508,21 @@ export async function POST(request: NextRequest) {
       return isNaN(num) ? max : Math.max(max, num);
     }, 0);
     const newTxNo = String(lastNo + 1);
+    // 이동은 쌍 전표라 번호가 2개 필요하다 (이동출고 → 이동입고 순)
+    const moveOutTxNo = String(lastNo + 1);
+    const moveInTxNo  = String(lastNo + 2);
+
+    // 이동 가격: 원본 로트의 단가/통화/환율을 두 행 모두에 복사
+    const movePrice = moveSource
+      ? {
+          unitPrice:           moveSource.unitPrice != null ? Number(moveSource.unitPrice) : null,
+          amount:              moveSource.unitPrice != null
+            ? Number(moveSource.unitPrice) * Number(body.qty) : null,
+          currency:            moveSource.currency ?? "KRW",
+          exchangeRateAtEntry: moveSource.exchangeRateAtEntry != null
+            ? Number(moveSource.exchangeRateAtEntry) : null,
+        }
+      : null;
 
     // 출고/불출/사용중/폐기 시 참조 건 가격 자동 복사
     // (사용중이 입고에서 복사하므로 폐기→사용중 체인으로 가격이 이어진다)
@@ -463,7 +560,8 @@ export async function POST(request: NextRequest) {
     // 불출처 처리: disburseeUserId로 user 조회 후 partner 매칭
     // 사용중/폐기는 사내 처리이므로 거래처가 없다.
     const noPartnerType =
-      body.txType === "불출" || body.txType === "사용중" || body.txType === "폐기";
+      body.txType === "불출" || body.txType === "사용중" || body.txType === "폐기" ||
+      body.txType === "이동";
     let finalPartnerId = noPartnerType ? null : (body.partnerId || null);
     if (body.txType === "불출" && body.disburseeUserId) {
       const disburseeUser = await prisma.user.findUnique({
@@ -484,8 +582,45 @@ export async function POST(request: NextRequest) {
       targetUnitId: number; from: string; to: string; extra: Record<string, unknown>;
     };
 
-    const { tx, pending } = await prisma.$transaction(async (db) => {
+    const { tx, pending, moveOut } = await prisma.$transaction(async (db) => {
       const pending: PendingTransition[] = [];
+
+      // ── 이동: 쌍 전표 2행을 한 트랜잭션에서 생성 ──────────
+      // 자동 상태 전이는 일으키지 않는다 (물리적 위치만 바뀌고 타겟 status는 불변).
+      if (body.txType === "이동" && moveSource && movePrice) {
+        const moveCommon = {
+          txDate:       new Date(body.txDate),
+          itemId:       Number(body.itemId),
+          qty:          Number(body.qty),
+          ...movePrice,
+          partnerId:    null,
+          txReasonId:   body.txReasonId || null,
+          userId:       sessionUserId ?? null,
+          memo:         body.memo || null,
+          targetUnitId: moveSource.targetUnitId ?? body.targetUnitId ?? null,
+          barcodeId:    moveSource.barcodeId    ?? body.barcodeId    ?? null,
+        };
+        const outRow = await db.inventoryTx.create({
+          data: {
+            ...moveCommon,
+            txNo:       moveOutTxNo,
+            txType:     MOVE_OUT,
+            locationId: moveSource.locationId,
+            refTxNo:    body.refTxNo,
+          },
+        });
+        const inRow = await db.inventoryTx.create({
+          data: {
+            ...moveCommon,
+            txNo:       moveInTxNo,
+            txType:     MOVE_IN,
+            locationId: Number(body.locationId),
+            refTxNo:    moveOutTxNo,
+          },
+        });
+        return { tx: inRow, pending, moveOut: outRow };
+      }
+
       const created = await db.inventoryTx.create({
       data: {
         txNo:         newTxNo,
@@ -706,7 +841,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-      return { tx: created, pending };
+      return { tx: created, pending, moveOut: null as typeof created | null };
     });
 
     // 전이 기록은 커밋이 확정된 뒤에 남긴다 (롤백된 전이를 기록하지 않기 위함)
@@ -722,8 +857,19 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // activity_log 기록 (등록 시점 내용을 detail에 스냅샷)
+    // activity_log 기록 (등록 시점 내용을 detail에 스냅샷) — 이동은 두 행 각각 남긴다
+    if (moveOut) {
+      await logActivity(sessionUserId, "CREATE", "inventory_tx", moveOut.id, await buildInventoryTxDetail(moveOut.id));
+    }
     await logActivity(sessionUserId, "CREATE", "inventory_tx", tx.id, await buildInventoryTxDetail(tx.id));
+
+    if (moveOut) {
+      // 응답은 이동입고 행 기준 + 쌍 전표번호를 함께 반환
+      return NextResponse.json(
+        { ...tx, moveOutTxNo, moveInTxNo },
+        { status: 201 }
+      );
+    }
 
     return NextResponse.json(tx, { status: 201 });
   } catch (error) {
@@ -747,6 +893,11 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
 
+    // VALID_TYPES가 "이동"을 허용하게 되었으므로 PUT에서는 별도로 막는다.
+    // (이동은 쌍 전표 구조라 단건 수정으로 구분을 바꿀 수 없다)
+    if (body.txType === "이동" || body.txType === MOVE_OUT || body.txType === MOVE_IN) {
+      return NextResponse.json({ error: "이동 건으로 구분을 변경할 수 없습니다." }, { status: 400 });
+    }
     if (body.txType !== undefined && !VALID_TYPES.includes(body.txType)) {
       return NextResponse.json({ error: "구분은 입고/출고/불출/사용중/폐기 중 하나여야 합니다." }, { status: 400 });
     }
@@ -771,6 +922,14 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json(
         { error: "수정할 거래를 찾을 수 없습니다." },
         { status: 404 }
+      );
+    }
+
+    // ⓪ 이동 쌍 전표는 수정 불가 — 한쪽만 바뀌면 쌍 정합성이 깨진다
+    if (before.txType === MOVE_OUT || before.txType === MOVE_IN) {
+      return NextResponse.json(
+        { error: "이동 건은 수정할 수 없습니다. 삭제 후 다시 등록해 주세요." },
+        { status: 400 }
       );
     }
 
@@ -998,6 +1157,85 @@ export async function DELETE(request: NextRequest) {
         { error: "삭제할 거래를 찾을 수 없습니다." },
         { status: 404 }
       );
+    }
+
+    // ⓪ 이동 쌍 전표: 어느 쪽을 지우든 짝을 함께 지운다.
+    //    한쪽만 남으면 출발지/도착지 한쪽에만 반영된 유령 재고가 된다.
+    if (beforeDelete.txType === MOVE_IN || beforeDelete.txType === MOVE_OUT) {
+      const txInclude = {
+        barcode:  { select: { id: true, code: true, targetUnitId: true } },
+        item:     true,
+        partner:  true,
+        location: true,
+        user:     true,
+      } as const;
+
+      // 쌍의 양쪽을 확정한다 (이동출고 → 이동입고 방향으로 refTxNo가 걸려 있다)
+      let moveInRow = beforeDelete.txType === MOVE_IN ? beforeDelete : null;
+      let moveOutRow = beforeDelete.txType === MOVE_OUT ? beforeDelete : null;
+
+      if (beforeDelete.txType === MOVE_IN) {
+        moveOutRow = beforeDelete.refTxNo
+          ? await prisma.inventoryTx.findFirst({
+              where:   { txNo: beforeDelete.refTxNo, txType: MOVE_OUT },
+              include: txInclude,
+            })
+          : null;
+      } else {
+        moveInRow = beforeDelete.txNo
+          ? await prisma.inventoryTx.findFirst({
+              where:   { refTxNo: beforeDelete.txNo, txType: MOVE_IN },
+              include: txInclude,
+            })
+          : null;
+      }
+
+      // 이동입고분에서 이미 출고/사용된 건이 있으면 삭제 불가
+      if (moveInRow?.txNo) {
+        const childCount = await prisma.inventoryTx.count({
+          where: { refTxNo: moveInRow.txNo, NOT: { id: moveInRow.id } },
+        });
+        if (childCount > 0) {
+          return NextResponse.json(
+            { error: `이동입고분에서 이미 ${childCount}건이 출고/사용되었습니다. 먼저 해당 거래를 삭제해 주세요.` },
+            { status: 400 }
+          );
+        }
+      }
+
+      const rowsToDelete = [moveOutRow, moveInRow].filter(
+        (r): r is NonNullable<typeof beforeDelete> => r !== null
+      );
+      const missingPair =
+        beforeDelete.txType === MOVE_IN ? moveOutRow === null : moveInRow === null;
+
+      // 스냅샷은 삭제 전에 굳혀 둔다
+      const snapshots = rowsToDelete.map(r => {
+        let detail: string | undefined;
+        try { detail = formatInventoryTxDetail(r); } catch { detail = undefined; }
+        return { id: r.id, detail, row: txRowSnapshot(r) };
+      });
+
+      await prisma.$transaction(async (db) => {
+        for (const r of rowsToDelete) {
+          await db.inventoryTx.delete({ where: { id: r.id } });
+        }
+      });
+
+      const missingNote =
+        beforeDelete.txType === MOVE_IN ? "짝 이동출고 없음" : "짝 이동입고 없음";
+      for (const s of snapshots) {
+        await logActivity(
+          sessionUserId, "DELETE", "inventory_tx", s.id,
+          [s.detail, "이동 쌍 전표 삭제", missingPair ? missingNote : null]
+            .filter(Boolean).join(" | "),
+          s.row
+        );
+      }
+
+      return NextResponse.json({
+        message: missingPair ? "삭제 완료 (짝 전표를 찾지 못해 이 건만 삭제됨)" : "삭제 완료 (이동 쌍 전표)",
+      });
     }
 
     // ① 입고/충진 입고/사용중 건이면: 이를 참조하는 거래가 있는지 확인

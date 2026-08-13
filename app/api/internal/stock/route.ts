@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireInternalAuth } from "@/lib/internal-auth";
-import { STOCK_MINUS_TYPES, getStockMinusDisposals, sumDisposalsByItem } from "@/lib/txTypes";
+import { STOCK_PLUS_TYPES, STOCK_MINUS_TYPES, getStockMinusDisposals, sumDisposalsByItem } from "@/lib/txTypes";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
     const [inSum, outSum] = await Promise.all([
       prisma.inventoryTx.aggregate({
-        where: { itemId, txType: "입고", ...locationFilter },
+        where: { itemId, txType: { in: STOCK_PLUS_TYPES }, ...locationFilter },
         _sum: { qty: true },
       }),
       prisma.inventoryTx.aggregate({

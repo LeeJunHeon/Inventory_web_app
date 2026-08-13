@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { STOCK_MINUS_TYPES, getStockMinusDisposals, sumDisposalsByItem } from "@/lib/txTypes";
+import { STOCK_PLUS_TYPES, STOCK_MINUS_TYPES, getStockMinusDisposals, sumDisposalsByItem } from "@/lib/txTypes";
 
 export async function GET() {
   try {
@@ -51,7 +51,7 @@ export async function GET() {
 
       const inSums = await prisma.inventoryTx.groupBy({
         by: ["itemId"],
-        where: { itemId: { in: itemIds }, txType: "입고" },
+        where: { itemId: { in: itemIds }, txType: { in: STOCK_PLUS_TYPES } },
         _sum: { qty: true },
       });
 
@@ -89,7 +89,7 @@ export async function GET() {
     const [allInTxs, allOutTxs] = await Promise.all([
       prisma.inventoryTx.groupBy({
         by: ["itemId"],
-        where: { txType: "입고" },
+        where: { txType: { in: STOCK_PLUS_TYPES } },
         _sum: { qty: true },
       }),
       prisma.inventoryTx.groupBy({
@@ -117,7 +117,7 @@ export async function GET() {
       const [locIn, locOut] = await Promise.all([
         prisma.inventoryTx.groupBy({
           by: ["itemId"],
-          where: { locationId: loc.id, txType: "입고" },
+          where: { locationId: loc.id, txType: { in: STOCK_PLUS_TYPES } },
           _sum: { qty: true },
         }),
         prisma.inventoryTx.groupBy({

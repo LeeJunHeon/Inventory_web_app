@@ -9,7 +9,7 @@ import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
 import { exportXLSX } from "@/lib/xlsxUtils";
 
 interface BarcodeInfo  { id: number; code: string; isActive: string; }
-interface TxCount      { inbound: number; outbound: number; disburse: number; using?: number; disposal?: number; }
+interface TxCount      { inbound: number; outbound: number; disburse: number; using?: number; disposal?: number; moveIn?: number; moveOut?: number; }
 interface SearchResult {
   itemId: number; itemCode: string; itemName: string; category: string;
   barcodes: BarcodeInfo[]; txCount: TxCount; currentQty: number;
@@ -215,6 +215,16 @@ export default function StockTracingPage() {
                 {!!item.txCount.disposal && (
                   <span className="flex items-center gap-1 text-gray-500">
                     <Trash2 size={12} />{t.tracing.disposeLabel} {item.txCount.disposal}{t.tracing.countUnit}
+                  </span>
+                )}
+                {!!item.txCount.moveOut && (
+                  <span className="flex items-center gap-1 text-violet-600">
+                    <ArrowUpCircle size={12} />{t.tracing.moveOutLabel} {item.txCount.moveOut}{t.tracing.countUnit}
+                  </span>
+                )}
+                {!!item.txCount.moveIn && (
+                  <span className="flex items-center gap-1 text-violet-500">
+                    <ArrowDownCircle size={12} />{t.tracing.moveInLabel} {item.txCount.moveIn}{t.tracing.countUnit}
                   </span>
                 )}
                 <span className="ml-auto font-semibold text-emerald-700">
