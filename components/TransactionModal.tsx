@@ -330,6 +330,13 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         const bc = await res.json();
         if (!res.ok) { setError(bc.error || t.tx.barcodeLookupFailed); barcodeInputRef.current?.focus(); return; }
 
+        // 부분일치 결과가 여러 건 — 서버가 자동 선택을 거부. 선택기를 부분검색 UI로 띄운다.
+        if (bc.multiple) {
+          setError(bc.error);
+          openBarcodeSelector();  // 내부에서 setBarcodeSelectorSearch(barcodeInput.trim()) 수행
+          return;
+        }
+
         // 폐기: 이 바코드에 아직 폐기되지 않은 '사용중' 건이 있으면 그것을 참조한다(사용 후 폐기).
         // 없으면 아래 입고 참조 경로로 떨어져 '재고 직접 폐기'가 된다.
         let usingRef: { txNo: string; locationId: number } | null = null;
@@ -408,6 +415,13 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         const res = await fetch(`/api/barcodes/lookup?code=${encodeURIComponent(lookupCode)}`);
         const bc = await res.json();
         if (!res.ok) { setError(bc.error ?? t.tx.barcodeLookupFailed); barcodeInputRef.current?.focus(); return; }
+
+        // 부분일치 결과가 여러 건 — 목록에서 직접 선택
+        if (bc.multiple) {
+          setError(bc.error);
+          openBarcodeSelector();
+          return;
+        }
         setBarcodeId(bc.barcodeId);
         setTargetUnitId(bc.targetUnitId ?? null);
         if (bc.category && bc.category !== category) {
@@ -613,7 +627,9 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const filteredBarcodes = barcodeSelectorList.filter(b => {
     if (!barcodeSelectorSearch) return true;
     const s = barcodeSelectorSearch.toLowerCase();
-    return b.code.toLowerCase().includes(s) ||
+    // 바코드 코드는 하이픈 무시 비교 (W4P0BT89 ↔ W4P0BT-89)
+    const q = barcodeSelectorSearch.replace(/-/g, "").toUpperCase();
+    return b.code.replace(/-/g, "").toUpperCase().includes(q) ||
            b.itemCode.toLowerCase().includes(s) ||
            b.itemName.toLowerCase().includes(s);
   });
@@ -819,9 +835,17 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 value={barcodeInput}
                 disabled={isBarcodeLooking}
                 onChange={e => {
+                  if ((e.nativeEvent as any).isComposing) return;
                   setBarcodeInput(normalizeBarcodeInput(e.target.value));
                 }}
-                onKeyDown={e => e.key === "Enter" && handleBarcodeLookup()}
+                onCompositionStart={() => { isComposingRef.current = true; }}
+                onCompositionEnd={e => {
+                  isComposingRef.current = false;
+                  setBarcodeInput(normalizeBarcodeInput(e.currentTarget.value));
+                }}
+                onKeyDown={e => {
+                  if (e.key === "Enter" && !isComposingRef.current) handleBarcodeLookup();
+                }}
                 placeholder={t.tx.barcodePlaceholder}
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
               />
