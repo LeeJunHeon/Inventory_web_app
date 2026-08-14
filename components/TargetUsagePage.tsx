@@ -10,7 +10,14 @@ import { exportXLSX } from "@/lib/xlsxUtils";
 import DatePicker from "@/components/DatePicker";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
 
-interface TargetInfo { id: number; barcodeCode: string; itemCode: string; itemName: string; materialName: string; status: string; memo: string; }
+interface TargetInfo {
+  id: number; barcodeCode: string; itemCode: string; itemName: string;
+  materialName: string; status: string; memo: string;
+  consumeAlertG?: number | null;
+  firstWeight?: number | null;
+  currentWeight?: number | null;
+  consumedG?: number | null;
+}
 interface LogItem { id: number; targetId: number; timestamp: string; type: string; weight: number | null; location: string; locationId: number | null; reason: string; userName: string; barcodeCode: string; itemName: string; }
 
 interface LocationOption { id: number; name: string; }
@@ -1084,6 +1091,33 @@ export default function TargetUsagePage() {
                   onChange={e => setSelectedTarget({ ...selectedTarget, materialName: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
+
+              {/* 소진 알림 진행 — 품목에 기준값이 설정된 경우만 표시 */}
+              {selectedTarget.consumeAlertG != null && selectedTarget.consumedG != null && (() => {
+                const alertG = selectedTarget.consumeAlertG!;
+                const used   = selectedTarget.consumedG!;
+                const pct    = alertG > 0 ? Math.min(100, Math.round((used / alertG) * 100)) : 0;
+                const over   = used >= alertG;
+                return (
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-xs text-gray-400">{t.target.consumeLabel}</p>
+                      <p className={`text-xs font-semibold ${over ? "text-rose-600" : "text-gray-600"}`}>
+                        {used.toFixed(3)}g / {alertG}g ({pct}%)
+                      </p>
+                    </div>
+                    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          over ? "bg-rose-500" : pct >= 80 ? "bg-amber-500" : "bg-blue-500"
+                        }`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    {over && <p className="mt-1 text-xs text-rose-500">{t.target.consumeOver}</p>}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* 버튼 — mt-auto로 하단 고정 */}

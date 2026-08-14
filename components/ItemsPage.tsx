@@ -10,13 +10,13 @@ interface ItemOption {
   id: number; code: string; name: string;
   category: string; categoryId: number;
   unit: string | null; note: string | null; isActive: boolean;
-  purity?: number | null; hasCopper?: string | null; copperThickness?: number | null;
+  purity?: number | null; hasCopper?: string | null; copperThickness?: number | null; consumeAlertG?: number | null;
 }
 interface CategoryOption { id: number; name: string; codePrefix: string | null; parentId: number | null; }
 
 const CATS = ["전체", "웨이퍼", "타겟", "ALD", "가스", "기자재/소모품"];
 
-const EMPTY_FORM = { code: "", name: "", categoryId: "", unit: "", note: "", purity: "", hasCopper: "", copperThickness: "" };
+const EMPTY_FORM = { code: "", name: "", categoryId: "", unit: "", note: "", purity: "", hasCopper: "", copperThickness: "", consumeAlertG: "" };
 
 export default function ItemsPage() {
   const { t } = useT();
@@ -106,6 +106,7 @@ export default function ItemsPage() {
       purity: item.purity?.toString() ?? "",
       hasCopper: item.hasCopper ?? "",
       copperThickness: item.copperThickness?.toString() ?? "",
+      consumeAlertG: item.consumeAlertG?.toString() ?? "",
     });
     setFormError("");
     setShowForm(true);
@@ -132,6 +133,7 @@ export default function ItemsPage() {
           purity: form.purity,
           hasCopper: form.hasCopper,
           copperThickness: form.copperThickness,
+          consumeAlertG: form.consumeAlertG,
         }),
       });
       const data = await res.json();
@@ -285,6 +287,15 @@ export default function ItemsPage() {
                     onChange={e => setForm(f => ({ ...f, copperThickness: e.target.value }))}
                     placeholder="예: 0.125"
                     className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400" />
+                </div>
+                {/* 소진 알림 기준 */}
+                <div>
+                  <label className="block text-xs font-semibold text-blue-700 mb-1">소진 알림 기준 (g)</label>
+                  <input type="number" step="0.001" value={form.consumeAlertG}
+                    onChange={e => setForm(f => ({ ...f, consumeAlertG: e.target.value }))}
+                    placeholder="예: 29 (비우면 알림 없음)"
+                    className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400" />
+                  <p className="mt-1 text-[11px] text-blue-500">최초 측정값 대비 이만큼 줄면 Google Chat 알림</p>
                 </div>
               </>
             )}

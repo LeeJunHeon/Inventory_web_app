@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
       purity:          item.targetSpec?.purity != null ? Number(item.targetSpec.purity) : null,
       hasCopper:       item.targetSpec?.hasCopper ?? null,
       copperThickness: item.targetSpec?.copperThickness != null ? Number(item.targetSpec.copperThickness) : null,
+      consumeAlertG:   item.targetSpec?.consumeAlertG != null ? Number(item.targetSpec.consumeAlertG) : null,
       isActive:    item.isActive,
     })));
   } catch (error) {
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
   }
   try {
     const body = await request.json();
-    const { code, name, categoryId, unit, minStockQty, note, purity, hasCopper, copperThickness } = body;
+    const { code, name, categoryId, unit, minStockQty, note, purity, hasCopper, copperThickness, consumeAlertG } = body;
 
     if (!code?.trim() || !name?.trim() || !categoryId) {
       return NextResponse.json({ error: "품목코드, 품목명, 품목군은 필수입니다." }, { status: 400 });
@@ -112,6 +113,7 @@ export async function POST(request: NextRequest) {
           purity:          purity == null || purity === "" ? null : Number(purity),
           hasCopper:       hasCopper || null,
           copperThickness: copperThickness == null || copperThickness === "" ? null : Number(copperThickness),
+          consumeAlertG:   consumeAlertG == null || consumeAlertG === "" ? null : Number(consumeAlertG),
         },
       });
     }
@@ -143,7 +145,7 @@ export async function PUT(request: NextRequest) {
     if (!id) return NextResponse.json({ error: "id 파라미터 필요" }, { status: 400 });
 
     const body = await request.json();
-    const { name, categoryId, unit, minStockQty, note, purity, hasCopper, copperThickness } = body;
+    const { name, categoryId, unit, minStockQty, note, purity, hasCopper, copperThickness, consumeAlertG } = body;
 
     const beforeItem = await prisma.item.findUnique({
       where: { id: Number(id) },
@@ -163,7 +165,7 @@ export async function PUT(request: NextRequest) {
     });
 
     if (item.category.name === "타겟" &&
-        (purity !== undefined || hasCopper !== undefined || copperThickness !== undefined)) {
+        (purity !== undefined || hasCopper !== undefined || copperThickness !== undefined || consumeAlertG !== undefined)) {
       const { diameterInch, materialCode, thicknessInch } = parseTargetSpecFromCode(item.code);
       await prisma.targetSpec.upsert({
         where: { itemId: item.id },
@@ -171,12 +173,14 @@ export async function PUT(request: NextRequest) {
           ...(purity          !== undefined && { purity:          purity == null || purity === "" ? null : Number(purity) }),
           ...(hasCopper       !== undefined && { hasCopper:       hasCopper || null }),
           ...(copperThickness !== undefined && { copperThickness: copperThickness == null || copperThickness === "" ? null : Number(copperThickness) }),
+          ...(consumeAlertG !== undefined && { consumeAlertG: consumeAlertG == null || consumeAlertG === "" ? null : Number(consumeAlertG) }),
         },
         create: {
           itemId: item.id, materialCode, diameterInch, thicknessInch,
           purity:          purity == null || purity === "" ? null : Number(purity),
           hasCopper:       hasCopper || null,
           copperThickness: copperThickness == null || copperThickness === "" ? null : Number(copperThickness),
+          consumeAlertG:   consumeAlertG == null || consumeAlertG === "" ? null : Number(consumeAlertG),
         },
       });
     }

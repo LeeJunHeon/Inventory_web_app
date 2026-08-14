@@ -4,6 +4,7 @@ import { getSessionUserId, logActivity } from "@/lib/auth-helpers";
 import { expandBarcodeVariants } from "@/lib/barcodeUtils";
 import { buildTargetLogDetail } from "@/lib/logDetail";
 import { createDisposalTxForTarget } from "@/lib/txTypes";
+import { checkAndSendConsumeAlert } from "@/lib/targetConsumeAlert";
 
 // GET /api/targets?barcode=T-0187&page=1&limit=50
 export async function GET(request: NextRequest) {
@@ -65,7 +66,8 @@ export async function GET(request: NextRequest) {
       }
 
       const where = { targetUnitId: bc.targetUnit.id };
-      const [total, logs] = await Promise.all([
+      const measureWhere = { targetUnitId: bc.targetUnit.id, logType: "측정", weight: { not: null } };
+      const [total, logs, firstMeasure, lastMeasure] = await Promise.all([
         prisma.targetLog.count({ where }),
         prisma.targetLog.findMany({
           where,
@@ -74,10 +76,31 @@ export async function GET(request: NextRequest) {
           skip,
           take: limit,
         }),
+        prisma.targetLog.findFirst({
+          where: measureWhere,
+          orderBy: [{ loggedAt: "asc" }, { id: "asc" }],
+          select: { weight: true },
+        }),
+        prisma.targetLog.findFirst({
+          where: measureWhere,
+          orderBy: [{ loggedAt: "desc" }, { id: "desc" }],
+          select: { weight: true },
+        }),
       ]);
 
       // 바코드에 item이 직접 연결되지 않은 경우 targetUnit.item으로 fallback
       const bcItem = bc.item ?? bc.targetUnit?.item ?? null;
+
+      // 소진 알림 진행 표시용
+      const firstWeight   = firstMeasure?.weight != null ? Number(firstMeasure.weight) : null;
+      const currentWeight = lastMeasure?.weight  != null ? Number(lastMeasure.weight)  : null;
+      // 과거 데이터에 무게 역전 건이 있어 음수가 나올 수 있다 → 0으로 클램프
+      const consumedG =
+        firstWeight != null && currentWeight != null
+          ? Math.max(0, firstWeight - currentWeight)
+          : null;
+      const consumeAlertG =
+        bcItem?.targetSpec?.consumeAlertG != null ? Number(bcItem.targetSpec.consumeAlertG) : null;
 
       return NextResponse.json({
         total, page, limit,
@@ -89,6 +112,10 @@ export async function GET(request: NextRequest) {
           materialName: bcItem?.targetSpec?.materialCode  || "",
           status:       bc.targetUnit.status,
           note:         bc.targetUnit.note                || "",
+          consumeAlertG,
+          firstWeight,
+          currentWeight,
+          consumedG,
         },
         logs: logs.map((l) => ({
           id: l.id,
@@ -403,6 +430,11 @@ export async function POST(request: NextRequest) {
     // activity_log 기록 (등록 시점 내용을 detail에 스냅샷)
     const logUserId = sessionUserId ?? null;
     await logActivity(logUserId, "CREATE", "target_log", log.id, await buildTargetLogDetail(log.id));
+
+    // 타겟 소진 알림 — 측정일 때만. 내부에서 예외를 전부 흡수하므로 저장에 영향 없음
+    if (isMeasure) {
+      await checkAndSendConsumeAlert(body.targetUnitId);
+    }
 
     return NextResponse.json(log, { status: 201 });
   } catch (error) {

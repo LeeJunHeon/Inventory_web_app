@@ -3,6 +3,7 @@ import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/auth-helpers";
 import { buildTargetLogDetail } from "@/lib/logDetail";
+import { checkAndSendConsumeAlert } from "@/lib/targetConsumeAlert";
 
 function safeStringEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
@@ -246,6 +247,9 @@ export async function POST(request: NextRequest) {
     }
 
     await logActivity(actingUserId, "CREATE", "target_log", log.id, await buildTargetLogDetail(log.id));
+
+    // 타겟 소진 알림 — 이 엔드포인트는 측정만 처리하므로 조건 불필요
+    await checkAndSendConsumeAlert(targetUnitId);
 
     return NextResponse.json({ id: log.id, targetUnitId, message: "측정이 기록되었습니다." }, { status: 201 });
   } catch (error) {

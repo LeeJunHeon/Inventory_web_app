@@ -146,6 +146,7 @@ model TargetSpec {
   purity        Decimal? @db.Decimal(6, 3)
   hasCopper     String?  @map("has_copper") // Y | N
   copperThickness Decimal? @map("copper_thickness") @db.Decimal(5, 3)
+  consumeAlertG   Decimal? @map("consume_alert_g") @db.Decimal(10, 3)
 
   item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
@@ -161,6 +162,8 @@ model TargetUnit {
   createdAt  DateTime  @default(now()) @map("created_at") @db.Date
   disposedAt DateTime? @map("disposed_at") @db.Date
   note       String?
+  consumeAlertSentAt DateTime? @map("consume_alert_sent_at")
+  consumeAlertSentG  Decimal?  @map("consume_alert_sent_g") @db.Decimal(10, 3)
 
   item                      Item?            @relation(fields: [itemId], references: [id])
   barcodes                  Barcode[]

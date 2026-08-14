@@ -537,6 +537,8 @@ export const ko = {
     searchFailed: "조회 실패",
     searchError: "조회 중 오류가 발생했습니다.",
     noResults: "검색 결과가 없습니다.",
+    consumeLabel: "소진 진행",
+    consumeOver: "기준 초과 — 교체 준비 필요",
   },
   status: {
     subtitle: "전체 위치 · 품목별 현재 재고와 수급 상태를 확인합니다",

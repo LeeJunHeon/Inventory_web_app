@@ -539,6 +539,8 @@ export const en: Messages = {
     searchFailed: "Search failed",
     searchError: "An error occurred during search.",
     noResults: "No results found.",
+    consumeLabel: "Consumption",
+    consumeOver: "Threshold exceeded — prepare replacement",
   },
   status: {
     subtitle: "Check current stock and supply status by item",
