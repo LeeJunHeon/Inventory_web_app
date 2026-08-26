@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Search, Save, AlertTriangle, Weight, MapPin, FileText, ArrowDown, ArrowUp, ArrowUpDown, Loader2, Camera, MapPinned, ChevronDown } from "lucide-react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { Search, Save, AlertTriangle, Weight, MapPin, FileText, ArrowDown, ArrowUp, ArrowUpDown, Loader2, Camera, MapPinned, ChevronDown, ChevronLeft, ChevronRight, Image as ImageIcon, Trash2, X } from "lucide-react";
 import CsvButton from "@/components/CsvButton";
+import PhotoUploader from "@/components/ui/PhotoUploader";
+import { assetPath } from "@/lib/assetPath";
 import { TARGET_STATUS_LABELS, formatWeight } from "@/lib/data";
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
 import { useT } from "@/lib/i18n";
@@ -21,6 +23,18 @@ interface TargetInfo {
 interface LogItem { id: number; targetId: number; timestamp: string; type: string; weight: number | null; location: string; locationId: number | null; reason: string; userName: string; barcodeCode: string; itemName: string; }
 
 interface LocationOption { id: number; name: string; }
+
+/** GET /api/target-photos 의 항목 (이미지 본문은 포함되지 않는다) */
+interface TargetPhoto {
+  id: number;
+  targetLogId: number | null;
+  targetUnitId: number | null;
+  fileName: string;
+  takenDate: string | null;
+  tag: string | null;
+  matchStatus: string | null;
+  uploaderName: string;
+}
 
 interface TargetListItem {
   id: number;
@@ -220,7 +234,47 @@ export default function TargetUsagePage() {
   const [editEndDate, setEditEndDate]       = useState("");
   const [slotSaving, setSlotSaving]         = useState(false);
 
+  // ── 측정 사진 ──────────────────────────────────────────────────────────
+  const [photoFiles, setPhotoFiles]         = useState<File[]>([]);
+  const [photoTag, setPhotoTag]             = useState("");
+  // PhotoUploader 내부 상태를 저장 후 비우기 위한 remount 키
+  const [photoUploaderKey, setPhotoUploaderKey] = useState(0);
+  const [photos, setPhotos]                 = useState<TargetPhoto[]>([]);
+  const [photosLoading, setPhotosLoading]   = useState(false);
+  const [showPhotos, setShowPhotos]         = useState(false);
+  // 라이트박스는 "어떤 목록을 보고 있는지"까지 함께 들고 있어야 좌우 이동이 맞는다
+  const [lightbox, setLightbox]             = useState<{ list: TargetPhoto[]; idx: number } | null>(null);
+  const [photoDeleteConfirm, setPhotoDeleteConfirm] = useState(false);
+  const [photoDeleting, setPhotoDeleting]   = useState(false);
+
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3000); };
+
+  // 측정 기록 id → 사진 목록 (이력 테이블의 🖼 뱃지용)
+  const photosByLog = useMemo(() => {
+    const map = new Map<number, TargetPhoto[]>();
+    for (const p of photos) {
+      if (p.targetLogId == null) continue;
+      const arr = map.get(p.targetLogId);
+      if (arr) arr.push(p);
+      else map.set(p.targetLogId, [p]);
+    }
+    return map;
+  }, [photos]);
+
+  // ⚠️ /api/targets 는 건드리지 않는다. 타겟이 바뀔 때 사진만 별도로 1회 조회한다.
+  const fetchPhotos = async (targetUnitId: number) => {
+    setPhotosLoading(true);
+    try {
+      const res = await fetch(`/api/target-photos?targetUnitId=${targetUnitId}&limit=200`);
+      if (!res.ok) { setPhotos([]); return; }
+      const data = await res.json();
+      setPhotos(Array.isArray(data.photos) ? data.photos : []);
+    } catch {
+      setPhotos([]);
+    } finally {
+      setPhotosLoading(false);
+    }
+  };
 
   // 마운트 시 바코드 input 자동 포커스
   useEffect(() => {
@@ -297,6 +351,81 @@ export default function TargetUsagePage() {
     setMovementsMeta({ unknownLocationCount: 0, isDisposed: false, disposedAt: null });
     setShowMovements(false);
   }, [selectedTarget?.id]);
+
+  // selectedTarget 바뀌면 사진 목록 재조회 (없으면 비움)
+  useEffect(() => {
+    setLightbox(null);
+    setShowPhotos(false);
+    const id = selectedTarget?.id;
+    if (!id) { setPhotos([]); return; }
+    fetchPhotos(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTarget?.id]);
+
+  // 라이트박스 키보드 조작 (ESC 닫기 / 좌우 이동)
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightbox(null);
+      else if (e.key === "ArrowLeft") movePhoto(-1);
+      else if (e.key === "ArrowRight") movePhoto(1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lightbox]);
+
+  // 보고 있는 사진이 바뀌면 삭제 확인 상태를 되돌린다
+  const movePhoto = (delta: number) => {
+    setPhotoDeleteConfirm(false);
+    setLightbox(prev => {
+      if (!prev || prev.list.length === 0) return prev;
+      const next = (prev.idx + delta + prev.list.length) % prev.list.length;
+      return { ...prev, idx: next };
+    });
+  };
+
+  // DB 에 저장된 태그 문자열은 레거시 임포트 값도 섞이므로, 아는 값만 번역한다
+  const photoTagLabel = (tag: string | null): string =>
+    tag === "before_sanding" ? t.target.photoTagBefore
+      : tag === "after_sanding" ? t.target.photoTagAfter
+      : (tag ?? "");
+
+  const openLightbox = (list: TargetPhoto[], idx: number) => {
+    if (list.length === 0) return;
+    setPhotoDeleteConfirm(false);
+    setLightbox({ list, idx });
+  };
+
+  // 사진 삭제 — window.confirm 대신 인라인 2단계 확인(handleDispose 와 같은 패턴)
+  const handleDeletePhoto = async () => {
+    if (!lightbox) return;
+    const current = lightbox.list[lightbox.idx];
+    if (!current) return;
+    if (!photoDeleteConfirm) { setPhotoDeleteConfirm(true); return; }
+
+    setPhotoDeleting(true);
+    try {
+      const res = await fetch(`/api/target-photos/${current.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        showToast(e.error || t.target.photoDeleteFailed);
+        return;
+      }
+      showToast(t.target.photoDeleted);
+      setPhotoDeleteConfirm(false);
+
+      const remaining = lightbox.list.filter(p => p.id !== current.id);
+      setLightbox(remaining.length === 0
+        ? null
+        : { list: remaining, idx: Math.min(lightbox.idx, remaining.length - 1) });
+      setPhotos(prev => prev.filter(p => p.id !== current.id));
+    } catch {
+      showToast(t.target.photoDeleteFailed);
+    } finally {
+      setPhotoDeleting(false);
+    }
+  };
 
   // 토글 펼치면 movements lazy fetch
   useEffect(() => {
@@ -426,9 +555,31 @@ export default function TargetUsagePage() {
         body: JSON.stringify({ targetUnitId: selectedTarget.id, type: "측정", weight: weight ? parseFloat(weight) : null, locationId: locationId || null, reason }),
       });
       if (!res.ok) { const e = await res.json(); showToast(e.error || t.common.saveFail); return; }
-      showToast(t.target.weightSaved);
+
+      // POST /api/targets 는 생성된 target_log 를 그대로 돌려준다 → id 로 사진을 붙인다
+      const createdLog = await res.json().catch(() => null);
+      const createdLogId = createdLog && typeof createdLog.id === "number" ? createdLog.id : null;
+
+      // 사진 업로드는 측정값 저장과 독립적이다. 실패해도 롤백하지 않고 알리기만 한다.
+      let failed = 0;
+      if (createdLogId !== null && photoFiles.length > 0) {
+        for (const file of photoFiles) {
+          try {
+            const fd = new FormData();
+            fd.append("file", file);
+            fd.append("targetLogId", String(createdLogId));
+            if (photoTag) fd.append("tag", photoTag);
+            const up = await fetch("/api/target-photos", { method: "POST", body: fd });
+            if (!up.ok) failed++;
+          } catch { failed++; }
+        }
+      }
+
+      showToast(failed > 0 ? t.target.photoUploadFailed(failed) : t.target.weightSaved);
       setWeight(""); setLocationId(""); setReason("");
+      setPhotoFiles([]); setPhotoTag(""); setPhotoUploaderKey(k => k + 1);
       fetchLogs(1, selectedTarget.barcodeCode);
+      fetchPhotos(selectedTarget.id);
     } catch { showToast(t.target.saveFailed); }
     finally { setSaving(false); }
   };
@@ -1186,6 +1337,25 @@ export default function TargetUsagePage() {
                 <input type="text" placeholder={t.target.reasonPlaceholder} value={reason} onChange={(e) => setReason(e.target.value)}
                   className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
+
+              {/* 측정 사진 — 저장 시 생성된 target_log 에 붙는다 */}
+              <PhotoUploader
+                key={photoUploaderKey}
+                onFilesChange={setPhotoFiles}
+                maxFiles={10}
+                disabled={saving}
+              />
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">
+                  <span className="inline-flex items-center gap-1"><ImageIcon size={12} />{t.target.photoTagLabel}</span>
+                </label>
+                <select value={photoTag} onChange={(e) => setPhotoTag(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none">
+                  <option value="">{t.target.photoTagNone}</option>
+                  <option value="before_sanding">{t.target.photoTagBefore}</option>
+                  <option value="after_sanding">{t.target.photoTagAfter}</option>
+                </select>
+              </div>
             </div>
 
             {/* 버튼 — mt-auto로 하단 고정 */}
@@ -1323,6 +1493,7 @@ export default function TargetUsagePage() {
                   <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.target.colStorage}</th>
                   <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.target.colReason}</th>
                   <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.target.colAuthor}</th>
+                  {selectedTarget && <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.target.photoAttach}</th>}
                 </tr></thead>
                 <tbody>
                   {sorted.map((log) => (
@@ -1335,9 +1506,26 @@ export default function TargetUsagePage() {
                       <td className="px-5 py-3 text-sm text-gray-600">{log.location}</td>
                       <td className="px-5 py-3 text-sm text-gray-600">{log.reason}</td>
                       <td className="px-5 py-3 text-sm text-gray-500">{log.userName}</td>
+                      {selectedTarget && (
+                        <td className="px-5 py-3 text-sm">
+                          {(() => {
+                            const rowPhotos = photosByLog.get(log.id) ?? [];
+                            if (rowPhotos.length === 0) return <span className="text-gray-300">-</span>;
+                            return (
+                              <button
+                                onClick={() => openLightbox(rowPhotos, 0)}
+                                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 font-semibold"
+                              >
+                                <ImageIcon size={14} />
+                                {rowPhotos.length}{t.target.photoCountUnit}
+                              </button>
+                            );
+                          })()}
+                        </td>
+                      )}
                     </tr>
                   ))}
-                  {sorted.length === 0 && <tr><td colSpan={8} className="px-5 py-12 text-center text-sm text-gray-400">{t.target.noLogs}</td></tr>}
+                  {sorted.length === 0 && <tr><td colSpan={9} className="px-5 py-12 text-center text-sm text-gray-400">{t.target.noLogs}</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -1372,6 +1560,167 @@ export default function TargetUsagePage() {
           </>
         )}
       </div>
+      {/* 사진 타임라인 — 그 타겟의 전체 사진을 촬영일 순으로 (기본 접힘) */}
+      {selectedTarget && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
+          <button
+            onClick={() => setShowPhotos(v => !v)}
+            className="w-full flex items-center gap-2 text-sm font-bold text-gray-900 hover:text-blue-600 transition-colors text-left min-w-0"
+          >
+            <ImageIcon size={16} className="text-blue-500 shrink-0" />
+            <span>{t.target.photoTimelineTitle}</span>
+            {photos.length > 0 && (
+              <span className="text-xs text-gray-400 font-normal">
+                ({photos.length}{t.target.photoCountUnit})
+              </span>
+            )}
+            <ChevronDown
+              size={14}
+              className={`ml-auto text-gray-400 transition-transform shrink-0 ${showPhotos ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          {showPhotos && (
+            <div className="mt-4">
+              {photosLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 size={20} className="animate-spin text-blue-500" />
+                </div>
+              ) : photos.length === 0 ? (
+                <p className="text-sm text-gray-400 py-6 text-center">{t.target.photoNone}</p>
+              ) : (
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                  {photos.map((p, i) => (
+                    <button
+                      key={p.id}
+                      onClick={() => openLightbox(photos, i)}
+                      className="relative aspect-square overflow-hidden rounded-xl bg-gray-100 border border-gray-100 hover:ring-2 hover:ring-blue-400 transition"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={assetPath(`/api/target-photos/${p.id}?thumb=1`)}
+                        alt={p.fileName}
+                        loading="lazy"
+                        className="h-full w-full object-cover"
+                      />
+                      <div className="absolute inset-x-0 top-0 flex flex-wrap gap-1 p-1">
+                        {p.tag && (
+                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md bg-blue-500/90 text-white">
+                            {photoTagLabel(p.tag)}
+                          </span>
+                        )}
+                        {p.matchStatus === "unmatched" && (
+                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-500/80 text-white">
+                            {t.target.photoUnmatched}
+                          </span>
+                        )}
+                      </div>
+                      {p.takenDate && (
+                        <div className="absolute inset-x-0 bottom-0 bg-black/50 px-1 py-0.5 text-center">
+                          <span className="text-[9px] text-white font-mono">
+                            {new Date(p.takenDate).toLocaleDateString("ko-KR")}
+                          </span>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 라이트박스 */}
+      {lightbox && lightbox.list[lightbox.idx] && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setLightbox(null)}
+        >
+          <div
+            className="relative max-w-4xl w-full max-h-full flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs text-white/70 font-mono truncate">
+                {lightbox.list[lightbox.idx].fileName}
+              </span>
+              {lightbox.list[lightbox.idx].tag && (
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-blue-500 text-white shrink-0">
+                  {photoTagLabel(lightbox.list[lightbox.idx].tag)}
+                </span>
+              )}
+              {lightbox.list[lightbox.idx].matchStatus === "unmatched" && (
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-500 text-white shrink-0">
+                  {t.target.photoUnmatched}
+                </span>
+              )}
+              <span className="text-xs text-white/50 ml-auto shrink-0">
+                {lightbox.idx + 1} / {lightbox.list.length}
+              </span>
+              <button
+                onClick={() => setLightbox(null)}
+                aria-label={t.target.photoClose}
+                className="p-1.5 rounded-lg text-white/70 hover:bg-white/10 shrink-0"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="relative flex-1 min-h-0 flex items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={assetPath(`/api/target-photos/${lightbox.list[lightbox.idx].id}`)}
+                alt={lightbox.list[lightbox.idx].fileName}
+                className="max-h-[70vh] max-w-full object-contain rounded-xl bg-black"
+              />
+              {lightbox.list.length > 1 && (
+                <>
+                  <button
+                    onClick={() => movePhoto(-1)}
+                    aria-label={t.target.photoPrev}
+                    className="absolute left-1 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/70"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <button
+                    onClick={() => movePhoto(1)}
+                    aria-label={t.target.photoNext}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/70"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* 삭제 — 브라우저 모달 대신 인라인 2단계 확인 */}
+            <div className="mt-3 flex items-center justify-center gap-2">
+              <button
+                onClick={handleDeletePhoto}
+                disabled={photoDeleting}
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold disabled:opacity-60 ${
+                  photoDeleteConfirm
+                    ? "bg-rose-500 text-white hover:bg-rose-600"
+                    : "bg-white/10 text-white hover:bg-white/20"
+                }`}
+              >
+                <Trash2 size={14} />
+                {photoDeleteConfirm ? t.target.photoDeleteConfirm : t.target.photoDelete}
+              </button>
+              {photoDeleteConfirm && (
+                <button
+                  onClick={() => setPhotoDeleteConfirm(false)}
+                  className="text-xs text-white/70 underline"
+                >
+                  {t.common.cancel}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {showCameraScanner && (
         <BarcodeCameraScanner
           onDetected={code => {
