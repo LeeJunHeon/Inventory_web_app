@@ -1,0 +1,6 @@
+# 저장소는 LF로 통일 (Windows 편집기 CRLF 재발 방지)
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary

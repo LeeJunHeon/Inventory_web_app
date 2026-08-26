@@ -56,7 +56,10 @@ function toJpegName(name: string) {
  */
 async function resizeImage(file: File): Promise<File | null> {
   try {
-    const bitmap = await createImageBitmap(file);
+    // ⚠️ imageOrientation 을 반드시 명시한다.
+    // canvas 로 재인코딩하는 순간 EXIF 가 사라져 서버의 sharp().rotate() 가
+    // 무동작이 된다. 여기서 픽셀을 돌려놓지 않으면 세로 사진이 누운 채로 저장된다.
+    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
     const w0 = bitmap.width;
     const h0 = bitmap.height;
     if (!w0 || !h0) { bitmap.close(); return null; }
@@ -231,7 +234,7 @@ export default function PhotoUploader({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/heic"
+        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
         multiple
         className="hidden"
         onChange={handleInputChange}

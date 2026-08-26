@@ -1525,7 +1525,7 @@ export default function TargetUsagePage() {
                       )}
                     </tr>
                   ))}
-                  {sorted.length === 0 && <tr><td colSpan={9} className="px-5 py-12 text-center text-sm text-gray-400">{t.target.noLogs}</td></tr>}
+                  {sorted.length === 0 && <tr><td colSpan={selectedTarget ? 9 : 8} className="px-5 py-12 text-center text-sm text-gray-400">{t.target.noLogs}</td></tr>}
                 </tbody>
               </table>
             </div>
