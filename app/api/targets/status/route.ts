@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { STOCK_PLUS_TYPES } from "@/lib/txTypeConstants";
 
 const STATUS_ORDER: Record<string, number> = {
   "미사용": 0,
@@ -51,28 +52,32 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 쿼리 3: 입고 트랜잭션 전체를 한 번에 가져와서 JS에서 타겟별 최신값 추출
+    // 쿼리 3: 재고를 가산하는 전표(입고 + 이동입고)를 한 번에 가져와 타겟별 최신값 추출.
+    // 입고만 보면 이동으로 본사↔공덕을 옮긴 타겟이 옛 사이트에 남는다.
     const allInboundTxs = await prisma.inventoryTx.findMany({
       where: {
-        txType: "입고",
+        txType: { in: STOCK_PLUS_TYPES },
         targetUnitId: { in: ids },
       },
-      select: { targetUnitId: true, txDate: true, locationId: true },
+      select: { targetUnitId: true, txType: true, txDate: true, locationId: true },
       orderBy: { txDate: "desc" },
     });
 
-    // 타겟별 가장 최근 입고일 Map
+    // 두 Map의 기준이 다르다:
+    //  - inboundDateMap: 화면의 '입고일'이므로 순수 입고 전표만 본다(이동일이 아니다)
+    //  - inboundLocMap : 현재 어느 사이트에 있는지이므로 이동입고를 포함한 최신 전표를 본다
     const inboundDateMap = new Map<number, string>();
     const inboundLocMap = new Map<number, number>();
     for (const tx of allInboundTxs) {
-      if (tx.targetUnitId && !inboundDateMap.has(tx.targetUnitId)) {
+      if (!tx.targetUnitId) continue;
+      if (tx.txType === "입고" && !inboundDateMap.has(tx.targetUnitId)) {
         inboundDateMap.set(
           tx.targetUnitId,
           tx.txDate.toISOString().split("T")[0]
         );
-        if (tx.locationId != null) {
-          inboundLocMap.set(tx.targetUnitId, tx.locationId);
-        }
+      }
+      if (tx.locationId != null && !inboundLocMap.has(tx.targetUnitId)) {
+        inboundLocMap.set(tx.targetUnitId, tx.locationId);
       }
     }
 
