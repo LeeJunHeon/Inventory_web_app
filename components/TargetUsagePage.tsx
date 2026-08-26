@@ -1243,6 +1243,26 @@ export default function TargetUsagePage() {
                   className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
 
+              {/* 무게 요약 — API가 이미 주던 값. 소진 기준값이 없는 품목에서도 보여야 한다.
+                  측정 기록이 없는 신규 타겟(둘 다 null)이면 통째로 숨긴다.
+                  consumedG는 서버에서 0으로 클램프돼 오므로 화면에서 다시 계산하지 않는다. */}
+              {(selectedTarget.firstWeight != null || selectedTarget.currentWeight != null) && (
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">{t.target.firstWeightLabel}</p>
+                    <p className="text-sm font-semibold text-gray-900">{formatWeight(selectedTarget.firstWeight ?? null)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">{t.target.currentWeight}</p>
+                    <p className="text-sm font-semibold text-gray-900">{formatWeight(selectedTarget.currentWeight ?? null)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">{t.target.consumedLabel}</p>
+                    <p className="text-sm font-semibold text-gray-900">{formatWeight(selectedTarget.consumedG ?? null)}</p>
+                  </div>
+                </div>
+              )}
+
               {/* 소진 알림 진행 — 품목에 기준값이 설정된 경우만 표시 */}
               {selectedTarget.consumeAlertG != null && selectedTarget.consumedG != null && (() => {
                 const alertG = selectedTarget.consumeAlertG!;
@@ -1269,6 +1289,39 @@ export default function TargetUsagePage() {
                   </div>
                 );
               })()}
+
+              {/* 최근 사진 — 사진이 없으면 빈 자리를 만들지 않는다.
+                  썸네일 스타일은 아래 타임라인 그리드와 통일. */}
+              {photos.length > 0 && (
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">{t.target.photoRecentTitle}</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {photos.slice(0, 3).map((p, i) => (
+                      <button
+                        key={p.id}
+                        onClick={() => openLightbox(photos, i)}
+                        className="relative aspect-square overflow-hidden rounded-xl bg-gray-100 border border-gray-100 hover:ring-2 hover:ring-blue-400 transition"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={assetPath(`/api/target-photos/${p.id}?thumb=1`)}
+                          alt={p.fileName}
+                          loading="lazy"
+                          className="h-full w-full object-cover"
+                        />
+                      </button>
+                    ))}
+                    {photos.length > 3 && (
+                      <button
+                        onClick={() => setShowPhotos(true)}
+                        className="aspect-square rounded-xl border border-dashed border-gray-200 bg-gray-50 text-xs font-semibold text-gray-500 hover:border-blue-300 hover:text-blue-600 transition"
+                      >
+                        {t.target.photoMore(photos.length - 3)}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 버튼 — mt-auto로 하단 고정 */}

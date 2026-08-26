@@ -539,6 +539,8 @@ export const ko = {
     noResults: "검색 결과가 없습니다.",
     consumeLabel: "소진 진행",
     consumeOver: "기준 초과 — 교체 준비 필요",
+    firstWeightLabel: "최초 무게",
+    consumedLabel: "소모량",
     // 측정 사진
     photoAttach: "사진 첨부",
     photoCamera: "카메라 촬영",
@@ -556,6 +558,8 @@ export const ko = {
     photoTagBefore: "샌딩 전",
     photoTagAfter: "샌딩 후",
     photoUploadFailed: (n: number) => `측정값은 저장됐으나 사진 ${n}장 업로드에 실패했습니다.`,
+    photoRecentTitle: "최근 사진",
+    photoMore: (n: number) => `+${n}장 더`,
     photoTimelineTitle: "측정 사진",
     photoCountUnit: "장",
     photoNone: "등록된 사진이 없습니다.",

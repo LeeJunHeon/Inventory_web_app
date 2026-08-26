@@ -541,6 +541,8 @@ export const en: Messages = {
     noResults: "No results found.",
     consumeLabel: "Consumption",
     consumeOver: "Threshold exceeded — prepare replacement",
+    firstWeightLabel: "First",
+    consumedLabel: "Consumed",
     // Measurement photos
     photoAttach: "Photos",
     photoCamera: "Take Photo",
@@ -558,6 +560,8 @@ export const en: Messages = {
     photoTagBefore: "Before sanding",
     photoTagAfter: "After sanding",
     photoUploadFailed: (n: number) => `Measurement saved, but ${n} photo(s) failed to upload.`,
+    photoRecentTitle: "Recent photos",
+    photoMore: (n: number) => `+${n} more`,
     photoTimelineTitle: "Measurement Photos",
     photoCountUnit: "",
     photoNone: "No photos yet.",
