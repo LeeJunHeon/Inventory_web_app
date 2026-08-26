@@ -6,6 +6,7 @@ import { TYPE_COLORS, CATEGORY_COLORS, formatPrice } from "@/lib/data";
 import { useApi } from "@/lib/useApi";
 import type { PageId } from "@/components/Sidebar";
 import { useT } from "@/lib/i18n";
+import { STOCK_PLUS_TYPES } from "@/lib/txTypeConstants";
 
 interface LocationSummary {
   locationId: number; locationName: string;
@@ -139,7 +140,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
                   { label: t.dashboard.detailDate,     value: selectedRecent.date },
                   { label: t.dashboard.detailItem,     value: selectedRecent.name },
                   { label: t.dashboard.detailCategory, value: selectedRecent.category },
-                  { label: t.dashboard.detailQty,      value: `${selectedRecent.type === "입고" ? "+" : "-"}${selectedRecent.qty}${t.dashboard.qtyUnit}` },
+                  { label: t.dashboard.detailQty,      value: `${STOCK_PLUS_TYPES.includes(selectedRecent.type) ? "+" : "-"}${selectedRecent.qty}${t.dashboard.qtyUnit}` },
                   { label: t.dashboard.detailAmount,   value: formatPrice(selectedRecent.amount) },
                   { label: t.dashboard.detailPartner,  value: selectedRecent.partner || "-" },
                 ].map(({ label, value }) => (
@@ -261,7 +262,8 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
                   </div>
                   <div className="text-right">
                     <span className={`text-sm font-bold ${tc?.text || "text-gray-700"}`}>
-                      {item.type === "입고" ? "+" : "-"}{item.qty}{t.dashboard.qtyUnit}
+                      {/* 이동입고도 재고가 늘어난다 — 문자열 비교 대신 가산 유형 집합으로 판정 */}
+                      {STOCK_PLUS_TYPES.includes(item.type) ? "+" : "-"}{item.qty}{t.dashboard.qtyUnit}
                     </span>
                     <p className="text-xs text-gray-400">{formatPrice(item.amount)}</p>
                   </div>

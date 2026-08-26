@@ -6,6 +6,7 @@ import { CATEGORY_COLORS } from "@/lib/data";
 import { useSession } from "next-auth/react";
 import { useT } from "@/lib/i18n";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
+import { STOCK_PLUS_TYPES, MOVE_IN, MOVE_OUT } from "@/lib/txTypeConstants";
 import { exportXLSX } from "@/lib/xlsxUtils";
 
 interface BarcodeInfo  { id: number; code: string; isActive: string; }
@@ -26,12 +27,17 @@ const TYPE_STYLE: Record<string, string> = {
   "입고": "bg-blue-50 text-blue-700 border-blue-200",
   "출고": "bg-rose-50 text-rose-700 border-rose-200",
   "불출": "bg-amber-50 text-amber-700 border-amber-200",
+  // 이동 쌍은 lib/data 의 TYPE_COLORS 와 같은 보라 계열 (없으면 회색으로 떨어진다)
+  [MOVE_OUT]: "bg-violet-50 text-violet-700 border-violet-200",
+  [MOVE_IN]:  "bg-violet-50 text-violet-700 border-violet-200",
 };
 
 const TYPE_DOT: Record<string, string> = {
   "입고": "bg-blue-500",
   "출고": "bg-rose-500",
   "불출": "bg-amber-500",
+  [MOVE_OUT]: "bg-violet-500",
+  [MOVE_IN]:  "bg-violet-400",
 };
 
 export default function StockTracingPage() {
@@ -336,8 +342,9 @@ export default function StockTracingPage() {
                             {tx.partnerName || tx.reasonName || tx.memo || "-"}
                           </td>
                           <td className="px-4 py-3 text-sm font-semibold text-right whitespace-nowrap">
-                            <span className={tx.txType === "입고" ? "text-blue-600" : "text-rose-600"}>
-                              {tx.txType === "입고" ? "+" : "-"}{tx.qty.toLocaleString()}
+                            {/* 이동입고도 재고가 늘어난다 — 문자열 비교 대신 가산 유형 집합으로 판정 */}
+                            <span className={STOCK_PLUS_TYPES.includes(tx.txType) ? "text-blue-600" : "text-rose-600"}>
+                              {STOCK_PLUS_TYPES.includes(tx.txType) ? "+" : "-"}{tx.qty.toLocaleString()}
                             </span>
                           </td>
                           {!isEmployee && (
@@ -367,9 +374,27 @@ export default function StockTracingPage() {
                     className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
                     <Download size={15} />Excel
                   </button>
-                  <span className="text-blue-600">{t.tracing.inboundLabel} {txHistory.filter(tx => tx.txType === "입고").reduce((s, tx) => s + tx.qty, 0).toLocaleString()}</span>
-                  <span className="text-rose-500">{t.tracing.outboundLabel} {txHistory.filter(tx => tx.txType === "출고").reduce((s, tx) => s + tx.qty, 0).toLocaleString()}</span>
-                  <span className="text-amber-600">{t.tracing.disburseLabel} {txHistory.filter(tx => tx.txType === "불출").reduce((s, tx) => s + tx.qty, 0).toLocaleString()}</span>
+                  {/* 합계는 재고 증감 기준이다. 이동입고는 입고 쪽, 이동출고는 출고 쪽에
+                      포함돼야 화면 합계와 실제 보유수량 변화가 맞는다.
+                      사용중/폐기는 위 검색 결과 카드와 같이 있을 때만 노출한다. */}
+                  {(() => {
+                    const sum = (types: string[]) =>
+                      txHistory.filter(tx => types.includes(tx.txType)).reduce((s, tx) => s + tx.qty, 0);
+                    const inbound  = sum(STOCK_PLUS_TYPES);
+                    const outbound = sum(["출고", MOVE_OUT]);
+                    const disburse = sum(["불출"]);
+                    const using    = sum(["사용중"]);
+                    const disposal = sum(["폐기"]);
+                    return (
+                      <>
+                        <span className="text-blue-600">{t.tracing.inboundLabel} {inbound.toLocaleString()}</span>
+                        <span className="text-rose-500">{t.tracing.outboundLabel} {outbound.toLocaleString()}</span>
+                        <span className="text-amber-600">{t.tracing.disburseLabel} {disburse.toLocaleString()}</span>
+                        {using > 0 && <span className="text-teal-600">{t.tracing.usingLabel} {using.toLocaleString()}</span>}
+                        {disposal > 0 && <span className="text-gray-500">{t.tracing.disposeLabel} {disposal.toLocaleString()}</span>}
+                      </>
+                    );
+                  })()}
                 </div>
               )}
             </div>
@@ -396,7 +421,7 @@ export default function StockTracingPage() {
               {[
                 { label: t.tracing.detailTxNo,      value: selectedTx.txNo ? `#${selectedTx.txNo}` : "-" },
                 { label: t.tracing.detailRefTxNo,   value: selectedTx.refTxNo || "-" },
-                { label: t.tracing.detailQty,        value: `${selectedTx.txType === "입고" ? "+" : "-"}${selectedTx.qty.toLocaleString()}` },
+                { label: t.tracing.detailQty,        value: `${STOCK_PLUS_TYPES.includes(selectedTx.txType) ? "+" : "-"}${selectedTx.qty.toLocaleString()}` },
                 ...(isEmployee ? [] : [{ label: t.tracing.detailUnitPrice, value: selectedTx.unitPrice != null ? (selectedTx.currency === "USD" ? `$${selectedTx.unitPrice.toLocaleString()}` : `₩${selectedTx.unitPrice.toLocaleString()}`) : "-" }]),
                 { label: t.tracing.detailPartner,    value: selectedTx.partnerName || "-" },
                 { label: t.tracing.detailReason,     value: selectedTx.reasonName || "-" },
