@@ -6,6 +6,37 @@ import { logActivity } from "@/lib/auth-helpers";
 // 유지하기 위해 여기서 재수출한다.
 export { MOVE_OUT, MOVE_IN, STOCK_PLUS_TYPES, STOCK_MINUS_TYPES, LOT_CONSUME_TYPES } from "@/lib/txTypeConstants";
 
+/**
+ * 보유수량에서 차감해야 하는 폐기 행의 id 집합을 고른다.
+ *
+ * 규칙: '사용중' 전표를 참조한 폐기는 차감하지 않는다.
+ * 사용중이 이미 STOCK_MINUS_TYPES 로 한 번 빠졌으므로 그 폐기까지 빼면 이중 차감이 된다.
+ *
+ * rows 는 폐기가 아닌 행이 섞여 있어도 된다(폐기만 골라서 본다).
+ * 참조 전표 조회는 호출 1회로 묶는다 — 행마다 조회하면 그대로 N+1 이 된다.
+ */
+export async function pickStockMinusDisposalIds(
+  rows: { id: number; txType: string; refTxNo: string | null }[]
+): Promise<Set<number>> {
+  const disposals = rows.filter(r => r.txType === "폐기");
+  if (disposals.length === 0) return new Set<number>();
+
+  const refNos = [...new Set(disposals.map(r => r.refTxNo).filter((v): v is string => !!v))];
+  const refs = refNos.length > 0
+    ? await prisma.inventoryTx.findMany({
+        where: { txNo: { in: refNos } },
+        select: { txNo: true, txType: true },
+      })
+    : [];
+  const usingRefSet = new Set(refs.filter(r => r.txType === "사용중").map(r => r.txNo));
+
+  return new Set(
+    disposals
+      .filter(r => !(r.refTxNo && usingRefSet.has(r.refTxNo)))
+      .map(r => r.id)
+  );
+}
+
 /** 보유수량을 차감해야 하는 폐기 건 반환 (사용중을 참조한 폐기는 제외) */
 export async function getStockMinusDisposals(
   filter: { itemIds?: number[]; locationId?: number }
@@ -16,19 +47,13 @@ export async function getStockMinusDisposals(
       ...(filter.itemIds ? { itemId: { in: filter.itemIds } } : {}),
       ...(filter.locationId ? { locationId: filter.locationId } : {}),
     },
-    select: { itemId: true, locationId: true, qty: true, refTxNo: true },
+    select: { id: true, itemId: true, locationId: true, qty: true, txType: true, refTxNo: true },
   });
   if (rows.length === 0) return [];
-  const refNos = [...new Set(rows.map(r => r.refTxNo).filter((v): v is string => !!v))];
-  const refs = refNos.length > 0
-    ? await prisma.inventoryTx.findMany({
-        where: { txNo: { in: refNos } },
-        select: { txNo: true, txType: true },
-      })
-    : [];
-  const usingRefSet = new Set(refs.filter(r => r.txType === "사용중").map(r => r.txNo));
+  // 판정 규칙은 pickStockMinusDisposalIds 한 곳에만 둔다 (복제 금지)
+  const keep = await pickStockMinusDisposalIds(rows);
   return rows
-    .filter(r => !(r.refTxNo && usingRefSet.has(r.refTxNo)))
+    .filter(r => keep.has(r.id))
     .map(({ itemId, locationId, qty }) => ({ itemId, locationId, qty }));
 }
 

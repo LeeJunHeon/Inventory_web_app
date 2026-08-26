@@ -4,6 +4,7 @@ import { requireAuth, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 import { formatBarcodeDetail, formatAldBarcodeDetail, barcodeHeader } from "@/lib/logDetail";
 import { expandBarcodeVariants } from "@/lib/barcodeUtils";
 import { barcodePrefixFor } from "@/lib/barcodePrefix";
+import { STOCK_PLUS_TYPES, STOCK_MINUS_TYPES, pickStockMinusDisposalIds } from "@/lib/txTypes";
 
 // GET /api/barcodes — 바코드 목록 조회
 export async function GET(request: NextRequest) {
@@ -84,22 +85,34 @@ export async function GET(request: NextRequest) {
         item: { include: { category: true } },
         targetUnit: { include: { item: { include: { category: true } } } },
         inventoryTxs: {
-          select: { txType: true, qty: true },
+          select: { id: true, txType: true, qty: true, refTxNo: true },
         },
       },
       orderBy: { code: "asc" },
     });
 
+    // 바코드별 잔여수량은 /api/status 의 보유수량과 같은 기준으로 계산한다.
+    //   가산(입고·이동입고) − 차감(출고·불출·사용중·이동출고) − 차감 대상 폐기
+    // 예전처럼 입고−(출고+불출)만 보면 이동·사용중·폐기가 통째로 빠져,
+    // 이동한 바코드일수록 화면 수량이 크게 어긋난다.
+    // 폐기 판정은 전체 바코드의 tx 를 모아 한 번만 호출한다 (바코드마다 부르면 N+1).
+    const disposalKeepIds = await pickStockMinusDisposalIds(
+      barcodes.flatMap(b => b.inventoryTxs)
+    );
+
     return NextResponse.json(barcodes.map((b) => {
       // barcode.item 우선, 없으면 targetUnit.item에서 품목 정보 추출
       const item = b.item ?? b.targetUnit?.item ?? null;
-      const inQty = b.inventoryTxs
-        .filter(t => t.txType === "입고")
+      const plus = b.inventoryTxs
+        .filter(t => STOCK_PLUS_TYPES.includes(t.txType))
         .reduce((sum, t) => sum + t.qty, 0);
-      const outQty = b.inventoryTxs
-        .filter(t => t.txType === "출고" || t.txType === "불출")
+      const minus = b.inventoryTxs
+        .filter(t => STOCK_MINUS_TYPES.includes(t.txType))
         .reduce((sum, t) => sum + t.qty, 0);
-      const remainQty = inQty - outQty;
+      const disposal = b.inventoryTxs
+        .filter(t => t.txType === "폐기" && disposalKeepIds.has(t.id))
+        .reduce((sum, t) => sum + t.qty, 0);
+      const remainQty = plus - minus - disposal;
       return {
         id:           b.id,
         code:         b.code,

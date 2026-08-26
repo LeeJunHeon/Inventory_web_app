@@ -60,7 +60,9 @@ export async function GET(request: NextRequest) {
         targetUnitId: { in: ids },
       },
       select: { targetUnitId: true, txType: true, txDate: true, locationId: true },
-      orderBy: { txDate: "desc" },
+      // txDate 는 날짜 단위라 같은 날 입고와 이동입고가 겹치면 순서가 비결정적이다.
+      // id 를 tiebreaker 로 둬서 나중에 등록된 전표가 최신으로 잡히게 한다.
+      orderBy: [{ txDate: "desc" }, { id: "desc" }],
     });
 
     // 두 Map의 기준이 다르다:
