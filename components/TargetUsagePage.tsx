@@ -110,7 +110,8 @@ interface ChamberHistoryLog {
   note: string | null;
 }
 
-const PAGE_LIMIT = 50;
+const PAGE_LIMIT = 50;              // 타겟 선택 시 / 전체 보기로 펼친 상태
+const PAGE_LIMIT_COMPACT = 10;      // 타겟 미선택 + 접힌 상태
 const HISTORY_PAGE_LIMIT = 5;
 
 export default function TargetUsagePage() {
@@ -202,6 +203,7 @@ export default function TargetUsagePage() {
   const [weight, setWeight]                 = useState("");
   const [locationId, setLocationId]         = useState<number | "">("");
   const [reason, setReason]                 = useState("");
+  const [logsExpanded, setLogsExpanded]     = useState(false);
   const [sortField, setSortField]           = useState("timestamp");
   const [sortDir, setSortDir]               = useState<"asc" | "desc">("desc");
   const [saving, setSaving]                 = useState(false);
@@ -355,10 +357,17 @@ export default function TargetUsagePage() {
     return () => clearTimeout(timer);
   }, [slotSearchQuery, slotSearchType]);
 
-  const fetchLogs = async (targetPage: number, barcode?: string) => {
+  // 타겟을 조회하지 않은 "전체" 상태에서는 화면을 덜 차지하게 10줄만 본다.
+  // 타겟을 선택하면 그 타겟 기록만 나오므로 줄일 이유가 없어 50줄 그대로.
+  const logLimit = (selectedTarget || logsExpanded) ? PAGE_LIMIT : PAGE_LIMIT_COMPACT;
+
+  // limitOverride: 토글 직후처럼 state 가 아직 반영되지 않은 시점에 쓴다.
+  const fetchLogs = async (targetPage: number, barcode?: string, limitOverride?: number) => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(targetPage), limit: String(PAGE_LIMIT) });
+      // barcode 로 조회하는 순간엔 selectedTarget 이 아직 null 이라 logLimit 이 10이다.
+      const limit = limitOverride ?? (barcode ? PAGE_LIMIT : logLimit);
+      const params = new URLSearchParams({ page: String(targetPage), limit: String(limit) });
       if (barcode) params.set("barcode", barcode);
       const res = await fetch(`/api/targets?${params}`);
       if (!res.ok) {
@@ -379,11 +388,15 @@ export default function TargetUsagePage() {
 
   useEffect(() => { fetchLogs(1); }, []);
 
+  // 표시 줄 수가 바뀌면 페이지를 1로. (3페이지 보다 10줄로 줄면 범위를 벗어난다)
+  useEffect(() => { setPage(1); }, [logLimit]);
+
   // selectedTarget 바뀌면 movements 초기화 + 토글 닫기
   useEffect(() => {
     setMovements([]);
     setMovementsMeta({ unknownLocationCount: 0, isDisposed: false, disposedAt: null });
     setShowMovements(false);
+    setLogsExpanded(false);
   }, [selectedTarget?.id]);
 
   // selectedTarget 바뀌면 사진 목록 재조회 (없으면 비움)
@@ -1580,6 +1593,18 @@ export default function TargetUsagePage() {
           <h2 className="font-bold text-gray-900">{selectedTarget ? t.target.logTitle(selectedTarget.barcodeCode) : t.target.allLogsTitle}</h2>
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-400">{t.target.totalCount} {total.toLocaleString()}{t.target.countUnit}</span>
+            {!selectedTarget && total > PAGE_LIMIT_COMPACT && (
+              <button
+                onClick={() => {
+                  const next = !logsExpanded;
+                  setLogsExpanded(next);
+                  fetchLogs(1, undefined, next ? PAGE_LIMIT : PAGE_LIMIT_COMPACT);
+                }}
+                className="text-xs font-semibold text-blue-500 hover:text-blue-600"
+              >
+                {logsExpanded ? "간략히" : "전체 보기"}
+              </button>
+            )}
             <CsvButton onClick={handleExportCSV} disabled={!logs || logs.length === 0} />
           </div>
         </div>
@@ -1636,10 +1661,10 @@ export default function TargetUsagePage() {
             </div>
 
             {/* 페이지네이션 */}
-            {total > PAGE_LIMIT && (
+            {total > logLimit && (
               <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
                 <span className="text-xs text-gray-400">
-                  {((page - 1) * PAGE_LIMIT + 1).toLocaleString()}–{Math.min(page * PAGE_LIMIT, total).toLocaleString()} / {total.toLocaleString()}{t.target.countUnit}
+                  {((page - 1) * logLimit + 1).toLocaleString()}–{Math.min(page * logLimit, total).toLocaleString()} / {total.toLocaleString()}{t.target.countUnit}
                 </span>
                 <div className="flex items-center gap-2">
                   <button
@@ -1650,11 +1675,11 @@ export default function TargetUsagePage() {
                     {t.common.prev}
                   </button>
                   <span className="text-xs text-gray-500 min-w-[60px] text-center">
-                    {page} / {Math.ceil(total / PAGE_LIMIT)}
+                    {page} / {Math.ceil(total / logLimit)}
                   </span>
                   <button
                     onClick={() => fetchLogs(page + 1, selectedTarget?.barcodeCode)}
-                    disabled={page >= Math.ceil(total / PAGE_LIMIT)}
+                    disabled={page >= Math.ceil(total / logLimit)}
                     className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {t.common.next}
