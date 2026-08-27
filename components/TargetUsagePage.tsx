@@ -261,6 +261,39 @@ export default function TargetUsagePage() {
     return map;
   }, [photos]);
 
+  // 촬영일(YYYY-MM-DD) 기준 그룹 — 날짜 내림차순, 날짜 미상은 맨 아래.
+  // ⚠️ targetLogId 로 묶지 않는다: logs 는 페이지네이션이 걸려 있어
+  //    현재 페이지 밖 측정의 사진이 헤더 없이 떠돌게 된다.
+  const photoGroups = useMemo(() => {
+    const map = new Map<string, { photo: TargetPhoto; idx: number }[]>();
+    photos.forEach((p, idx) => {
+      const key = p.takenDate ? String(p.takenDate).slice(0, 10) : "";
+      const arr = map.get(key);
+      if (arr) arr.push({ photo: p, idx });
+      else map.set(key, [{ photo: p, idx }]);
+    });
+    return [...map.entries()]
+      .map(([date, items]) => ({ date, items }))
+      .sort((a, b) => {
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        return b.date.localeCompare(a.date);
+      });
+  }, [photos]);
+
+  // 그룹 헤더에 붙일 측정 정보 — 같은 날짜의 로그 중 가장 최근 것 하나.
+  // 페이지 밖 측정이면 못 찾을 수 있고, 그때는 날짜만 보여준다.
+  const logByDate = useMemo(() => {
+    const map = new Map<string, LogItem>();
+    for (const log of logs) {
+      const key = (log.timestamp || "").slice(0, 10);
+      if (!key) continue;
+      const prev = map.get(key);
+      if (!prev || log.timestamp.localeCompare(prev.timestamp) > 0) map.set(key, log);
+    }
+    return map;
+  }, [logs]);
+
   // ⚠️ /api/targets 는 건드리지 않는다. 타겟이 바뀔 때 사진만 별도로 1회 조회한다.
   const fetchPhotos = async (targetUnitId: number) => {
     setPhotosLoading(true);
@@ -1309,6 +1342,18 @@ export default function TargetUsagePage() {
                           loading="lazy"
                           className="h-full w-full object-cover"
                         />
+                        <div className="absolute inset-x-0 top-0 flex flex-wrap gap-1 p-1">
+                          {p.matchStatus === "candidate" && (
+                            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md bg-amber-500/90 text-white">
+                              {t.target.photoCandidate}
+                            </span>
+                          )}
+                          {p.matchStatus === "unmatched" && (
+                            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-500/80 text-white">
+                              {t.target.photoUnmatched}
+                            </span>
+                          )}
+                        </div>
                       </button>
                     ))}
                     {photos.length > 3 && (
@@ -1642,41 +1687,73 @@ export default function TargetUsagePage() {
               ) : photos.length === 0 ? (
                 <p className="text-sm text-gray-400 py-6 text-center">{t.target.photoNone}</p>
               ) : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                  {photos.map((p, i) => (
-                    <button
-                      key={p.id}
-                      onClick={() => openLightbox(photos, i)}
-                      className="relative aspect-square overflow-hidden rounded-xl bg-gray-100 border border-gray-100 hover:ring-2 hover:ring-blue-400 transition"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={assetPath(`/api/target-photos/${p.id}?thumb=1`)}
-                        alt={p.fileName}
-                        loading="lazy"
-                        className="h-full w-full object-cover"
-                      />
-                      <div className="absolute inset-x-0 top-0 flex flex-wrap gap-1 p-1">
-                        {p.tag && (
-                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md bg-blue-500/90 text-white">
-                            {photoTagLabel(p.tag)}
+                <div className="space-y-5">
+                  {photoGroups.map((group, gi) => {
+                    const log = group.date ? logByDate.get(group.date) : undefined;
+                    // 감소량은 바로 아래(더 오래된) 그룹과 비교. 양쪽 무게가 다 있을 때만.
+                    let deltaText: string | null = null;
+                    const nextGroup = photoGroups[gi + 1];
+                    const nextLog = nextGroup?.date ? logByDate.get(nextGroup.date) : undefined;
+                    if (log?.weight != null && nextLog?.weight != null) {
+                      const diff = Number(log.weight) - Number(nextLog.weight);
+                      const sign = diff > 0 ? "+" : diff < 0 ? "\u2212" : "";
+                      deltaText = `${sign}${formatWeight(Math.abs(diff))}`;
+                    }
+                    return (
+                      <div key={group.date || "unknown"}>
+                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 border-b border-gray-100 pb-1.5 mb-2">
+                          <span className="text-xs font-bold text-gray-900 font-mono">
+                            {group.date || t.target.photoDateUnknown}
                           </span>
-                        )}
-                        {p.matchStatus === "unmatched" && (
-                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-500/80 text-white">
-                            {t.target.photoUnmatched}
-                          </span>
-                        )}
-                      </div>
-                      {p.takenDate && (
-                        <div className="absolute inset-x-0 bottom-0 bg-black/50 px-1 py-0.5 text-center">
-                          <span className="text-[9px] text-white font-mono">
-                            {new Date(p.takenDate).toLocaleDateString("ko-KR")}
-                          </span>
+                          {log?.weight != null && (
+                            <span className="text-xs text-gray-500">· {formatWeight(Number(log.weight))}</span>
+                          )}
+                          {log?.location && (
+                            <span className="text-xs text-gray-400 truncate">· {log.location}</span>
+                          )}
+                          {deltaText && (
+                            <span className="ml-auto text-xs font-semibold text-gray-500 font-mono shrink-0">
+                              {deltaText}
+                            </span>
+                          )}
                         </div>
-                      )}
-                    </button>
-                  ))}
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                          {group.items.map(({ photo: p, idx }) => (
+                            <button
+                              key={p.id}
+                              onClick={() => openLightbox(photos, idx)}
+                              className="relative aspect-square overflow-hidden rounded-xl bg-gray-100 border border-gray-100 hover:ring-2 hover:ring-blue-400 transition"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={assetPath(`/api/target-photos/${p.id}?thumb=1`)}
+                                alt={p.fileName}
+                                loading="lazy"
+                                className="h-full w-full object-cover"
+                              />
+                              <div className="absolute inset-x-0 top-0 flex flex-wrap gap-1 p-1">
+                                {p.tag && (
+                                  <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md bg-blue-500/90 text-white">
+                                    {photoTagLabel(p.tag)}
+                                  </span>
+                                )}
+                                {p.matchStatus === "candidate" && (
+                                  <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md bg-amber-500/90 text-white">
+                                    {t.target.photoCandidate}
+                                  </span>
+                                )}
+                                {p.matchStatus === "unmatched" && (
+                                  <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-500/80 text-white">
+                                    {t.target.photoUnmatched}
+                                  </span>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1701,6 +1778,11 @@ export default function TargetUsagePage() {
               {lightbox.list[lightbox.idx].tag && (
                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-blue-500 text-white shrink-0">
                   {photoTagLabel(lightbox.list[lightbox.idx].tag)}
+                </span>
+              )}
+              {lightbox.list[lightbox.idx].matchStatus === "candidate" && (
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-amber-500 text-white shrink-0">
+                  {t.target.photoCandidate}
                 </span>
               )}
               {lightbox.list[lightbox.idx].matchStatus === "unmatched" && (

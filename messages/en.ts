@@ -566,6 +566,8 @@ export const en: Messages = {
     photoCountUnit: "",
     photoNone: "No photos yet.",
     photoUnmatched: "Unmatched",
+    photoCandidate: "Estimated",
+    photoDateUnknown: "Date unknown",
     photoDelete: "Delete photo",
     photoDeleteConfirm: "Confirm (click again)",
     photoDeleted: "Photo deleted.",

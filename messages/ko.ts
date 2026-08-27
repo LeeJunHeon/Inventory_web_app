@@ -564,6 +564,8 @@ export const ko = {
     photoCountUnit: "장",
     photoNone: "등록된 사진이 없습니다.",
     photoUnmatched: "미연결",
+    photoCandidate: "추정",
+    photoDateUnknown: "날짜 미상",
     photoDelete: "사진 삭제",
     photoDeleteConfirm: "확인 (재클릭)",
     photoDeleted: "사진이 삭제되었습니다.",
