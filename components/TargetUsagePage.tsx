@@ -242,6 +242,7 @@ export default function TargetUsagePage() {
   const [photos, setPhotos]                 = useState<TargetPhoto[]>([]);
   const [photosLoading, setPhotosLoading]   = useState(false);
   const [showPhotos, setShowPhotos]         = useState(false);
+  const photoTimelineRef                    = useRef<HTMLDivElement>(null);
   // 라이트박스는 "어떤 목록을 보고 있는지"까지 함께 들고 있어야 좌우 이동이 맞는다
   const [lightbox, setLightbox]             = useState<{ list: TargetPhoto[]; idx: number } | null>(null);
   const [photoDeleteConfirm, setPhotoDeleteConfirm] = useState(false);
@@ -1358,7 +1359,13 @@ export default function TargetUsagePage() {
                     ))}
                     {photos.length > 3 && (
                       <button
-                        onClick={() => setShowPhotos(true)}
+                        onClick={() => {
+                          setShowPhotos(true);
+                          // 섹션이 화면 밖이면 펼쳐도 티가 안 나므로 같이 스크롤한다
+                          requestAnimationFrame(() => {
+                            photoTimelineRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                          });
+                        }}
                         className="aspect-square rounded-xl border border-dashed border-gray-200 bg-gray-50 text-xs font-semibold text-gray-500 hover:border-blue-300 hover:text-blue-600 transition"
                       >
                         {t.target.photoMore(photos.length - 3)}
@@ -1660,7 +1667,7 @@ export default function TargetUsagePage() {
       </div>
       {/* 사진 타임라인 — 그 타겟의 전체 사진을 촬영일 순으로 (기본 접힘) */}
       {selectedTarget && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
+        <div ref={photoTimelineRef} className="bg-white rounded-2xl border border-gray-100 p-4 sm:p-5">
           <button
             onClick={() => setShowPhotos(v => !v)}
             className="w-full flex items-center gap-2 text-sm font-bold text-gray-900 hover:text-blue-600 transition-colors text-left min-w-0"
