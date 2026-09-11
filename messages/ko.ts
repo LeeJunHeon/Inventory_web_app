@@ -542,6 +542,8 @@ export const ko = {
     firstWeightLabel: "최초 무게",
     consumedLabel: "소모량",
     // 측정 사진
+    logsShowAll: "전체 보기",
+    logsShowLess: "간략히",
     photoAttach: "사진 첨부",
     photoCamera: "카메라 촬영",
     photoGallery: "갤러리 선택",

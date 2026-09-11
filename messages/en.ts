@@ -544,6 +544,8 @@ export const en: Messages = {
     firstWeightLabel: "First",
     consumedLabel: "Consumed",
     // Measurement photos
+    logsShowAll: "Show all",
+    logsShowLess: "Show less",
     photoAttach: "Photos",
     photoCamera: "Take Photo",
     photoGallery: "Choose from Gallery",

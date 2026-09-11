@@ -531,7 +531,7 @@ export default function TargetUsagePage() {
       setSelectedTarget(null);
       setTargetList([]);
       setSearchError("");
-      fetchLogs(1);
+      fetchLogs(1, undefined, PAGE_LIMIT_COMPACT);
       return;
     }
 
@@ -1155,6 +1155,8 @@ export default function TargetUsagePage() {
               setTargetList([]);
               setSelectedTarget(null);
               setSearchError("");
+              setLogsExpanded(false);
+              fetchLogs(1, undefined, PAGE_LIMIT_COMPACT);
             }}
             className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 shrink-0"
           >
@@ -1194,7 +1196,7 @@ export default function TargetUsagePage() {
                 if (e.key === "Enter" && !isComposingRef.current) {
                   const code = e.currentTarget.value.trim();
                   if (code) handleSearch();
-                  else { setSelectedTarget(null); setTargetList([]); setSearchError(""); fetchLogs(1); }
+                  else { setSelectedTarget(null); setTargetList([]); setSearchError(""); fetchLogs(1, undefined, PAGE_LIMIT_COMPACT); }
                 }
               }}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
@@ -1602,7 +1604,7 @@ export default function TargetUsagePage() {
                 }}
                 className="text-xs font-semibold text-blue-500 hover:text-blue-600"
               >
-                {logsExpanded ? "간략히" : "전체 보기"}
+                {logsExpanded ? t.target.logsShowLess : t.target.logsShowAll}
               </button>
             )}
             <CsvButton onClick={handleExportCSV} disabled={!logs || logs.length === 0} />
