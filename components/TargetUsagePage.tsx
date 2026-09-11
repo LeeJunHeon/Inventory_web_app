@@ -11,6 +11,8 @@ import { useT } from "@/lib/i18n";
 import { exportXLSX } from "@/lib/xlsxUtils";
 import DatePicker from "@/components/DatePicker";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
+import { TargetPhoto } from "@/lib/targetPhotoTypes";
+import TargetPhotoGallery from "@/components/TargetPhotoGallery";
 
 interface TargetInfo {
   id: number; barcodeCode: string; itemCode: string; itemName: string;
@@ -23,18 +25,6 @@ interface TargetInfo {
 interface LogItem { id: number; targetId: number; timestamp: string; type: string; weight: number | null; location: string; locationId: number | null; reason: string; userName: string; barcodeCode: string; itemName: string; }
 
 interface LocationOption { id: number; name: string; }
-
-/** GET /api/target-photos 의 항목 (이미지 본문은 포함되지 않는다) */
-interface TargetPhoto {
-  id: number;
-  targetLogId: number | null;
-  targetUnitId: number | null;
-  fileName: string;
-  takenDate: string | null;
-  tag: string | null;
-  matchStatus: string | null;
-  uploaderName: string;
-}
 
 interface TargetListItem {
   id: number;
@@ -246,7 +236,7 @@ export default function TargetUsagePage() {
   const [showPhotos, setShowPhotos]         = useState(false);
   const photoTimelineRef                    = useRef<HTMLDivElement>(null);
   // 라이트박스는 "어떤 목록을 보고 있는지"까지 함께 들고 있어야 좌우 이동이 맞는다
-  const [lightbox, setLightbox]             = useState<{ list: TargetPhoto[]; idx: number } | null>(null);
+  const [lightbox, setLightbox]             = useState<{ list: TargetPhoto[]; idx: number; onDeleted?: (id: number) => void } | null>(null);
   const [photoDeleteConfirm, setPhotoDeleteConfirm] = useState(false);
   const [photoDeleting, setPhotoDeleting]   = useState(false);
 
@@ -438,10 +428,10 @@ export default function TargetUsagePage() {
       : tag === "after_sanding" ? t.target.photoTagAfter
       : (tag ?? "");
 
-  const openLightbox = (list: TargetPhoto[], idx: number) => {
+  const openLightbox = (list: TargetPhoto[], idx: number, onDeleted?: (id: number) => void) => {
     if (list.length === 0) return;
     setPhotoDeleteConfirm(false);
-    setLightbox({ list, idx });
+    setLightbox({ list, idx, onDeleted });
   };
 
   // 사진 삭제 — window.confirm 대신 인라인 2단계 확인(handleDispose 와 같은 패턴)
@@ -467,6 +457,7 @@ export default function TargetUsagePage() {
         ? null
         : { list: remaining, idx: Math.min(lightbox.idx, remaining.length - 1) });
       setPhotos(prev => prev.filter(p => p.id !== current.id));
+      lightbox.onDeleted?.(current.id);
     } catch {
       showToast(t.target.photoDeleteFailed);
     } finally {
@@ -1795,6 +1786,10 @@ export default function TargetUsagePage() {
         </div>
       )}
 
+      {!selectedTarget && (
+        <TargetPhotoGallery onOpenPhoto={openLightbox} />
+      )}
+
       {/* 라이트박스 */}
       {lightbox && lightbox.list[lightbox.idx] && (
         <div
@@ -1823,6 +1818,21 @@ export default function TargetUsagePage() {
                 <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-500 text-white shrink-0">
                   {t.target.photoUnmatched}
                 </span>
+              )}
+              {!selectedTarget && lightbox.list[lightbox.idx].barcodeCode && (
+                <button
+                  onClick={() => {
+                    const code = lightbox.list[lightbox.idx].barcodeCode!;
+                    setLightbox(null);
+                    setSearchType("바코드");
+                    setBarcodeInput(code);
+                    fetchLogs(1, code);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white/15 text-white hover:bg-white/25 shrink-0"
+                >
+                  {t.target.galleryGoTarget}
+                </button>
               )}
               <span className="text-xs text-white/50 ml-auto shrink-0">
                 {lightbox.idx + 1} / {lightbox.list.length}

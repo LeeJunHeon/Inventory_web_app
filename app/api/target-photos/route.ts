@@ -61,6 +61,7 @@ export async function GET(request: NextRequest) {
           takenDate: true, materialCode: true, diameterInch: true, maker: true, tag: true,
           source: true, matchStatus: true, createdAt: true,
           user: { select: { name: true } },
+          targetUnit: { select: { barcodes: { select: { code: true }, take: 1 } } },
         },
         orderBy: [{ takenDate: "desc" }, { id: "asc" }],
         skip: (page - 1) * limit,
@@ -70,7 +71,13 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       total, page, limit,
-      photos: photos.map((p) => ({ ...p, uploaderName: p.user?.name ?? "", user: undefined })),
+      photos: photos.map((p) => ({
+        ...p,
+        uploaderName: p.user?.name ?? "",
+        barcodeCode:  p.targetUnit?.barcodes[0]?.code ?? null,
+        user: undefined,
+        targetUnit: undefined,
+      })),
     });
   } catch (error) {
     console.error("GET /api/target-photos error:", error);
