@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
     const page    = Math.max(1, parseInt(searchParams.get("page")  || "1", 10));
     const limit   = Math.max(1, parseInt(searchParams.get("limit") || "50", 10));
     const skip    = (page - 1) * limit;
+    const all     = searchParams.get("all") === "true";
 
     // 품목코드 또는 품목명 검색: 해당 품목의 타겟 목록 반환
     if (itemCode || itemName) {
@@ -73,8 +74,7 @@ export async function GET(request: NextRequest) {
           where,
           include: { location: true, user: true },
           orderBy: { loggedAt: "desc" },
-          skip,
-          take: limit,
+          ...(all ? {} : { skip, take: limit }),
         }),
         prisma.targetLog.findFirst({
           where: measureWhere,
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
         bcItem?.targetSpec?.consumeAlertG != null ? Number(bcItem.targetSpec.consumeAlertG) : null;
 
       return NextResponse.json({
-        total, page, limit,
+        total, page: all ? 1 : page, limit,
         target: {
           id:           bc.targetUnit.id,
           barcodeCode:  bc.code,
@@ -142,8 +142,7 @@ export async function GET(request: NextRequest) {
       prisma.targetLog.findMany({
         where: logWhere,
         orderBy: { loggedAt: "desc" },
-        skip,
-        take: limit,
+        ...(all ? {} : { skip, take: limit }),
         include: {
           location: true,
           user: true,
@@ -158,7 +157,7 @@ export async function GET(request: NextRequest) {
     ]);
 
     return NextResponse.json({
-      total, page, limit,
+      total, page: all ? 1 : page, limit,
       target: null,
       logs: logs.map((l) => ({
         id: l.id,

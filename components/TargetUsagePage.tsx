@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Search, Save, AlertTriangle, Weight, MapPin, FileText, ArrowDown, ArrowUp, ArrowUpDown, Loader2, Camera, MapPinned, ChevronDown, ChevronLeft, ChevronRight, Image as ImageIcon, Trash2, X } from "lucide-react";
+import { Search, Save, AlertTriangle, Weight, MapPin, FileText, ArrowDown, ArrowUp, ArrowUpDown, Loader2, Camera, MapPinned, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Image as ImageIcon, Trash2, X } from "lucide-react";
 import CsvButton from "@/components/CsvButton";
 import PhotoUploader from "@/components/ui/PhotoUploader";
 import { assetPath } from "@/lib/assetPath";
@@ -125,20 +125,30 @@ export default function TargetUsagePage() {
   const [logs, setLogs]                     = useState<LogItem[]>([]);
   const [total, setTotal]                   = useState(0);
 
-  const handleExportCSV = () => {
-    if (!logs || logs.length === 0) return;
-    exportXLSX(
-      ["타임스탬프", "구분", "무게(g)", "품목명", "바코드", "위치", "사유", "작업자"],
-      logs.map((log: any) => [
-        log.timestamp, log.type, log.weight ?? "",
-        log.itemName, log.barcodeCode, log.location,
-        log.reason, log.userName,
-      ]),
-      selectedTarget
-        ? `타겟사용현황_${selectedTarget.barcodeCode}_${new Date().toISOString().split("T")[0]}.xlsx`
-        : `타겟사용현황_전체_${new Date().toISOString().split("T")[0]}.xlsx`,
-      "타겟사용이력"
-    );
+  // 화면의 logs 는 페이지 한 장(10/50줄)뿐이라, 내보내기는 all=true 로 전체를 따로 받는다
+  // (handleHistoryCSV 와 같은 패턴)
+  const handleExportCSV = async () => {
+    try {
+      const params = new URLSearchParams({ all: "true" });
+      if (selectedTarget) params.set("barcode", selectedTarget.barcodeCode);
+      const res = await fetch(`/api/targets?${params}`);
+      if (!res.ok) { showToast(t.common.saveFail); return; }
+      const data = await res.json();
+      const rows = Array.isArray(data.logs) ? data.logs : [];
+      if (rows.length === 0) return;
+      exportXLSX(
+        ["타임스탬프", "구분", "무게(g)", "품목명", "바코드", "위치", "사유", "작업자"],
+        rows.map((log: any) => [
+          log.timestamp, log.type, log.weight ?? "",
+          log.itemName, log.barcodeCode, log.location,
+          log.reason, log.userName,
+        ]),
+        selectedTarget
+          ? `타겟사용현황_${selectedTarget.barcodeCode}_${new Date().toISOString().split("T")[0]}.xlsx`
+          : `타겟사용현황_전체_${new Date().toISOString().split("T")[0]}.xlsx`,
+        "타겟사용이력"
+      );
+    } catch { showToast(t.common.saveFail); }
   };
 
   // 이동 내역 CSV (현재 표시되는 segments 전체)
@@ -1593,8 +1603,9 @@ export default function TargetUsagePage() {
                   setLogsExpanded(next);
                   fetchLogs(1, undefined, next ? PAGE_LIMIT : PAGE_LIMIT_COMPACT);
                 }}
-                className="text-xs font-semibold text-blue-500 hover:text-blue-600"
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-blue-300 hover:text-blue-600 transition"
               >
+                {logsExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                 {logsExpanded ? t.target.logsShowLess : t.target.logsShowAll}
               </button>
             )}
@@ -1608,15 +1619,15 @@ export default function TargetUsagePage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead><tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("timestamp")}><div className="flex items-center gap-1">{t.target.colTime} <SortIcon field="timestamp" /></div></th>
-                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colType}</th>
-                  <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("weight")}><div className="flex items-center justify-end gap-1">{t.target.colWeight} <SortIcon field="weight" /></div></th>
-                  {!selectedTarget && <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colItem}</th>}
-                  {!selectedTarget && <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.target.barcodeLabel}</th>}
-                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.target.colStorage}</th>
-                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.target.colReason}</th>
-                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.target.colAuthor}</th>
-                  {selectedTarget && <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.target.photoAttach}</th>}
+                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 whitespace-nowrap cursor-pointer" onClick={() => handleSort("timestamp")}><div className="flex items-center gap-1">{t.target.colTime} <SortIcon field="timestamp" /></div></th>
+                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 whitespace-nowrap">{t.inventory.colType}</th>
+                  <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 whitespace-nowrap cursor-pointer" onClick={() => handleSort("weight")}><div className="flex items-center justify-end gap-1">{t.target.colWeight} <SortIcon field="weight" /></div></th>
+                  {!selectedTarget && <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 whitespace-nowrap">{t.inventory.colItem}</th>}
+                  {!selectedTarget && <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 whitespace-nowrap">{t.target.barcodeLabel}</th>}
+                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 whitespace-nowrap">{t.target.colStorage}</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 whitespace-nowrap">{t.target.colReason}</th>
+                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 whitespace-nowrap">{t.target.colAuthor}</th>
+                  {selectedTarget && <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 whitespace-nowrap">{t.target.photoAttach}</th>}
                 </tr></thead>
                 <tbody>
                   {sorted.map((log) => (
