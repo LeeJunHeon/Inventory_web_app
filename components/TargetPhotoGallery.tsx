@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { Image as ImageIcon, Loader2, ChevronDown } from "lucide-react";
+import { Image as ImageIcon, Loader2, ChevronDown, Upload } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { assetPath } from "@/lib/assetPath";
 import { TargetPhoto } from "@/lib/targetPhotoTypes";
+import TargetPhotoUploadModal from "@/components/TargetPhotoUploadModal";
 
 interface Props {
   onOpenPhoto: (list: TargetPhoto[], idx: number, onDeleted: (id: number) => void) => void;
@@ -33,6 +34,8 @@ export default function TargetPhotoGallery({ onOpenPhoto, refreshKey }: Props) {
   const [page, setPage]               = useState(1);
   const [loading, setLoading]         = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [showUpload, setShowUpload]   = useState(false);
+  const [reloadTick, setReloadTick]   = useState(0);
 
   // 값이 있는 필터만 파라미터로 붙인다. fetch 는 상대경로 (BasePathFetch 가 보정)
   const buildUrl = useCallback((p: number) => {
@@ -61,7 +64,7 @@ export default function TargetPhotoGallery({ onOpenPhoto, refreshKey }: Props) {
       .catch(() => { if (!cancelled) { setItems([]); setTotal(0); } })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [buildUrl, refreshKey]);
+  }, [buildUrl, refreshKey, reloadTick]);
 
   useEffect(() => {
     let cancelled = false;
@@ -70,7 +73,7 @@ export default function TargetPhotoGallery({ onOpenPhoto, refreshKey }: Props) {
       .then(data => { if (!cancelled && data) setFacets(data); })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [refreshKey]);
+  }, [refreshKey, reloadTick]);
 
   const loadMore = async () => {
     if (loadingMore) return;
@@ -132,6 +135,12 @@ export default function TargetPhotoGallery({ onOpenPhoto, refreshKey }: Props) {
         <ImageIcon size={16} className="text-blue-500" />
         <span className="text-sm font-bold text-gray-800">{t.target.galleryTitle}</span>
         <span className="text-xs text-gray-400">({total}{t.target.photoCountUnit})</span>
+        <button
+          onClick={() => setShowUpload(true)}
+          className="ml-auto inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition"
+        >
+          <Upload size={14} /> {t.target.galleryUploadBtn}
+        </button>
       </div>
 
       <div className="flex flex-wrap gap-2 mb-4">
@@ -239,6 +248,13 @@ export default function TargetPhotoGallery({ onOpenPhoto, refreshKey }: Props) {
             </button>
           )}
         </div>
+      )}
+
+      {showUpload && (
+        <TargetPhotoUploadModal
+          onClose={() => setShowUpload(false)}
+          onUploaded={() => setReloadTick(t => t + 1)}
+        />
       )}
     </div>
   );

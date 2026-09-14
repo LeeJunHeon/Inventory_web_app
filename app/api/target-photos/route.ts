@@ -192,7 +192,7 @@ export async function POST(request: NextRequest) {
           height:       imgB.height,
           // ⚠️ UTC 자정. taken_date 는 @db.Date 라 로컬(KST) 자정으로 만들면 하루 밀린다.
           takenDate:    new Date(`${takenDateRaw}T00:00:00Z`),
-          materialCode: specB?.materialCode ?? null,
+          materialCode: specB?.materialCode?.toUpperCase() ?? null,
           diameterInch: specB?.diameterInch ?? null,
           maker:        null,
           tag,
@@ -274,7 +274,7 @@ export async function POST(request: NextRequest) {
         height:       img.height,
         // 촬영일은 측정 시각의 날짜 부분. logged_at 은 KST 벽시계로 저장돼 있다.
         takenDate:    new Date(log.loggedAt.toISOString().slice(0, 10)),
-        materialCode: spec?.materialCode ?? null,
+        materialCode: spec?.materialCode?.toUpperCase() ?? null,
         diameterInch: spec?.diameterInch ?? null,
         maker:        null, // 제조사는 DB에 필드가 없다 (레거시 파일명에만 존재)
         tag,

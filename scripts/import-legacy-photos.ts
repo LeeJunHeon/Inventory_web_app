@@ -321,7 +321,7 @@ async function main() {
           width:        main.info.width,
           height:       main.info.height,
           takenDate:    p.date ? dayOf(p.date) : null,
-          materialCode: p.material,
+          materialCode: p.material?.toUpperCase() ?? null,
           diameterInch: p.sizeInch != null ? Math.round(p.sizeInch) : null,
           maker:        p.maker,
           tag:          p.tag,
