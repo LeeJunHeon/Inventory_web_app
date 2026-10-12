@@ -4,38 +4,17 @@ import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
 import { Home, Package, BarChart3, Clock, Target, QrCode, Users, LogOut, Boxes, X, Layers, Building2, Search, FileText, Droplet, ArrowLeft } from "lucide-react";
 import { useT } from "@/lib/i18n";
+import { MENUS, canViewPage, type MenuIconName, type PageId, type TabPerms } from "@/lib/menus";
 
-export type PageId =
-  | "dashboard" | "inventory" | "status" | "period"
-  | "target" | "ald" | "barcode" | "tracing" | "items" | "partners" | "admin" | "logs";
+export type { PageId } from "@/lib/menus";
 
-interface Perms {
-  role: string;
-  canViewMain: boolean;
-  canViewStatus: boolean;
-  canViewPeriod: boolean;
-  canViewTargetUsage: boolean;
-  canViewBarcode: boolean;
-  canViewBarcodeCreatePrint: boolean;
-  canViewUserPerm: boolean;
-}
+const MENU_ICONS: Record<MenuIconName, React.ElementType> = {
+  Home, Package, BarChart3, Clock, QrCode, Search, Layers, Target, Droplet, Building2, Users, FileText,
+};
 
-function isVisible(id: PageId, perms: Perms | null): boolean {
+function isVisible(id: PageId, perms: TabPerms | null): boolean {
   if (!perms) return false;
-  switch (id) {
-    case "dashboard":  return perms.canViewMain;
-    case "inventory":  return true;
-    case "status":     return perms.canViewStatus;
-    case "period":     return perms.canViewPeriod;
-    case "target":     return perms.canViewTargetUsage;
-    case "ald":        return perms.canViewTargetUsage;
-    case "barcode":    return perms.canViewBarcode;
-    case "tracing":    return true;
-    case "items":      return true;
-    case "partners":   return perms.role === "admin";
-    case "admin":      return perms.canViewUserPerm;
-    case "logs":       return perms.role === "admin";
-  }
+  return canViewPage(id, perms);
 }
 
 interface SidebarProps {
@@ -51,25 +30,18 @@ export default function Sidebar({
   currentPage, onNavigate, isOpen, onClose,
   userName = "-", userRole = "-",
 }: SidebarProps) {
-  const [perms, setPerms]               = useState<Perms | null>(null);
+  const [perms, setPerms]               = useState<TabPerms | null>(null);
   const [permsLoading, setPermsLoading] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { t } = useT();
 
-  const NAV_ITEMS: { id: PageId; label: string; icon: React.ElementType; group?: string }[] = [
-    { id: "dashboard",  label: t.nav.dashboard,      icon: Home },
-    { id: "inventory",  label: t.nav.inventory,       icon: Package },
-    { id: "status",     label: t.nav.status,          icon: BarChart3 },
-    { id: "period",     label: t.nav.period,          icon: Clock },
-    { id: "barcode",    label: t.nav.barcode,         icon: QrCode },
-    { id: "tracing",    label: t.nav.tracing,         icon: Search },
-    { id: "items",      label: t.nav.items,           icon: Layers },
-    { id: "target",     label: t.nav.targetSputter,   icon: Target,   group: t.nav.targetGroup },
-    { id: "ald",        label: t.nav.targetAld,       icon: Droplet,  group: t.nav.targetGroup },
-    { id: "partners",   label: t.nav.partners,        icon: Building2, group: t.nav.master },
-    { id: "admin",      label: t.nav.admin,           icon: Users,     group: t.nav.master },
-    { id: "logs",       label: t.nav.logs,            icon: FileText,  group: t.nav.master },
-  ];
+  const NAV_ITEMS: { id: PageId; label: string; icon: React.ElementType; group?: string }[] =
+    MENUS.map(m => ({
+      id:    m.page,
+      label: t.nav[m.labelKey],
+      icon:  MENU_ICONS[m.icon],
+      group: m.groupKey ? t.nav[m.groupKey] : undefined,
+    }));
 
   // userName이 확정될 때마다 최신 권한 재조회 (로그인 직후, 사용자 전환 시 반영)
   useEffect(() => {

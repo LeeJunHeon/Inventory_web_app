@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { Menu, Bell, Lock, Globe } from "lucide-react";
 import Sidebar, { PageId } from "@/components/Sidebar";
@@ -18,17 +18,8 @@ import AdminPage        from "@/components/AdminPage";
 import StockTracingPage from "@/components/StockTracingPage";
 import LogPage          from "@/components/LogPage";
 import { useT } from "@/lib/i18n";
-
-interface Perms {
-  role: string;
-  canViewMain: boolean;
-  canViewStatus: boolean;
-  canViewPeriod: boolean;
-  canViewTargetUsage: boolean;
-  canViewBarcode: boolean;
-  canViewBarcodeCreatePrint: boolean;
-  canViewUserPerm: boolean;
-}
+import { DEFAULT_PAGE, canViewPage, type TabPerms } from "@/lib/menus";
+import { readPageParam, writePageParam, sendLauncherUsage } from "@/lib/launcher";
 
 function NoAccess({ pageName }: { pageName: string }) {
   const { t } = useT();
@@ -49,7 +40,7 @@ function NoAccess({ pageName }: { pageName: string }) {
 export default function Home() {
   const { data: session } = useSession();
   const { lang, setLang, t } = useT();
-  const [page, setPage]               = useState<PageId>("dashboard");
+  const [page, setPage]               = useState<PageId>(DEFAULT_PAGE);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // 클라이언트에서만 모바일 감지 → 모바일이면 초기에 닫음
@@ -64,10 +55,35 @@ export default function Home() {
   }[]>([]);
   const [showLang, setShowLang]       = useState(false);
   const [showNotif, setShowNotif]     = useState(false);
-  const [perms, setPerms]             = useState<Perms | null>(null);
+  const [perms, setPerms]             = useState<TabPerms | null>(null);
   const [statusLocationId, setStatusLocationId] = useState<number | null>(null);
   const [statusStockFilter, setStatusStockFilter] = useState<StockFilter>("전체");
   const [inventoryInitialFilter, setInventoryInitialFilter] = useState<{ type?: string; date?: string } | null>(null);
+
+  // 메뉴 주소(?page=) — 마운트 후 주소의 화면으로 연다. 첫 화면은 사용 기록을 보내지 않는다.
+  // 첫 화면이 반영되기 전에는 주소를 덮어쓰지 않도록 목표 화면을 기억해 둔다.
+  const initialPageRef = useRef<PageId | null>(null);
+  useEffect(() => {
+    const p = readPageParam();
+    initialPageRef.current = p ?? DEFAULT_PAGE;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 주소(외부 상태)에서 첫 화면 동기화
+    if (p && p !== DEFAULT_PAGE) setPage(p);
+  }, []);
+
+  // 화면이 바뀔 때마다 주소의 page 파라미터를 맞춘다 (replaceState — 뒤로가기 동작은 그대로)
+  useEffect(() => {
+    if (initialPageRef.current !== null) {
+      if (page !== initialPageRef.current) return;
+      initialPageRef.current = null;
+    }
+    writePageParam(page);
+  }, [page]);
+
+  // 사용자 조작으로 화면을 바꾸는 곳은 모두 여기로 — 다른 메뉴로 이동할 때만 포털에 사용 기록 1건
+  function navigate(p: PageId) {
+    if (p !== page) sendLauncherUsage(p);
+    setPage(p);
+  }
 
   const userName = session?.user?.name ?? "로딩중...";
   const userRole = (session?.user as any)?.role ?? "";
@@ -110,20 +126,7 @@ export default function Home() {
   // 현재 페이지 접근 권한 확인
   function canAccess(p: PageId): boolean {
     if (!perms) return true; // 로딩 중엔 허용 (깜빡임 방지)
-    switch (p) {
-      case "dashboard":  return perms.canViewMain;
-      case "inventory":  return true;
-      case "status":     return perms.canViewStatus;
-      case "period":     return perms.canViewPeriod;
-      case "target":     return perms.canViewTargetUsage;
-      case "ald":        return perms.canViewTargetUsage;
-      case "barcode":    return perms.canViewBarcode;
-      case "tracing":    return true;
-      case "items":      return true;
-      case "partners":   return perms.role === "admin";
-      case "admin":      return perms.canViewUserPerm;
-      case "logs":       return perms.role === "admin";
-    }
+    return canViewPage(p, perms);
   }
 
   const renderPage = () => {
@@ -132,7 +135,7 @@ export default function Home() {
       case "dashboard": return (
         <DashboardPage
           onNavigate={(p, lid, filter) => {
-            setPage(p);
+            navigate(p);
             if (lid !== undefined) setStatusLocationId(lid ?? null);
             if (filter?.stockFilter) setStatusStockFilter(filter.stockFilter as "전체" | "보유중" | "미보유");
             else setStatusStockFilter("전체");
@@ -172,7 +175,7 @@ export default function Home() {
             setStatusLocationId(null);
             setStatusStockFilter("전체");
           }
-          setPage(p);
+          navigate(p);
         }}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -267,7 +270,7 @@ export default function Home() {
                     </ul>
                     <div className="px-4 py-2.5 border-t border-gray-100">
                       <button
-                        onClick={() => { setStatusLocationId(null); setStatusStockFilter("부족"); setPage("status"); setShowNotif(false); }}
+                        onClick={() => { setStatusLocationId(null); setStatusStockFilter("부족"); navigate("status"); setShowNotif(false); }}
                         className="w-full text-xs font-semibold text-blue-500 hover:text-blue-600 text-center py-1"
                       >
                         {t.header.viewAll}
