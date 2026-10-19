@@ -145,8 +145,8 @@ export default function TargetUsagePage() {
           log.reason, log.userName,
         ]),
         selectedTarget
-          ? `타겟사용현황_${selectedTarget.barcodeCode}_${new Date().toISOString().split("T")[0]}.xlsx`
-          : `타겟사용현황_전체_${new Date().toISOString().split("T")[0]}.xlsx`,
+          ? `타겟사용현황_${selectedTarget.barcodeCode}_${kstToday()}.xlsx`
+          : `타겟사용현황_전체_${kstToday()}.xlsx`,
         "타겟사용이력"
       );
     } catch { showToast(t.common.saveFail); }
@@ -165,7 +165,7 @@ export default function TargetUsagePage() {
         seg.firstWeight != null ? seg.firstWeight.toFixed(3) : "",
         seg.lastWeight != null ? seg.lastWeight.toFixed(3) : "",
       ]),
-      `타겟이동내역_${selectedTarget.barcodeCode}_${new Date().toISOString().split("T")[0]}.xlsx`,
+      `타겟이동내역_${selectedTarget.barcodeCode}_${kstToday()}.xlsx`,
       "타겟이동내역"
     );
   };
@@ -191,7 +191,7 @@ export default function TargetUsagePage() {
           log.changedBy ?? "",
           log.note ?? "",
         ]),
-        `챔버이력_${historySlot.locationName}_${new Date().toISOString().split("T")[0]}.xlsx`,
+        `챔버이력_${historySlot.locationName}_${kstToday()}.xlsx`,
         "챔버이력"
       );
     } catch (err) {

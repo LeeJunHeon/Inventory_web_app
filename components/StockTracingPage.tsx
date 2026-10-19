@@ -8,6 +8,7 @@ import { useT } from "@/lib/i18n";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
 import { STOCK_PLUS_TYPES, MOVE_IN, MOVE_OUT } from "@/lib/txTypeConstants";
 import { exportXLSX } from "@/lib/xlsxUtils";
+import { kstToday } from "@/lib/kst";
 
 interface BarcodeInfo  { id: number; code: string; isActive: string; }
 interface TxCount      { inbound: number; outbound: number; disburse: number; using?: number; disposal?: number; moveIn?: number; moveOut?: number; }
@@ -68,8 +69,8 @@ export default function StockTracingPage() {
         tx.qty, tx.unitPrice ?? "", tx.barcodeCode ?? "",
       ]),
       selectedItem
-        ? `재고추적_${selectedItem.itemCode}_${new Date().toISOString().split("T")[0]}.xlsx`
-        : `재고추적_${new Date().toISOString().split("T")[0]}.xlsx`,
+        ? `재고추적_${selectedItem.itemCode}_${kstToday()}.xlsx`
+        : `재고추적_${kstToday()}.xlsx`,
       "재고추적"
     );
   };

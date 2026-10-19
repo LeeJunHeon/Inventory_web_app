@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Search, Plus, Edit, Trash2, Loader2, X, Download } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { exportXLSX } from "@/lib/xlsxUtils";
+import { kstToday } from "@/lib/kst";
 
 interface Partner {
   id: number; name: string;
@@ -23,7 +24,7 @@ export default function PartnersPage() {
         p.name, p.managerName ?? "", p.contact ?? "",
         p.email ?? "", p.isActive === true || p.isActive === "Y" ? "활성" : "비활성",
       ]),
-      `거래처관리_${new Date().toISOString().split("T")[0]}.xlsx`,
+      `거래처관리_${kstToday()}.xlsx`,
       "거래처"
     );
   };

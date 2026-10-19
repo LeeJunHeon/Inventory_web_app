@@ -5,6 +5,7 @@ import { Search, Plus, Edit, Trash2, Loader2, X, Check, Download } from "lucide-
 import { CATEGORY_COLORS } from "@/lib/data";
 import { useT } from "@/lib/i18n";
 import { exportXLSX } from "@/lib/xlsxUtils";
+import { kstToday } from "@/lib/kst";
 
 interface ItemOption {
   id: number; code: string; name: string;
@@ -37,7 +38,7 @@ export default function ItemsPage() {
         item.code, item.name, item.category?.name ?? item.category ?? "",
         item.unit ?? "", item.minQty ?? 0, item.note ?? "",
       ]),
-      `품목관리_${new Date().toISOString().split("T")[0]}.xlsx`,
+      `품목관리_${kstToday()}.xlsx`,
       "품목"
     );
   };

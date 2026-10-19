@@ -66,11 +66,3 @@ export function exportXLSX(
 ): void {
   exportXLSXSheets([{ name: sheetName, headers, rows }], filename);
 }
-
-/** 브라우저 로컬 날짜 YYYY-MM-DD (toISOString 은 UTC 라 KST 오전 9시 전엔 어제가 된다) */
-export function todayStamp(): string {
-  const d = new Date();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${d.getFullYear()}-${mm}-${dd}`;
-}

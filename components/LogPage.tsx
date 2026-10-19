@@ -5,6 +5,7 @@ import { Download, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import DatePicker from "./DatePicker";
 import { useT } from "@/lib/i18n";
 import { exportXLSX } from "@/lib/xlsxUtils";
+import { kstToday } from "@/lib/kst";
 
 interface LogEntry {
   id: number;
@@ -174,7 +175,7 @@ export default function LogPage() {
         l.tableLabel,
         String(l.recordId),
         l.detail,
-      ]), `activity_log_${new Date().toISOString().slice(0, 10)}.xlsx`, "활동로그");
+      ]), `activity_log_${kstToday()}.xlsx`, "활동로그");
     } catch {
       /* 내보내기 실패는 무시 */
     } finally {

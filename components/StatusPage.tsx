@@ -8,8 +8,9 @@ import CsvButton from "@/components/CsvButton";
 import type { TargetItem } from "@/components/TargetStatusSection";
 import { useT } from "@/lib/i18n";
 import type { Messages } from "@/messages/ko";
-import { exportXLSXSheets, todayStamp } from "@/lib/xlsxUtils";
+import { exportXLSXSheets } from "@/lib/xlsxUtils";
 import type { XlsxSheet } from "@/lib/xlsxUtils";
+import { kstToday } from "@/lib/kst";
 
 interface LocationOption { id: number; name: string; }
 
@@ -291,7 +292,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
     return [
       "보유현황", locationLabel, cat,
       stockFilter !== "전체" ? stockFilter : undefined,
-      todayStamp(),
+      kstToday(),
     ].filter(Boolean).join("_") + ".xlsx";
   };
 

@@ -6,6 +6,7 @@ import { CATEGORY_COLORS } from "@/lib/data";
 import { useT } from "@/lib/i18n";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
 import { exportXLSX } from "@/lib/xlsxUtils";
+import { kstToday } from "@/lib/kst";
 import BarcodeLabelModal from "@/components/BarcodeLabelModal";
 
 interface BarcodeItem {
@@ -64,7 +65,7 @@ export default function BarcodePage() {
         b.id, b.code, b.itemCode, b.itemName, b.category,
         b.targetUnitId ?? "", b.isActive, b.memo ?? "",
       ]),
-      `바코드_${new Date().toISOString().split("T")[0]}.xlsx`,
+      `바코드_${kstToday()}.xlsx`,
       "바코드"
     );
   };

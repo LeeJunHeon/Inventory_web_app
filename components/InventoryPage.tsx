@@ -10,6 +10,7 @@ import CsvButton            from "@/components/CsvButton";
 import DatePicker           from "./DatePicker";
 import { useT } from "@/lib/i18n";
 import { exportXLSX } from "@/lib/xlsxUtils";
+import { kstToday } from "@/lib/kst";
 
 interface LocationOption { id: number; name: string; }
 interface BlockedDeleteInfo {
@@ -183,9 +184,7 @@ export default function InventoryPage({
   // ── CSV 내보내기 ──────────────────────────────────────
   const handleExport = () => {
     if (items.length === 0) { setToast(t.inventory.noExportData); setTimeout(() => setToast(""), 3000); return; }
-    const now      = new Date();
-    const dateStr  = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}`;
-    const filename = `${t.inventory.csvFilename}_${dateStr}.xlsx`;
+    const filename = `${t.inventory.csvFilename}_${kstToday()}.xlsx`;
     exportXLSX(t.inventory.csvHeaders, items.map(i => [
       i.txNo || "", i.id, i.date, i.type, i.category, i.code, i.name,
       i.qty, i.price, i.amount, i.currency, i.exchangeRateAtEntry ?? "",

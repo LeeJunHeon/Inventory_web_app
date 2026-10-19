@@ -10,6 +10,7 @@ import BarcodeCameraScanner from "./BarcodeCameraScanner";
 import CsvButton from "@/components/CsvButton";
 import { useT } from "@/lib/i18n";
 import { exportXLSX } from "@/lib/xlsxUtils";
+import { kstToday } from "@/lib/kst";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
 
 interface PortSlot {
@@ -305,7 +306,7 @@ export default function AldPrecursorPage() {
         l.remainPercent != null ? l.remainPercent.toFixed(1) : "",
         l.estimatedRemainCycle ?? "", l.location, l.userName,
       ]),
-      `ALD_${selectedCanister?.barcodeCode || "logs"}_${new Date().toISOString().split("T")[0]}.xlsx`,
+      `ALD_${selectedCanister?.barcodeCode || "logs"}_${kstToday()}.xlsx`,
       "ALD사용현황"
     );
   };
