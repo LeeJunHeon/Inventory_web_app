@@ -9,7 +9,8 @@ import {
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
 import CsvButton from "@/components/CsvButton";
 import { useT } from "@/lib/i18n";
-import { exportXLSX } from "@/lib/xlsxUtils";
+import { buildSheet, exportXLSXSheets } from "@/lib/xlsxUtils";
+import type { XlsxColumn } from "@/lib/xlsxUtils";
 import { kstToday } from "@/lib/kst";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
 
@@ -283,7 +284,8 @@ export default function AldPrecursorPage() {
     }
   };
 
-  const sortedLogs = [...logs].sort((a, b) => {
+  // 화면 정렬 — 엑셀도 같은 비교를 쓴다
+  const compareLogs = (a: AldLogItem, b: AldLogItem) => {
     const av = (a as unknown as Record<string, unknown>)[sortField];
     const bv = (b as unknown as Record<string, unknown>)[sortField];
     if (av == null && bv == null) return 0;
@@ -292,23 +294,38 @@ export default function AldPrecursorPage() {
     return sortDir === "asc"
       ? (av < bv ? -1 : av > bv ? 1 : 0)
       : (av > bv ? -1 : av < bv ? 1 : 0);
-  });
+  };
+  const sortedLogs = [...logs].sort(compareLogs);
 
-  const handleCsvExport = () => {
+  // 화면의 logs 는 한 페이지뿐이라, 같은 조건 + all=true 로 전체를 다시 받아 화면 정렬로 내보낸다
+  const handleCsvExport = async () => {
     if (logs.length === 0) return;
-    exportXLSX(
-      ["시간","구분","물질명","Canister","Gross(g)","Tare(g)","Measure(g)","누적사이클","소모량(g/cyc)","잔여량(%)","추정잔여(cyc)","현위치","작성자"],
-      logs.map((l) => [
-        l.timestamp, l.logSubType, l.materialName, l.canisterId?.toString() ?? "",
-        l.grossWeight ?? "", l.tareWeight ?? "", l.measureWeight ?? "",
-        l.cumulativeCycle ?? "",
-        l.consumptionPerCycle != null ? l.consumptionPerCycle.toFixed(4) : "",
-        l.remainPercent != null ? l.remainPercent.toFixed(1) : "",
-        l.estimatedRemainCycle ?? "", l.location, l.userName,
-      ]),
-      `ALD_${selectedCanister?.barcodeCode || "logs"}_${kstToday()}.xlsx`,
-      "ALD사용현황"
-    );
+    try {
+      const params = new URLSearchParams({ all: "true" });
+      if (selectedCanister) params.set("canisterId", String(selectedCanister.id));
+      const res = await fetch(`/api/ald/logs?${params}`);
+      if (!res.ok) throw new Error("조회 실패");
+      const rows: AldLogItem[] = (await res.json()).logs ?? [];
+      const columns: XlsxColumn<AldLogItem>[] = [
+        { header: "시간",          value: l => l.timestamp },
+        { header: "구분",          value: l => l.logSubType },
+        { header: "물질명",        value: l => l.materialName },
+        { header: "Canister",      value: l => l.canisterCode },
+        { header: "Gross(g)",      value: l => l.grossWeight ?? "",         numFmt: "0.000" },
+        { header: "Tare(g)",       value: l => l.tareWeight ?? "",          numFmt: "0.000" },
+        { header: "Measure(g)",    value: l => l.measureWeight ?? "",       numFmt: "0.000" },
+        { header: "누적사이클",    value: l => l.cumulativeCycle ?? "" },
+        { header: "소모량(g/cyc)", value: l => l.consumptionPerCycle ?? "", numFmt: "0.0000" },
+        { header: "잔여량(%)",     value: l => l.remainPercent ?? "",       numFmt: "0.0" },
+        { header: "추정잔여(cyc)", value: l => l.estimatedRemainCycle ?? "" },
+        { header: "현위치",        value: l => l.location },
+        { header: "작성자",        value: l => l.userName },
+      ];
+      exportXLSXSheets(
+        [buildSheet("ALD사용현황", columns, [...rows].sort(compareLogs))],
+        `ALD_${selectedCanister?.barcodeCode || "logs"}_${kstToday()}.xlsx`,
+      );
+    } catch { showToast(t.common.exportFail); }
   };
 
   const remainColor = (pct: number | null) => {

@@ -5,7 +5,9 @@ import { formatKstDateTime } from "@/lib/kst";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/ald/logs?canisterId=1&page=1&limit=50
+// GET /api/ald/logs?canisterId=1&page=1&limit=50  (all=true: 페이지네이션 없이 전부, 상한 ALL_MAX)
+const ALL_MAX = 50000;
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -13,6 +15,7 @@ export async function GET(request: NextRequest) {
     const page       = Math.max(1, Number(searchParams.get("page")  || "1"));
     const limit      = Math.max(1, Number(searchParams.get("limit") || "50"));
     const skip       = (page - 1) * limit;
+    const all        = searchParams.get("all") === "true";
 
     // canisterId 없으면 ALD 전체 로그 반환
     const whereClause = canisterId
@@ -24,8 +27,8 @@ export async function GET(request: NextRequest) {
       prisma.targetLog.findMany({
         where:   whereClause,
         orderBy: { loggedAt: "desc" },
-        skip,
-        take:    limit,
+        skip:    all ? 0 : skip,
+        take:    all ? ALL_MAX : limit,
         include: {
           aldLogDetail: true,
           location:     true,

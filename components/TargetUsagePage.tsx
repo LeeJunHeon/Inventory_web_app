@@ -8,8 +8,9 @@ import { assetPath } from "@/lib/assetPath";
 import { TARGET_STATUS_LABELS, formatWeight } from "@/lib/data";
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
 import { useT } from "@/lib/i18n";
-import { exportXLSX } from "@/lib/xlsxUtils";
-import { kstToday } from "@/lib/kst";
+import { buildSheet, exportXLSX, exportXLSXSheets } from "@/lib/xlsxUtils";
+import type { XlsxColumn } from "@/lib/xlsxUtils";
+import { formatKstDate, formatKstDateTime, kstToday } from "@/lib/kst";
 import DatePicker from "@/components/DatePicker";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
 import { TargetPhoto } from "@/lib/targetPhotoTypes";
@@ -135,19 +136,24 @@ export default function TargetUsagePage() {
       const res = await fetch(`/api/targets?${params}`);
       if (!res.ok) { showToast(t.common.saveFail); return; }
       const data = await res.json();
-      const rows = Array.isArray(data.logs) ? data.logs : [];
+      const rows: LogItem[] = Array.isArray(data.logs) ? data.logs : [];
       if (rows.length === 0) return;
-      exportXLSX(
-        ["타임스탬프", "구분", "무게(g)", "품목명", "바코드", "위치", "사유", "작업자"],
-        rows.map((log: any) => [
-          log.timestamp, log.type, log.weight ?? "",
-          log.itemName, log.barcodeCode, log.location,
-          log.reason, log.userName,
-        ]),
+      // timestamp 는 API 가 KST 로 만들어 준다. 행 순서는 화면 정렬과 같게
+      const columns: XlsxColumn<LogItem>[] = [
+        { header: "타임스탬프", value: log => log.timestamp },
+        { header: "구분",       value: log => log.type },
+        { header: "무게(g)",    value: log => log.weight ?? "", numFmt: "0.000" },
+        { header: "품목명",     value: log => log.itemName },
+        { header: "바코드",     value: log => log.barcodeCode },
+        { header: "위치",       value: log => log.location },
+        { header: "사유",       value: log => log.reason },
+        { header: "작업자",     value: log => log.userName },
+      ];
+      exportXLSXSheets(
+        [buildSheet("타겟사용이력", columns, [...rows].sort(compareLogs))],
         selectedTarget
           ? `타겟사용현황_${selectedTarget.barcodeCode}_${kstToday()}.xlsx`
           : `타겟사용현황_전체_${kstToday()}.xlsx`,
-        "타겟사용이력"
       );
     } catch { showToast(t.common.saveFail); }
   };
@@ -155,18 +161,17 @@ export default function TargetUsagePage() {
   // 이동 내역 CSV (현재 표시되는 segments 전체)
   const handleMovementsCSV = () => {
     if (!selectedTarget || movements.length === 0) return;
-    exportXLSX(
-      ["위치", "시작일", "종료일", "측정횟수", "첫 무게(g)", "마지막 무게(g)"],
-      movements.map(seg => [
-        seg.locationName || "(위치 미상)",
-        new Date(seg.enteredAt).toLocaleDateString("ko-KR"),
-        seg.leftAt ? new Date(seg.leftAt).toLocaleDateString("ko-KR") : "현재",
-        String(seg.measurementCount),
-        seg.firstWeight != null ? seg.firstWeight.toFixed(3) : "",
-        seg.lastWeight != null ? seg.lastWeight.toFixed(3) : "",
-      ]),
+    const columns: XlsxColumn<MovementSegment>[] = [
+      { header: "위치",           value: seg => seg.locationName || "(위치 미상)" },
+      { header: "시작일",         value: seg => formatKstDate(seg.enteredAt) },
+      { header: "종료일",         value: seg => seg.leftAt ? formatKstDate(seg.leftAt) : "현재" },
+      { header: "측정횟수",       value: seg => seg.measurementCount },
+      { header: "첫 무게(g)",     value: seg => seg.firstWeight ?? "", numFmt: "0.000" },
+      { header: "마지막 무게(g)", value: seg => seg.lastWeight ?? "",  numFmt: "0.000" },
+    ];
+    exportXLSXSheets(
+      [buildSheet("타겟이동내역", columns, movements)],
       `타겟이동내역_${selectedTarget.barcodeCode}_${kstToday()}.xlsx`,
-      "타겟이동내역"
     );
   };
 
@@ -182,7 +187,7 @@ export default function TargetUsagePage() {
       exportXLSX(
         ["변경시각", "액션", "이전 바코드", "이전 품목", "현재 바코드", "현재 품목", "작업자", "메모"],
         allLogs.map((log: any) => [
-          new Date(log.changedAt).toLocaleString("ko-KR"),
+          formatKstDateTime(log.changedAt, { seconds: true }),
           log.action === "load" ? "장착" : log.action === "unload" ? "제거" : "교체",
           log.previousBarcode ?? "",
           log.previousItemName ?? "",
@@ -745,12 +750,14 @@ export default function TargetUsagePage() {
     }
   };
 
-  const sorted = [...logs].sort((a, b) => {
+  // 화면 정렬 — 측정 기록 엑셀도 같은 비교를 쓴다
+  const compareLogs = (a: LogItem, b: LogItem) => {
     const dir = sortDir === "asc" ? 1 : -1;
     if (sortField === "timestamp") return a.timestamp.localeCompare(b.timestamp) * dir;
     if (sortField === "weight") return ((a.weight ?? 0) - (b.weight ?? 0)) * dir;
     return 0;
-  });
+  };
+  const sorted = [...logs].sort(compareLogs);
 
   const handleSort = (field: string) => {
     if (sortField === field) setSortDir(sortDir === "asc" ? "desc" : "asc");
