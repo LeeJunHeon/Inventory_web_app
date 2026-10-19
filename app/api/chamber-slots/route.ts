@@ -3,11 +3,18 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { expandBarcodeVariants } from "@/lib/barcodeUtils";
 import { createHrCalendarEvent } from "@/lib/hrCalendar";
+import { isInternalClient } from "@/lib/internal-network";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/chamber-slots — 슬롯 전체 조회 또는 타겟 검색 (q 파라미터 있을 때)
 export async function GET(request: NextRequest) {
+  // proxy.ts 검사가 우회될 때를 대비해 한 번 더 — 로그인 사용자 또는 사내망(Python 프로그램)만
+  const session = await auth();
+  if (!session?.user && !isInternalClient(request.headers)) {
+    return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
   const q    = searchParams.get("q")?.trim() ?? "";
   const type = searchParams.get("type") ?? "바코드";

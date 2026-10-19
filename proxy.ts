@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import { authConfig } from "./auth.config";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { isInternalClient } from "./lib/internal-network";
 
 // Edge Runtime용 — Prisma 없는 authConfig만 사용 (성능 유지)
 // Prisma가 포함된 auth.ts는 Edge Runtime에서 실행 불가
@@ -52,8 +53,9 @@ export default auth((req: NextRequest & { auth: any }) => {
     return NextResponse.next();
   }
 
-  // /api/chamber-slots GET 은 Python 프로그램용 — 인증 없이 허용
-  if (pathname === "/api/chamber-slots" && req.method === "GET") {
+  // /api/chamber-slots GET 은 공정 노트북 Python 프로그램용 — 사내망(X-Client-IP)이면 로그인 없이 허용.
+  // 사내가 아니면 아래 /api/* 분기로 내려가 로그인 사용자만 통과하고, 미인증은 401.
+  if (pathname === "/api/chamber-slots" && req.method === "GET" && isInternalClient(req.headers)) {
     return NextResponse.next();
   }
 
