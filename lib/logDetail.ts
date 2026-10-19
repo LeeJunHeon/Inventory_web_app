@@ -117,11 +117,12 @@ export function formatPartnerDetail(p: {
 }
 
 export function formatBarcodeDetail(bc: {
-  code: string; item?: { name: string } | null;
+  code: string; item?: { name: string } | null; memo?: string | null;
 }): string {
   return join([
     bc.code,
     bc.item ? `품목:${bc.item.name}` : null,
+    bc.memo ? `메모:${bc.memo}` : null,
   ]);
 }
 

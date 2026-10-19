@@ -486,7 +486,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           itemId,
-          materialName: barcodeCreateMaterial || null,
+          memo: barcodeCreateMaterial || null,
           ...(category === "ALD Canister" && {
             aldMaterialName: aldMaterialName || null,
             aldTareWeight:   aldTareWeight ? parseFloat(aldTareWeight) : null,

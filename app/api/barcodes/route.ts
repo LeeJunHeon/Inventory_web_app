@@ -178,6 +178,7 @@ export async function POST(request: NextRequest) {
             itemId:       item.id,
             targetUnitId: targetUnit.id,
             isActive:     "Y",
+            memo:         body.memo || null,
           },
           include: { item: { include: { category: true } }, targetUnit: true },
         });
@@ -261,6 +262,7 @@ export async function POST(request: NextRequest) {
         itemId:       item.id,
         targetUnitId: null,
         isActive:     "Y",
+        memo:         body.memo || null,
       },
       include: { item: { include: { category: true } }, targetUnit: true },
     });
