@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
       include: {
         category: true,
         barcodes: { select: { code: true }, where: { isActive: "Y" } },
+        waferSpec: { select: { resistivity: true, thicknessNote: true } },
       },
       orderBy: { code: "asc" },
     });
@@ -112,6 +113,8 @@ export async function GET(request: NextRequest) {
           currentQty,
           requiredQty: item.minStockQty,
           barcodes:    item.barcodes?.map(b => b.code) ?? [],
+          resistivity:   item.waferSpec?.resistivity ?? null,
+          thicknessNote: item.waferSpec?.thicknessNote ?? null,
           locationQty: locationId ? undefined : {
             1: (loc1InMap.get(item.id) || 0) - (loc1OutMap.get(item.id) || 0) - (loc1DisposalMap.get(item.id) || 0),
             2: (loc2InMap.get(item.id) || 0) - (loc2OutMap.get(item.id) || 0) - (loc2DisposalMap.get(item.id) || 0),

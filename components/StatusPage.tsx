@@ -14,7 +14,8 @@ interface LocationOption { id: number; name: string; }
 interface StockItem {
   id: number; code: string; name: string;
   currentQty: number; requiredQty: number;
-  category: string; attrs?: Record<string, string>;
+  category: string;
+  resistivity?: string | null; thicknessNote?: string | null;
   barcodes?: string[];
   locationQty?: Record<number, number>;
 }
@@ -430,7 +431,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
                             <td className="px-5 py-3 text-sm font-mono text-gray-600">{item.code}</td>
                             <td className="px-5 py-3 text-sm font-medium text-gray-900">{item.name}</td>
                             <td className="px-5 py-3 text-xs font-mono text-gray-400">{item.barcodes?.join(", ") || "-"}</td>
-                            {cat === "웨이퍼" && <><td className="px-5 py-3 text-sm text-gray-500">{item.attrs?.["저항"] || "-"}</td><td className="px-5 py-3 text-sm text-gray-500">{item.attrs?.["두께"] || "-"}</td></>}
+                            {cat === "웨이퍼" && <><td className="px-5 py-3 text-sm text-gray-500">{item.resistivity || "-"}</td><td className="px-5 py-3 text-sm text-gray-500">{item.thicknessNote || "-"}</td></>}
                             {selectedLocationId === null ? (
                               <>
                                 <td className="px-3 py-3 text-sm text-right text-gray-600">{item.locationQty?.[1] ?? 0}</td>
