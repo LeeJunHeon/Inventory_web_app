@@ -180,10 +180,10 @@ async function measuredUnitsOn(dayStart: Date, dayEnd: Date, mat: string, inch: 
   });
 }
 
-// ⚠️ target_log.logged_at 은 KST 벽시계를 naive timestamp 로 저장한 값이고
-//    Prisma 는 그걸 UTC 로 해석해 Date 를 만든다. 따라서 비교용 경계도 반드시
-//    UTC 자정("...Z")으로 만들어야 한다. 로컬(KST) 자정으로 만들면 9시간 어긋난다.
-//    taken_date(@db.Date) 도 같은 이유로 UTC 자정이어야 날짜가 밀리지 않는다.
+// ⚠️ (정정) target_log.logged_at 은 KST 벽시계가 아니라 UTC 로 저장된다 (Prisma 7 이 now() 를 UTC 로 넣는다).
+//    이 스크립트는 KST 벽시계로 잘못 가정하고 UTC 자정 경계로 비교했으므로, 날짜 매칭은 UTC 날짜 기준
+//    (KST 오전 9시 전 측정은 전날로 취급)으로 이미 실행됐다. 1회성 스크립트라 로직은 기록으로 남겨 둔다.
+//    taken_date(@db.Date) 는 날짜의 UTC 자정으로 넣어야 날짜가 밀리지 않는다 — 이 부분은 맞다.
 const dayOf = (ymd: string) =>
   new Date(`${ymd.slice(0, 4)}-${ymd.slice(4, 6)}-${ymd.slice(6, 8)}T00:00:00Z`);
 const addDays = (d: Date, n: number) => new Date(d.getTime() + n * 86400000);
@@ -217,7 +217,7 @@ async function match(p: Parsed): Promise<Match> {
 
   const byDay = new Map<string, typeof near>();
   for (const l of near) {
-    const k = l.loggedAt.toISOString().slice(0, 10);   // naive=KST 이므로 그대로 KST 날짜
+    const k = l.loggedAt.toISOString().slice(0, 10);   // UTC 날짜 (당시 KST 로 잘못 가정 — 위 주석 참고)
     const arr = byDay.get(k);
     if (arr) arr.push(l);
     else byDay.set(k, [l]);

@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { TARGET_STATUS_LABELS } from "@/lib/data";
 import CsvButton from "@/components/CsvButton";
 import type { XlsxCell, XlsxSheet } from "@/lib/xlsxUtils";
+import { formatKstDateTime } from "@/lib/kst";
 
 export interface TargetItem {
   id: number;
@@ -48,7 +49,7 @@ export function buildUnitSheet(variant: "target" | "ald", items: TargetItem[]): 
       { header: "공병무게(g)", value: (t: TargetItem) => t.tareWeight != null ? round3(t.tareWeight) : "-", numFmt: "0.000" },
     ] : []),
     { header: "현재 무게(g)",  value: t => t.latestWeight != null ? round3(t.latestWeight) : "미측정", numFmt: "0.000" },
-    { header: "마지막 측정일", value: t => t.latestLoggedAt ? t.latestLoggedAt.replace("T", " ").slice(0, 16) : "-" },
+    { header: "마지막 측정일", value: t => t.latestLoggedAt ? formatKstDateTime(t.latestLoggedAt) : "-" },
     { header: "현재 위치",     value: t => t.locationName || "-" },
     { header: "입고일",        value: t => t.inboundDate || "-" },
     ...(!isAld ? [
@@ -165,7 +166,7 @@ export default function TargetStatusSection({
                         {t.latestWeight != null ? `${t.latestWeight.toFixed(3)}g` : "미측정"}
                       </td>
                       <td className="px-5 py-3 text-xs text-gray-500">
-                        {t.latestLoggedAt ? t.latestLoggedAt.replace("T", " ").slice(0, 16) : "-"}
+                        {t.latestLoggedAt ? formatKstDateTime(t.latestLoggedAt) : "-"}
                       </td>
                       <td className="px-5 py-3 text-sm text-gray-600">{t.locationName || "-"}</td>
                       <td className="px-5 py-3 text-xs text-gray-500">{t.inboundDate || "-"}</td>

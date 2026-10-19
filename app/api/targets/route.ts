@@ -5,6 +5,7 @@ import { expandBarcodeVariants } from "@/lib/barcodeUtils";
 import { buildTargetLogDetail } from "@/lib/logDetail";
 import { createDisposalTxForTarget } from "@/lib/txTypes";
 import { checkAndSendConsumeAlert } from "@/lib/targetConsumeAlert";
+import { formatKstDateTime, kstTodayDbDate } from "@/lib/kst";
 
 // GET /api/targets?barcode=T-0187&page=1&limit=50
 export async function GET(request: NextRequest) {
@@ -120,7 +121,7 @@ export async function GET(request: NextRequest) {
         logs: logs.map((l) => ({
           id: l.id,
           targetId: l.targetUnitId,
-          timestamp: l.loggedAt.toISOString().replace("T", " ").slice(0, 16),
+          timestamp: formatKstDateTime(l.loggedAt),
           type: l.logType,
           weight: l.weight ? Number(l.weight) : null,
           location: l.location?.name || "",
@@ -162,7 +163,7 @@ export async function GET(request: NextRequest) {
       logs: logs.map((l) => ({
         id: l.id,
         targetId: l.targetUnitId,
-        timestamp: l.loggedAt.toISOString().replace("T", " ").slice(0, 16),
+        timestamp: formatKstDateTime(l.loggedAt),
         type: l.logType,
         weight: l.weight ? Number(l.weight) : null,
         location: l.location?.name || "",
@@ -304,7 +305,7 @@ export async function POST(request: NextRequest) {
             data: {
               txNo: newTxNo,
               txType: "사용중",
-              txDate: new Date(),
+              txDate: kstTodayDbDate(),
               itemId: tu.itemId!,
               targetUnitId: body.targetUnitId,
               barcodeId: bc?.id ?? null,
@@ -385,7 +386,7 @@ export async function POST(request: NextRequest) {
     if (isDispose) {
       await prisma.targetUnit.update({
         where: { id: body.targetUnitId },
-        data: { status: "폐기", disposedAt: new Date() },
+        data: { status: "폐기", disposedAt: kstTodayDbDate() },
       });
       await prisma.barcode.updateMany({
         where: { targetUnitId: body.targetUnitId },

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/auth-helpers";
+import { kstTodayDbDate } from "@/lib/kst";
 
 // 거래 유형 상수는 lib/txTypeConstants.ts 에 있다 — 이 파일은 prisma 를 import 하므로
 // 클라이언트 컴포넌트가 직접 가져갈 수 없기 때문이다. 서버 쪽 import 경로를 그대로
@@ -270,7 +271,7 @@ export async function createDisposalTxForTarget(opts: {
     data: {
       txNo:         String(lastNo + 1),
       txType:       "폐기",
-      txDate:       new Date(),
+      txDate:       kstTodayDbDate(),
       itemId:       tu.itemId,
       targetUnitId: opts.targetUnitId,
       barcodeId:    bc?.id ?? null,

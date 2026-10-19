@@ -24,6 +24,7 @@ interface UsingLot {
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
 import BarcodeLabelModal from "./BarcodeLabelModal";
 import { useT } from "@/lib/i18n";
+import { kstToday } from "@/lib/kst";
 import DatePicker           from "./DatePicker";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
 
@@ -86,7 +87,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const [usingLots, setUsingLots]     = useState<UsingLot[]>([]);
   const [category, setCategory] = useState("웨이퍼");
 
-  const [date, setDate]             = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate]             = useState(kstToday());
   const [itemId, setItemId]         = useState<number | null>(null);
   const [itemCode, setItemCode]     = useState("");
   const [itemName, setItemName]     = useState("");
@@ -204,7 +205,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   // 모달 닫힐 때 전체 폼 초기화
   useEffect(() => {
     if (!isOpen) {
-      setType("입고"); setCategory("웨이퍼"); setDate(new Date().toISOString().split("T")[0]);
+      setType("입고"); setCategory("웨이퍼"); setDate(kstToday());
       setItemId(null); setItemCode(""); setItemName("");
       setBarcodeInput(""); setBarcodeId(null); setTargetUnitId(null); setRefTxNo(null);
       setShowCameraScanner(false);

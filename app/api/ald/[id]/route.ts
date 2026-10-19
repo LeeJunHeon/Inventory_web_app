@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 import { createDisposalTxForTarget } from "@/lib/txTypes";
 import { targetUnitHeader } from "@/lib/logDetail";
+import { kstTodayDbDate } from "@/lib/kst";
 
 // GET /api/ald/[id]
 export async function GET(
@@ -74,7 +75,7 @@ export async function PUT(
         data: {
           ...(status !== undefined && { status }),
           ...(note   !== undefined && { note }),
-          ...(status === "폐기"    && { disposedAt: new Date() }),
+          ...(status === "폐기"    && { disposedAt: kstTodayDbDate() }),
         },
       });
 

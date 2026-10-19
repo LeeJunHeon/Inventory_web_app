@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/auth-helpers";
 import { buildTargetLogDetail } from "@/lib/logDetail";
 import { checkAndSendConsumeAlert } from "@/lib/targetConsumeAlert";
+import { kstTodayDbDate } from "@/lib/kst";
 
 function safeStringEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
@@ -182,7 +183,7 @@ export async function POST(request: NextRequest) {
           data: {
             txNo: newTxNo,
             txType: "사용중",
-            txDate: new Date(),
+            txDate: kstTodayDbDate(),
             itemId: tu.itemId!,
             targetUnitId,
             barcodeId: bc?.id ?? null,

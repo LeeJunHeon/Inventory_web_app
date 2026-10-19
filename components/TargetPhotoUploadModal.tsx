@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Search, Loader2, X, Upload } from "lucide-react";
 import { useT } from "@/lib/i18n";
+import { kstToday } from "@/lib/kst";
 import PhotoUploader from "@/components/ui/PhotoUploader";
 
 interface Props {
@@ -11,12 +12,6 @@ interface Props {
 }
 
 interface Candidate { id: number; barcodeCode: string; itemName: string; status: string; }
-
-// toISOString 은 UTC 라 새벽엔 어제가 된다 → 로컬 날짜로 만든다
-const todayLocal = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
 
 const SELECT_CLS = "px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500";
 const INPUT_CLS  = "w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500";
@@ -28,7 +23,7 @@ export default function TargetPhotoUploadModal({ onClose, onUploaded }: Props) {
   const [searching, setSearching]   = useState(false);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selected, setSelected]     = useState<Candidate | null>(null);
-  const [takenDate, setTakenDate]   = useState(todayLocal());
+  const [takenDate, setTakenDate]   = useState(kstToday());
   const [tag, setTag]               = useState("");
   const [files, setFiles]           = useState<File[]>([]);
   const [uploaderKey, setUploaderKey] = useState(0);

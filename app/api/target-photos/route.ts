@@ -5,6 +5,7 @@ import {
   ALLOWED_EXT, MAX_UPLOAD_BYTES, MAX_PHOTOS_PER_LOG,
   isAllowedExt, normalizeFileName, processImage, decodeErrorMessage,
 } from "@/lib/targetPhoto";
+import { formatKstDate } from "@/lib/kst";
 
 /**
  * 타겟 측정 사진 목록/업로드.
@@ -272,8 +273,9 @@ export async function POST(request: NextRequest) {
         fileSize:     img.fileSize,
         width:        img.width,
         height:       img.height,
-        // 촬영일은 측정 시각의 날짜 부분. logged_at 은 KST 벽시계로 저장돼 있다.
-        takenDate:    new Date(log.loggedAt.toISOString().slice(0, 10)),
+        // 촬영일은 측정 시각의 KST 날짜. logged_at 은 UTC 로 저장되므로 KST 로 바꾼 뒤 날짜를 뗀다.
+        // taken_date 는 @db.Date 라 그 날짜의 UTC 자정으로 넣는다.
+        takenDate:    new Date(`${formatKstDate(log.loggedAt)}T00:00:00Z`),
         materialCode: spec?.materialCode?.toUpperCase() ?? null,
         diameterInch: spec?.diameterInch ?? null,
         maker:        null, // 제조사는 DB에 필드가 없다 (레거시 파일명에만 존재)

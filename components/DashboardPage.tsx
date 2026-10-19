@@ -6,6 +6,7 @@ import { TYPE_COLORS, CATEGORY_COLORS, formatPrice } from "@/lib/data";
 import { useApi } from "@/lib/useApi";
 import type { PageId } from "@/components/Sidebar";
 import { useT } from "@/lib/i18n";
+import { kstToday } from "@/lib/kst";
 import { STOCK_PLUS_TYPES } from "@/lib/txTypeConstants";
 
 interface LocationSummary {
@@ -49,7 +50,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
   const [selectedRecent, setSelectedRecent] = useState<typeof data.recent[0] | null>(null);
   const { t, lang } = useT();
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = kstToday();
 
   const stats = [
     {

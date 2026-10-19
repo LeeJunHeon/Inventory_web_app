@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { createDisposalTxForTarget } from "@/lib/txTypes";
 import { logActivity } from "@/lib/auth-helpers";
 import { targetUnitHeader } from "@/lib/logDetail";
+import { kstTodayDbDate } from "@/lib/kst";
 
 // PUT /api/targets/[id] — 타겟 상태 변경
 export async function PUT(
@@ -36,7 +37,7 @@ export async function PUT(
       data: {
         ...(status !== undefined && { status }),
         ...(note   !== undefined && { note }),
-        ...(status === "폐기" && { disposedAt: new Date() }),
+        ...(status === "폐기" && { disposedAt: kstTodayDbDate() }),
       },
     });
 

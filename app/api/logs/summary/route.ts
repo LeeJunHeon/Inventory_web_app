@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { kstDayStart, kstDayEnd } from "@/lib/kst";
 
 export const dynamic = "force-dynamic";
 
@@ -22,8 +23,8 @@ export async function GET(request: NextRequest) {
 
     // 날짜 필터는 /api/logs 와 동일 규칙
     const andConditions: any[] = [];
-    if (startDate) andConditions.push({ createdAt: { gte: new Date(startDate) } });
-    if (endDate)   andConditions.push({ createdAt: { lte: new Date(endDate + "T23:59:59.999Z") } });
+    if (startDate) andConditions.push({ createdAt: { gte: kstDayStart(startDate) } });
+    if (endDate)   andConditions.push({ createdAt: { lte: kstDayEnd(endDate) } });
     const where = andConditions.length > 0 ? { AND: andConditions } : {};
 
     const [byAction, byUser, users] = await Promise.all([

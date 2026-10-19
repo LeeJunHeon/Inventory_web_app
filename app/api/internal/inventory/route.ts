@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/auth-helpers";
 import { buildInventoryTxDetail } from "@/lib/logDetail";
 import { LOT_CONSUME_TYPES } from "@/lib/txTypes";
+import { kstTodayDbDate } from "@/lib/kst";
 
 const VALID_TYPES = ["입고", "출고", "불출", "충진 입고"];
 
@@ -505,7 +506,7 @@ export async function POST(request: NextRequest) {
         // 상태 → 폐기
         await prisma.targetUnit.update({
           where: { id: bc.targetUnitId },
-          data: { status: "폐기", disposedAt: new Date() },
+          data: { status: "폐기", disposedAt: kstTodayDbDate() },
         });
         // 바코드 비활성화
         await prisma.barcode.update({

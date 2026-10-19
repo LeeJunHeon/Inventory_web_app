@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, getSessionUser, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 import { buildInventoryTxDetail, formatInventoryTxDetail, inventoryTxHeader } from "@/lib/logDetail";
 import { LOT_CONSUME_TYPES, MOVE_IN, MOVE_OUT, recordAutoTransition, resolveAutoTransitionRevert } from "@/lib/txTypes";
+import { kstTodayDbDate } from "@/lib/kst";
 
 function buildItemSpec(ws: {
   waferType?: string | null; diameterInch?: number | null;
@@ -746,7 +747,7 @@ export async function POST(request: NextRequest) {
         // 상태 → 폐기
         await db.targetUnit.update({
           where: { id: bc.targetUnitId },
-          data: { status: "폐기", disposedAt: new Date() },
+          data: { status: "폐기", disposedAt: kstTodayDbDate() },
         });
         // 바코드 비활성화
         await db.barcode.update({
@@ -784,7 +785,7 @@ export async function POST(request: NextRequest) {
         if (statusChanged) {
           await db.targetUnit.update({
             where: { id: tuId },
-            data: { status: "폐기", disposedAt: new Date() },
+            data: { status: "폐기", disposedAt: kstTodayDbDate() },
           });
         }
         await db.barcode.update({

@@ -8,14 +8,12 @@ import DatePicker from "./DatePicker";
 import { TYPE_COLORS, CATEGORY_COLORS, formatPrice, formatQty, InventoryItem } from "@/lib/data";
 import { useT } from "@/lib/i18n";
 import { exportXLSX } from "@/lib/xlsxUtils";
+import { kstToday } from "@/lib/kst";
 
-// 이번 달 1일 ~ 오늘 기본값
+// 이번 달 1일 ~ 오늘 기본값 (KST)
 function getDefaultDates() {
-  const today = new Date();
-  const y = today.getFullYear();
-  const m = String(today.getMonth() + 1).padStart(2, "0");
-  const d = String(today.getDate()).padStart(2, "0");
-  return { start: `${y}-${m}-01`, end: `${y}-${m}-${d}` };
+  const today = kstToday();
+  return { start: `${today.slice(0, 7)}-01`, end: today };
 }
 
 export default function PeriodPage() {

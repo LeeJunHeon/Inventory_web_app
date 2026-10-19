@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, getSessionUserId, logActivity } from "@/lib/auth-helpers";
+import { formatKstDateTime } from "@/lib/kst";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
         id:                    l.id,
         canisterId:            l.targetUnitId,
         canisterCode:          l.targetUnit?.barcodes?.[0]?.code || "",
-        timestamp:             l.loggedAt.toISOString().replace("T", " ").slice(0, 16),
+        timestamp:             formatKstDateTime(l.loggedAt),
         logSubType:            l.aldLogDetail?.logSubType || l.logType,
         materialName:          l.aldLogDetail?.materialName || "",
         grossWeight:           l.aldLogDetail?.grossWeight    ? Number(l.aldLogDetail.grossWeight)           : null,

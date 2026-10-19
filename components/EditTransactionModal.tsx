@@ -131,7 +131,7 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
             <h2 className="text-lg font-bold text-gray-900">{t.tx.editRecord}</h2>
             {item.createdAt && (
               <p className="text-xs text-gray-400 mt-0.5">
-                {t.tx.createdAt}: {new Date(item.createdAt).toLocaleString("ko-KR")}
+                {t.tx.createdAt}: {new Date(item.createdAt).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}
               </p>
             )}
           </div>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { kstDayStart, kstDayEnd } from "@/lib/kst";
 import { buildInventoryTxDetail, formatTargetLogDetail } from "@/lib/logDetail";
 
 export const dynamic = "force-dynamic";
@@ -42,8 +43,8 @@ export async function GET(request: NextRequest) {
     const all       = searchParams.get("all") === "true";
 
     const andConditions: any[] = [];
-    if (startDate) andConditions.push({ createdAt: { gte: new Date(startDate) } });
-    if (endDate)   andConditions.push({ createdAt: { lte: new Date(endDate + "T23:59:59.999Z") } });
+    if (startDate) andConditions.push({ createdAt: { gte: kstDayStart(startDate) } });
+    if (endDate)   andConditions.push({ createdAt: { lte: kstDayEnd(endDate) } });
     if (userId)    andConditions.push({ userId: Number(userId) });
     if (action)    andConditions.push({ action });
     if (tableName) andConditions.push({ tableName });

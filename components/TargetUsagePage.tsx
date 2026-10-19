@@ -9,6 +9,7 @@ import { TARGET_STATUS_LABELS, formatWeight } from "@/lib/data";
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
 import { useT } from "@/lib/i18n";
 import { exportXLSX } from "@/lib/xlsxUtils";
+import { kstToday } from "@/lib/kst";
 import DatePicker from "@/components/DatePicker";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
 import { TargetPhoto } from "@/lib/targetPhotoTypes";
@@ -674,10 +675,7 @@ export default function TargetUsagePage() {
 
   // 챔버 슬롯 수정 핸들러
   // 오늘 날짜 (YYYY-MM-DD) — 과거 날짜 선택 차단용
-  const todayStr = (() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  })();
+  const todayStr = kstToday();
 
   // "Chamber 2 - " 로 시작하는 슬롯만 챔버2 (캘린더 등록 대상)
   const isChamber2 = (slot: ChamberSlot | null): boolean =>
@@ -957,6 +955,7 @@ export default function TargetUsagePage() {
               ) : (
                 historyLogs.map(log => {
                   const ts = new Date(log.changedAt).toLocaleString("ko-KR", {
+                    timeZone: "Asia/Seoul",
                     year: "numeric", month: "2-digit", day: "2-digit",
                     hour: "2-digit", minute: "2-digit",
                   });
@@ -1129,7 +1128,7 @@ export default function TargetUsagePage() {
                       </div>
                       {slot.latestLoggedAt && (
                         <p className="text-xs text-gray-400">
-                          {new Date(slot.latestLoggedAt).toLocaleDateString("ko-KR")}
+                          {new Date(slot.latestLoggedAt).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })}
                         </p>
                       )}
                     </div>
@@ -1532,8 +1531,8 @@ export default function TargetUsagePage() {
                 <>
                   <div className="space-y-2">
                     {movements.map((seg, idx) => {
-                      const entered = new Date(seg.enteredAt).toLocaleDateString("ko-KR");
-                      const left = seg.leftAt ? new Date(seg.leftAt).toLocaleDateString("ko-KR") : "현재";
+                      const entered = new Date(seg.enteredAt).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" });
+                      const left = seg.leftAt ? new Date(seg.leftAt).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" }) : "현재";
                       const isCurrent = seg.leftAt === null && !movementsMeta.isDisposed;
                       return (
                         <div
@@ -1578,7 +1577,7 @@ export default function TargetUsagePage() {
                       <span className="text-xs font-semibold text-rose-700">폐기됨</span>
                       {movementsMeta.disposedAt && (
                         <span className="text-xs text-rose-500 ml-auto font-mono">
-                          {new Date(movementsMeta.disposedAt).toLocaleDateString("ko-KR")}
+                          {new Date(movementsMeta.disposedAt).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })}
                         </span>
                       )}
                     </div>

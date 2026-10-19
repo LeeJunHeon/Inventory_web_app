@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { kstTodayDbDate } from "@/lib/kst";
 
 export const dynamic = "force-dynamic";
 
@@ -7,10 +8,9 @@ export const dynamic = "force-dynamic";
 // 포털의 AppCardGrid가 호출 — 재고관리 요약 정보 제공
 export async function GET() {
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // tx_date(@db.Date)는 날짜의 UTC 자정으로 저장된다 → KST 오늘의 UTC 자정 ~ +1일 (dashboard 와 같은 방식)
+    const today = kstTodayDbDate();
+    const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
     const [totalItems, todayIn, todayOut, todayUse] = await Promise.all([
       prisma.item.count(),

@@ -317,6 +317,7 @@ export default function LogPage() {
                         <td className="px-4 py-2 text-xs text-gray-500 whitespace-nowrap">
                           {row.lastActivity
                             ? new Date(row.lastActivity).toLocaleString("ko-KR", {
+                                timeZone: "Asia/Seoul",
                                 year: "numeric", month: "2-digit", day: "2-digit",
                                 hour: "2-digit", minute: "2-digit",
                               })
@@ -375,6 +376,7 @@ export default function LogPage() {
                         <tr className="hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => setExpandedLogId(prev => prev === log.id ? null : log.id)}>
                           <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
                             {new Date(log.createdAt).toLocaleString("ko-KR", {
+                              timeZone: "Asia/Seoul",
                               year: "numeric", month: "2-digit", day: "2-digit",
                               hour: "2-digit", minute: "2-digit",
                             })}
@@ -464,6 +466,7 @@ export default function LogPage() {
                       </div>
                       <span className="text-xs text-gray-400">
                         {new Date(log.createdAt).toLocaleString("ko-KR", {
+                          timeZone: "Asia/Seoul",
                           month: "2-digit", day: "2-digit",
                           hour: "2-digit", minute: "2-digit",
                         })}
