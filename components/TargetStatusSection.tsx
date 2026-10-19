@@ -2,6 +2,8 @@
 
 import { Loader2 } from "lucide-react";
 import { TARGET_STATUS_LABELS } from "@/lib/data";
+import CsvButton from "@/components/CsvButton";
+import type { XlsxCell, XlsxSheet } from "@/lib/xlsxUtils";
 
 export interface TargetItem {
   id: number;
@@ -28,6 +30,39 @@ interface TargetStatusSectionProps {
   loading?: boolean;
   error?: string;
   variant?: "target" | "ald";
+  onExport?: () => void;
+}
+
+const round3 = (v: number) => Math.round(v * 1000) / 1000;
+
+// 화면 표의 열을 바꾸면 이 함수도 같이 바꿀 것
+/** 데스크탑 표와 열·순서·값이 1:1 인 엑셀 시트. 단위는 헤더로 옮기고 셀은 숫자로 둔다. */
+export function buildUnitSheet(variant: "target" | "ald", items: TargetItem[]): XlsxSheet {
+  const isAld = variant === "ald";
+  const columns: { header: string; value: (t: TargetItem) => XlsxCell; numFmt?: string }[] = [
+    { header: "바코드", value: t => t.barcodeCode || "-" },
+    { header: "품목명", value: t => t.itemName },
+    { header: "상태",   value: t => TARGET_STATUS_LABELS[t.status]?.label ?? t.status },
+    ...(isAld ? [
+      { header: "물질명",      value: (t: TargetItem) => t.materialName || "-" },
+      { header: "공병무게(g)", value: (t: TargetItem) => t.tareWeight != null ? round3(t.tareWeight) : "-", numFmt: "0.000" },
+    ] : []),
+    { header: "현재 무게(g)",  value: t => t.latestWeight != null ? round3(t.latestWeight) : "미측정", numFmt: "0.000" },
+    { header: "마지막 측정일", value: t => t.latestLoggedAt ? t.latestLoggedAt.replace("T", " ").slice(0, 16) : "-" },
+    { header: "현재 위치",     value: t => t.locationName || "-" },
+    { header: "입고일",        value: t => t.inboundDate || "-" },
+    ...(!isAld ? [
+      { header: "순도(%)",       value: (t: TargetItem) => t.purity ?? "-" },
+      { header: "Copper",        value: (t: TargetItem) => t.hasCopper === "Y" ? "있음" : t.hasCopper === "N" ? "없음" : "-" },
+      { header: "Cu 두께(inch)", value: (t: TargetItem) => t.copperThickness ?? "-" },
+    ] : []),
+  ];
+  return {
+    name: isAld ? "ALD Canister" : "타겟",
+    headers: columns.map(c => c.header),
+    rows: items.map(t => columns.map(c => c.value(t))),
+    numFmts: columns.map(c => c.numFmt),
+  };
 }
 
 /**
@@ -39,6 +74,7 @@ export default function TargetStatusSection({
   loading = false,
   error = "",
   variant = "target",
+  onExport,
 }: TargetStatusSectionProps) {
   const isAld = variant === "ald";
 
@@ -70,6 +106,7 @@ export default function TargetStatusSection({
           </span>
           <span className="text-xs text-gray-400">{items.length}개</span>
         </div>
+        {onExport && <CsvButton size="sm" onClick={onExport} disabled={items.length === 0} />}
       </div>
 
       {/* 테이블 */}

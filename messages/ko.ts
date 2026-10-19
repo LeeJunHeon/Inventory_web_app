@@ -621,6 +621,7 @@ export const ko = {
     catEquip: "기자재/소모품",
     countSuffix: "종",
     editHint: "필요수량 셀을 클릭해 직접 수정하세요",
+    exportAll: "전체 Excel",
     colCode: "품목코드",
     colName: "품목명",
     colBarcode: "바코드",

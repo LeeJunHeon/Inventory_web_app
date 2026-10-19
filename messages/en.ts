@@ -623,6 +623,7 @@ export const en: Messages = {
     catEquip: "Equipment",
     countSuffix: "",
     editHint: "Click required qty cell to edit",
+    exportAll: "Export all",
     colCode: "Code",
     colName: "Item Name",
     colBarcode: "Barcode",

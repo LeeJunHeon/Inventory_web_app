@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Search, AlertTriangle, CheckCircle, AlertCircle, Loader2, Check, X, ChevronUp, ChevronDown, ChevronsUpDown, Download } from "lucide-react";
+import { Search, AlertTriangle, CheckCircle, AlertCircle, Loader2, Check, X, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { CATEGORY_COLORS } from "@/lib/data";
-import TargetStatusSection from "@/components/TargetStatusSection";
+import TargetStatusSection, { buildUnitSheet } from "@/components/TargetStatusSection";
+import CsvButton from "@/components/CsvButton";
 import type { TargetItem } from "@/components/TargetStatusSection";
 import { useT } from "@/lib/i18n";
 import type { Messages } from "@/messages/ko";
-import { exportXLSX } from "@/lib/xlsxUtils";
+import { exportXLSXSheets, todayStamp } from "@/lib/xlsxUtils";
+import type { XlsxSheet } from "@/lib/xlsxUtils";
 
 interface LocationOption { id: number; name: string; }
 
@@ -218,24 +220,6 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
     (targetsVisible ? searchedTargets.filter(u => passUnit(u, f)).length : 0) +
     (aldVisible     ? searchedAld.filter(u => passUnit(u, f)).length     : 0);
 
-  const handleExportCSV = () => {
-    if (!filteredItems || filteredItems.length === 0) return;
-    exportXLSX(
-      ["품목코드", "품목명", "품목군", "바코드", "본사", "공덕", "합계", "최소수량", "수급상태"],
-      filteredItems.map(item => [
-        item.code, item.name, item.category,
-        (item.barcodes ?? []).join(" / "),
-        item.locationQty?.[1] ?? 0,
-        item.locationQty?.[2] ?? 0,
-        item.currentQty,
-        item.requiredQty,
-        getSupplyLevel(item.currentQty, item.requiredQty, t).label,
-      ]),
-      `보유현황_${new Date().toISOString().split("T")[0]}.xlsx`,
-      "보유현황"
-    );
-  };
-
   const filteredItems = filtered.filter(item => passItem(item, stockFilter));
   const filteredTargets = searchedTargets.filter(u => passUnit(u, stockFilter));
   const filteredAld     = searchedAld.filter(u => passUnit(u, stockFilter));
@@ -246,6 +230,82 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
       return (a[sortField] - b[sortField]) * v;
     return String(a[sortField]).localeCompare(String(b[sortField]), "ko") * v;
   });
+
+  // ── 화면 섹션 목록 — 렌더와 엑셀이 같이 쓴다 (화면만 바뀌고 엑셀이 어긋나지 않도록) ──
+  type Section =
+    | { kind: "item"; cat: string; rows: StockItem[] }
+    | { kind: "unit"; cat: "타겟" | "ALD Canister"; variant: "target" | "ald"; rows: TargetItem[] };
+  const sections: Section[] = [...CATS, "ALD Canister"]
+    .filter((cat) => selectedCategory === "전체" || selectedCategory === cat)
+    .flatMap((cat): Section[] => {
+      // 개체 단위 섹션 — "부족"은 개체에 해당 개념이 없으므로 섹션 자체를 감춘다
+      if (cat === "타겟" || cat === "ALD Canister") {
+        const rows = cat === "타겟" ? filteredTargets : filteredAld;
+        if (stockFilter === "부족") return [];
+        if (search.trim() && rows.length === 0) return [];
+        return [{ kind: "unit", cat, variant: cat === "타겟" ? "target" : "ald", rows }];
+      }
+      // 품목 단위 섹션 — 개체 전용 상태 필터일 때는 렌더링하지 않는다
+      if (UNIT_ONLY_FILTERS.includes(stockFilter)) return [];
+      const rows = sortedItems.filter((i) => i.category === cat);
+      if (rows.length === 0 && search) return [];
+      return [{ kind: "item", cat, rows }];
+    });
+
+  // 화면 품목 표의 열을 바꾸면 이 함수도 같이 바꿀 것
+  const buildItemSheet = (cat: string, rows: StockItem[]): XlsxSheet => {
+    const allLocations = selectedLocationId === null;
+    return {
+      name: cat,
+      headers: [
+        t.status.colCode, t.status.colName, t.status.colBarcode,
+        ...(cat === "웨이퍼" ? [t.status.colResistivity, t.status.colThickness] : []),
+        ...(allLocations
+          ? [t.status.locationMain, t.status.locationGongdeok, t.status.colTotal]
+          : [t.status.colStock]),
+        t.status.colRequired, t.status.colSupplyStatus,
+      ],
+      rows: rows.map((item) => [
+        item.code, item.name, item.barcodes?.join(", ") || "-",
+        ...(cat === "웨이퍼" ? [item.resistivity || "-", item.thicknessNote || "-"] : []),
+        ...(allLocations
+          ? [item.locationQty?.[1] ?? 0, item.locationQty?.[2] ?? 0, item.currentQty]
+          : [item.currentQty]),
+        item.requiredQty || "-",
+        getSupplyLevel(item.currentQty, item.requiredQty, t).label,
+      ]),
+    };
+  };
+
+  const sectionSheet = (sec: Section): XlsxSheet =>
+    sec.kind === "item" ? buildItemSheet(sec.cat, sec.rows) : buildUnitSheet(sec.variant, sec.rows);
+
+  // 개체 섹션은 조회 오류면 화면에 표가 없고 targetUnits 가 이전 위치 값일 수 있어 제외
+  const exportableSections = sections.filter((sec) =>
+    sec.rows.length > 0 && (sec.kind === "item" || !unitsError));
+
+  const exportFilename = (cat?: string) => {
+    const locationLabel = selectedLocationId === null
+      ? "전체"
+      : locationOptions.find((l) => l.id === selectedLocationId)?.name;
+    return [
+      "보유현황", locationLabel, cat,
+      stockFilter !== "전체" ? stockFilter : undefined,
+      todayStamp(),
+    ].filter(Boolean).join("_") + ".xlsx";
+  };
+
+  const handleExportAll = () => {
+    if (exportableSections.length === 0) return;
+    exportXLSXSheets(
+      exportableSections.map(sectionSheet),
+      exportFilename(selectedCategory !== "전체" ? selectedCategory : undefined),
+    );
+  };
+
+  const handleExportSection = (sec: Section) => {
+    exportXLSXSheets([sectionSheet(sec)], exportFilename(sec.cat));
+  };
 
   const shortageCount = items.filter((i) => i.requiredQty > 0 && i.currentQty < i.requiredQty).length;
 
@@ -281,10 +341,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
               <span className="text-sm font-semibold text-rose-700">{t.status.shortageAlert(shortageCount)}</span>
             </div>
           )}
-          <button onClick={handleExportCSV} disabled={filteredItems.length === 0}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-            <Download size={15} />Excel
-          </button>
+          <CsvButton onClick={handleExportAll} disabled={exportableSections.length === 0} label={t.status.exportAll} />
         </div>
       </div>
 
@@ -364,28 +421,14 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
         </div>
       </div>
 
-      {[...CATS, "ALD Canister"].filter((cat) => selectedCategory === "전체" || selectedCategory === cat).map((cat) => {
-        // 개체 단위 섹션 — "부족"은 개체에 해당 개념이 없으므로 섹션 자체를 감춘다
-        if (cat === "타겟") {
-          if (stockFilter === "부족") return null;
-          if (search.trim() && filteredTargets.length === 0) return null;
+      {sections.map((sec) => {
+        if (sec.kind === "unit") {
           return (
-            <TargetStatusSection key={cat} variant="target" items={filteredTargets}
-              loading={unitsLoading} error={unitsError} />
+            <TargetStatusSection key={sec.cat} variant={sec.variant} items={sec.rows}
+              loading={unitsLoading} error={unitsError} onExport={() => handleExportSection(sec)} />
           );
         }
-        if (cat === "ALD Canister") {
-          if (stockFilter === "부족") return null;
-          if (search.trim() && filteredAld.length === 0) return null;
-          return (
-            <TargetStatusSection key={cat} variant="ald" items={filteredAld}
-              loading={unitsLoading} error={unitsError} />
-          );
-        }
-        // 품목 단위 섹션 — 개체 전용 상태 필터일 때는 렌더링하지 않는다
-        if (UNIT_ONLY_FILTERS.includes(stockFilter)) return null;
-        const catItems = sortedItems.filter((i) => i.category === cat);
-        if (catItems.length === 0 && search) return null;
+        const { cat, rows: catItems } = sec;
         return (
           <div key={cat} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
             <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
@@ -393,7 +436,10 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
                 <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${CATEGORY_COLORS[cat] || ""}`}>{cat}</span>
                 <span className="text-xs text-gray-400">{catItems.length}{t.status.countSuffix}</span>
               </div>
-              <p className="text-xs text-gray-400">{t.status.editHint}</p>
+              <div className="flex items-center gap-3">
+                <p className="hidden md:block text-xs text-gray-400">{t.status.editHint}</p>
+                <CsvButton size="sm" onClick={() => handleExportSection(sec)} disabled={sec.rows.length === 0} />
+              </div>
             </div>
 
             {catItems.length === 0 ? (
