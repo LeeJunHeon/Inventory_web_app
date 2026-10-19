@@ -5,7 +5,8 @@ import { Search, Plus, Trash2, Copy, QrCode, Check, X, Loader2, Printer, Pencil,
 import { CATEGORY_COLORS } from "@/lib/data";
 import { useT } from "@/lib/i18n";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
-import { exportXLSX } from "@/lib/xlsxUtils";
+import { buildSheet, exportXLSXSheets } from "@/lib/xlsxUtils";
+import type { XlsxColumn } from "@/lib/xlsxUtils";
 import { kstToday } from "@/lib/kst";
 import BarcodeLabelModal from "@/components/BarcodeLabelModal";
 
@@ -36,6 +37,9 @@ interface UnlinkedInbound {
 
 const CATS = ["전체", "타겟", "ALD Canister", "웨이퍼", "가스", "기자재/소모품"];
 
+/** 화면 표기 TU-001 */
+const formatTargetUnitId = (id: number) => `TU-${String(id).padStart(3, "0")}`;
+
 export default function BarcodePage() {
   const { t } = useT();
   const SEARCH_TYPE_LABEL: Record<string, string> = {
@@ -57,17 +61,20 @@ export default function BarcodePage() {
     "기자재/소모품": t.barcode.catEquip,
   };
   const [barcodes, setBarcodes]         = useState<BarcodeItem[]>([]);
+  // 화면 표와 같은 순서·표기 (sortedBarcodes, TU-001, 활성 라벨)
   const handleExportCSV = () => {
     if (!barcodes || barcodes.length === 0) return;
-    exportXLSX(
-      ["ID", "바코드", "품목코드", "품목명", "품목군", "타겟ID", "활성여부", "메모"],
-      barcodes.map(b => [
-        b.id, b.code, b.itemCode, b.itemName, b.category,
-        b.targetUnitId ?? "", b.isActive, b.memo ?? "",
-      ]),
-      `바코드_${kstToday()}.xlsx`,
-      "바코드"
-    );
+    const columns: XlsxColumn<BarcodeItem>[] = [
+      { header: "ID",       value: b => b.id },
+      { header: "바코드",   value: b => b.code },
+      { header: "품목코드", value: b => b.itemCode },
+      { header: "품목명",   value: b => b.itemName },
+      { header: "품목군",   value: b => b.category },
+      { header: "타겟ID",   value: b => b.targetUnitId ? formatTargetUnitId(b.targetUnitId) : "-" },
+      { header: "활성여부", value: b => b.isActive === "Y" ? t.barcode.active : t.barcode.inactive },
+      { header: "메모",     value: b => b.memo ?? "" },
+    ];
+    exportXLSXSheets([buildSheet("바코드", columns, sortedBarcodes)], `바코드_${kstToday()}.xlsx`);
   };
   const [loading, setLoading]           = useState(true);
   const [search, setSearch]             = useState("");
@@ -229,6 +236,15 @@ export default function BarcodePage() {
       setDeactivating(false);
     }
   };
+
+  // 목록 정렬 — 화면과 엑셀이 같이 쓴다
+  const sortedBarcodes = [...barcodes].sort((a, b) => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    if (sortField === "id")       return (a.id - b.id) * dir;
+    if (sortField === "code")     return a.code.localeCompare(b.code) * dir;
+    if (sortField === "category") return a.category.localeCompare(b.category) * dir;
+    return 0;
+  });
 
   return (
     <div className="space-y-5">
@@ -570,14 +586,6 @@ export default function BarcodePage() {
       {loading ? (
         <div className="flex items-center justify-center h-32"><Loader2 size={24} className="animate-spin text-blue-500" /></div>
       ) : (() => {
-        const sortedBarcodes = [...barcodes].sort((a, b) => {
-          const dir = sortDir === "asc" ? 1 : -1;
-          if (sortField === "id")       return (a.id - b.id) * dir;
-          if (sortField === "code")     return a.code.localeCompare(b.code) * dir;
-          if (sortField === "category") return a.category.localeCompare(b.category) * dir;
-          return 0;
-        });
-
         const handleSort = (field: "id" | "code" | "category") => {
           if (sortField === field) setSortDir(sortDir === "asc" ? "desc" : "asc");
           else { setSortField(field); setSortDir("desc"); }
@@ -625,7 +633,7 @@ export default function BarcodePage() {
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[b.category] || ""}`}>{b.category}</span>
                     </td>
                     <td className="px-5 py-3 text-sm text-gray-500 font-mono">
-                      {b.targetUnitId ? `TU-${String(b.targetUnitId).padStart(3, "0")}` : "-"}
+                      {b.targetUnitId ? formatTargetUnitId(b.targetUnitId) : "-"}
                     </td>
                     <td className="px-5 py-3 text-center">
                       {b.isActive === "Y"
@@ -674,7 +682,7 @@ export default function BarcodePage() {
                 <p className="text-sm text-gray-700">{b.itemName}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-400">
-                    {b.itemCode}{b.targetUnitId ? ` · TU-${String(b.targetUnitId).padStart(3, "0")}` : ""}
+                    {b.itemCode}{b.targetUnitId ? ` · ${formatTargetUnitId(b.targetUnitId)}` : ""}
                   </span>
                   <div className="flex items-center gap-1">
                     <button onClick={() => setPrintItem(b)}

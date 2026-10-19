@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback, Fragment } from "react";
 import { Download, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import DatePicker from "./DatePicker";
 import { useT } from "@/lib/i18n";
-import { exportXLSX } from "@/lib/xlsxUtils";
-import { kstToday } from "@/lib/kst";
+import { buildSheet, exportXLSXSheets } from "@/lib/xlsxUtils";
+import type { XlsxColumn } from "@/lib/xlsxUtils";
+import { formatKstDateTime, kstToday } from "@/lib/kst";
 
 interface LogEntry {
   id: number;
@@ -162,22 +163,37 @@ export default function LogPage() {
       params.set("all", "true");
 
       const res  = await fetch(`/api/logs?${params}`);
+      if (!res.ok) throw new Error("조회 실패");
       const json = await res.json();
       const rows: LogEntry[] = json.data ?? [];
       if (rows.length === 0) return;
 
-      exportXLSX(t.logs.csvHeaders, rows.map(l => [
-        l.id,
-        new Date(l.createdAt).toLocaleString("ko-KR"),
-        l.userName,
-        l.userId ?? "",
-        l.actionLabel,
-        l.tableLabel,
-        String(l.recordId),
-        l.detail,
-      ]), `activity_log_${kstToday()}.xlsx`, "활동로그");
+      const [hId, hTime, hUser, hUserId, hAction, hTable, hRecord, hDetail] = t.logs.csvHeaders;
+      const logCols: XlsxColumn<LogEntry>[] = [
+        { header: hId,     value: l => l.id },
+        { header: hTime,   value: l => formatKstDateTime(l.createdAt, { seconds: true }) },
+        { header: hUser,   value: l => l.userName },
+        { header: hUserId, value: l => l.userId ?? "" },
+        { header: hAction, value: l => l.actionLabel },
+        { header: hTable,  value: l => l.tableLabel },
+        { header: hRecord, value: l => String(l.recordId) },
+        { header: hDetail, value: l => l.detail },
+      ];
+      // 화면의 사용자별 요약 표와 같은 값·라벨
+      const summaryCols: XlsxColumn<SummaryRow>[] = [
+        { header: t.logs.colUser,         value: r => r.userName },
+        { header: t.logs.colCreate,       value: r => r.create },
+        { header: t.logs.colUpdate,       value: r => r.update },
+        { header: t.logs.colDelete,       value: r => r.delete },
+        { header: t.logs.colTotal,        value: r => r.total },
+        { header: t.logs.colLastActivity, value: r => r.lastActivity ? formatKstDateTime(r.lastActivity) : "-" },
+      ];
+      exportXLSXSheets([
+        buildSheet("활동로그", logCols, rows),
+        buildSheet("사용자별요약", summaryCols, summary),
+      ], `activity_log_${kstToday()}.xlsx`);
     } catch {
-      /* 내보내기 실패는 무시 */
+      alert(t.common.exportFail);
     } finally {
       setExporting(false);
     }

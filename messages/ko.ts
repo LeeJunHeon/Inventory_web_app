@@ -295,6 +295,7 @@ export const ko = {
     detailBarcode: "바코드",
     detailManager: "담당자",
     detailMemo: "메모",
+    detailCurrency: "통화",
   },
   logs: {
     subtitle: "데이터 변경 이력을 확인합니다",

@@ -4,13 +4,14 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Search, Plus, Edit, Trash2, Loader2, X, Check, Download } from "lucide-react";
 import { CATEGORY_COLORS } from "@/lib/data";
 import { useT } from "@/lib/i18n";
-import { exportXLSX } from "@/lib/xlsxUtils";
+import { buildSheet, exportXLSXSheets } from "@/lib/xlsxUtils";
+import type { XlsxColumn } from "@/lib/xlsxUtils";
 import { kstToday } from "@/lib/kst";
 
 interface ItemOption {
   id: number; code: string; name: string;
   category: string; categoryId: number;
-  unit: string | null; note: string | null; isActive: boolean;
+  unit: string | null; note: string | null; isActive: boolean; minStockQty?: number;
   purity?: number | null; hasCopper?: string | null; copperThickness?: number | null; consumeAlertG?: number | null;
 }
 interface CategoryOption { id: number; name: string; codePrefix: string | null; parentId: number | null; }
@@ -30,17 +31,24 @@ export default function ItemsPage() {
     "기자재/소모품": t.inventory.catEquip,
   };
   const [items, setItems]                   = useState<ItemOption[]>([]);
+  // 화면 표와 같은 열 (타겟 필터면 순도·Copper·Cu 두께) + 필요수량(보유현황과 같은 용어)
   const handleExportCSV = () => {
     if (!items || items.length === 0) return;
-    exportXLSX(
-      ["품목코드", "품목명", "품목군", "단위", "최소수량", "비고"],
-      items.map((item: any) => [
-        item.code, item.name, item.category?.name ?? item.category ?? "",
-        item.unit ?? "", item.minQty ?? 0, item.note ?? "",
-      ]),
-      `품목관리_${kstToday()}.xlsx`,
-      "품목"
-    );
+    const columns: XlsxColumn<ItemOption>[] = [
+      { header: "품목코드", value: item => item.code },
+      { header: "품목명",   value: item => item.name },
+      { header: "품목군",   value: item => item.category },
+      { header: "단위",     value: item => item.unit ?? "" },
+      { header: "필요수량", value: item => item.minStockQty ?? 0 },
+      { header: "비고",     value: item => item.note ?? "" },
+      ...(catFilter === "타겟" ? [
+        { header: "순도(%)",       value: (item: ItemOption) => item.purity ?? "-" },
+        { header: "Copper",        value: (item: ItemOption) => item.hasCopper === "Y" ? "있음" : item.hasCopper === "N" ? "없음" : "-" },
+        { header: "Cu 두께(inch)", value: (item: ItemOption) => item.copperThickness ?? "-" },
+      ] : []),
+      { header: "상태",     value: item => item.isActive ? t.barcode.active : t.barcode.inactive },
+    ];
+    exportXLSXSheets([buildSheet("품목", columns, items)], `품목관리_${kstToday()}.xlsx`);
   };
   const [categories, setCategories]         = useState<CategoryOption[]>([]);
   const [loading, setLoading]               = useState(true);

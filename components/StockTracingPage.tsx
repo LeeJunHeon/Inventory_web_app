@@ -7,7 +7,8 @@ import { useSession } from "next-auth/react";
 import { useT } from "@/lib/i18n";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
 import { STOCK_PLUS_TYPES, MOVE_IN, MOVE_OUT } from "@/lib/txTypeConstants";
-import { exportXLSX } from "@/lib/xlsxUtils";
+import { buildSheet, exportXLSXSheets } from "@/lib/xlsxUtils";
+import type { XlsxColumn } from "@/lib/xlsxUtils";
 import { kstToday } from "@/lib/kst";
 
 interface BarcodeInfo  { id: number; code: string; isActive: string; }
@@ -59,19 +60,30 @@ export default function StockTracingPage() {
   const [selectedItem, setSelectedItem]     = useState<SearchResult | null>(null);
   const [selectedBarcodeId, setSelectedBarcodeId] = useState<number | null>(null);
   const [txHistory, setTxHistory]           = useState<TxRecord[]>([]);
+  // 열 = 화면 표 + 상세 팝업 항목 (라벨도 같은 t.tracing). money: 직원에게는 감추는 열
   const handleExportCSV = () => {
     if (!txHistory || txHistory.length === 0) return;
-    exportXLSX(
-      ["날짜", "구분", "전표번호", "거래처/사유", "수량", "단가", "바코드"],
-      txHistory.map((tx: any) => [
-        tx.txDate, tx.txType, tx.txNo ?? "",
-        tx.partnerName || tx.reason || "",
-        tx.qty, tx.unitPrice ?? "", tx.barcodeCode ?? "",
-      ]),
+    const columns: (XlsxColumn<TxRecord> & { money?: boolean })[] = [
+      { header: t.tracing.colDate,         value: tx => tx.txDate },
+      { header: t.tracing.colType,         value: tx => tx.txType },
+      { header: t.tracing.detailTxNo,      value: tx => tx.txNo ?? "" },
+      { header: t.tracing.detailRefTxNo,   value: tx => tx.refTxNo ?? "" },
+      { header: t.tracing.detailPartner,   value: tx => tx.partnerName || "" },
+      { header: t.tracing.detailReason,    value: tx => tx.reasonName || "" },
+      // 화면과 같은 기준의 부호: 재고 증가 유형이면 +, 그 외 −
+      { header: t.tracing.detailQty,       value: tx => STOCK_PLUS_TYPES.includes(tx.txType) ? tx.qty : -tx.qty },
+      { header: t.tracing.detailUnitPrice, value: tx => tx.unitPrice ?? "", money: true },
+      { header: t.tracing.detailCurrency,  value: tx => tx.currency,         money: true },
+      { header: t.tracing.detailLocation,  value: tx => tx.locationName || "" },
+      { header: t.tracing.detailBarcode,   value: tx => tx.barcodeCode || "" },
+      { header: t.tracing.detailManager,   value: tx => tx.userName || "" },
+      { header: t.tracing.detailMemo,      value: tx => tx.memo || "" },
+    ];
+    exportXLSXSheets(
+      [buildSheet("재고추적", columns.filter(c => !(isEmployee && c.money)), txHistory)],
       selectedItem
         ? `재고추적_${selectedItem.itemCode}_${kstToday()}.xlsx`
         : `재고추적_${kstToday()}.xlsx`,
-      "재고추적"
     );
   };
   const [loading, setLoading]               = useState(false);

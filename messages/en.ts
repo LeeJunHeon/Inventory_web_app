@@ -297,6 +297,7 @@ export const en: Messages = {
     detailBarcode: "Barcode",
     detailManager: "Manager",
     detailMemo: "Memo",
+    detailCurrency: "Currency",
   },
   logs: {
     subtitle: "View all data change history",
