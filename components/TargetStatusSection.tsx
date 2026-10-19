@@ -3,7 +3,8 @@
 import { Loader2 } from "lucide-react";
 import { TARGET_STATUS_LABELS } from "@/lib/data";
 import CsvButton from "@/components/CsvButton";
-import type { XlsxCell, XlsxSheet } from "@/lib/xlsxUtils";
+import { buildSheet } from "@/lib/xlsxUtils";
+import type { XlsxColumn, XlsxSheet } from "@/lib/xlsxUtils";
 import { formatKstDateTime } from "@/lib/kst";
 
 export interface TargetItem {
@@ -40,7 +41,7 @@ const round3 = (v: number) => Math.round(v * 1000) / 1000;
 /** 데스크탑 표와 열·순서·값이 1:1 인 엑셀 시트. 단위는 헤더로 옮기고 셀은 숫자로 둔다. */
 export function buildUnitSheet(variant: "target" | "ald", items: TargetItem[]): XlsxSheet {
   const isAld = variant === "ald";
-  const columns: { header: string; value: (t: TargetItem) => XlsxCell; numFmt?: string }[] = [
+  const columns: XlsxColumn<TargetItem>[] = [
     { header: "바코드", value: t => t.barcodeCode || "-" },
     { header: "품목명", value: t => t.itemName },
     { header: "상태",   value: t => TARGET_STATUS_LABELS[t.status]?.label ?? t.status },
@@ -58,12 +59,7 @@ export function buildUnitSheet(variant: "target" | "ald", items: TargetItem[]): 
       { header: "Cu 두께(inch)", value: (t: TargetItem) => t.copperThickness ?? "-" },
     ] : []),
   ];
-  return {
-    name: isAld ? "ALD Canister" : "타겟",
-    headers: columns.map(c => c.header),
-    rows: items.map(t => columns.map(c => c.value(t))),
-    numFmts: columns.map(c => c.numFmt),
-  };
+  return buildSheet(isAld ? "ALD Canister" : "타겟", columns, items);
 }
 
 /**

@@ -121,6 +121,9 @@ const REF_REQUIRED_TYPES = ["출고", "불출", "사용중", "폐기"];
  *  챔버·Vault 등 세부 물리 위치는 target_log·chamber_slot·ald_port_slot의 영역이다. */
 const VALID_LOCATION_IDS = [1, 2];
 
+/** GET all=true 의 안전 상한 */
+const ALL_MAX = 50000;
+
 // GET /api/inventory
 export async function GET(request: NextRequest) {
   try {
@@ -192,6 +195,8 @@ export async function GET(request: NextRequest) {
 
     const where = andConditions.length > 0 ? { AND: andConditions } : {};
 
+    // all=true: 같은 조건으로 페이지네이션 없이 전부 (엑셀 내보내기용, 안전 상한 ALL_MAX)
+    const all   = searchParams.get("all") === "true";
     const page  = parseInt(searchParams.get("page")  ?? "1",  10);
     const limit = parseInt(searchParams.get("limit") ?? "50", 10);
     const skip  = (page - 1) * limit;
@@ -220,8 +225,8 @@ export async function GET(request: NextRequest) {
           user:     true,
         },
         orderBy,
-        take: limit,
-        skip,
+        take: all ? ALL_MAX : limit,
+        skip: all ? 0 : skip,
       }),
     ]);
 

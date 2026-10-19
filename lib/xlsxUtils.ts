@@ -10,6 +10,23 @@ export interface XlsxSheet {
   numFmts?: (string | undefined)[];
 }
 
+/** 열 정의 — 헤더·값·숫자 형식을 한 곳에 둬 열 위치가 어긋나지 않게 한다 */
+export interface XlsxColumn<T> {
+  header: string;
+  value: (row: T) => XlsxCell;
+  numFmt?: string;
+}
+
+/** 열 정의 배열로 headers/rows/numFmts 를 한 번에 만든다 */
+export function buildSheet<T>(name: string, columns: XlsxColumn<T>[], rows: T[]): XlsxSheet {
+  return {
+    name,
+    headers: columns.map(c => c.header),
+    rows: rows.map(r => columns.map(c => c.value(r))),
+    numFmts: columns.map(c => c.numFmt),
+  };
+}
+
 function buildWorksheet({ headers, rows, numFmts }: XlsxSheet): XLSX.WorkSheet {
   const data = [headers, ...rows.map(r => r.map(v => v ?? ""))];
   const ws = XLSX.utils.aoa_to_sheet(data);

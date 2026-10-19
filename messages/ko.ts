@@ -1,6 +1,7 @@
 export const ko = {
   common: {
     loading: "로딩 중...",
+    exportFail: "엑셀 내보내기에 실패했습니다.",
     save: "저장",
     cancel: "취소",
     delete: "삭제",
@@ -124,7 +125,14 @@ export const ko = {
     perPage: (n: number) => `${n}개씩`,
     sum: "합계",
     csvFilename: "재고내역",
-    csvHeaders: ["전표번호","ID","날짜","구분","품목군","품목코드","품목명","수량","단가","금액","통화","등록시환율","위치","거래처","사유","등록자","바코드","바코드메모","참조전표","품목스펙","메모","등록시각"],
+    csvHeaders: {
+      txNo: "전표번호", id: "ID", date: "날짜", type: "구분", category: "품목군",
+      code: "품목코드", name: "품목명", qty: "수량", price: "단가", amount: "금액",
+      currency: "통화", rateAtEntry: "등록시환율", krwAtEntry: "원화환산(등록시)",
+      location: "위치", partner: "거래처", reason: "사유", user: "등록자",
+      barcode: "바코드", barcodeMemo: "바코드메모", refTxNo: "참조전표", itemSpec: "품목스펙",
+      memo: "메모", createdAt: "등록시각",
+    },
   },
   period: {
     subtitle: "기간을 지정하여 입출고 내역을 조회합니다",
@@ -141,7 +149,18 @@ export const ko = {
     countUnit: "건",
     qtyUnit: "개",
     csvFilename: "재고내역",
-    csvHeaders: ["날짜","구분","품목군","품목코드","품목명","수량","단가","금액","거래처","담당자","바코드","메모"],
+    csvHeaders: {
+      date: "날짜", type: "구분", category: "품목군", code: "품목코드", name: "품목명",
+      qty: "수량", price: "단가", amount: "금액", currency: "통화", appliedRate: "적용환율",
+      krw: "원화환산", partner: "거래처", user: "등록자", barcode: "바코드", memo: "메모",
+    },
+    sheetDetail: "상세내역",
+    sheetTypeSummary: "구분별요약",
+    sheetCatSummary: "품목군별요약",
+    summaryHeaders: {
+      type: "구분", count: "건수", qty: "수량",
+      krwAmount: "원화금액", usdAmount: "달러금액", krwTotal: "원화환산합계",
+    },
   },
   tx: {
     usingRefLabel: "폐기할 사용중 건",

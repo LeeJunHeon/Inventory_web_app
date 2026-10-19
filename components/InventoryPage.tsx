@@ -9,8 +9,9 @@ import EditTransactionModal from "./EditTransactionModal";
 import CsvButton            from "@/components/CsvButton";
 import DatePicker           from "./DatePicker";
 import { useT } from "@/lib/i18n";
-import { exportXLSX } from "@/lib/xlsxUtils";
-import { kstToday } from "@/lib/kst";
+import { buildSheet, exportXLSXSheets } from "@/lib/xlsxUtils";
+import type { XlsxColumn } from "@/lib/xlsxUtils";
+import { formatKstDateTime, kstToday } from "@/lib/kst";
 
 interface LocationOption { id: number; name: string; }
 interface BlockedDeleteInfo {
@@ -21,6 +22,29 @@ interface BlockedDeleteInfo {
 }
 
 const SEARCH_FIELDS_KO = ["전체", "품목명", "품목코드", "바코드", "거래처"];
+
+interface InventoryQuery {
+  search: string; searchField: string; exactMatch: boolean;
+  typeFilter: string; categoryFilter: string;
+  startDate: string; endDate: string; locationFilter: number | "";
+  sortField: string; sortDir: "asc" | "desc";
+}
+
+/** 목록 조회와 엑셀 내보내기가 같은 조건(검색·구분·품목군·기간·위치·정렬)을 쓰도록 한 곳에서 만든다 */
+function buildInventoryParams(q: InventoryQuery): URLSearchParams {
+  const params = new URLSearchParams();
+  if (q.search)                 params.set("search", q.search);
+  if (q.search && q.searchField !== "전체") params.set("searchField", q.searchField);
+  if (q.search && q.exactMatch) params.set("exact", "true");
+  if (q.typeFilter !== "전체")     params.set("type", q.typeFilter);
+  if (q.categoryFilter !== "전체") params.set("category", q.categoryFilter);
+  if (q.startDate) params.set("startDate", q.startDate);
+  if (q.endDate)   params.set("endDate",   q.endDate);
+  if (q.locationFilter !== "") params.set("locationId", String(q.locationFilter));
+  params.set("sortField", q.sortField);
+  params.set("sortDir",   q.sortDir);
+  return params;
+}
 
 interface InventoryPageProps {
   initialTypeFilter?: string;
@@ -99,19 +123,12 @@ export default function InventoryPage({
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (search)               params.set("search", search);
-      if (search && searchField !== "전체") params.set("searchField", searchField);
-      if (search && exactMatch) params.set("exact", "true");
-      if (typeFilter !== "전체")    params.set("type", typeFilter);
-      if (categoryFilter !== "전체") params.set("category", categoryFilter);
-      if (startDate) params.set("startDate", startDate);
-      if (endDate)   params.set("endDate",   endDate);
-      if (locationFilter !== "") params.set("locationId", String(locationFilter));
-      params.set("page",      String(page));
-      params.set("limit",     String(limit));
-      params.set("sortField", sortField);
-      params.set("sortDir",   sortDir);
+      const params = buildInventoryParams({
+        search, searchField, exactMatch, typeFilter, categoryFilter,
+        startDate, endDate, locationFilter, sortField, sortDir,
+      });
+      params.set("page",  String(page));
+      params.set("limit", String(limit));
       const res = await fetch(`/api/inventory?${params}`);
       if (!res.ok) throw new Error("조회 실패");
       const json = await res.json();
@@ -181,17 +198,56 @@ export default function InventoryPage({
     } catch { setToast(t.common.networkError); setTimeout(() => setToast(""), 3000); }
   };
 
-  // ── CSV 내보내기 ──────────────────────────────────────
-  const handleExport = () => {
+  // ── 엑셀 내보내기 — 현재 페이지가 아니라 같은 조건의 전체 건 ─────────
+  const handleExport = async () => {
     if (items.length === 0) { setToast(t.inventory.noExportData); setTimeout(() => setToast(""), 3000); return; }
-    const filename = `${t.inventory.csvFilename}_${kstToday()}.xlsx`;
-    exportXLSX(t.inventory.csvHeaders, items.map(i => [
-      i.txNo || "", i.id, i.date, i.type, i.category, i.code, i.name,
-      i.qty, i.price, i.amount, i.currency, i.exchangeRateAtEntry ?? "",
-      i.location, i.partner, i.txReason ?? "", i.userName ?? "",
-      i.barcode, i.barcodeMemo ?? "", i.refTxNo ?? "", i.itemSpec ?? "",
-      i.memo, i.createdAt ?? "",
-    ]), filename, "재고관리");
+    try {
+      const params = buildInventoryParams({
+        search, searchField, exactMatch, typeFilter, categoryFilter,
+        startDate, endDate, locationFilter, sortField, sortDir,
+      });
+      params.set("all", "true");
+      const res = await fetch(`/api/inventory?${params}`);
+      if (!res.ok) throw new Error("조회 실패");
+      const rows: InventoryItem[] = (await res.json()).data ?? [];
+
+      // 화면처럼 USD 는 등록시 환율로 원화 환산 (환율 없으면 빈칸)
+      const krwAtEntry = (i: InventoryItem) =>
+        i.amount == null ? ""
+        : i.currency === "USD" ? (i.exchangeRateAtEntry ? Math.round(i.amount * i.exchangeRateAtEntry) : "")
+        : i.amount;
+      const h = t.inventory.csvHeaders;
+      // money: 직원(employee)에게는 화면처럼 감추는 금액 관련 열
+      const columns: (XlsxColumn<InventoryItem> & { money?: boolean })[] = [
+        { header: h.txNo,        value: i => i.txNo || "" },
+        { header: h.id,          value: i => i.id },
+        { header: h.date,        value: i => i.date },
+        { header: h.type,        value: i => i.type },
+        { header: h.category,    value: i => i.category },
+        { header: h.code,        value: i => i.code },
+        { header: h.name,        value: i => i.name },
+        { header: h.qty,         value: i => i.qty },
+        { header: h.price,       value: i => i.price,                      money: true },
+        { header: h.amount,      value: i => i.amount,                     money: true },
+        { header: h.currency,    value: i => i.currency,                   money: true },
+        { header: h.rateAtEntry, value: i => i.exchangeRateAtEntry ?? "",  money: true },
+        { header: h.krwAtEntry,  value: krwAtEntry,                        money: true },
+        { header: h.location,    value: i => i.location },
+        { header: h.partner,     value: i => i.partner },
+        { header: h.reason,      value: i => i.txReason ?? "" },
+        { header: h.user,        value: i => i.userName ?? "" },
+        { header: h.barcode,     value: i => i.barcode },
+        { header: h.barcodeMemo, value: i => i.barcodeMemo ?? "" },
+        { header: h.refTxNo,     value: i => i.refTxNo ?? "" },
+        { header: h.itemSpec,    value: i => i.itemSpec ?? "" },
+        { header: h.memo,        value: i => i.memo },
+        { header: h.createdAt,   value: i => i.createdAt ? formatKstDateTime(i.createdAt, { seconds: true }) : "" },
+      ];
+      exportXLSXSheets(
+        [buildSheet("재고관리", columns.filter(c => !(isEmployee && c.money)), rows)],
+        `${t.inventory.csvFilename}_${kstToday()}.xlsx`,
+      );
+    } catch { setToast(t.common.exportFail); setTimeout(() => setToast(""), 3000); }
   };
 
   const SortIcon = ({ field }: { field: string }) => {

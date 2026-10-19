@@ -7,7 +7,8 @@ import { useSession } from "next-auth/react";
 import DatePicker from "./DatePicker";
 import { TYPE_COLORS, CATEGORY_COLORS, formatPrice, formatQty, InventoryItem } from "@/lib/data";
 import { useT } from "@/lib/i18n";
-import { exportXLSX } from "@/lib/xlsxUtils";
+import { buildSheet, exportXLSXSheets } from "@/lib/xlsxUtils";
+import type { XlsxColumn } from "@/lib/xlsxUtils";
 import { kstToday } from "@/lib/kst";
 
 // 이번 달 1일 ~ 오늘 기본값 (KST)
@@ -71,7 +72,7 @@ export default function PeriodPage() {
     setLoading(true);
     setSearched(true);
     try {
-      const params = new URLSearchParams({ startDate, endDate, limit: "9999" });
+      const params = new URLSearchParams({ startDate, endDate, all: "true" });
       if (categoryFilter !== "전체") params.set("category", categoryFilter);
       if (typeFilter !== "전체") params.set("type", typeFilter);
       const res = await fetch(`/api/inventory?${params}`);
@@ -92,14 +93,6 @@ export default function PeriodPage() {
     if (currentRate === null) return;
     handleSearch();
   }, [startDate, endDate, categoryFilter, typeFilter, manualRate, currentRate]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleCSV = () => {
-    if (items.length === 0) { alert(t.inventory.noExportData); return; }
-    exportXLSX(t.period.csvHeaders, items.map(i => [
-      i.date, i.type, i.category, i.code, i.name,
-      i.qty, i.price, i.amount, i.partner, i.handler, i.barcode, i.memo,
-    ]), `${t.period.csvFilename}_${startDate}_${endDate}.xlsx`, "기간별조회");
-  };
 
   const summary = {
     입고: { count: 0, qty: 0, krwAmount: 0, usdAmount: 0 },
@@ -153,6 +146,65 @@ export default function PeriodPage() {
   const activeCats = CATEGORY_LIST.filter(cat =>
     TYPE_LIST.some(type => categoryBreakdown[cat][type].count > 0)
   );
+
+  // 화면 카드 ≈₩ 와 같은 환율 (수동 입력 > 현재 환율)
+  const summaryRate = Number(manualRate) > 0 ? Number(manualRate) : (currentRate ?? 1400);
+
+  // ── 엑셀: 상세내역 + 구분별요약(카드) + 품목군별요약(표). 화면의 표·카드를 바꾸면 같이 바꿀 것 ──
+  // money: 직원(employee)에게는 화면처럼 감추는 금액 관련 열
+  type PeriodColumn<T> = XlsxColumn<T> & { money?: boolean };
+  const visibleCols = <T,>(cols: PeriodColumn<T>[]) => cols.filter(c => !(isEmployee && c.money));
+
+  const handleCSV = () => {
+    if (items.length === 0) { alert(t.inventory.noExportData); return; }
+    const h = t.period.csvHeaders;
+    const sh = t.period.summaryHeaders;
+    const typeLabel = (type: string) => TYPE_LABEL_MAP[type] || type;
+
+    const detailCols: PeriodColumn<InventoryItem>[] = [
+      { header: h.date,        value: i => i.date },
+      { header: h.type,        value: i => i.type },
+      { header: h.category,    value: i => i.category },
+      { header: h.code,        value: i => i.code },
+      { header: h.name,        value: i => i.name },
+      { header: h.qty,         value: i => i.qty },
+      { header: h.price,       value: i => i.price,    money: true },
+      { header: h.amount,      value: i => i.amount,   money: true },
+      { header: h.currency,    value: i => i.currency, money: true },
+      { header: h.appliedRate, value: i => i.currency === "USD" ? getRate(i) : "", money: true },
+      { header: h.krw,         money: true,
+        value: i => i.amount == null ? "" : i.currency === "USD" ? Math.round(i.amount * getRate(i)) : i.amount },
+      { header: h.partner,     value: i => i.partner },
+      { header: h.user,        value: i => i.userName ?? "" },
+      { header: h.barcode,     value: i => i.barcode },
+      { header: h.memo,        value: i => i.memo },
+    ];
+
+    const typeCols: PeriodColumn<(typeof TYPE_LIST)[number]>[] = [
+      { header: sh.type,      value: type => typeLabel(type) },
+      { header: sh.count,     value: type => summary[type].count },
+      { header: sh.qty,       value: type => summary[type].qty },
+      { header: sh.krwAmount, value: type => summary[type].krwAmount, money: true },
+      { header: sh.usdAmount, value: type => summary[type].usdAmount, money: true },
+      { header: sh.krwTotal,  money: true,
+        value: type => Math.round(summary[type].krwAmount + summary[type].usdAmount * summaryRate) },
+    ];
+
+    const catCols: PeriodColumn<string>[] = [
+      { header: t.period.catCol, value: cat => cat },
+      ...TYPE_LIST.flatMap((type): PeriodColumn<string>[] => [
+        { header: `${typeLabel(type)} ${sh.count}`,     value: cat => categoryBreakdown[cat][type].count },
+        { header: `${typeLabel(type)} ${sh.qty}`,       value: cat => categoryBreakdown[cat][type].qty },
+        { header: `${typeLabel(type)} ${sh.krwAmount}`, value: cat => Math.round(categoryBreakdown[cat][type].amount), money: true },
+      ]),
+    ];
+
+    exportXLSXSheets([
+      buildSheet(t.period.sheetDetail,      visibleCols(detailCols), items),
+      buildSheet(t.period.sheetTypeSummary, visibleCols(typeCols),   [...TYPE_LIST]),
+      buildSheet(t.period.sheetCatSummary,  visibleCols(catCols),    activeCats),
+    ], `${t.period.csvFilename}_${startDate}_${endDate}.xlsx`);
+  };
 
   return (
     <div className="space-y-5">

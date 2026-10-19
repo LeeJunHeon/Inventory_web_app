@@ -3,6 +3,7 @@ import type { Messages } from "./ko";
 export const en: Messages = {
   common: {
     loading: "Loading...",
+    exportFail: "Excel export failed.",
     save: "Save",
     cancel: "Cancel",
     delete: "Delete",
@@ -126,7 +127,14 @@ export const en: Messages = {
     perPage: (n: number) => `${n} / page`,
     sum: "Sum",
     csvFilename: "inventory",
-    csvHeaders: ["Tx No.","ID","Date","Type","Category","Item Code","Item Name","Qty","Unit Price","Amount","Currency","Entry Rate","Location","Partner","Reason","Registrant","Barcode","Barcode Memo","Ref Tx No.","Item Spec","Memo","Created At"],
+    csvHeaders: {
+      txNo: "Tx No.", id: "ID", date: "Date", type: "Type", category: "Category",
+      code: "Item Code", name: "Item Name", qty: "Qty", price: "Unit Price", amount: "Amount",
+      currency: "Currency", rateAtEntry: "Entry Rate", krwAtEntry: "KRW (at entry)",
+      location: "Location", partner: "Partner", reason: "Reason", user: "Registrant",
+      barcode: "Barcode", barcodeMemo: "Barcode Memo", refTxNo: "Ref Tx No.", itemSpec: "Item Spec",
+      memo: "Memo", createdAt: "Created At",
+    },
   },
   period: {
     subtitle: "Search inbound/outbound records by date range",
@@ -143,7 +151,18 @@ export const en: Messages = {
     countUnit: "",
     qtyUnit: "",
     csvFilename: "period_report",
-    csvHeaders: ["Date","Type","Category","Item Code","Item Name","Qty","Unit Price","Amount","Partner","Handler","Barcode","Memo"],
+    csvHeaders: {
+      date: "Date", type: "Type", category: "Category", code: "Item Code", name: "Item Name",
+      qty: "Qty", price: "Unit Price", amount: "Amount", currency: "Currency", appliedRate: "Applied Rate",
+      krw: "KRW", partner: "Partner", user: "Registrant", barcode: "Barcode", memo: "Memo",
+    },
+    sheetDetail: "Details",
+    sheetTypeSummary: "By Type",
+    sheetCatSummary: "By Category",
+    summaryHeaders: {
+      type: "Type", count: "Count", qty: "Qty",
+      krwAmount: "KRW Amount", usdAmount: "USD Amount", krwTotal: "KRW Total",
+    },
   },
   tx: {
     usingRefLabel: "In-use record to dispose",
