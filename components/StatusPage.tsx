@@ -32,6 +32,8 @@ function getSupplyLevel(current: number, required: number, t: Messages) {
 }
 
 const CATS = ["웨이퍼", "타겟", "가스", "기자재/소모품"];
+/** 품목(item) 단위 표로 보여주는 품목군 — 타겟·ALD Canister 는 개체 단위 표 */
+const ITEM_SECTION_CATS = CATS.filter((c) => c !== "타겟");
 
 /** 품목 단위 상태(보유중/미보유/부족)와 개체 단위 상태(미사용/사용중/…)를 한 축으로 합친 필터 */
 export type StockFilter =
@@ -180,11 +182,10 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
   const matchAny = (vals: (string | null | undefined)[]) =>
     !search.trim() || vals.some(v => match(v));
 
-  // 품목(item) 단위 섹션은 개체 품목군을 포함하지 않는다 — 표의 성격이 다르다
-  const isUnitCategory = (c: string) => c === "타겟" || c === "ALD Canister";
-
+  // 품목 섹션이 있는 품목군만 — 개체 품목군과 화면에 섹션이 없는 품목군(ALD Precursor 등)을 빼야
+  // 상태 칩 숫자가 화면 행 수와 맞는다
   const filtered = items.filter((item) => {
-    if (isUnitCategory(item.category)) return false;
+    if (!ITEM_SECTION_CATS.includes(item.category)) return false;
     const matchSearch = matchAny([item.code, item.name, ...(item.barcodes ?? [])]);
     const matchCat    = selectedCategory === "전체" || item.category === selectedCategory;
     return matchSearch && matchCat;
