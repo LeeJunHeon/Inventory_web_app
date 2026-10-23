@@ -756,6 +756,7 @@ export const en: Messages = {
     portSaveBtn: "Save",
     portSearchPlaceholder: "Enter barcode (e.g. C-001)",
     portSaving: "Saving...",
+    portClearing: "Clearing...",
     portEmptySlot: "Empty",
     logTitle: (code: string) => `${code} measurement/refill history`,
     allLogsTitle: "All measurement/refill history",

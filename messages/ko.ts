@@ -754,6 +754,7 @@ export const ko = {
     portSaveBtn: "저장",
     portSearchPlaceholder: "바코드 입력 (예: C-001)",
     portSaving: "저장 중...",
+    portClearing: "비우는 중...",
     portEmptySlot: "미장착",
     logTitle: (code: string) => `${code} 측정/충진 이력`,
     allLogsTitle: "전체 측정/충진 이력",

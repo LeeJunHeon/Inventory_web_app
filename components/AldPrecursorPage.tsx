@@ -59,6 +59,9 @@ interface AldLogItem {
 
 const PAGE_LIMIT = 50;
 
+// 포트에 배정할 수 없는 Canister 상태 — 서버(PUT /api/ald/port-slots)도 같은 상태를 거절한다
+const UNASSIGNABLE_STATUSES = ["폐기", "판매완료"];
+
 export default function AldPrecursorPage() {
   const { t } = useT();
 
@@ -69,7 +72,8 @@ export default function AldPrecursorPage() {
   const [editingPort, setEditingPort] = useState<PortSlot | null>(null);
   const [allCanisters, setAllCanisters] = useState<CanisterInfo[]>([]);
   const [portSelectedCanister, setPortSelectedCanister] = useState<CanisterInfo | null>(null);
-  const [portSaving, setPortSaving] = useState(false);
+  const [portSaving, setPortSaving] = useState(false);     // 저장·비우기 중 (두 버튼 모두 비활성화)
+  const [portClearing, setPortClearing] = useState(false); // 그중 비우기 중 (버튼 문구용)
 
   // ─── 검색 ───
   const [searchType, setSearchType] = useState<"바코드" | "품목코드" | "물질명">("바코드");
@@ -252,20 +256,27 @@ export default function AldPrecursorPage() {
     finally { setPortSaving(false); }
   };
 
-  // 포트 비우기
-  const handlePortClear = () => {
+  // 포트 비우기 (서버에 저장 → 성공하면 서버 값을 다시 읽는다. 실패하면 모달을 닫지 않는다)
+  const handlePortClear = async () => {
     if (!editingPort) return;
-    setPortSelectedCanister(null);
-    const clearedSlot: PortSlot = {
-      ...editingPort,
-      canisterId: null,
-      canisterCode: null,
-      materialName: null,
-      remainPercent: null,
-    };
-    setAllPortSlots(prev => prev.map(p => p.id === editingPort.id ? clearedSlot : p));
-    setEditingPort(null);
-    showToast("포트를 비웠습니다.");
+    setPortSaving(true);
+    setPortClearing(true);
+    try {
+      const res = await fetch("/api/ald/port-slots", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slotId: editingPort.id, canisterId: null }),
+      });
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        showToast(e.error || "비우기 실패");
+        return;
+      }
+      await fetchPortSlots();
+      showToast("포트를 비웠습니다.");
+      setEditingPort(null);
+    } catch { showToast("비우기 실패"); }
+    finally { setPortSaving(false); setPortClearing(false); }
   };
 
   const SortIcon = ({ field }: { field: string }) => {
@@ -451,14 +462,20 @@ export default function AldPrecursorPage() {
             <div className="max-h-48 overflow-y-auto space-y-1 border border-gray-100 rounded-xl p-1">
               {allCanisters.length === 0 ? (
                 <p className="text-sm text-gray-400 text-center py-4">등록된 Canister가 없습니다</p>
-              ) : allCanisters.map((c) => (
+              ) : allCanisters.map((c) => {
+                // 폐기·판매완료는 목록에 보이되 선택할 수 없다
+                const unassignable = UNASSIGNABLE_STATUSES.includes(c.status);
+                return (
                 <button
                   key={c.id}
                   onClick={() => setPortSelectedCanister(c)}
+                  disabled={unassignable}
                   className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                    portSelectedCanister?.id === c.id
-                      ? "bg-blue-50 border border-blue-200"
-                      : "hover:bg-gray-50"
+                    unassignable
+                      ? "opacity-50"
+                      : portSelectedCanister?.id === c.id
+                        ? "bg-blue-50 border border-blue-200"
+                        : "hover:bg-gray-50"
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -475,23 +492,25 @@ export default function AldPrecursorPage() {
                     </div>
                   </div>
                 </button>
-              ))}
+                );
+              })}
             </div>
 
             {/* 버튼 */}
             <div className="flex gap-2">
               <button
                 onClick={handlePortClear}
-                className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50"
+                disabled={portSaving || editingPort.canisterId === null}
+                className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-60 disabled:hover:bg-transparent"
               >
-                {t.ald.portClearBtn}
+                {portClearing ? t.ald.portClearing : t.ald.portClearBtn}
               </button>
               <button
                 onClick={handlePortSave}
                 disabled={portSaving}
                 className="flex-1 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-semibold hover:bg-blue-600 disabled:opacity-60"
               >
-                {portSaving ? t.ald.portSaving : t.ald.portSaveBtn}
+                {portSaving && !portClearing ? t.ald.portSaving : t.ald.portSaveBtn}
               </button>
             </div>
           </div>

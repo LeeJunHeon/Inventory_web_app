@@ -5,6 +5,9 @@ import { requireAuth, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 
 export const dynamic = "force-dynamic";
 
+// 포트에 배정할 수 없는 Canister 상태 (TargetUnit.status). 배정하면 status 가 "사용중"으로 되살아나므로 막는다.
+const UNASSIGNABLE_STATUSES = ["폐기", "판매완료"];
+
 // GET /api/ald/port-slots
 // 전체 포트 현황 반환 (장착된 Canister 정보 포함)
 export async function GET() {
@@ -120,12 +123,19 @@ export async function PUT(request: NextRequest) {
           where: { id: canisterId },
           select: {
             category: true,
+            status:   true,
             barcodes: { where: { isActive: "Y" }, take: 1, select: { code: true } },
           },
         });
         if (!tu) throw new PortSlotError(404, "Canister 를 찾을 수 없습니다");
         // 화면(AldPrecursorPage)의 배정 후보는 /api/ald 의 ALD Canister 뿐이다
         if (tu.category !== "ald") throw new PortSlotError(400, "ALD Canister 만 포트에 배정할 수 있습니다");
+        // 폐기·판매완료 Canister 는 배정 불가. 이미 그 포트에 장착된 같은 Canister 를 다시 저장하는 경우도 거절한다
+        // (정상 흐름에서는 폐기 시 포트가 비워지지만 과거 데이터로 남아 있을 수 있고, 허용하면 아래에서 "사용중"으로 되살아난다).
+        // 그런 포트는 "비우기"로 정리한다.
+        if (UNASSIGNABLE_STATUSES.includes(tu.status)) {
+          throw new PortSlotError(400, "폐기·판매완료된 Canister 는 포트에 배정할 수 없습니다");
+        }
         code = tu.barcodes[0]?.code ?? null;
 
         // 같은 Canister가 다른 포트에 있으면 먼저 비우기 (같은 포트 재배정이면 자기 자신을 비웠다가 다시 채운다)
