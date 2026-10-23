@@ -14,6 +14,7 @@ const TABLE_LABEL: Record<string, string> = {
   chamber_slot: "챔버별 타겟 현황",
   user:         "관리자 설정",
   target_unit:  "타겟 관리",
+  target_photo: "타겟 사진",
 };
 
 const ACTION_LABEL: Record<string, string> = {
