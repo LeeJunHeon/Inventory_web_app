@@ -61,7 +61,7 @@ class PortSlotError extends Error {
 /** 양의 정수(숫자 또는 숫자 문자열)면 그 값, 아니면 null */
 function parsePositiveInt(v: unknown): number | null {
   const n = typeof v === "number" ? v
-    : typeof v === "string" && /^d+$/.test(v.trim()) ? Number(v.trim())
+    : typeof v === "string" && /^\d+$/.test(v.trim()) ? Number(v.trim())
     : NaN;
   return Number.isSafeInteger(n) && n > 0 ? n : null;
 }
