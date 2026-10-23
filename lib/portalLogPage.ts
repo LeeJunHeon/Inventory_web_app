@@ -9,6 +9,7 @@ const TABLE_PAGE = {
   barcode:      "barcode",
   user:         "admin",
   target_photo: "target", // 사진 첨부는 스퍼터 타겟만 허용(app/api/target-photos)
+  ald_port_slot: "ald",   // ALD 포트 배정/비우기(app/api/ald/port-slots)
 } satisfies Record<string, PageId>;
 
 /** target_unit / target_log 는 ALD·스퍼터가 같은 이름을 쓰므로 TargetUnit.category 로 정한다 */
@@ -34,8 +35,9 @@ export function pageForLog(log: PortalLogRef, category?: string | null): PageId 
     return undefined;
   }
   if (log.tableName === "chamber_slot") {
-    // ALD 포트 배정(app/api/ald/port-slots)도 "chamber_slot" 이름으로 남아 id 로는 구분할 수 없다.
-    // 그 기록은 detail 이 "포트 배정"/"포트 비우기"로 시작한다.
+    // 과거 ALD 포트 배정 기록은 "chamber_slot" 이름으로 남아 있어 id 로는 구분할 수 없다
+    // (지금은 "ald_port_slot" 으로 남긴다). 아직 이름을 옮기지 않은 과거 기록을 위해 남겨 둔다.
+    // 그 기록은 detail 이 "포트 배정"/"포트 비우기"로 시작한다(스퍼터 챔버 기록은 "[챔버명]" 으로 시작).
     const d = log.detail ?? "";
     return d.startsWith("포트 배정") || d.startsWith("포트 비우기") ? "ald" : "target";
   }

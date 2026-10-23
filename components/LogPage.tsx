@@ -51,6 +51,8 @@ const TABLE_COLORS: Record<string, string> = {
   chamber_slot: "bg-pink-100 text-pink-700",
   user:         "bg-indigo-100 text-indigo-700",
   target_unit:  "bg-yellow-100 text-yellow-700",
+  ald_port_slot: "bg-cyan-100 text-cyan-700",
+  target_photo: "bg-lime-100 text-lime-700",
 };
 
 function parseDiff(detail: string): Array<{ field: string; from: string; to: string }> | null {
@@ -80,6 +82,8 @@ export default function LogPage() {
     { key: "chamber_slot", label: t.logs.tblChamber },
     { key: "user",         label: t.logs.tblUser },
     { key: "target_unit",  label: t.logs.tblTargetUnit },
+    { key: "ald_port_slot", label: t.logs.tblAldPort },
+    { key: "target_photo", label: t.logs.tblPhoto },
   ];
 
   const [logs, setLogs]           = useState<LogEntry[]>([]);

@@ -319,6 +319,8 @@ export const en: Messages = {
     tblChamber: "Chamber Status",
     tblUser: "Admin",
     tblTargetUnit: "Target Mgmt",
+    tblAldPort: "ALD Port",
+    tblPhoto: "Target Photo",
     colTime: "Time",
     colWorker: "User",
     colTable: "Table",

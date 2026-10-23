@@ -317,6 +317,8 @@ export const ko = {
     tblChamber: "챔버별 타겟 현황",
     tblUser: "관리자 설정",
     tblTargetUnit: "타겟 관리",
+    tblAldPort: "ALD 포트 배정",
+    tblPhoto: "타겟 사진",
     colTime: "시각",
     colWorker: "작업자",
     colTable: "테이블",

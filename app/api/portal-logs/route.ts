@@ -15,6 +15,7 @@ const TABLE_LABEL: Record<string, string> = {
   user:         "관리자 설정",
   target_unit:  "타겟 관리",
   target_photo: "타겟 사진",
+  ald_port_slot: "ALD 포트 배정",
 };
 
 const ACTION_LABEL: Record<string, string> = {
