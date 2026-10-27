@@ -495,7 +495,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         }),
       });
       const data = await res.json();
-      if (!res.ok) { setBarcodeCreateError((data.error || t.common.saveFail) + (data.detail ? `\n${data.detail}` : "")); return; }
+      if (!res.ok) { setBarcodeCreateError(data.error || t.common.saveFail); return; }
       // 생성된 바코드를 자동으로 입력란에 채우고 조회
       setBarcodeInput(data.code);
       justCreatedBarcodeId.current = data.id;

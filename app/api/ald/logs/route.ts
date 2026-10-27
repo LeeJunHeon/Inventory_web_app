@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 import { formatKstDateTime } from "@/lib/kst";
+import { Prisma } from "@/app/generated/prisma/client";
+import { isPortAssignable, parsePositiveInt } from "@/lib/aldPortRules";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +69,21 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/** 측정 저장 때 지정한 포트에 이 Canister 를 배정할 수 있는지 확인. 안 되면 오류 응답, 되면 null */
+async function checkPortAssignment(slotId: number, canisterId: number): Promise<NextResponse | null> {
+  const [slot, tu] = await Promise.all([
+    prisma.aldPortSlot.findUnique({ where: { id: slotId }, select: { id: true } }),
+    prisma.targetUnit.findUnique({ where: { id: canisterId }, select: { status: true } }),
+  ]);
+  if (!slot) {
+    return NextResponse.json({ error: "포트를 찾을 수 없습니다" }, { status: 404 });
+  }
+  if (!isPortAssignable(tu?.status)) {
+    return NextResponse.json({ error: "폐기·판매완료된 Canister 는 포트에 배정할 수 없습니다" }, { status: 400 });
+  }
+  return null;
+}
+
 // POST /api/ald/logs — 측정/충진 기록 저장
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth();
@@ -84,10 +101,15 @@ export async function POST(request: NextRequest) {
       cumulativeCycle,
       reason,
     } = body;
-    const slotId = body.slotId ? Number(body.slotId) : null;
+    // slotId: 없으면(null·빈 값) 포트 배정 없이 측정만, 있으면 양의 정수만
+    const hasSlot = body.slotId !== null && body.slotId !== undefined && body.slotId !== "";
+    const slotId = hasSlot ? parsePositiveInt(body.slotId) : null;
 
     if (!canisterId || body.measureWeight == null) {
       return NextResponse.json({ error: "canisterId, measureWeight는 필수입니다." }, { status: 400 });
+    }
+    if (hasSlot && slotId === null) {
+      return NextResponse.json({ error: "slotId가 올바르지 않습니다." }, { status: 400 });
     }
 
     // Canister spec 조회 (tare, initialGross)
@@ -96,6 +118,12 @@ export async function POST(request: NextRequest) {
     });
     if (!spec) {
       return NextResponse.json({ error: "Canister 정보를 찾을 수 없습니다." }, { status: 404 });
+    }
+
+    // 포트를 지정했으면 측정 기록을 남기기 전에 확인 — 거절하면 아무것도 저장하지 않는다
+    if (slotId !== null) {
+      const portCheck = await checkPortAssignment(slotId, Number(canisterId));
+      if (portCheck) return portCheck;
     }
 
     const measure     = Number(body.measureWeight);
@@ -186,7 +214,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ id: saved.id, message: "저장되었습니다." }, { status: 201 });
   } catch (error) {
+    // 확인 뒤 저장 전에 포트가 지워졌으면 update 가 P2025 → 롤백
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      return NextResponse.json({ error: "포트를 찾을 수 없습니다" }, { status: 404 });
+    }
     console.error("POST /api/ald/logs error:", error);
-    return NextResponse.json({ error: "저장 실패", detail: String(error) }, { status: 500 });
+    return NextResponse.json({ error: "저장 실패" }, { status: 500 });
   }
 }

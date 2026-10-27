@@ -13,6 +13,7 @@ import { buildSheet, exportXLSXSheets } from "@/lib/xlsxUtils";
 import type { XlsxColumn } from "@/lib/xlsxUtils";
 import { kstToday } from "@/lib/kst";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
+import { isPortAssignable } from "@/lib/aldPortRules";
 
 interface PortSlot {
   id: number;
@@ -59,9 +60,6 @@ interface AldLogItem {
 
 const PAGE_LIMIT = 50;
 
-// 포트에 배정할 수 없는 Canister 상태 — 서버(PUT /api/ald/port-slots)도 같은 상태를 거절한다
-const UNASSIGNABLE_STATUSES = ["폐기", "판매완료"];
-
 export default function AldPrecursorPage() {
   const { t } = useT();
 
@@ -104,6 +102,8 @@ export default function AldPrecursorPage() {
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
   const [weightError, setWeightError] = useState("");
+  // 선택한 Canister 가 폐기·판매완료면 측정 폼의 포트 선택을 막는다 (측정 저장은 가능, 서버도 같은 규칙으로 거절)
+  const measurePortAllowed = isPortAssignable(selectedCanister?.status);
 
   // ─── UX ───
   const [toast, setToast] = useState("");
@@ -212,8 +212,8 @@ export default function AldPrecursorPage() {
           materialName:        selectedCanister.materialName,
           measureWeight:       parseFloat(measureWeight),
           consumptionPerCycle: consumptionPerCycle ? parseFloat(consumptionPerCycle) : null,
-          locationId:          locationId || null,
-          slotId:              slotId || null,
+          locationId:          measurePortAllowed ? (locationId || null) : null,
+          slotId:              measurePortAllowed ? (slotId || null) : null,
           cumulativeCycle:     cumulativeCycle ? parseInt(cumulativeCycle) : null,
           reason,
         }),
@@ -464,7 +464,7 @@ export default function AldPrecursorPage() {
                 <p className="text-sm text-gray-400 text-center py-4">등록된 Canister가 없습니다</p>
               ) : allCanisters.map((c) => {
                 // 폐기·판매완료는 목록에 보이되 선택할 수 없다
-                const unassignable = UNASSIGNABLE_STATUSES.includes(c.status);
+                const unassignable = !isPortAssignable(c.status);
                 return (
                 <button
                   key={c.id}
@@ -748,7 +748,8 @@ export default function AldPrecursorPage() {
                   <span className="inline-flex items-center gap-1"><MapPin size={12} /> {t.ald.locationLabel}</span>
                 </label>
                 <select
-                  value={slotId}
+                  value={measurePortAllowed ? slotId : ""}
+                  disabled={!measurePortAllowed}
                   onChange={(e) => {
                     const sid = Number(e.target.value) || "";
                     setSlotId(sid);
@@ -761,7 +762,7 @@ export default function AldPrecursorPage() {
                       setLocationId("");
                     }
                   }}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none disabled:bg-gray-50 disabled:text-gray-400"
                 >
                   <option value="">선택</option>
                   {locationOptions.map(loc => (
@@ -780,6 +781,9 @@ export default function AldPrecursorPage() {
                     </optgroup>
                   ))}
                 </select>
+                {!measurePortAllowed && (
+                  <p className="mt-1 text-xs text-gray-400">{t.ald.portUnassignableHint}</p>
+                )}
               </div>
               <div>
                 <label className="block text-xs text-gray-400 mb-1">

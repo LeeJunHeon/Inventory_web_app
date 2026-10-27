@@ -757,6 +757,7 @@ export const en: Messages = {
     portSearchPlaceholder: "Enter barcode (e.g. C-001)",
     portSaving: "Saving...",
     portClearing: "Clearing...",
+    portUnassignableHint: "Discarded or sold canisters can't be assigned to a port (the measurement is still saved)",
     portEmptySlot: "Empty",
     logTitle: (code: string) => `${code} measurement/refill history`,
     allLogsTitle: "All measurement/refill history",

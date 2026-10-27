@@ -98,6 +98,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("POST /api/barcodes/link-to-inbound error:", error);
-    return NextResponse.json({ error: "바코드 사후 연결 실패", detail: String(error) }, { status: 500 });
+    return NextResponse.json({ error: "바코드 사후 연결 실패" }, { status: 500 });
   }
 }

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/auth-helpers";
+import { Prisma } from "@/app/generated/prisma/client";
+import { isPortAssignable, parsePositiveInt } from "@/lib/aldPortRules";
 
 function safeStringEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
@@ -36,6 +38,21 @@ async function requireWriteAuth(request: Request): Promise<WriteAuthResult> {
     return { ok: false, response: NextResponse.json({ error: "행위자를 찾을 수 없거나 비활성 사용자입니다." }, { status: 403 }) };
   }
   return { ok: true, actingUserId: user.id };
+}
+
+/** 측정 저장 때 지정한 포트에 이 Canister 를 배정할 수 있는지 확인. 안 되면 오류 응답, 되면 null */
+async function checkPortAssignment(slotId: number, canisterId: number): Promise<NextResponse | null> {
+  const [slot, tu] = await Promise.all([
+    prisma.aldPortSlot.findUnique({ where: { id: slotId }, select: { id: true } }),
+    prisma.targetUnit.findUnique({ where: { id: canisterId }, select: { status: true } }),
+  ]);
+  if (!slot) {
+    return NextResponse.json({ error: "포트를 찾을 수 없습니다" }, { status: 404 });
+  }
+  if (!isPortAssignable(tu?.status)) {
+    return NextResponse.json({ error: "폐기·판매완료된 Canister 는 포트에 배정할 수 없습니다" }, { status: 400 });
+  }
+  return null;
 }
 
 // POST /api/internal/ald-log — 챗봇용 ALD 캐니스터 "측정" 기록 (토큰 + acting-user 인증)
@@ -109,8 +126,20 @@ export async function POST(request: NextRequest) {
     const estimatedRemainCycle = (curCycle && measure > 0 && initialPure > measure)
       ? Math.round(measure * curCycle / (initialPure - measure)) : null;
 
-    const slotId = body.slotId ? Number(body.slotId) : null;
+    // slotId: 없으면(null·빈 값) 포트 배정 없이 측정만, 있으면 양의 정수만
+    const hasSlot = body.slotId !== null && body.slotId !== undefined && body.slotId !== "";
+    const slotId = hasSlot ? parsePositiveInt(body.slotId) : null;
+    if (hasSlot && slotId === null) {
+      return NextResponse.json({ error: "slotId가 올바르지 않습니다." }, { status: 400 });
+    }
     const locationId = body.locationId ? Number(body.locationId) : null;
+
+    // 포트를 지정했으면 측정 기록을 남기기 전에 확인 — 거절하면 아무것도 저장하지 않는다
+    // (폐기는 바코드 비활성화로 위에서 막히지만, 판매완료는 바코드가 살아 있어 여기서 막는다)
+    if (slotId !== null) {
+      const portCheck = await checkPortAssignment(slotId, canisterId);
+      if (portCheck) return portCheck;
+    }
 
     const saved = await prisma.$transaction(async (tx) => {
       // target_log 저장
@@ -170,7 +199,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ id: saved.id, canisterId, message: "측정이 기록되었습니다." }, { status: 201 });
   } catch (error) {
+    // 확인 뒤 저장 전에 포트가 지워졌으면 update 가 P2025 → 롤백
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      return NextResponse.json({ error: "포트를 찾을 수 없습니다" }, { status: 404 });
+    }
     console.error("POST /api/internal/ald-log error:", error);
-    return NextResponse.json({ error: "측정 기록 실패", detail: String(error) }, { status: 500 });
+    return NextResponse.json({ error: "측정 기록 실패" }, { status: 500 });
   }
 }

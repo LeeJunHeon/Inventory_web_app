@@ -755,6 +755,7 @@ export const ko = {
     portSearchPlaceholder: "바코드 입력 (예: C-001)",
     portSaving: "저장 중...",
     portClearing: "비우는 중...",
+    portUnassignableHint: "폐기·판매완료된 Canister 는 포트를 지정할 수 없습니다 (측정은 저장됩니다)",
     portEmptySlot: "미장착",
     logTitle: (code: string) => `${code} 측정/충진 이력`,
     allLogsTitle: "전체 측정/충진 이력",

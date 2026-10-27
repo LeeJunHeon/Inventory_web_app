@@ -255,6 +255,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ id: log.id, targetUnitId, message: "측정이 기록되었습니다." }, { status: 201 });
   } catch (error) {
     console.error("POST /api/internal/target-log error:", error);
-    return NextResponse.json({ error: "측정 기록 실패", detail: String(error) }, { status: 500 });
+    return NextResponse.json({ error: "측정 기록 실패" }, { status: 500 });
   }
 }
