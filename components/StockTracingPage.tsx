@@ -10,7 +10,6 @@ import { STOCK_PLUS_TYPES, MOVE_IN, MOVE_OUT } from "@/lib/txTypeConstants";
 import { buildSheet, exportXLSXSheets } from "@/lib/xlsxUtils";
 import type { XlsxColumn } from "@/lib/xlsxUtils";
 import { kstToday } from "@/lib/kst";
-import { ORIENTATION_MISSING_MARK } from "@/lib/waferSpec";
 
 interface BarcodeInfo  { id: number; code: string; isActive: string; }
 interface TxCount      { inbound: number; outbound: number; disburse: number; using?: number; disposal?: number; moveIn?: number; moveOut?: number; }
@@ -209,7 +208,7 @@ export default function StockTracingPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-900 truncate">{item.itemName}</p>
                   {item.specSummary && (
-                    <p className={`text-[11px] mt-0.5 ${item.specSummary.startsWith(ORIENTATION_MISSING_MARK) ? "text-rose-600 font-semibold" : "text-violet-500"}`}>
+                    <p className="text-[11px] mt-0.5 text-gray-400">
                       {item.specSummary}
                     </p>
                   )}

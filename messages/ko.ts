@@ -250,7 +250,7 @@ export const ko = {
     waferDopant: "도펀트",
     waferGrade: "등급",
     waferOxidation: "산화막",
-    waferInboundBlocked: "방향이 입력되지 않은 품목은 입고할 수 없습니다. 품목관리에서 방향을 먼저 입력하세요.",
+    waferInboundBlocked: "방향이 없어 입고할 수 없습니다 · 품목관리에서 입력하세요",
     itemSearchSpecPlaceholder: "품목코드, 품목명 또는 스펙 검색",
     entryRate: "등록 당시 환율",
     editSave: "수정 저장",

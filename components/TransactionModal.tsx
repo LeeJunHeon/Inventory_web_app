@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { X, List, Loader2, Plus, Camera, Printer } from "lucide-react";
+import { X, List, Loader2, Plus, Camera, Printer, AlertCircle } from "lucide-react";
 import { TYPE_COLORS, CATEGORY_COLORS } from "@/lib/data";
 import InboundSelectModal, { type InboundTx } from "./InboundSelectModal";
 
@@ -1260,7 +1260,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                               <span className="font-medium text-gray-900">{opt.name}</span>
                               <span className="ml-2 text-xs text-gray-400 font-mono">{opt.code}</span>
                               {opt.specSummary && (
-                                <p className={`text-[11px] mt-0.5 ${hasOrientation(opt.waferSpec) ? "text-violet-500" : "text-rose-600 font-semibold"}`}>
+                                <p className="text-[11px] mt-0.5 text-gray-400">
                                   {opt.specSummary}
                                 </p>
                               )}
@@ -1295,31 +1295,24 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
             <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
               <p className="text-xs font-semibold text-blue-700 mb-2">{t.tx.waferSpecTitle}</p>
               {waferSpec ? (
-                <div className="space-y-1.5">
-                  {/* 방향을 첫 줄에 강조 */}
-                  <p className="text-sm">
-                    <span className="text-blue-400 text-xs">{waferLabels.orientation}: </span>
-                    {hasOrientation(waferSpec)
-                      ? <span className="font-bold text-blue-900">{waferSpec.orientation}</span>
-                      : <span className="font-bold text-rose-600">{t.items.orientationMissing}</span>}
-                  </p>
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-blue-800">
-                    {WAFER_SPEC_KEYS.filter(key => key !== "orientation").map(key => (
-                      <span key={key}>
-                        <span className="text-blue-400">{waferLabels[key]}: </span>
-                        {key === "diameterInch"
+                <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-blue-800">
+                  {WAFER_SPEC_KEYS.map(key => (
+                    <span key={key}>
+                      <span className="text-blue-400">{waferLabels[key]}: </span>
+                      {key === "orientation" && !hasOrientation(waferSpec)
+                        ? <span className="text-rose-600">{t.items.orientationMissing}</span>
+                        : key === "diameterInch"
                           ? (waferSpec.diameterInch ? `${waferSpec.diameterInch}"` : "-")
                           : (waferSpec[key] || "-")}
-                      </span>
-                    ))}
-                  </div>
+                    </span>
+                  ))}
                 </div>
               ) : (
                 <p className="text-xs text-blue-400">{t.tx.noSpec}</p>
               )}
               {waferInboundBlocked && (
-                <p className="mt-2 text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
-                  {t.tx.waferInboundBlocked}
+                <p className="mt-2 flex items-center gap-1 text-xs text-rose-600">
+                  <AlertCircle size={13} className="shrink-0" />{t.tx.waferInboundBlocked}
                 </p>
               )}
             </div>

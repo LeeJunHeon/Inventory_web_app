@@ -12,7 +12,6 @@ import { useT } from "@/lib/i18n";
 import { buildSheet, exportXLSXSheets } from "@/lib/xlsxUtils";
 import type { XlsxColumn } from "@/lib/xlsxUtils";
 import { formatKstDateTime, kstToday } from "@/lib/kst";
-import { ORIENTATION_MISSING_MARK } from "@/lib/waferSpec";
 
 interface LocationOption { id: number; name: string; }
 interface BlockedDeleteInfo {
@@ -452,7 +451,7 @@ export default function InventoryPage({
                         </p>
                         <p className="text-xs text-gray-400">{item.code}</p>
                         {item.itemSpecShort && (
-                          <p className={`text-[11px] ${item.itemSpecShort.startsWith(ORIENTATION_MISSING_MARK) ? "text-rose-600 font-semibold" : "text-violet-500"}`}>
+                          <p className="text-[11px] text-gray-400">
                             {item.itemSpecShort}
                           </p>
                         )}
@@ -572,7 +571,7 @@ export default function InventoryPage({
                     {item.barcode && <span className="text-xs font-mono text-gray-400">· {item.barcode}</span>}
                   </div>
                   {item.itemSpecShort && (
-                    <p className={`text-[11px] mt-0.5 ${item.itemSpecShort.startsWith(ORIENTATION_MISSING_MARK) ? "text-rose-600 font-semibold" : "text-violet-500"}`}>
+                    <p className="text-[11px] mt-0.5 text-gray-400">
                       {item.itemSpecShort}
                     </p>
                   )}

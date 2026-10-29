@@ -487,10 +487,10 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
                             <td className="px-5 py-3 text-sm font-medium text-gray-900">{item.name}</td>
                             <td className="px-5 py-3 text-xs font-mono text-gray-400">{item.barcodes?.join(", ") || "-"}</td>
                             {cat === "웨이퍼" && <>
-                              <td className="px-5 py-3 text-sm text-gray-700 whitespace-nowrap">
+                              <td className="px-5 py-3 text-sm text-gray-500 whitespace-nowrap">
                                 {hasOrientation(item.waferSpec)
                                   ? item.waferSpec?.orientation
-                                  : <span className="text-xs font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">{t.items.orientationMissing}</span>}
+                                  : <span className="text-gray-400">-</span>}
                               </td>
                               <td className="px-5 py-3 text-xs text-gray-500">{formatWaferSpecSummary(item.waferSpec, { labeled: false, omitOrientation: true }) || "-"}</td>
                             </>}
@@ -553,7 +553,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
                             <p className="text-sm font-semibold text-gray-900">{item.name}</p>
                             <p className="text-xs text-gray-400">{item.code}</p>
                             {item.specSummary && (
-                              <p className={`text-[11px] mt-0.5 ${hasOrientation(item.waferSpec) ? "text-violet-500" : "text-rose-600 font-semibold"}`}>{item.specSummary}</p>
+                              <p className="text-[11px] mt-0.5 text-gray-400">{item.specSummary}</p>
                             )}
                             {item.barcodes && item.barcodes.length > 0 && (
                               <p className="text-xs text-gray-400 font-mono mt-0.5">{item.barcodes.join(", ")}</p>

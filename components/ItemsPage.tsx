@@ -476,7 +476,7 @@ export default function ItemsPage() {
                     {catFilter === WAFER_CATEGORY && WAFER_SPEC_KEYS.map(key => (
                       <td key={key} className="px-5 py-3 text-sm text-gray-600 whitespace-nowrap">
                         {key === "orientation" && !hasOrientation(item.waferSpec)
-                          ? <span className="text-xs font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">{t.items.orientationMissing}</span>
+                          ? <span className="text-xs text-rose-600">{t.items.orientationMissing}</span>
                           : key === "diameterInch"
                             ? (item.waferSpec?.diameterInch ? `${item.waferSpec.diameterInch}"` : "-")
                             : (item.waferSpec?.[key] || "-")}
@@ -519,9 +519,14 @@ export default function ItemsPage() {
                 </div>
                 <p className="text-sm font-medium text-gray-900">{item.name}</p>
                 <p className="text-xs text-gray-400">{[item.unit, item.note].filter(Boolean).join(" · ") || "-"}</p>
-                {item.category === WAFER_CATEGORY && item.specSummary && (
-                  <p className={`text-[11px] ${hasOrientation(item.waferSpec) ? "text-violet-500" : "text-rose-600 font-semibold"}`}>
+                {item.category === WAFER_CATEGORY && (item.specSummary || !hasOrientation(item.waferSpec)) && (
+                  <p className="text-[11px] text-gray-400">
                     {item.specSummary}
+                    {!hasOrientation(item.waferSpec) && (
+                      <span className="text-rose-600">
+                        {item.specSummary ? " · " : ""}{t.tx.waferOrient} {t.items.orientationMissing}
+                      </span>
+                    )}
                   </p>
                 )}
                 {catFilter === "타겟" && (

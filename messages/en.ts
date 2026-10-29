@@ -252,7 +252,7 @@ export const en: Messages = {
     waferDopant: "Dopant",
     waferGrade: "Grade",
     waferOxidation: "Oxide",
-    waferInboundBlocked: "Items without an orientation cannot be received. Enter the orientation in Item Management first.",
+    waferInboundBlocked: "Cannot receive without orientation · enter it in Item Management",
     itemSearchSpecPlaceholder: "Search item code, name or spec",
     entryRate: "Rate at entry",
     editSave: "Save Changes",
