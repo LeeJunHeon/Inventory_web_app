@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 import { formatItemDetail, itemHeader } from "@/lib/logDetail";
+import { WAFER_CATEGORY, pickWaferSpec, formatWaferSpecSummary, diffWaferSpec } from "@/lib/waferSpec";
+import { validateWaferSpecInput, waferSpecSearchWhere } from "@/lib/waferSpecServer";
+import type { WaferSpecData } from "@/lib/waferSpecServer";
 
 // 품목코드에서 타겟 스펙 파생 (파싱 실패 시 안전 기본값)
 function parseTargetSpecFromCode(code: string) {
@@ -44,12 +47,13 @@ export async function GET(request: NextRequest) {
       where.OR = [
         { code: { contains: search, mode: "insensitive" } },
         { name: { contains: search, mode: "insensitive" } },
+        waferSpecSearchWhere(search, false),
       ];
     }
 
     const items = await prisma.item.findMany({
       where,
-      include: { category: true, targetSpec: true },
+      include: { category: true, targetSpec: true, waferSpec: true },
       orderBy: { code: "asc" },
     });
 
@@ -67,6 +71,10 @@ export async function GET(request: NextRequest) {
       copperThickness: item.targetSpec?.copperThickness != null ? Number(item.targetSpec.copperThickness) : null,
       consumeAlertG:   item.targetSpec?.consumeAlertG != null ? Number(item.targetSpec.consumeAlertG) : null,
       isActive:    item.isActive,
+      waferSpec:   pickWaferSpec(item.waferSpec),
+      specSummary: item.category.name === WAFER_CATEGORY
+        ? formatWaferSpecSummary(item.waferSpec, { labeled: false })
+        : null,
     })));
   } catch (error) {
     console.error("GET /api/items error:", error);
@@ -93,16 +101,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `품목코드 "${code}"가 이미 존재합니다.` }, { status: 409 });
     }
 
-    const item = await prisma.item.create({
-      data: {
-        code:        code.trim(),
-        name:        name.trim(),
-        categoryId:  Number(categoryId),
-        unit:        unit?.trim() || null,
-        minStockQty: Number(minStockQty) || 0,
-        note:        note?.trim() || null,
-      },
-      include: { category: true },
+    // 웨이퍼: 스펙(방향·직경 필수)을 먼저 검증 — 실패하면 아무것도 만들지 않는다
+    const category = await prisma.itemCategory.findUnique({
+      where: { id: Number(categoryId) }, select: { name: true },
+    });
+    let waferData: WaferSpecData | null = null;
+    if (category?.name === WAFER_CATEGORY) {
+      const v = validateWaferSpecInput(body.waferSpec, { itemCode: code.trim(), before: null });
+      if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 });
+      waferData = v.data;
+    }
+
+    const item = await prisma.$transaction(async (tx) => {
+      const created = await tx.item.create({
+        data: {
+          code:        code.trim(),
+          name:        name.trim(),
+          categoryId:  Number(categoryId),
+          unit:        unit?.trim() || null,
+          minStockQty: Number(minStockQty) || 0,
+          note:        note?.trim() || null,
+        },
+        include: { category: true },
+      });
+      if (waferData) {
+        await tx.waferSpec.create({ data: { itemId: created.id, ...waferData } });
+      }
+      return created;
     });
 
     if (item.category.name === "타겟") {
@@ -119,7 +144,11 @@ export async function POST(request: NextRequest) {
     }
 
     const sessionUserId = await getSessionUserId();
-    await logActivity(sessionUserId, "CREATE", "item", item.id, formatItemDetail(item));
+    const specDetail = waferData ? formatWaferSpecSummary(waferData, { labeled: true }) : null;
+    await logActivity(
+      sessionUserId, "CREATE", "item", item.id,
+      formatItemDetail(item) + (specDetail ? ` | 스펙: ${specDetail}` : "")
+    );
 
     return NextResponse.json({
       id: item.id, code: item.code, name: item.name,
@@ -149,19 +178,51 @@ export async function PUT(request: NextRequest) {
 
     const beforeItem = await prisma.item.findUnique({
       where: { id: Number(id) },
-      include: { category: true },
+      include: { category: true, waferSpec: true },
     });
 
-    const item = await prisma.item.update({
-      where: { id: Number(id) },
-      data: {
-        ...(name        !== undefined && { name:        name.trim() }),
-        ...(categoryId  !== undefined && { categoryId:  Number(categoryId) }),
-        ...(unit        !== undefined && { unit:        unit?.trim() || null }),
-        ...(minStockQty !== undefined && { minStockQty: Number(minStockQty) }),
-        ...(note        !== undefined && { note:        note?.trim() || null }),
-      },
-      include: { category: true },
+    // 웨이퍼 스펙 — 검증과 "과거 기록 반영" 확인은 어떤 쓰기보다 먼저 한다
+    const waferSpecBefore = pickWaferSpec(beforeItem?.waferSpec);
+    let waferData: WaferSpecData | null = null;
+    let specChanges: string[] = [];
+    if (beforeItem?.category.name === WAFER_CATEGORY && body.waferSpec !== undefined) {
+      const v = validateWaferSpecInput(body.waferSpec, { itemCode: beforeItem.code, before: waferSpecBefore });
+      if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 });
+      specChanges = diffWaferSpec(waferSpecBefore, v.data);
+      if (specChanges.length > 0) {
+        waferData = v.data;
+        if (body.confirmSpecChange !== true) {
+          const txCount = await prisma.inventoryTx.count({ where: { itemId: beforeItem.id } });
+          if (txCount > 0) {
+            return NextResponse.json({
+              error: "스펙 변경 확인이 필요합니다.",
+              needsConfirm: "specChange", txCount, changes: specChanges,
+            }, { status: 409 });
+          }
+        }
+      }
+    }
+
+    const item = await prisma.$transaction(async (tx) => {
+      const updated = await tx.item.update({
+        where: { id: Number(id) },
+        data: {
+          ...(name        !== undefined && { name:        name.trim() }),
+          ...(categoryId  !== undefined && { categoryId:  Number(categoryId) }),
+          ...(unit        !== undefined && { unit:        unit?.trim() || null }),
+          ...(minStockQty !== undefined && { minStockQty: Number(minStockQty) }),
+          ...(note        !== undefined && { note:        note?.trim() || null }),
+        },
+        include: { category: true },
+      });
+      if (waferData) {
+        await tx.waferSpec.upsert({
+          where:  { itemId: updated.id },
+          update: waferData,
+          create: { itemId: updated.id, ...waferData },
+        });
+      }
+      return updated;
     });
 
     if (item.category.name === "타겟" &&
@@ -191,11 +252,13 @@ export async function PUT(request: NextRequest) {
       if (unit !== undefined && (beforeItem.unit ?? "") !== (unit ?? "")) ch.push(`단위: ${beforeItem.unit || "-"} → ${unit || "-"}`);
       if (note !== undefined && (beforeItem.note ?? "") !== (note ?? "")) ch.push(`비고: ${beforeItem.note || "-"} → ${note || "-"}`);
     }
+    if (waferData) ch.push(...specChanges);
     if (ch.length > 0 && beforeItem) {
       const sessionUserId = await getSessionUserId();
       await logActivity(
         sessionUserId, "UPDATE", "item", Number(id),
-        `${itemHeader(beforeItem)} ${ch.join(" | ")}`
+        `${itemHeader(beforeItem)} ${ch.join(" | ")}`,
+        waferData ? { waferSpecBefore } : undefined
       );
     }
 
@@ -232,12 +295,19 @@ export async function DELETE(request: NextRequest) {
     try {
       const before = await prisma.item.findUnique({
         where: { id: Number(id) },
-        include: { category: true },
+        include: { category: true, waferSpec: true },
       });
-      if (before) deleteDetail = formatItemDetail(before);
+      if (before) {
+        const specDetail = formatWaferSpecSummary(before.waferSpec, { labeled: true });
+        deleteDetail = formatItemDetail(before) + (specDetail ? ` | 스펙: ${specDetail}` : "");
+      }
     } catch { deleteDetail = undefined; }
 
-    await prisma.item.delete({ where: { id: Number(id) } });
+    // DB FK 가 CASCADE 가 아니어도 안전하도록 스펙 행을 같은 트랜잭션에서 먼저 지운다
+    await prisma.$transaction([
+      prisma.waferSpec.deleteMany({ where: { itemId: Number(id) } }),
+      prisma.item.delete({ where: { id: Number(id) } }),
+    ]);
 
     const sessionUserId = await getSessionUserId();
     await logActivity(sessionUserId, "DELETE", "item", Number(id), deleteDetail);

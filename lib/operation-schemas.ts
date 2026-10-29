@@ -68,12 +68,16 @@ export const OPERATION_SCHEMAS: OperationSchema[] = [
       { name: "unit",        label: "단위",     type: "text",   required: false },
       { name: "minStockQty", label: "최소재고", type: "number", required: false },
       { name: "note",        label: "비고",     type: "text",   required: false },
+      { name: "orientation", label: "방향",     type: "text",   required: false,
+        validation: "분류가 웨이퍼일 때만 필수. 예: <100>, <111>, 해당 없음. 웨이퍼가 아니면 비워둔다." },
+      { name: "diameterInch", label: "직경(inch)", type: "number", required: false,
+        validation: "웨이퍼일 때만. 비우면 품목코드(W-4-…)에서 자동으로 채운다." },
     ],
     steps: [
-      { api: "POST /api/internal/items", body: ["code", "name", "categoryId", "unit", "minStockQty", "note"] },
+      { api: "POST /api/internal/items", body: ["code", "name", "categoryId", "unit", "minStockQty", "note", "orientation", "diameterInch"] },
     ],
     cardTitle: "품목 등록 확인",
-    cardShow: ["code", "name", "categoryId", "unit", "minStockQty", "note"],
+    cardShow: ["code", "name", "categoryId", "unit", "minStockQty", "note", "orientation", "diameterInch"],
   },
   {
     id: "inventory_inbound",

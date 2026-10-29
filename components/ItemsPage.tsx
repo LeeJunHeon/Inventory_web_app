@@ -7,18 +7,33 @@ import { useT } from "@/lib/i18n";
 import { buildSheet, exportXLSXSheets } from "@/lib/xlsxUtils";
 import type { XlsxColumn } from "@/lib/xlsxUtils";
 import { kstToday } from "@/lib/kst";
+import SpecSelect from "@/components/SpecSelect";
+import {
+  WAFER_CATEGORY, WAFER_SPEC_KEYS, WAFER_SPEC_LABELS, WAFER_SPEC_DEFAULT_OPTIONS,
+  parseDiameterFromCode, hasOrientation, waferSpecLabelsT,
+} from "@/lib/waferSpec";
+import type { WaferSpecKey, WaferSpecValues } from "@/lib/waferSpec";
 
 interface ItemOption {
   id: number; code: string; name: string;
   category: string; categoryId: number;
   unit: string | null; note: string | null; isActive: boolean; minStockQty?: number;
   purity?: number | null; hasCopper?: string | null; copperThickness?: number | null; consumeAlertG?: number | null;
+  waferSpec?: WaferSpecValues | null; specSummary?: string | null;
 }
 interface CategoryOption { id: number; name: string; codePrefix: string | null; parentId: number | null; }
 
 const CATS = ["전체", "웨이퍼", "타겟", "ALD", "가스", "기자재/소모품"];
 
 const EMPTY_FORM = { code: "", name: "", categoryId: "", unit: "", note: "", purity: "", hasCopper: "", copperThickness: "", consumeAlertG: "" };
+
+type WaferForm = Record<WaferSpecKey, string>;
+const EMPTY_WAFER_FORM: WaferForm = {
+  orientation: "", diameterInch: "", waferType: "", dopant: "", grade: "",
+  thicknessNote: "", resistivity: "", surface: "", oxidation: "",
+};
+/** 선택지 없이 자유 입력하는 칸 */
+const WAFER_FREE_KEYS: WaferSpecKey[] = ["thicknessNote", "resistivity"];
 
 export default function ItemsPage() {
   const { t } = useT();
@@ -46,6 +61,10 @@ export default function ItemsPage() {
         { header: "Copper",        value: (item: ItemOption) => item.hasCopper === "Y" ? "있음" : item.hasCopper === "N" ? "없음" : "-" },
         { header: "Cu 두께(inch)", value: (item: ItemOption) => item.copperThickness ?? "-" },
       ] : []),
+      ...(catFilter === WAFER_CATEGORY ? WAFER_SPEC_KEYS.map(key => ({
+        header: key === "diameterInch" ? `${WAFER_SPEC_LABELS[key]}(inch)` : WAFER_SPEC_LABELS[key],
+        value: (item: ItemOption) => item.waferSpec?.[key] ?? "-",
+      })) : []),
       { header: "상태",     value: item => item.isActive ? t.barcode.active : t.barcode.inactive },
     ];
     exportXLSXSheets([buildSheet("품목", columns, items)], `품목관리_${kstToday()}.xlsx`);
@@ -60,8 +79,19 @@ export default function ItemsPage() {
   const [saving, setSaving]                 = useState(false);
   const [formError, setFormError]           = useState("");
   const [toast, setToast]                   = useState("");
+  const [waferForm, setWaferForm]           = useState<WaferForm>(EMPTY_WAFER_FORM);
+  const [specOptions, setSpecOptions]       = useState<Record<WaferSpecKey, string[]>>(WAFER_SPEC_DEFAULT_OPTIONS);
+  const waferLabels = waferSpecLabelsT(t);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 2500); };
+
+  // 웨이퍼 스펙 선택지 (DB 에 직접 입력된 값 포함). 실패하면 기본 선택지 유지
+  useEffect(() => {
+    fetch("/api/items/wafer-spec-options")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data && typeof data === "object") setSpecOptions({ ...WAFER_SPEC_DEFAULT_OPTIONS, ...data }); })
+      .catch(() => {});
+  }, []);
 
   // 품목군 목록 로드
   useEffect(() => {
@@ -101,6 +131,7 @@ export default function ItemsPage() {
   const openCreate = () => {
     setEditTarget(null);
     setForm(EMPTY_FORM);
+    setWaferForm(EMPTY_WAFER_FORM);
     setFormError("");
     setShowForm(true);
   };
@@ -117,6 +148,10 @@ export default function ItemsPage() {
       copperThickness: item.copperThickness?.toString() ?? "",
       consumeAlertG: item.consumeAlertG?.toString() ?? "",
     });
+    const ws = item.waferSpec;
+    setWaferForm(Object.fromEntries(
+      WAFER_SPEC_KEYS.map(key => [key, ws?.[key] != null ? String(ws[key]) : ""])
+    ) as WaferForm);
     setFormError("");
     setShowForm(true);
   };
@@ -126,26 +161,38 @@ export default function ItemsPage() {
     if (!form.code.trim() || !form.name.trim() || !form.categoryId) {
       setFormError(t.items.formRequired); return;
     }
+    if (isWafer && (!waferForm.orientation.trim() || !waferForm.diameterInch.trim())) {
+      setFormError(t.items.waferSpecRequired); return;
+    }
     setFormError(""); setSaving(true);
     try {
       const url    = editTarget ? `/api/items?id=${editTarget.id}` : "/api/items";
       const method = editTarget ? "PUT" : "POST";
-      const res    = await fetch(url, {
+      const payload = {
+        code:       form.code.trim(),
+        name:       form.name.trim(),
+        categoryId: Number(form.categoryId),
+        unit:       form.unit.trim() || null,
+        note:       form.note.trim() || null,
+        purity: form.purity,
+        hasCopper: form.hasCopper,
+        copperThickness: form.copperThickness,
+        consumeAlertG: form.consumeAlertG,
+        ...(isWafer && { waferSpec: waferForm }),
+      };
+      const send = (confirmSpecChange: boolean) => fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code:       form.code.trim(),
-          name:       form.name.trim(),
-          categoryId: Number(form.categoryId),
-          unit:       form.unit.trim() || null,
-          note:       form.note.trim() || null,
-          purity: form.purity,
-          hasCopper: form.hasCopper,
-          copperThickness: form.copperThickness,
-          consumeAlertG: form.consumeAlertG,
-        }),
+        body: JSON.stringify(confirmSpecChange ? { ...payload, confirmSpecChange: true } : payload),
       });
-      const data = await res.json();
+      let res  = await send(false);
+      let data = await res.json();
+      // 입출고 기록이 있는 품목의 스펙 변경 — 과거 기록 전체에 반영되므로 확인 후 재요청
+      if (res.status === 409 && data.needsConfirm === "specChange") {
+        if (!confirm(t.items.specChangeConfirm(Number(data.txCount) || 0, Array.isArray(data.changes) ? data.changes : []))) return;
+        res  = await send(true);
+        data = await res.json();
+      }
       if (!res.ok) { setFormError(data.error || t.common.saveFail); return; }
       showToast("✅ " + (editTarget ? t.items.editSuccess : t.items.createSuccess));
       setShowForm(false);
@@ -170,6 +217,17 @@ export default function ItemsPage() {
   const isTarget = form.categoryId
     ? categories.find(c => String(c.id) === String(form.categoryId))?.name === "타겟"
     : false;
+  const isWaferCategoryId = (categoryId: string) =>
+    !!categoryId && categories.find(c => String(c.id) === String(categoryId))?.name === WAFER_CATEGORY;
+  const isWafer = isWaferCategoryId(form.categoryId);
+
+  // 신규 등록: 직경 칸이 비어 있을 때만 품목코드(W-4-…)에서 직경을 채운다
+  const autofillDiameter = (code: string, categoryId: string) => {
+    if (editTarget || !isWaferCategoryId(categoryId)) return;
+    const d = parseDiameterFromCode(code);
+    if (d != null) setWaferForm(w => w.diameterInch ? w : { ...w, diameterInch: String(d) });
+  };
+  const specMissing = formError === t.items.waferSpecRequired;
 
   return (
     <div className="space-y-5">
@@ -209,7 +267,7 @@ export default function ItemsPage() {
             {/* 품목군 */}
             <div>
               <label className="block text-xs font-semibold text-blue-700 mb-1">{t.items.catLabel} <span className="text-rose-500">*</span></label>
-              <select value={form.categoryId} onChange={e => setForm(f => ({ ...f, categoryId: e.target.value }))}
+              <select value={form.categoryId} onChange={e => { setForm(f => ({ ...f, categoryId: e.target.value })); autofillDiameter(form.code, e.target.value); }}
                 disabled={!!editTarget}
                 className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none disabled:opacity-60">
                 <option value="">{t.items.selectPlaceholder}</option>
@@ -241,7 +299,7 @@ export default function ItemsPage() {
             {/* 품목코드 */}
             <div>
               <label className="block text-xs font-semibold text-blue-700 mb-1">{t.items.itemCodeLabel} <span className="text-rose-500">*</span></label>
-              <input value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))}
+              <input value={form.code} onChange={e => { setForm(f => ({ ...f, code: e.target.value })); autofillDiameter(e.target.value, form.categoryId); }}
                 readOnly={!!editTarget}
                 placeholder={t.items.itemCodePlaceholder}
                 className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400 read-only:opacity-60" />
@@ -308,6 +366,35 @@ export default function ItemsPage() {
                 </div>
               </>
             )}
+            {/* 웨이퍼 전용 스펙 — 방향·직경 필수 */}
+            {isWafer && (
+              <>
+                <div className="sm:col-span-2 lg:col-span-3 pt-1">
+                  <p className="text-xs font-bold text-blue-900">{t.items.waferSpecTitle}</p>
+                  <p className="text-[11px] text-blue-500 mt-0.5">{t.items.waferSpecHint}</p>
+                </div>
+                {WAFER_SPEC_KEYS.map(key => {
+                  const required = key === "orientation" || key === "diameterInch";
+                  const set = (v: string) => setWaferForm(w => ({ ...w, [key]: v }));
+                  return (
+                    <div key={key}>
+                      <label className="block text-xs font-semibold text-blue-700 mb-1">
+                        {waferLabels[key]}{key === "diameterInch" ? " (inch)" : ""}
+                        {required && <span className="text-rose-500"> *</span>}
+                      </label>
+                      {WAFER_FREE_KEYS.includes(key) ? (
+                        <input value={waferForm[key]} onChange={e => set(e.target.value)} maxLength={100}
+                          placeholder={key === "thicknessNote" ? t.items.thicknessPlaceholder : t.items.resistivityPlaceholder}
+                          className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400" />
+                      ) : (
+                        <SpecSelect value={waferForm[key]} onChange={set} options={specOptions[key] ?? []}
+                          invalid={required && specMissing && !waferForm[key].trim()} />
+                      )}
+                    </div>
+                  );
+                })}
+              </>
+            )}
           </div>
           {formError && <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-xl">{formError}</p>}
           <div className="flex gap-2">
@@ -363,12 +450,15 @@ export default function ItemsPage() {
                   <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">Copper</th>
                   <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">Cu 두께</th>
                 </>}
+                {catFilter === WAFER_CATEGORY && WAFER_SPEC_KEYS.map(key => (
+                  <th key={key} className="text-left text-xs font-semibold text-gray-500 px-5 py-3 whitespace-nowrap">{waferLabels[key]}</th>
+                ))}
                 <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">{t.items.statusLabel}</th>
                 <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colAction}</th>
               </tr></thead>
               <tbody>
                 {items.length === 0 ? (
-                  <tr><td colSpan={catFilter === "타겟" ? 10 : 7} className="px-5 py-12 text-center text-sm text-gray-400">{t.items.noData}</td></tr>
+                  <tr><td colSpan={catFilter === "타겟" ? 10 : catFilter === WAFER_CATEGORY ? 7 + WAFER_SPEC_KEYS.length : 7} className="px-5 py-12 text-center text-sm text-gray-400">{t.items.noData}</td></tr>
                 ) : items.map(item => (
                   <tr key={item.id} className={`border-b border-gray-50 hover:bg-blue-50/30 group ${!item.isActive ? "opacity-40" : ""}`}>
                     <td className="px-5 py-3 text-sm font-mono font-semibold text-gray-900">{item.code}</td>
@@ -383,6 +473,15 @@ export default function ItemsPage() {
                       <td className="px-5 py-3 text-sm text-gray-600">{item.hasCopper === "Y" ? "있음" : item.hasCopper === "N" ? "없음" : "-"}</td>
                       <td className="px-5 py-3 text-sm text-gray-600">{item.copperThickness != null ? `${item.copperThickness}"` : "-"}</td>
                     </>}
+                    {catFilter === WAFER_CATEGORY && WAFER_SPEC_KEYS.map(key => (
+                      <td key={key} className="px-5 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        {key === "orientation" && !hasOrientation(item.waferSpec)
+                          ? <span className="text-xs font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">{t.items.orientationMissing}</span>
+                          : key === "diameterInch"
+                            ? (item.waferSpec?.diameterInch ? `${item.waferSpec.diameterInch}"` : "-")
+                            : (item.waferSpec?.[key] || "-")}
+                      </td>
+                    ))}
                     <td className="px-5 py-3 text-center">
                       {item.isActive
                         ? <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">{t.barcode.active}</span>
@@ -420,6 +519,11 @@ export default function ItemsPage() {
                 </div>
                 <p className="text-sm font-medium text-gray-900">{item.name}</p>
                 <p className="text-xs text-gray-400">{[item.unit, item.note].filter(Boolean).join(" · ") || "-"}</p>
+                {item.category === WAFER_CATEGORY && item.specSummary && (
+                  <p className={`text-[11px] ${hasOrientation(item.waferSpec) ? "text-violet-500" : "text-rose-600 font-semibold"}`}>
+                    {item.specSummary}
+                  </p>
+                )}
                 {catFilter === "타겟" && (
                   <p className="text-[11px] text-gray-400">
                     {[

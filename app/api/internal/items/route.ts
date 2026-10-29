@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { requireInternalAuth } from "@/lib/internal-auth";
 import { logActivity } from "@/lib/auth-helpers";
 import { formatItemDetail } from "@/lib/logDetail";
+import { WAFER_CATEGORY, WAFER_SPEC_KEYS, formatWaferSpecSummary } from "@/lib/waferSpec";
+import { validateWaferSpecInput, waferSpecSearchWhere } from "@/lib/waferSpecServer";
+import type { WaferSpecData } from "@/lib/waferSpecServer";
 
 export const dynamic = "force-dynamic";
 
@@ -111,12 +114,13 @@ export async function GET(request: NextRequest) {
       where.OR = [
         { code: { contains: search, mode: "insensitive" } },
         { name: { contains: search, mode: "insensitive" } },
+        waferSpecSearchWhere(search, false),
       ];
     }
 
     const items = await prisma.item.findMany({
       where,
-      include: { category: true },
+      include: { category: true, waferSpec: true },
       orderBy: { code: "asc" },
     });
 
@@ -128,6 +132,9 @@ export async function GET(request: NextRequest) {
       categoryId:  item.categoryId,
       unit:        item.unit,
       minStockQty: item.minStockQty,
+      specSummary: item.category.name === WAFER_CATEGORY
+        ? formatWaferSpecSummary(item.waferSpec, { labeled: false })
+        : null,
     })));
   } catch (error) {
     console.error("GET /api/internal/items error:", error);
@@ -157,19 +164,44 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `품목코드 "${code}"가 이미 존재합니다.` }, { status: 409 });
     }
 
-    const item = await prisma.item.create({
-      data: {
-        code:        code.trim(),
-        name:        name.trim(),
-        categoryId:  Number(categoryId),
-        unit:        unit?.trim() || null,
-        minStockQty: Number(minStockQty) || 0,
-        note:        note?.trim() || null,
-      },
-      include: { category: true },
+    // 웨이퍼: body 최상위의 orientation·diameterInch(그 밖의 스펙 키도)를 먼저 검증
+    const category = await prisma.itemCategory.findUnique({
+      where: { id: Number(categoryId) }, select: { name: true },
+    });
+    let waferData: WaferSpecData | null = null;
+    if (category?.name === WAFER_CATEGORY) {
+      const specInput: Record<string, unknown> = {};
+      for (const key of WAFER_SPEC_KEYS) {
+        if (body[key] !== undefined) specInput[key] = body[key];
+      }
+      const v = validateWaferSpecInput(specInput, { itemCode: code.trim(), before: null });
+      if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 });
+      waferData = v.data;
+    }
+
+    const item = await prisma.$transaction(async (tx) => {
+      const created = await tx.item.create({
+        data: {
+          code:        code.trim(),
+          name:        name.trim(),
+          categoryId:  Number(categoryId),
+          unit:        unit?.trim() || null,
+          minStockQty: Number(minStockQty) || 0,
+          note:        note?.trim() || null,
+        },
+        include: { category: true },
+      });
+      if (waferData) {
+        await tx.waferSpec.create({ data: { itemId: created.id, ...waferData } });
+      }
+      return created;
     });
 
-    await logActivity(actingUserId, "CREATE", "item", item.id, formatItemDetail(item));
+    const specDetail = waferData ? formatWaferSpecSummary(waferData, { labeled: true }) : null;
+    await logActivity(
+      actingUserId, "CREATE", "item", item.id,
+      formatItemDetail(item) + (specDetail ? ` | 스펙: ${specDetail}` : "")
+    );
 
     return NextResponse.json({
       id: item.id, code: item.code, name: item.name,
