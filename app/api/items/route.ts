@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 import { formatItemDetail, itemHeader } from "@/lib/logDetail";
-import { WAFER_CATEGORY, pickWaferSpec, formatWaferSpecSummary, diffWaferSpec } from "@/lib/waferSpec";
+import { WAFER_CATEGORY, pickWaferSpec, formatWaferSpecSummary, diffWaferSpec, hasOverwrite } from "@/lib/waferSpec";
 import { validateWaferSpecInput, waferSpecSearchWhere } from "@/lib/waferSpecServer";
 import type { WaferSpecData } from "@/lib/waferSpecServer";
 
@@ -191,7 +191,8 @@ export async function PUT(request: NextRequest) {
       specChanges = diffWaferSpec(waferSpecBefore, v.data);
       if (specChanges.length > 0) {
         waferData = v.data;
-        if (body.confirmSpecChange !== true) {
+        // 비어 있던 칸을 처음 채우는 것만이면 확인 없이 저장 — 기존 값이 바뀌거나 비워질 때만 확인
+        if (body.confirmSpecChange !== true && hasOverwrite(waferSpecBefore, v.data)) {
           const txCount = await prisma.inventoryTx.count({ where: { itemId: beforeItem.id } });
           if (txCount > 0) {
             return NextResponse.json({

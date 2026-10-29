@@ -143,6 +143,22 @@ function diffSafe(v: string | null): string {
   return v ? v.replace(/ \| | → /g, "/") : "-";
 }
 
+/**
+ * 기존에 값이 있던 칸이 다른 값으로 바뀌거나 비워지는지 — 비어 있던 칸을 처음 채우는 것만이면 false.
+ * diffWaferSpec 과 같은 표시값 기준으로 비교한다. (스펙 행이 없던 경우는 항상 false)
+ */
+export function hasOverwrite(
+  before: Partial<WaferSpecValues> | null | undefined,
+  after: Partial<WaferSpecValues> | null | undefined,
+): boolean {
+  const b = before ?? {};
+  const a = after ?? {};
+  return WAFER_SPEC_KEYS.some(key => {
+    const bv = displayValue(key, b);
+    return bv !== null && bv !== displayValue(key, a);
+  });
+}
+
 /** 변경된 칸만 ["방향: - → <100>", ...] (빈 값은 "-") */
 export function diffWaferSpec(
   before: Partial<WaferSpecValues> | null | undefined,
