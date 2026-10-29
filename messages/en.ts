@@ -251,6 +251,7 @@ export const en: Messages = {
     waferDopant: "Dopant",
     waferGrade: "Grade",
     waferOxidation: "Oxide",
+    waferInboundBlocked: "Items without an orientation cannot be received. Enter the orientation in Item Management first.",
     entryRate: "Rate at entry",
     editSave: "Save Changes",
     barcodeSelectorTitle: (cat: string) => `Select Barcode — ${cat}`,

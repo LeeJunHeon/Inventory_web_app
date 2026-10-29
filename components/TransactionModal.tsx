@@ -27,6 +27,7 @@ import { useT } from "@/lib/i18n";
 import { kstToday } from "@/lib/kst";
 import DatePicker           from "./DatePicker";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
+import { hasOrientation } from "@/lib/waferSpec";
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -152,6 +153,8 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
 
   // 웨이퍼 스펙
   const [waferSpec, setWaferSpec] = useState<WaferSpecInfo | null>(null);
+  // 어떤 품목의 스펙 조회가 끝났는지(ok=false 는 조회 실패) — 로딩/완료/실패 구분용
+  const [waferSpecLoaded, setWaferSpecLoaded] = useState<{ itemId: number; ok: boolean } | null>(null);
 
   // 입고 참조 선택
   const [showInboundSelect, setShowInboundSelect] = useState(false);
@@ -279,11 +282,29 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   // 웨이퍼 품목 선택 시 스펙 조회
   useEffect(() => {
     if (category !== "웨이퍼" || !itemId || !isOpen) { setWaferSpec(null); return; }
+    let alive = true;
     fetch(`/api/items/${itemId}/spec`)
-      .then(r => r.json())
-      .then(data => setWaferSpec(data?.waferSpec ?? null))
-      .catch(() => setWaferSpec(null));
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(String(r.status))))
+      .then(data => {
+        if (!alive) return;
+        setWaferSpec(data?.waferSpec ?? null);
+        setWaferSpecLoaded({ itemId, ok: true });
+      })
+      .catch(() => {
+        if (!alive) return;
+        setWaferSpec(null);
+        setWaferSpecLoaded({ itemId, ok: false });
+      });
+    return () => { alive = false; };
   }, [itemId, category, isOpen]);
+
+  // 방향 미입력 웨이퍼 입고 안내 — 조회가 끝났고(실패 제외) 방향이 비어 있거나 스펙 행이 없을 때.
+  // 실제 차단은 서버가 한다. 여기는 안내용이며 서버 에러는 기존 에러 표시로 그대로 보인다.
+  const waferSpecStatus: "idle" | "loading" | "done" | "error" =
+    category !== "웨이퍼" || !itemId ? "idle"
+    : waferSpecLoaded?.itemId !== itemId ? "loading"
+    : waferSpecLoaded.ok ? "done" : "error";
+  const waferInboundBlocked = type === "입고" && waferSpecStatus === "done" && !hasOrientation(waferSpec);
 
   // 모달 열릴 때 바코드 input 자동 포커스
   useEffect(() => {
@@ -881,7 +902,8 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
               </button>
               {type === "입고" && !showCameraScanner && (
                 <button onClick={() => { setShowBarcodeCreate(v => !v); setBarcodeCreateError(""); }}
-                  className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap"
+                  disabled={waferInboundBlocked}
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
                   title="새 바코드 생성">
                   <Plus size={15} />{t.tx.createBtn}
                 </button>
@@ -1018,7 +1040,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                   </p>
                 )}
                 <div className="flex gap-2">
-                  <button onClick={handleBarcodeCreate} disabled={barcodeCreating || !itemId}
+                  <button onClick={handleBarcodeCreate} disabled={barcodeCreating || !itemId || waferInboundBlocked}
                     className="flex-1 px-4 py-2 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 disabled:opacity-60">
                     {barcodeCreating ? t.barcode.creating : t.tx.createAndLink}
                   </button>
@@ -1276,6 +1298,11 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
               ) : (
                 <p className="text-xs text-blue-400">{t.tx.noSpec}</p>
               )}
+              {waferInboundBlocked && (
+                <p className="mt-2 text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+                  {t.tx.waferInboundBlocked}
+                </p>
+              )}
             </div>
           )}
 
@@ -1452,7 +1479,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
             className="px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
             {t.common.cancel}
           </button>
-          <button onClick={() => handleSave()} disabled={saving}
+          <button onClick={() => handleSave()} disabled={saving || waferInboundBlocked}
             className="px-5 py-2.5 text-sm font-bold text-white bg-blue-500 rounded-xl hover:bg-blue-600 transition-colors shadow-sm disabled:opacity-60">
             {saving ? t.common.saving : t.common.save}
           </button>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getWaferInboundBlockReason } from "@/lib/waferSpecServer";
 import { requireAuth, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 import { formatBarcodeDetail, formatAldBarcodeDetail, barcodeHeader } from "@/lib/logDetail";
 import { expandBarcodeVariants } from "@/lib/barcodeUtils";
@@ -151,6 +152,13 @@ export async function POST(request: NextRequest) {
     });
     if (!item) {
       return NextResponse.json({ error: "품목을 찾을 수 없습니다." }, { status: 404 });
+    }
+
+    // 방향 미입력 웨이퍼는 입고용 바코드도 만들지 않는다 — 번호 증가(barcodeSeq)보다 먼저 막아야
+    // 고아 바코드와 번호 빔이 생기지 않는다
+    const waferBlock = await getWaferInboundBlockReason(item.id);
+    if (waferBlock) {
+      return NextResponse.json({ error: waferBlock }, { status: 400 });
     }
 
     // BarcodeSeq를 이용한 순번 자동 생성

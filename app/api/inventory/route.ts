@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getWaferInboundBlockReason } from "@/lib/waferSpecServer";
 import { requireAuth, getSessionUser, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 import { buildInventoryTxDetail, formatInventoryTxDetail, inventoryTxHeader } from "@/lib/logDetail";
 import { LOT_CONSUME_TYPES, MOVE_IN, MOVE_OUT, recordAutoTransition, resolveAutoTransitionRevert } from "@/lib/txTypes";
@@ -435,6 +436,11 @@ export async function POST(request: NextRequest) {
         where: { id: Number(body.itemId) },
         include: { category: true },
       });
+      // 방향 미입력 웨이퍼는 입고 불가 (출고·불출·이동·전표 수정은 막지 않음)
+      const waferBlock = await getWaferInboundBlockReason(Number(body.itemId));
+      if (waferBlock) {
+        return NextResponse.json({ error: waferBlock }, { status: 400 });
+      }
       const catName = item?.category?.name;
       const needsBarcode    = catName === "타겟" || catName === "ALD Canister" || catName === "웨이퍼";
       const needsTargetUnit = catName === "타겟" || catName === "ALD Canister";

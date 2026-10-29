@@ -249,6 +249,7 @@ export const ko = {
     waferDopant: "도펀트",
     waferGrade: "등급",
     waferOxidation: "산화막",
+    waferInboundBlocked: "방향이 입력되지 않은 품목은 입고할 수 없습니다. 품목관리에서 방향을 먼저 입력하세요.",
     entryRate: "등록 당시 환율",
     editSave: "수정 저장",
     barcodeSelectorTitle: (cat: string) => `바코드 선택 — ${cat}`,
