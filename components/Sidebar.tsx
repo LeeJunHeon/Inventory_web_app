@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
-import { Home, Package, BarChart3, Clock, Target, QrCode, Users, LogOut, Boxes, X, Layers, Building2, Search, FileText, Droplet, ArrowLeft } from "lucide-react";
+import { Home, Package, BarChart3, Clock, Target, QrCode, Users, LogOut, X, Layers, Building2, Search, FileText, Droplet, ArrowLeft } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { MENUS, canViewPage, type MenuIconName, type PageId, type TabPerms } from "@/lib/menus";
 
@@ -130,8 +130,9 @@ export default function Sidebar({
         <div className="px-5 py-5 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                <Boxes size={18} className="text-white" />
+              {/* 포털 lib/portal-apps.ts 와 같은 값(아이콘·iconBgColor·iconColor, 32px 상자·아이콘 16px·strokeWidth 1.8) — 바꿀 때 같이 바꿀 것 */}
+              <div className="w-8 h-8 bg-[#eff6ff] rounded-lg flex items-center justify-center">
+                <Package size={16} color="#3b82f6" strokeWidth={1.8} />
               </div>
               <div>
                 <h1 className="text-sm font-bold text-gray-900">{t.nav.inventorySystem}</h1>
