@@ -11,6 +11,8 @@ import type { Messages } from "@/messages/ko";
 import { exportXLSXSheets } from "@/lib/xlsxUtils";
 import type { XlsxSheet } from "@/lib/xlsxUtils";
 import { kstToday } from "@/lib/kst";
+import { WAFER_SPEC_KEYS, WAFER_SPEC_TEXT_KEYS, hasOrientation, formatWaferSpecSummary, waferSpecLabelsT } from "@/lib/waferSpec";
+import type { WaferSpecValues } from "@/lib/waferSpec";
 
 interface LocationOption { id: number; name: string; }
 
@@ -19,6 +21,7 @@ interface StockItem {
   currentQty: number; requiredQty: number;
   category: string;
   resistivity?: string | null; thicknessNote?: string | null;
+  waferSpec?: WaferSpecValues | null; specSummary?: string | null;
   barcodes?: string[];
   locationQty?: Record<number, number>;
 }
@@ -73,6 +76,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
   const [sortDir, setSortDir]               = useState<"asc" | "desc">("asc");
 
   const { t } = useT();
+  const waferLabels = waferSpecLabelsT(t);
 
   const STOCK_FILTER_LABEL: Record<StockFilter, string> = {
     "전체": t.status.sfAll,
@@ -186,7 +190,10 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
   // 상태 칩 숫자가 화면 행 수와 맞는다
   const filtered = items.filter((item) => {
     if (!ITEM_SECTION_CATS.includes(item.category)) return false;
-    const matchSearch = matchAny([item.code, item.name, ...(item.barcodes ?? [])]);
+    const matchSearch = matchAny([
+      item.code, item.name, ...(item.barcodes ?? []),
+      ...WAFER_SPEC_TEXT_KEYS.map(key => item.waferSpec?.[key]),
+    ]);
     const matchCat    = selectedCategory === "전체" || item.category === selectedCategory;
     return matchSearch && matchCat;
   });
@@ -261,7 +268,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
       name: cat,
       headers: [
         t.status.colCode, t.status.colName, t.status.colBarcode,
-        ...(cat === "웨이퍼" ? [t.status.colResistivity, t.status.colThickness] : []),
+        ...(cat === "웨이퍼" ? WAFER_SPEC_KEYS.map(key => waferLabels[key]) : []),
         ...(allLocations
           ? [t.status.locationMain, t.status.locationGongdeok, t.status.colTotal]
           : [t.status.colStock]),
@@ -269,7 +276,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
       ],
       rows: rows.map((item) => [
         item.code, item.name, item.barcodes?.join(", ") || "-",
-        ...(cat === "웨이퍼" ? [item.resistivity || "-", item.thicknessNote || "-"] : []),
+        ...(cat === "웨이퍼" ? WAFER_SPEC_KEYS.map(key => item.waferSpec?.[key] ?? "-") : []),
         ...(allLocations
           ? [item.locationQty?.[1] ?? 0, item.locationQty?.[2] ?? 0, item.currentQty]
           : [item.currentQty]),
@@ -457,7 +464,7 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
                       <th onClick={() => handleSort("code")} className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5 cursor-pointer select-none hover:text-blue-600">{t.status.colCode}<SortIcon field="code" /></th>
                       <th onClick={() => handleSort("name")} className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5 cursor-pointer select-none hover:text-blue-600">{t.status.colName}<SortIcon field="name" /></th>
                       <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.status.colBarcode}</th>
-                      {cat === "웨이퍼" && <><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">{t.status.colResistivity}</th><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">{t.status.colThickness}</th></>}
+                      {cat === "웨이퍼" && <><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5 whitespace-nowrap">{waferLabels.orientation}</th><th className="text-left text-xs font-semibold text-gray-500 px-5 py-2.5">{t.status.colSpec}</th></>}
                       {selectedLocationId === null ? (
                         <>
                           <th className="text-right text-xs font-semibold text-gray-500 px-3 py-2.5 whitespace-nowrap">{t.status.locationMain}</th>
@@ -479,7 +486,14 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
                             <td className="px-5 py-3 text-sm font-mono text-gray-600">{item.code}</td>
                             <td className="px-5 py-3 text-sm font-medium text-gray-900">{item.name}</td>
                             <td className="px-5 py-3 text-xs font-mono text-gray-400">{item.barcodes?.join(", ") || "-"}</td>
-                            {cat === "웨이퍼" && <><td className="px-5 py-3 text-sm text-gray-500">{item.resistivity || "-"}</td><td className="px-5 py-3 text-sm text-gray-500">{item.thicknessNote || "-"}</td></>}
+                            {cat === "웨이퍼" && <>
+                              <td className="px-5 py-3 text-sm text-gray-700 whitespace-nowrap">
+                                {hasOrientation(item.waferSpec)
+                                  ? item.waferSpec?.orientation
+                                  : <span className="text-xs font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">{t.items.orientationMissing}</span>}
+                              </td>
+                              <td className="px-5 py-3 text-xs text-gray-500">{formatWaferSpecSummary(item.waferSpec, { labeled: false, omitOrientation: true }) || "-"}</td>
+                            </>}
                             {selectedLocationId === null ? (
                               <>
                                 <td className="px-3 py-3 text-sm text-right text-gray-600">{item.locationQty?.[1] ?? 0}</td>
@@ -538,6 +552,9 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
                           <div>
                             <p className="text-sm font-semibold text-gray-900">{item.name}</p>
                             <p className="text-xs text-gray-400">{item.code}</p>
+                            {item.specSummary && (
+                              <p className={`text-[11px] mt-0.5 ${hasOrientation(item.waferSpec) ? "text-violet-500" : "text-rose-600 font-semibold"}`}>{item.specSummary}</p>
+                            )}
                             {item.barcodes && item.barcodes.length > 0 && (
                               <p className="text-xs text-gray-400 font-mono mt-0.5">{item.barcodes.join(", ")}</p>
                             )}

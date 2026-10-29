@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getStockMinusDisposals, sumDisposalsByItem, MOVE_IN, MOVE_OUT } from "@/lib/txTypes";
+import { WAFER_CATEGORY, formatWaferSpecSummary } from "@/lib/waferSpec";
+import { waferSpecSearchWhere } from "@/lib/waferSpecServer";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +24,7 @@ export async function GET(request: NextRequest) {
           { code: { contains: query, mode: "insensitive" as const } },
           { name: { contains: query, mode: "insensitive" as const } },
           { barcodes: { some: { code: { contains: query, mode: "insensitive" as const } } } },
+          waferSpecSearchWhere(query, false),
         ],
       };
     })();
@@ -32,6 +35,7 @@ export async function GET(request: NextRequest) {
         category: { select: { name: true } },
         barcodes: { select: { id: true, code: true, isActive: true } },
         inventoryTxs: { select: { txType: true, qty: true } },
+        waferSpec: true,
       },
       take: 20,
     });
@@ -71,6 +75,9 @@ export async function GET(request: NextRequest) {
         itemCode:  item.code,
         itemName:  item.name,
         category:  item.category?.name ?? "",
+        specSummary: item.category?.name === WAFER_CATEGORY
+          ? formatWaferSpecSummary(item.waferSpec, { labeled: false })
+          : null,
         barcodes:  filteredBarcodes.map(b => ({ id: b.id, code: b.code, isActive: b.isActive })),
         txCount:   {
           inbound:  inbound.length,

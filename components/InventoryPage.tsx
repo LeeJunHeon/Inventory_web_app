@@ -12,6 +12,7 @@ import { useT } from "@/lib/i18n";
 import { buildSheet, exportXLSXSheets } from "@/lib/xlsxUtils";
 import type { XlsxColumn } from "@/lib/xlsxUtils";
 import { formatKstDateTime, kstToday } from "@/lib/kst";
+import { ORIENTATION_MISSING_MARK } from "@/lib/waferSpec";
 
 interface LocationOption { id: number; name: string; }
 interface BlockedDeleteInfo {
@@ -21,7 +22,7 @@ interface BlockedDeleteInfo {
   suggestion: string;
 }
 
-const SEARCH_FIELDS_KO = ["전체", "품목명", "품목코드", "바코드", "거래처"];
+const SEARCH_FIELDS_KO = ["전체", "품목명", "품목코드", "바코드", "거래처", "품목스펙"];
 
 interface InventoryQuery {
   search: string; searchField: string; exactMatch: boolean;
@@ -95,6 +96,7 @@ export default function InventoryPage({
     "품목코드": t.inventory.sfItemCode,
     "바코드": t.inventory.sfBarcode,
     "거래처": t.inventory.sfPartner,
+    "품목스펙": t.inventory.sfItemSpec,
   };
 
   // 구분 필터 표시 레이블 맵 (value는 한국어 유지)
@@ -449,6 +451,11 @@ export default function InventoryPage({
                           {item.itemSpec && <span className="ml-1.5 text-[10px] text-violet-400 font-normal">ℹ</span>}
                         </p>
                         <p className="text-xs text-gray-400">{item.code}</p>
+                        {item.itemSpecShort && (
+                          <p className={`text-[11px] ${item.itemSpecShort.startsWith(ORIENTATION_MISSING_MARK) ? "text-rose-600 font-semibold" : "text-violet-500"}`}>
+                            {item.itemSpecShort}
+                          </p>
+                        )}
                       </td>
                       <td className="px-5 py-3.5 text-sm text-right font-semibold text-gray-900">{formatQty(item.qty)}</td>
                       {!isEmployee && <td className="px-5 py-3.5 text-sm text-right text-gray-600">
@@ -564,6 +571,11 @@ export default function InventoryPage({
                     <span className="text-xs text-gray-400">{item.code}</span>
                     {item.barcode && <span className="text-xs font-mono text-gray-400">· {item.barcode}</span>}
                   </div>
+                  {item.itemSpecShort && (
+                    <p className={`text-[11px] mt-0.5 ${item.itemSpecShort.startsWith(ORIENTATION_MISSING_MARK) ? "text-rose-600 font-semibold" : "text-violet-500"}`}>
+                      {item.itemSpecShort}
+                    </p>
+                  )}
                 </div>
                 {item.currency !== "USD" ? (
                   <div className="flex items-center justify-between pt-2 border-t border-gray-50">

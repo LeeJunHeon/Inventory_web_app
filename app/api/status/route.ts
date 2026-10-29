@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { getSessionUserId, logActivity } from "@/lib/auth-helpers";
 import { STOCK_PLUS_TYPES, STOCK_MINUS_TYPES, getStockMinusDisposals, sumDisposalsByItem, sumDisposalsByItemAtLocation } from "@/lib/txTypes";
 import { itemHeader } from "@/lib/logDetail";
+import { WAFER_CATEGORY, pickWaferSpec, formatWaferSpecSummary } from "@/lib/waferSpec";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
       include: {
         category: true,
         barcodes: { select: { code: true }, where: { isActive: "Y" } },
-        waferSpec: { select: { resistivity: true, thicknessNote: true } },
+        waferSpec: true,
       },
       orderBy: { code: "asc" },
     });
@@ -115,6 +116,10 @@ export async function GET(request: NextRequest) {
           barcodes:    item.barcodes?.map(b => b.code) ?? [],
           resistivity:   item.waferSpec?.resistivity ?? null,
           thicknessNote: item.waferSpec?.thicknessNote ?? null,
+          waferSpec:     pickWaferSpec(item.waferSpec),
+          specSummary:   item.category.name === WAFER_CATEGORY
+            ? formatWaferSpecSummary(item.waferSpec, { labeled: false })
+            : null,
           locationQty: locationId ? undefined : {
             1: (loc1InMap.get(item.id) || 0) - (loc1OutMap.get(item.id) || 0) - (loc1DisposalMap.get(item.id) || 0),
             2: (loc2InMap.get(item.id) || 0) - (loc2OutMap.get(item.id) || 0) - (loc2DisposalMap.get(item.id) || 0),

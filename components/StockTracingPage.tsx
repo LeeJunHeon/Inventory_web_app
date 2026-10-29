@@ -10,12 +10,14 @@ import { STOCK_PLUS_TYPES, MOVE_IN, MOVE_OUT } from "@/lib/txTypeConstants";
 import { buildSheet, exportXLSXSheets } from "@/lib/xlsxUtils";
 import type { XlsxColumn } from "@/lib/xlsxUtils";
 import { kstToday } from "@/lib/kst";
+import { ORIENTATION_MISSING_MARK } from "@/lib/waferSpec";
 
 interface BarcodeInfo  { id: number; code: string; isActive: string; }
 interface TxCount      { inbound: number; outbound: number; disburse: number; using?: number; disposal?: number; moveIn?: number; moveOut?: number; }
 interface SearchResult {
   itemId: number; itemCode: string; itemName: string; category: string;
   barcodes: BarcodeInfo[]; txCount: TxCount; currentQty: number;
+  specSummary?: string | null;
 }
 
 interface TxRecord {
@@ -206,6 +208,11 @@ export default function StockTracingPage() {
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-900 truncate">{item.itemName}</p>
+                  {item.specSummary && (
+                    <p className={`text-[11px] mt-0.5 ${item.specSummary.startsWith(ORIENTATION_MISSING_MARK) ? "text-rose-600 font-semibold" : "text-violet-500"}`}>
+                      {item.specSummary}
+                    </p>
+                  )}
                   <p className="text-xs font-mono text-gray-500 mt-0.5">{item.itemCode}</p>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">

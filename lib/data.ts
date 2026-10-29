@@ -27,6 +27,7 @@ export interface InventoryItem {
   txReason: string;
   userName: string | null;
   itemSpec: string | null;
+  itemSpecShort?: string | null;
   createdAt: string | null;
 }
 

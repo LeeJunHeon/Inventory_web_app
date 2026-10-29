@@ -27,7 +27,8 @@ import { useT } from "@/lib/i18n";
 import { kstToday } from "@/lib/kst";
 import DatePicker           from "./DatePicker";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
-import { hasOrientation } from "@/lib/waferSpec";
+import { WAFER_SPEC_KEYS, hasOrientation, waferSpecLabelsT } from "@/lib/waferSpec";
+import type { WaferSpecValues } from "@/lib/waferSpec";
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -35,7 +36,11 @@ interface TransactionModalProps {
   onSuccess?: () => void;
 }
 
-interface ItemOption     { id: number; code: string; name: string; }
+interface ItemOption     {
+  id: number; code: string; name: string;
+  /** GET /api/items — 웨이퍼 품목만 값이 있다 */
+  waferSpec?: WaferSpecValues | null; specSummary?: string | null;
+}
 interface PartnerOption  {
   id: number;
   name: string;
@@ -48,11 +53,7 @@ interface TxReasonOption { id: number; name: string; }
 interface UserOption { id: number; name: string; role: string; }
 interface LocationOption { id: number; name: string; }
 interface BarcodeOption  { id: number; code: string; itemCode: string; itemName: string; isActive: string; remainQty: number; }
-interface WaferSpecInfo  {
-  waferType: string | null; diameterInch: number | null;
-  resistivity: string | null; thicknessNote: string | null;
-  orientation: string | null; surface: string | null;
-}
+type WaferSpecInfo = WaferSpecValues;
 interface SelectedInbound {
   txNo: string;
   txDate: string;
@@ -305,6 +306,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
     : waferSpecLoaded?.itemId !== itemId ? "loading"
     : waferSpecLoaded.ok ? "done" : "error";
   const waferInboundBlocked = type === "입고" && waferSpecStatus === "done" && !hasOrientation(waferSpec);
+  const waferLabels = waferSpecLabelsT(t);
 
   // 모달 열릴 때 바코드 input 자동 포커스
   useEffect(() => {
@@ -1222,7 +1224,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                     <div className="px-3 py-2 border-b border-gray-100">
                       <input
                         type="text"
-                        placeholder="품목코드 또는 품목명 검색"
+                        placeholder={t.tx.itemSearchSpecPlaceholder}
                         value={itemSelectorSearch}
                         onChange={e => setItemSelectorSearch(e.target.value)}
                         autoFocus
@@ -1233,7 +1235,8 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                     {(() => {
                       const q = itemSelectorSearch.toLowerCase();
                       const filtered = itemOptions
-                        .filter(opt => !q || opt.code.toLowerCase().includes(q) || opt.name.toLowerCase().includes(q))
+                        .filter(opt => !q || opt.code.toLowerCase().includes(q) || opt.name.toLowerCase().includes(q)
+                          || (opt.specSummary ?? "").toLowerCase().includes(q))
                         .sort((a, b) => a.code.localeCompare(b.code));
                       if (filtered.length === 0) return (
                         <p className="px-4 py-3 text-sm text-gray-400">{itemSelectorSearch ? "검색 결과가 없습니다" : t.tx.noItemsInCat}</p>
@@ -1256,6 +1259,11 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                             <div>
                               <span className="font-medium text-gray-900">{opt.name}</span>
                               <span className="ml-2 text-xs text-gray-400 font-mono">{opt.code}</span>
+                              {opt.specSummary && (
+                                <p className={`text-[11px] mt-0.5 ${hasOrientation(opt.waferSpec) ? "text-violet-500" : "text-rose-600 font-semibold"}`}>
+                                  {opt.specSummary}
+                                </p>
+                              )}
                             </div>
                             {stockMap.has(opt.id) && (
                               <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ml-2 shrink-0 ${
@@ -1287,13 +1295,24 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
             <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
               <p className="text-xs font-semibold text-blue-700 mb-2">{t.tx.waferSpecTitle}</p>
               {waferSpec ? (
-                <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-blue-800">
-                  <span><span className="text-blue-400">{t.tx.waferDiam}: </span>{waferSpec.diameterInch ? `${waferSpec.diameterInch}"` : "-"}</span>
-                  <span><span className="text-blue-400">{t.tx.waferType}: </span>{waferSpec.waferType || "-"}</span>
-                  <span><span className="text-blue-400">{t.tx.waferResist}: </span>{waferSpec.resistivity || "-"}</span>
-                  <span><span className="text-blue-400">{t.tx.waferThick}: </span>{waferSpec.thicknessNote || "-"}</span>
-                  <span><span className="text-blue-400">{t.tx.waferOrient}: </span>{waferSpec.orientation || "-"}</span>
-                  <span><span className="text-blue-400">{t.tx.waferSurface}: </span>{waferSpec.surface || "-"}</span>
+                <div className="space-y-1.5">
+                  {/* 방향을 첫 줄에 강조 */}
+                  <p className="text-sm">
+                    <span className="text-blue-400 text-xs">{waferLabels.orientation}: </span>
+                    {hasOrientation(waferSpec)
+                      ? <span className="font-bold text-blue-900">{waferSpec.orientation}</span>
+                      : <span className="font-bold text-rose-600">{t.items.orientationMissing}</span>}
+                  </p>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-blue-800">
+                    {WAFER_SPEC_KEYS.filter(key => key !== "orientation").map(key => (
+                      <span key={key}>
+                        <span className="text-blue-400">{waferLabels[key]}: </span>
+                        {key === "diameterInch"
+                          ? (waferSpec.diameterInch ? `${waferSpec.diameterInch}"` : "-")
+                          : (waferSpec[key] || "-")}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <p className="text-xs text-blue-400">{t.tx.noSpec}</p>

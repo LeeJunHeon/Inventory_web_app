@@ -43,6 +43,9 @@ export function waferSpecLabelsT(t: Messages): Record<WaferSpecKey, string> {
   };
 }
 
+/** 요약 문자열(labeled=false)에서 방향이 비어 있을 때 맨 앞에 붙는 표시 */
+export const ORIENTATION_MISSING_MARK = "방향 미입력";
+
 /** 방향 선택지 중 "결정 방향 없음" 값 */
 export const ORIENTATION_NONE = "해당 없음";
 
@@ -121,19 +124,22 @@ function displayValue(key: WaferSpecKey, ws: Partial<WaferSpecValues>): string |
  * - labeled=false: `<100> · 4" · P · Boron` (방향이 없으면 맨 앞에 "방향 미입력")
  * - labeled=true : `방향: <100> | 직경: 4" | 타입: P` (재고관리 itemSpec 형식)
  * 행이 없으면(null) labeled=false 는 "방향 미입력", labeled=true 는 null.
+ * omitOrientation=true 면 방향을 빼고(미입력 표시도 없이) 나머지만 — 방향을 별도 열로 보여줄 때.
  */
 export function formatWaferSpecSummary(
   ws: Partial<WaferSpecValues> | null | undefined,
-  { labeled }: { labeled: boolean },
+  { labeled, omitOrientation = false }: { labeled: boolean; omitOrientation?: boolean },
 ): string | null {
-  if (!ws) return labeled ? null : "방향 미입력";
+  if (!ws) return labeled || omitOrientation ? null : ORIENTATION_MISSING_MARK;
   const parts: string[] = [];
   for (const key of WAFER_SPEC_KEYS) {
+    if (omitOrientation && key === "orientation") continue;
     const v = displayValue(key, ws);
     if (v) parts.push(labeled ? `${WAFER_SPEC_LABELS[key]}: ${v}` : v);
   }
   if (labeled) return parts.length > 0 ? parts.join(" | ") : null;
-  if (!hasOrientation(ws)) parts.unshift("방향 미입력");
+  if (omitOrientation) return parts.length > 0 ? parts.join(" · ") : null;
+  if (!hasOrientation(ws)) parts.unshift(ORIENTATION_MISSING_MARK);
   return parts.join(" · ");
 }
 

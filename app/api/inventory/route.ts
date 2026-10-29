@@ -1,27 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getWaferInboundBlockReason } from "@/lib/waferSpecServer";
+import { getWaferInboundBlockReason, waferSpecSearchWhere } from "@/lib/waferSpecServer";
+import { WAFER_CATEGORY, formatWaferSpecSummary } from "@/lib/waferSpec";
 import { requireAuth, getSessionUser, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 import { buildInventoryTxDetail, formatInventoryTxDetail, inventoryTxHeader } from "@/lib/logDetail";
 import { LOT_CONSUME_TYPES, MOVE_IN, MOVE_OUT, recordAutoTransition, resolveAutoTransitionRevert } from "@/lib/txTypes";
 import { kstTodayDbDate } from "@/lib/kst";
 
-function buildItemSpec(ws: {
-  waferType?: string | null; diameterInch?: number | null;
-  resistivity?: string | null; thicknessNote?: string | null;
-  orientation?: string | null; surface?: string | null;
-} | null): string | null {
-  if (!ws) return null;
-  const parts = [
-    ws.diameterInch  ? `${ws.diameterInch}"` : null,
-    ws.waferType     ? `${ws.waferType}` : null,
-    ws.resistivity   ? `저항: ${ws.resistivity}` : null,
-    ws.thicknessNote ? `두께: ${ws.thicknessNote}` : null,
-    ws.orientation   ? `방향: ${ws.orientation}` : null,
-    ws.surface       ? `표면: ${ws.surface}` : null,
-  ].filter(Boolean);
-  return parts.length > 0 ? parts.join(" | ") : null;
-}
 
 // "이동"은 클라이언트가 보내는 별칭 — 서버가 이동출고/이동입고 두 행으로 변환한다.
 // 이동출고/이동입고는 직접 제출을 막기 위해 여기에 넣지 않는다.
@@ -180,6 +165,8 @@ export async function GET(request: NextRequest) {
         andConditions.push({ barcode: { code: { equals: search, mode: "insensitive" } } });
       } else if (searchField === "거래처") {
         andConditions.push({ partner: { name: textMatch(search) } });
+      } else if (searchField === "품목스펙") {
+        andConditions.push({ item: waferSpecSearchWhere(search, exact) });
       } else {
         andConditions.push({
           OR: [
@@ -189,6 +176,7 @@ export async function GET(request: NextRequest) {
               ? { equals: search, mode: "insensitive" as const }
               : { contains: search, mode: "insensitive" as const } } },
             { partner: { name: textMatch(search) } },
+            { item: waferSpecSearchWhere(search, exact) },
           ],
         });
       }
@@ -260,7 +248,10 @@ export async function GET(request: NextRequest) {
       txReasonId: tx.txReasonId ?? null,
       txReason:   tx.txReason?.name  || "",
       userName:   tx.user?.name      ?? null,
-      itemSpec:   buildItemSpec(tx.item.waferSpec),
+      itemSpec:   formatWaferSpecSummary(tx.item.waferSpec, { labeled: true }),
+      itemSpecShort: tx.item.category.name === WAFER_CATEGORY
+        ? formatWaferSpecSummary(tx.item.waferSpec, { labeled: false })
+        : null,
       createdAt:  tx.createdAt?.toISOString() ?? null,
     }));
 
