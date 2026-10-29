@@ -325,6 +325,12 @@ export default function ItemsPage() {
                 placeholder={t.items.notePlaceholder}
                 className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400" />
             </div>
+            {/* 상세정보 — 품목군별 전용 칸이 있을 때만 구분 줄 표시 */}
+            {(isTarget || isWafer) && (
+              <div className="sm:col-span-2 lg:col-span-3 border-t border-blue-200 pt-3">
+                <p className="text-xs font-bold text-blue-900">{t.items.detailSection}</p>
+              </div>
+            )}
             {/* 타겟 전용 스펙 */}
             {isTarget && (
               <>
@@ -369,10 +375,6 @@ export default function ItemsPage() {
             {/* 웨이퍼 전용 스펙 — 방향·직경 필수 */}
             {isWafer && (
               <>
-                <div className="sm:col-span-2 lg:col-span-3 pt-1">
-                  <p className="text-xs font-bold text-blue-900">{t.items.waferSpecTitle}</p>
-                  <p className="text-[11px] text-blue-500 mt-0.5">{t.items.waferSpecHint}</p>
-                </div>
                 {WAFER_SPEC_KEYS.map(key => {
                   const required = key === "orientation" || key === "diameterInch";
                   const set = (v: string) => setWaferForm(w => ({ ...w, [key]: v }));
