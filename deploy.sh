@@ -1,62 +1,22 @@
 #!/bin/bash
+# 재고관리(inventory-web) NAS 배포. GitHub Actions 가 올린 이미지(ghcr.io/leejunheon/inventory-web:<커밋 SHA>)를 받아 재시작만 한다(NAS 에서 빌드하지 않음).
+# 사용법: sudo ./deploy.sh            git pull → 그 커밋 이미지 받기 → :deployed 로 바꾸기 → 재시작·실행 확인 → 옛 이미지 정리
+#         sudo ./deploy.sh rollback   바로 전 이미지(:previous)로 되돌리기 (git pull 하지 않음)
+#         sudo ./deploy.sh --build    (비상용) GitHub 을 쓰지 않고 NAS 에서 직접 빌드
+# 처음 한 번 NAS 에서: sudo docker login ghcr.io (공개 저장소 이미지면 로그인 없이도 받을 수 있다)
 set -euo pipefail
 
 APP_DIR="/volume1/docker/inventory-web"
 SERVICE="nextjs"
 CONTAINER="inventory-web-nextjs"
-WAIT_SECONDS=60
-WAIT_INTERVAL=5
+# 같은 compose 의 운영 DB(postgres, inventory-web-postgres)는 건드리지 않는다
+GHCR_UP_ARGS=(--no-deps)
+GHCR_REPO="LeeJunHeon/Inventory_web_app"
+GHCR_IMAGES=("ghcr.io/leejunheon/inventory-web")
+GHCR_SERVICES=("$SERVICE")
 
-# 본문 전체를 함수로 감싼다 — git pull 이 이 파일을 바꿔도 이미 읽은 내용으로 끝까지 실행된다.
-main() {
-  # root 가 아니면 root(HOME=/root)로 다시 실행 — root 의 git 설정(safe.directory)을 쓰기 위함
-  if [ "$(id -u)" -ne 0 ]; then
-    exec sudo -H bash "$0" "$@"
-  fi
+# 공용 배포 함수 — 실행 중 git pull 로 파일이 바뀌어도 이미 읽은 함수로 끝까지 돈다
+# shellcheck source=scripts/ghcr-deploy.sh
+source "$(dirname "$(readlink -f "$0")")/scripts/ghcr-deploy.sh"
 
-  cd "$APP_DIR"
-
-  echo "[1/4] git pull"
-  local safe_dirs
-  safe_dirs="$(git config --global --get-all safe.directory || true)"
-  if ! grep -qxF -- "$APP_DIR" <<< "$safe_dirs"; then
-    git config --global --add safe.directory "$APP_DIR"
-  fi
-  git pull
-
-  echo "[2/4] docker compose build $SERVICE"
-  export BUILDX_GIT_INFO=0
-  docker compose build "$SERVICE"
-
-  echo "[3/4] docker compose up -d $SERVICE"
-  docker compose up -d "$SERVICE"
-
-  echo "[4/4] 컨테이너 실행 확인 ($CONTAINER, 최대 ${WAIT_SECONDS}초)"
-  local elapsed=0 running retried=0
-  while true; do
-    running="$(docker inspect -f '{{.State.Running}}' "$CONTAINER" 2>/dev/null || true)"
-    if [ "$running" = "true" ]; then
-      break
-    fi
-    # 첫 확인에서 꺼져 있으면 한 번 더 켠다 (이미지가 그대로일 때 up -d 가 켜지 않은 경우 대비)
-    if [ "$retried" -eq 0 ]; then
-      retried=1
-      echo "컨테이너가 실행 중이 아님 → docker compose up -d $SERVICE 재시도"
-      docker compose up -d "$SERVICE"
-    fi
-    if [ "$elapsed" -ge "$WAIT_SECONDS" ]; then
-      docker ps -a --filter "name=$CONTAINER"
-      docker logs --tail 30 "$CONTAINER" || true
-      echo "배포 실패: 컨테이너가 실행 중이 아님"
-      exit 1
-    fi
-    sleep "$WAIT_INTERVAL"
-    elapsed=$((elapsed + WAIT_INTERVAL))
-  done
-
-  git log --oneline -1
-  docker ps --filter "name=$CONTAINER" --format '{{.Names}}  {{.Status}}'
-  echo "배포 완료!"
-}
-
-main "$@"
+ghcr_standard_main "$@"

@@ -46,3 +46,7 @@ next-env.d.ts
 
 # NAS 전용 파일
 DB/
+
+# NAS 배포 기록(deploy 스크립트가 쓴다)
+.deploy-state
+.deploy-state.tmp
