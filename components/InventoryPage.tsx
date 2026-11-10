@@ -12,6 +12,7 @@ import { useT } from "@/lib/i18n";
 import { buildSheet, exportXLSXSheets } from "@/lib/xlsxUtils";
 import type { XlsxColumn } from "@/lib/xlsxUtils";
 import { formatKstDateTime, kstToday } from "@/lib/kst";
+import { TARGET_CATEGORY, formatPurity } from "@/lib/targetPurity";
 
 interface LocationOption { id: number; name: string; }
 interface BlockedDeleteInfo {
@@ -21,7 +22,13 @@ interface BlockedDeleteInfo {
   suggestion: string;
 }
 
-const SEARCH_FIELDS_KO = ["전체", "품목명", "품목코드", "바코드", "거래처", "품목스펙"];
+/** 정렬 헤더 아이콘 — 렌더 밖에 선언 (렌더 중 컴포넌트 생성 금지) */
+function SortIcon({ field, sortField, sortDir }: { field: string; sortField: string; sortDir: "asc" | "desc" }) {
+  if (sortField !== field) return <ArrowUpDown size={14} className="text-gray-300" />;
+  return sortDir === "asc" ? <ArrowUp size={14} className="text-blue-500" /> : <ArrowDown size={14} className="text-blue-500" />;
+}
+
+const SEARCH_FIELDS_KO = ["전체", "품목명", "품목코드", "바코드", "거래처", "품목스펙", "순도"];
 
 interface InventoryQuery {
   search: string; searchField: string; exactMatch: boolean;
@@ -96,6 +103,7 @@ export default function InventoryPage({
     "바코드": t.inventory.sfBarcode,
     "거래처": t.inventory.sfPartner,
     "품목스펙": t.inventory.sfItemSpec,
+    "순도": t.inventory.sfPurity,
   };
 
   // 구분 필터 표시 레이블 맵 (value는 한국어 유지)
@@ -227,6 +235,7 @@ export default function InventoryPage({
         { header: h.category,    value: i => i.category },
         { header: h.code,        value: i => i.code },
         { header: h.name,        value: i => i.name },
+        { header: h.purity,      value: i => i.category === TARGET_CATEGORY && i.purity != null ? i.purity : "" },
         { header: h.qty,         value: i => i.qty },
         { header: h.price,       value: i => i.price,                      money: true },
         { header: h.amount,      value: i => i.amount,                     money: true },
@@ -251,10 +260,9 @@ export default function InventoryPage({
     } catch { setToast(t.common.exportFail); setTimeout(() => setToast(""), 3000); }
   };
 
-  const SortIcon = ({ field }: { field: string }) => {
-    if (sortField !== field) return <ArrowUpDown size={14} className="text-gray-300" />;
-    return sortDir === "asc" ? <ArrowUp size={14} className="text-blue-500" /> : <ArrowDown size={14} className="text-blue-500" />;
-  };
+  // 타겟 탭에서만 순도 열 표시 (이름 아래 순도 줄은 숨겨 중복 방지)
+  const isTargetTab = categoryFilter === TARGET_CATEGORY;
+
 
   return (
     <div className="space-y-4 sm:space-y-5">
@@ -389,7 +397,11 @@ export default function InventoryPage({
           </div>
           <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1 overflow-x-auto">
             {CATEGORIES.map((cat) => (
-              <button key={cat} onClick={() => { setCategoryFilter(cat); setPage(1); }}
+              <button key={cat} onClick={() => {
+                setCategoryFilter(cat); setPage(1);
+                // 순도 정렬은 타겟 탭 전용 — 벗어나면 기본 정렬(날짜 내림차순)로
+                if (cat !== TARGET_CATEGORY && sortField === "purity") { setSortField("date"); setSortDir("desc"); }
+              }}
                 className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${categoryFilter === cat ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"}`}>
                 {CAT_LABEL_MAP[cat] || cat}
               </button>
@@ -412,14 +424,15 @@ export default function InventoryPage({
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100">
                     <th className="text-left text-xs font-semibold text-gray-500 px-4 py-3">{t.inventory.colTxNo}</th>
-                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("id")}><div className="flex items-center gap-1">ID <SortIcon field="id" /></div></th>
-                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("date")}><div className="flex items-center gap-1">{t.inventory.colDate} <SortIcon field="date" /></div></th>
+                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("id")}><div className="flex items-center gap-1">ID <SortIcon field="id" sortField={sortField} sortDir={sortDir} /></div></th>
+                    <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("date")}><div className="flex items-center gap-1">{t.inventory.colDate} <SortIcon field="date" sortField={sortField} sortDir={sortDir} /></div></th>
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colType}</th>
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colCategory}</th>
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colBarcode}</th>
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colItem}</th>
-                    <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("qty")}><div className="flex items-center justify-end gap-1">{t.inventory.colQty} <SortIcon field="qty" /></div></th>
-                    {!isEmployee && <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("amount")}><div className="flex items-center justify-end gap-1">{t.inventory.colAmount} <SortIcon field="amount" /></div></th>}
+                    {isTargetTab && <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("purity")}><div className="flex items-center gap-1">{t.inventory.colPurity} <SortIcon field="purity" sortField={sortField} sortDir={sortDir} /></div></th>}
+                    <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("qty")}><div className="flex items-center justify-end gap-1">{t.inventory.colQty} <SortIcon field="qty" sortField={sortField} sortDir={sortDir} /></div></th>
+                    {!isEmployee && <th className="text-right text-xs font-semibold text-gray-500 px-5 py-3 cursor-pointer" onClick={() => handleSort("amount")}><div className="flex items-center justify-end gap-1">{t.inventory.colAmount} <SortIcon field="amount" sortField={sortField} sortDir={sortDir} /></div></th>}
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colLocation}</th>
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colPartner}</th>
                     <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colRegistrant}</th>
@@ -428,7 +441,7 @@ export default function InventoryPage({
                 </thead>
                 <tbody>
                   {items.length === 0 ? (
-                    <tr><td colSpan={isEmployee ? 12 : 13} className="px-5 py-12 text-center text-sm text-gray-400">{t.common.noData}</td></tr>
+                    <tr><td colSpan={(isEmployee ? 12 : 13) + (isTargetTab ? 1 : 0)} className="px-5 py-12 text-center text-sm text-gray-400">{t.common.noData}</td></tr>
                   ) : items.map((item) => (
                     <tr key={item.id}
                       className="border-b border-gray-50 hover:bg-blue-50/30 transition-colors"
@@ -450,12 +463,13 @@ export default function InventoryPage({
                           {item.itemSpec && <span className="ml-1.5 text-[10px] text-violet-400 font-normal">ℹ</span>}
                         </p>
                         <p className="text-xs text-gray-400">{item.code}</p>
-                        {item.itemSpecShort && (
+                        {item.itemSpecShort && !isTargetTab && (
                           <p className="text-[11px] text-gray-400">
                             {item.itemSpecShort}
                           </p>
                         )}
                       </td>
+                      {isTargetTab && <td className="px-5 py-3.5 text-sm text-gray-600 whitespace-nowrap">{formatPurity(item.purity) ?? "-"}</td>}
                       <td className="px-5 py-3.5 text-sm text-right font-semibold text-gray-900">{formatQty(item.qty)}</td>
                       {!isEmployee && <td className="px-5 py-3.5 text-sm text-right text-gray-600">
                         {item.currency === "USD" ? (

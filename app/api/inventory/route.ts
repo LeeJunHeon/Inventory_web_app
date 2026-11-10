@@ -15,10 +15,10 @@ import {
 // 이동출고/이동입고는 직접 제출을 막기 위해 여기에 넣지 않는다.
 const VALID_TYPES = ["입고", "출고", "불출", "충진 입고", "사용중", "폐기", "이동"];
 
-/** 타겟 행의 스펙 칸 — labeled: "순도: 99.99%", 아니면 "순도 99.99%". 순도 없으면 null */
-function purityText(v: number | null, labeled: boolean): string | null {
+/** 타겟 행의 이름 아래 줄 — "순도 99.99%". 순도 없으면 null */
+function purityText(v: number | null): string | null {
   const f = formatPurity(v);
-  return f ? `순도${labeled ? ":" : ""} ${f}` : null;
+  return f ? `순도 ${f}` : null;
 }
 
 /** activity_log.snapshot 에 굳혀 둘 inventory_tx 스칼라 컬럼 전체 */
@@ -183,11 +183,10 @@ export async function GET(request: NextRequest) {
       } else if (searchField === "거래처") {
         andConditions.push({ partner: { name: textMatch(search) } });
       } else if (searchField === "품목스펙") {
-        andConditions.push(
-          purityWhere.length > 0
-            ? { OR: [{ item: waferSpecSearchWhere(search, exact) }, ...purityWhere] }
-            : { item: waferSpecSearchWhere(search, exact) }
-        );
+        andConditions.push({ item: waferSpecSearchWhere(search, exact) });
+      } else if (searchField === "순도") {
+        // 순도는 항상 숫자 일치 — 숫자로 읽히지 않으면 결과 0건
+        andConditions.push(puritySearch != null ? { OR: purityWhere } : { id: { in: [] } });
       } else {
         andConditions.push({
           OR: [
@@ -220,6 +219,11 @@ export async function GET(request: NextRequest) {
       date:   [{ txDate: sortDirParam }, { id: sortDirParam }],
       qty:    { qty: sortDirParam },
       amount: { amount: sortDirParam },
+      // 순도 없는 행은 오름·내림 모두 맨 뒤
+      purity: [
+        { targetUnit: { purity: { sort: sortDirParam, nulls: "last" } } },
+        { txDate: "desc" }, { id: "desc" },
+      ],
     };
     const orderBy = orderByMap[sortFieldParam] ?? [{ txDate: "desc" }, { id: "desc" }];
 
@@ -273,13 +277,11 @@ export async function GET(request: NextRequest) {
       txReasonId: tx.txReasonId ?? null,
       txReason:   tx.txReason?.name  || "",
       userName:   tx.user?.name      ?? null,
-      itemSpec:   tx.item.category.name === TARGET_CATEGORY
-        ? purityText(txUnitPurity(tx), true)
-        : formatWaferSpecSummary(tx.item.waferSpec, { labeled: true }),
+      itemSpec:   formatWaferSpecSummary(tx.item.waferSpec, { labeled: true }),
       itemSpecShort: tx.item.category.name === WAFER_CATEGORY
         ? formatWaferSpecSummary(tx.item.waferSpec, { labeled: false })
         : tx.item.category.name === TARGET_CATEGORY
-          ? purityText(txUnitPurity(tx), false)
+          ? purityText(txUnitPurity(tx))
           : null,
       createdAt:  tx.createdAt?.toISOString() ?? null,
     }));
