@@ -175,7 +175,6 @@ async function main() {
         diameterInch:  req(toInt(r.diameter_inch), "diameter_inch"),
         thicknessInch: toDec(r.thickness_inch),
         materialCode:  r.material_code,
-        purity:        toDec(r.purity),
         hasCopper:     r.has_copper || null,
       })),
       skipDuplicates: true,

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { TARGET_CATEGORY } from "@/lib/targetPurity";
 
 /**
  * activity_log.detail 스냅샷 생성 헬퍼.
@@ -20,7 +21,8 @@ type TxSnapshot = {
   unitPrice: unknown;
   memo:      string | null;
   refTxNo:   string | null;
-  item?:     { code: string; name: string } | null;
+  item?:     { code: string; name: string; category?: { name: string } | null } | null;
+  targetUnit?: { purity: unknown } | null;
   location?: { name: string } | null;
   partner?:  { name: string } | null;
   barcode?:  { code: string } | null;
@@ -28,8 +30,12 @@ type TxSnapshot = {
 };
 
 export function formatInventoryTxDetail(tx: TxSnapshot): string {
+  const purity =
+    tx.txType === "입고" && tx.item?.category?.name === TARGET_CATEGORY && tx.targetUnit?.purity != null
+      ? `순도:${Number(tx.targetUnit.purity)}%` : null;
   return join([
     `[${tx.txType}] ${tx.item?.name ?? "-"}(${tx.item?.code ?? "-"}) × ${tx.qty}`,
+    purity,
     tx.txNo               ? `전표:${tx.txNo}` : null,
     tx.location           ? `위치:${tx.location.name}` : null,
     tx.partner            ? `거래처:${tx.partner.name}` : null,
@@ -46,7 +52,10 @@ export async function buildInventoryTxDetail(txId: number): Promise<string | und
   try {
     const tx = await prisma.inventoryTx.findUnique({
       where:   { id: txId },
-      include: { item: true, location: true, partner: true, barcode: true },
+      include: {
+        item: { include: { category: true } }, location: true, partner: true, barcode: true,
+        targetUnit: { select: { purity: true } },
+      },
     });
     return tx ? formatInventoryTxDetail(tx) : undefined;
   } catch {

@@ -18,14 +18,14 @@ interface ItemOption {
   id: number; code: string; name: string;
   category: string; categoryId: number;
   unit: string | null; note: string | null; isActive: boolean; minStockQty?: number;
-  purity?: number | null; hasCopper?: string | null; copperThickness?: number | null; consumeAlertG?: number | null;
+  hasCopper?: string | null; copperThickness?: number | null; consumeAlertG?: number | null;
   waferSpec?: WaferSpecValues | null; specSummary?: string | null;
 }
 interface CategoryOption { id: number; name: string; codePrefix: string | null; parentId: number | null; }
 
 const CATS = ["전체", "웨이퍼", "타겟", "ALD", "가스", "기자재/소모품"];
 
-const EMPTY_FORM = { code: "", name: "", categoryId: "", unit: "", note: "", purity: "", hasCopper: "", copperThickness: "", consumeAlertG: "" };
+const EMPTY_FORM = { code: "", name: "", categoryId: "", unit: "", note: "", hasCopper: "", copperThickness: "", consumeAlertG: "" };
 
 type WaferForm = Record<WaferSpecKey, string>;
 const EMPTY_WAFER_FORM: WaferForm = {
@@ -57,7 +57,6 @@ export default function ItemsPage() {
       { header: "필요수량", value: item => item.minStockQty ?? 0 },
       { header: "비고",     value: item => item.note ?? "" },
       ...(catFilter === "타겟" ? [
-        { header: "순도(%)",       value: (item: ItemOption) => item.purity ?? "-" },
         { header: "Copper",        value: (item: ItemOption) => item.hasCopper === "Y" ? "있음" : item.hasCopper === "N" ? "없음" : "-" },
         { header: "Cu 두께(inch)", value: (item: ItemOption) => item.copperThickness ?? "-" },
       ] : []),
@@ -143,7 +142,6 @@ export default function ItemsPage() {
       categoryId: String(item.categoryId),
       unit: item.unit || "",
       note: item.note || "",
-      purity: item.purity?.toString() ?? "",
       hasCopper: item.hasCopper ?? "",
       copperThickness: item.copperThickness?.toString() ?? "",
       consumeAlertG: item.consumeAlertG?.toString() ?? "",
@@ -174,7 +172,6 @@ export default function ItemsPage() {
         categoryId: Number(form.categoryId),
         unit:       form.unit.trim() || null,
         note:       form.note.trim() || null,
-        purity: form.purity,
         hasCopper: form.hasCopper,
         copperThickness: form.copperThickness,
         consumeAlertG: form.consumeAlertG,
@@ -334,14 +331,6 @@ export default function ItemsPage() {
             {/* 타겟 전용 스펙 */}
             {isTarget && (
               <>
-                {/* 순도 */}
-                <div>
-                  <label className="block text-xs font-semibold text-blue-700 mb-1">순도 (%)</label>
-                  <input type="number" step="0.001" value={form.purity}
-                    onChange={e => setForm(f => ({ ...f, purity: e.target.value }))}
-                    placeholder="예: 99.999"
-                    className="w-full px-3 py-2.5 border border-blue-200 rounded-xl text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400" />
-                </div>
                 {/* Copper 유무 */}
                 <div>
                   <label className="block text-xs font-semibold text-blue-700 mb-1">Copper 유무</label>
@@ -448,7 +437,6 @@ export default function ItemsPage() {
                 <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.items.unitLabel}</th>
                 <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.items.noteLabel}</th>
                 {catFilter === "타겟" && <>
-                  <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">순도</th>
                   <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">Copper</th>
                   <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">Cu 두께</th>
                 </>}
@@ -460,7 +448,7 @@ export default function ItemsPage() {
               </tr></thead>
               <tbody>
                 {items.length === 0 ? (
-                  <tr><td colSpan={catFilter === "타겟" ? 10 : catFilter === WAFER_CATEGORY ? 7 + WAFER_SPEC_KEYS.length : 7} className="px-5 py-12 text-center text-sm text-gray-400">{t.items.noData}</td></tr>
+                  <tr><td colSpan={catFilter === "타겟" ? 9 : catFilter === WAFER_CATEGORY ? 7 + WAFER_SPEC_KEYS.length : 7} className="px-5 py-12 text-center text-sm text-gray-400">{t.items.noData}</td></tr>
                 ) : items.map(item => (
                   <tr key={item.id} className={`border-b border-gray-50 hover:bg-blue-50/30 group ${!item.isActive ? "opacity-40" : ""}`}>
                     <td className="px-5 py-3 text-sm font-mono font-semibold text-gray-900">{item.code}</td>
@@ -471,7 +459,6 @@ export default function ItemsPage() {
                     <td className="px-5 py-3 text-sm text-gray-500">{item.unit || "-"}</td>
                     <td className="px-5 py-3 text-sm text-gray-400">{item.note || "-"}</td>
                     {catFilter === "타겟" && <>
-                      <td className="px-5 py-3 text-sm text-gray-600">{item.purity != null ? `${item.purity}%` : "-"}</td>
                       <td className="px-5 py-3 text-sm text-gray-600">{item.hasCopper === "Y" ? "있음" : item.hasCopper === "N" ? "없음" : "-"}</td>
                       <td className="px-5 py-3 text-sm text-gray-600">{item.copperThickness != null ? `${item.copperThickness}"` : "-"}</td>
                     </>}
@@ -534,7 +521,6 @@ export default function ItemsPage() {
                 {catFilter === "타겟" && (
                   <p className="text-[11px] text-gray-400">
                     {[
-                      `순도 ${item.purity != null ? item.purity + "%" : "-"}`,
                       `Cu ${item.hasCopper === "Y" ? "있음" : item.hasCopper === "N" ? "없음" : "-"}`,
                       `Cu두께 ${item.copperThickness != null ? item.copperThickness + '"' : "-"}`,
                     ].join(" · ")}

@@ -144,7 +144,6 @@ model TargetSpec {
   diameterInch  Int      @map("diameter_inch")
   thicknessInch Decimal? @map("thickness_inch") @db.Decimal(5, 3)
   materialCode  String   @map("material_code") // AU, SI, SIO2, ATC 등
-  purity        Decimal? @db.Decimal(6, 3)
   hasCopper     String?  @map("has_copper") // Y | N
   copperThickness Decimal? @map("copper_thickness") @db.Decimal(5, 3)
   consumeAlertG   Decimal? @map("consume_alert_g") @db.Decimal(10, 3)
@@ -160,6 +159,7 @@ model TargetUnit {
   itemId     Int?      @map("item_id")
   status     String    @default("미사용") // 미사용 | 사용중 | 폐기 | 판매완료
   category   String    @default("sputter") // sputter | ald
+  purity     Decimal?  @db.Decimal(6, 3)
   createdAt  DateTime  @default(now()) @map("created_at") @db.Date
   disposedAt DateTime? @map("disposed_at") @db.Date
   note       String?

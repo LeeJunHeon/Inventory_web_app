@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
         locationName: latestLog?.location?.name ?? null,
         inboundDate: inboundDateMap.get(tu.id) ?? null,
         siteLocationId: inboundLocMap.get(tu.id) ?? 1,
-        purity:          tu.item?.targetSpec?.purity != null ? Number(tu.item.targetSpec.purity) : null,
+        purity:          tu.purity != null ? Number(tu.purity) : null,
         hasCopper:       tu.item?.targetSpec?.hasCopper ?? null,
         copperThickness: tu.item?.targetSpec?.copperThickness != null ? Number(tu.item.targetSpec.copperThickness) : null,
         // ALD 캐니스터 전용 필드 (sputter 응답에는 넣지 않는다)

@@ -29,6 +29,7 @@ import DatePicker           from "./DatePicker";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
 import { WAFER_SPEC_KEYS, hasOrientation, waferSpecLabelsT } from "@/lib/waferSpec";
 import type { WaferSpecValues } from "@/lib/waferSpec";
+import { TARGET_CATEGORY, PURITY_REQUIRED_ERROR, validateTargetPurity } from "@/lib/targetPurity";
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -105,6 +106,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const [currency, setCurrency]     = useState<"KRW" | "USD">("KRW");
   const [exchangeRateAtEntry, setExchangeRateAtEntry] = useState<number | null>(null);
   const [memo, setMemo]             = useState("");
+  const [purity, setPurity]         = useState("");
   const [saving, setSaving]         = useState(false);
   const [error, setError]           = useState("");
   const [aldConfirm, setAldConfirm] = useState<
@@ -218,7 +220,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       setLocationId(1);
       setCurrency("KRW");
       setExchangeRateAtEntry(null);
-      setMemo(""); setError(""); setAldConfirm(null); setShowItemSelector(false); setItemSelectorSearch("");
+      setMemo(""); setPurity(""); setError(""); setAldConfirm(null); setShowItemSelector(false); setItemSelectorSearch("");
       setShowBarcodeSelector(false); setBarcodeSelectorSearch(""); setBarcodeSelectorList([]);
       setWaferSpec(null);
       setShowInboundSelect(false); setSelectedInbound(null);
@@ -233,6 +235,9 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       setShowLabelModal(false);
     }
   }, [isOpen]);
+
+  // 순도는 타겟 입고 전용 — 분류·구분이 바뀌면 비운다 (각 변경 핸들러에서 setPurity(""))
+  const isTargetInbound = category === TARGET_CATEGORY && type === "입고";
 
   // 폐기(사용중 경로): 해당 품목의 폐기 가능한 사용중 건 목록 로드
   useEffect(() => {
@@ -395,6 +400,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           // setCategory → category useEffect가 setItemCode/setItemName을 "" 로 초기화함
           // await 이후에 덮어써야 하므로 setItemCode/setItemName은 아래로 이동
           isFromLookupRef.current = true;
+          if (bc.category !== category) setPurity("");
           setCategory(bc.category);
           const items = await fetch(`/api/items?category=${encodeURIComponent(bc.category)}`).then(r => r.json());
           setItemOptions(items);
@@ -460,6 +466,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           // setCategory → category useEffect가, setItemCode/setItemName을 "" 로 초기화
           // await 이전에 먼저 하면, setItemCode/setItemName이 날려 이후
           isFromLookupRef.current = true;
+          if (bc.category !== category) setPurity("");
           setCategory(bc.category);
           const items = await fetch(`/api/items?category=${encodeURIComponent(bc.category)}`).then(r => r.json()).then((r: ItemOption[]) => { setItemOptions(r); return r; });
           setItemOptions(items);
@@ -578,6 +585,16 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         return;
       }
     }
+    // 타겟 입고: 순도 필수
+    let purityValue: number | null = null;
+    if (isTargetInbound) {
+      const pr = validateTargetPurity(purity);
+      if (!pr.ok) {
+        setError(pr.error === PURITY_REQUIRED_ERROR ? t.tx.purityRequired : t.tx.purityInvalid);
+        return;
+      }
+      purityValue = pr.value;
+    }
     // 웨이퍼 입고: 바코드(입고 로트) 필수
     if (category === "웨이퍼" && type === "입고" && !barcodeId) {
       setError(t.tx.waferBarcodeRequired);
@@ -623,6 +640,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
           exchangeRateAtEntry: currency === "USD" ? exchangeRateAtEntry : null,
           locationId:   locationId,
           ...(confirmAldDispose ? { confirmAldDispose: true } : {}),
+          ...(isTargetInbound && { purity: purityValue }),
           ...(category === "ALD Canister" && {
             aldMaterialName: aldMaterialName || null,
             aldTareWeight:   aldTareWeight   ? parseFloat(aldTareWeight) : null,
@@ -824,7 +842,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                   setQuantity(""); setUnitPrice("");
                   setPartnerId(null); setPartnerName("");
                   setTxReasonId(null); setDisburseeId(null);
-                  setMemo(""); setWaferSpec(null); setError("");
+                  setMemo(""); setPurity(""); setWaferSpec(null); setError("");
                   setShowBarcodeCreate(false);
                   setAldMaterialName(""); setAldTareWeight(""); setAldInitialGross("");
                   setInboundType("신규");
@@ -1148,7 +1166,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
             <label className="block text-sm font-semibold text-gray-700 mb-2">{t.items.catLabel}</label>
             <div className="flex gap-2 flex-wrap">
               {["웨이퍼", "타겟", "ALD Canister", "가스", "기자재/소모품"].map((c) => (
-                <button key={c} onClick={() => { setCategory(c); setInboundType("신규"); }}
+                <button key={c} onClick={() => { if (c !== category) setPurity(""); setCategory(c); setInboundType("신규"); }}
                   className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                     category === c
                       ? `${CATEGORY_COLORS[c]} shadow-sm ring-1 ring-gray-200`
@@ -1289,6 +1307,16 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
             </div>
           </div>
+
+          {/* 순도 (타겟 입고 시만) */}
+          {isTargetInbound && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tx.purityLabel} <span className="text-rose-500">*</span></label>
+              <input type="number" step="0.001" min="0" max="100" value={purity}
+                onChange={e => setPurity(e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+            </div>
+          )}
 
           {/* 웨이퍼 스펙 정보 (웨이퍼 품목 선택 시만 표시) */}
           {category === "웨이퍼" && itemId && (

@@ -5,6 +5,7 @@ import { InventoryItem, TYPE_COLORS } from "@/lib/data";
 import { useT } from "@/lib/i18n";
 import InboundSelectModal, { InboundTx } from "@/components/InboundSelectModal";
 import BarcodeLabelModal from "@/components/BarcodeLabelModal";
+import { TARGET_CATEGORY, PURITY_REQUIRED_ERROR, isPurityEmpty, validateTargetPurity } from "@/lib/targetPurity";
 
 interface LocationOption { id: number; name: string; }
 
@@ -30,6 +31,9 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
     item.exchangeRateAtEntry ?? null
   );
   const [memo, setMemo]           = useState(item.memo);
+  // 순도: 타겟 입고 전표이고 실물(target_unit)이 연결된 경우만 수정 가능. 비워 두면 바꾸지 않는다.
+  const canEditPurity = item.type === "입고" && item.category === TARGET_CATEGORY && item.targetUnitId != null;
+  const [purity, setPurity]       = useState(item.purity != null ? String(item.purity) : "");
   const [locationId, setLocationId]           = useState<number>(item.locationId ?? 1);
   const [locationOptions, setLocationOptions] = useState<LocationOption[]>([]);
   const [refTxNo, setRefTxNo]                 = useState<string | null>(item.refTxNo ?? null);
@@ -89,6 +93,14 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
     if ((type === '출고' || type === '불출') && !refTxNo) {
       setError('참조 입고건을 선택해주세요.'); return;
     }
+    let purityValue: number | null = null;
+    if (canEditPurity && !isPurityEmpty(purity)) {
+      const pr = validateTargetPurity(purity);
+      if (!pr.ok) {
+        setError(pr.error === PURITY_REQUIRED_ERROR ? t.tx.purityRequired : t.tx.purityInvalid); return;
+      }
+      purityValue = pr.value;
+    }
     setSaving(true); setError("");
     try {
       const res = await fetch(`/api/inventory?id=${item.id}`, {
@@ -107,6 +119,7 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
           txReasonId: txReasonId ?? null,
           currency,
           exchangeRateAtEntry: exchangeRateAtEntry ?? null,
+          ...(purityValue != null && { purity: purityValue }),
         }),
       });
       if (!res.ok) {
@@ -147,6 +160,16 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
             <input readOnly value={`${item.name} (${item.code})`}
               className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
           </div>
+
+          {/* 순도 (타겟 입고 전표만) */}
+          {canEditPurity && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">{t.tx.purityLabel}</label>
+              <input type="number" step="0.001" min="0" max="100" value={purity}
+                onChange={e => setPurity(e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
+          )}
 
           {/* 바코드 (읽기 전용) + 라벨 재출력 */}
           <div>

@@ -6,6 +6,7 @@ import { logActivity } from "@/lib/auth-helpers";
 import { buildInventoryTxDetail } from "@/lib/logDetail";
 import { LOT_CONSUME_TYPES } from "@/lib/txTypes";
 import { kstTodayDbDate } from "@/lib/kst";
+import { TARGET_CATEGORY, validateTargetPurity } from "@/lib/targetPurity";
 
 const VALID_TYPES = ["입고", "출고", "불출", "충진 입고"];
 
@@ -261,6 +262,8 @@ export async function POST(request: NextRequest) {
     // 입고 시 바코드/타겟유닛 필수 검증 (카테고리별)
     // 바코드 필수: 타겟 / ALD Canister / 웨이퍼 (입고 로트 1:1)
     // targetUnit 연결 필수: 타겟 / ALD Canister 전용 (웨이퍼는 targetUnitId=null이므로 제외)
+    // 순도 필수: 타겟 전용 — 입고 행과 같은 트랜잭션에서 target_unit.purity 에 저장
+    let inboundPurity: { targetUnitId: number; value: number } | null = null;
     if (body.txType === "입고") {
       const item = await prisma.item.findUnique({
         where: { id: Number(body.itemId) },
@@ -283,6 +286,7 @@ export async function POST(request: NextRequest) {
         );
       }
       // 바코드는 있지만 targetUnitId가 없는 경우 (타겟/ALD 전용, 웨이퍼는 여기 안 들어옴)
+      let resolvedTargetUnitId: number | null = body.targetUnitId ? Number(body.targetUnitId) : null;
       if (needsTargetUnit && !body.targetUnitId) {
         const barcode = await prisma.barcode.findUnique({
           where: { id: Number(body.barcodeId) },
@@ -293,6 +297,16 @@ export async function POST(request: NextRequest) {
             { error: `바코드(${barcode?.code})에 연결된 정보가 없습니다. 바코드를 다시 생성해주세요.` },
             { status: 400 }
           );
+        }
+        resolvedTargetUnitId = barcode.targetUnitId;
+      }
+      if (catName === TARGET_CATEGORY) {
+        const purity = validateTargetPurity(body.purity);
+        if (!purity.ok) {
+          return NextResponse.json({ error: purity.error }, { status: 400 });
+        }
+        if (resolvedTargetUnitId) {
+          inboundPurity = { targetUnitId: resolvedTargetUnitId, value: purity.value };
         }
       }
     }
@@ -394,26 +408,36 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const tx = await prisma.inventoryTx.create({
-      data: {
-        txNo:         newTxNo,
-        txDate:       new Date(body.txDate),
-        txType:       body.txType,
-        itemId:       Number(body.itemId),
-        qty:          Number(body.qty),
-        unitPrice:           resolvedUnitPrice,
-        amount:              resolvedAmount,
-        partnerId:    finalPartnerId,
-        txReasonId:   body.txReasonId   || null,
-        locationId:   Number(body.locationId),
-        userId:       actingUserId ?? null,
-        memo:         body.memo         || null,
-        targetUnitId: body.targetUnitId || null,
-        barcodeId:    body.barcodeId    || null,
-        refTxNo:      body.refTxNo      || null,
-        currency:            resolvedCurrency,
-        exchangeRateAtEntry: resolvedExchangeRate,
-      },
+    // 입고 행 생성과 타겟 순도 저장은 한 트랜잭션으로 묶는다
+    const tx = await prisma.$transaction(async (db) => {
+      const created = await db.inventoryTx.create({
+        data: {
+          txNo:         newTxNo,
+          txDate:       new Date(body.txDate),
+          txType:       body.txType,
+          itemId:       Number(body.itemId),
+          qty:          Number(body.qty),
+          unitPrice:           resolvedUnitPrice,
+          amount:              resolvedAmount,
+          partnerId:    finalPartnerId,
+          txReasonId:   body.txReasonId   || null,
+          locationId:   Number(body.locationId),
+          userId:       actingUserId ?? null,
+          memo:         body.memo         || null,
+          targetUnitId: body.targetUnitId || null,
+          barcodeId:    body.barcodeId    || null,
+          refTxNo:      body.refTxNo      || null,
+          currency:            resolvedCurrency,
+          exchangeRateAtEntry: resolvedExchangeRate,
+        },
+      });
+      if (inboundPurity) {
+        await db.targetUnit.update({
+          where: { id: inboundPurity.targetUnitId },
+          data:  { purity: inboundPurity.value },
+        });
+      }
+      return created;
     });
 
     // 충진 입고 시: ald_canister_spec 물질명 업데이트

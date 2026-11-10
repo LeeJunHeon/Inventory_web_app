@@ -6,6 +6,7 @@ import { requireAuth, getSessionUser, getSessionUserId, logActivity } from "@/li
 import { buildInventoryTxDetail, formatInventoryTxDetail, inventoryTxHeader } from "@/lib/logDetail";
 import { LOT_CONSUME_TYPES, MOVE_IN, MOVE_OUT, recordAutoTransition, resolveAutoTransitionRevert } from "@/lib/txTypes";
 import { kstTodayDbDate } from "@/lib/kst";
+import { TARGET_CATEGORY, isPurityEmpty, validateTargetPurity } from "@/lib/targetPurity";
 
 
 // "이동"은 클라이언트가 보내는 별칭 — 서버가 이동출고/이동입고 두 행으로 변환한다.
@@ -212,6 +213,7 @@ export async function GET(request: NextRequest) {
           location: true,
           txReason: true,
           user:     true,
+          targetUnit: { select: { purity: true } },
         },
         orderBy,
         take: all ? ALL_MAX : limit,
@@ -244,6 +246,8 @@ export async function GET(request: NextRequest) {
       refTxNo:    tx.refTxNo    ?? null,
       itemId:     tx.itemId,
       barcodeId:  tx.barcodeId  ?? null,
+      targetUnitId: tx.targetUnitId ?? null,
+      purity:     tx.targetUnit?.purity != null ? Number(tx.targetUnit.purity) : null,
       partnerId:  tx.partnerId  ?? null,
       txReasonId: tx.txReasonId ?? null,
       txReason:   tx.txReason?.name  || "",
@@ -422,6 +426,8 @@ export async function POST(request: NextRequest) {
     // 입고 시 바코드/타겟유닛 필수 검증 (카테고리별)
     // 바코드 필수: 타겟 / ALD Canister / 웨이퍼 (입고 로트 1:1)
     // targetUnit 연결 필수: 타겟 / ALD Canister 전용 (웨이퍼는 targetUnitId=null이므로 제외)
+    // 순도 필수: 타겟 전용 — 입고 행과 같은 트랜잭션에서 target_unit.purity 에 저장
+    let inboundPurity: { targetUnitId: number; value: number } | null = null;
     if (body.txType === "입고") {
       const item = await prisma.item.findUnique({
         where: { id: Number(body.itemId) },
@@ -444,6 +450,7 @@ export async function POST(request: NextRequest) {
         );
       }
       // 바코드는 있지만 targetUnitId가 없는 경우 (타겟/ALD 전용, 웨이퍼는 여기 안 들어옴)
+      let resolvedTargetUnitId: number | null = body.targetUnitId ? Number(body.targetUnitId) : null;
       if (needsTargetUnit && !body.targetUnitId) {
         const barcode = await prisma.barcode.findUnique({
           where: { id: Number(body.barcodeId) },
@@ -454,6 +461,16 @@ export async function POST(request: NextRequest) {
             { error: `바코드(${barcode?.code})에 연결된 정보가 없습니다. 바코드를 다시 생성해주세요.` },
             { status: 400 }
           );
+        }
+        resolvedTargetUnitId = barcode.targetUnitId;
+      }
+      if (catName === TARGET_CATEGORY) {
+        const purity = validateTargetPurity(body.purity);
+        if (!purity.ok) {
+          return NextResponse.json({ error: purity.error }, { status: 400 });
+        }
+        if (resolvedTargetUnitId) {
+          inboundPurity = { targetUnitId: resolvedTargetUnitId, value: purity.value };
         }
       }
     }
@@ -645,6 +662,14 @@ export async function POST(request: NextRequest) {
         exchangeRateAtEntry: resolvedExchangeRate,
       },
     });
+
+    // 타겟 입고 시: 받은 순도를 실물(target_unit)에 저장
+    if (inboundPurity) {
+      await db.targetUnit.update({
+        where: { id: inboundPurity.targetUnitId },
+        data:  { purity: inboundPurity.value },
+      });
+    }
 
     // 충진 입고 시: ald_canister_spec 물질명 업데이트 + 상태 → 사용중
     if (body.txType === "충진 입고" && body.barcodeId) {
@@ -918,7 +943,10 @@ export async function PUT(request: NextRequest) {
 
     const before = await prisma.inventoryTx.findUnique({
       where: { id: Number(id) },
-      include: { item: true, partner: true, location: true, barcode: true },
+      include: {
+        item: { include: { category: true } }, partner: true, location: true, barcode: true,
+        targetUnit: { select: { purity: true } },
+      },
     });
 
     if (!before) {
@@ -1057,24 +1085,47 @@ export async function PUT(request: NextRequest) {
       if (refError) return NextResponse.json({ error: refError }, { status: 400 });
     }
 
-    const tx = await prisma.inventoryTx.update({
-      where: { id: Number(id) },
-      data: {
-        txDate:     body.txDate ? new Date(body.txDate) : undefined,
-        txType:     body.txType     ?? undefined,
-        itemId:     body.itemId     ?? undefined,
-        qty:        body.qty        ?? undefined,
-        unitPrice:  body.unitPrice  ?? undefined,
-        amount:     body.amount     ?? undefined,
-        partnerId:  body.partnerId  ?? undefined,
-        memo:       body.memo       ?? undefined,
-        locationId: body.locationId ?? undefined,
-        barcodeId:  body.barcodeId  ?? undefined,
-        refTxNo:    body.refTxNo !== undefined ? (body.refTxNo ?? null) : undefined,
-        txReasonId: body.txReasonId ?? undefined,
-        currency:   body.currency   ?? undefined,
-        exchangeRateAtEntry: body.exchangeRateAtEntry ?? undefined,
-      },
+    // 타겟 입고 전표의 순도 수정 — 칸이 비어 있으면 순도는 바꾸지 않는다
+    let nextPurity: number | null = null;
+    if (
+      !isPurityEmpty(body.purity) && before.txType === "입고" &&
+      before.item.category.name === TARGET_CATEGORY && before.targetUnitId
+    ) {
+      const purity = validateTargetPurity(body.purity);
+      if (!purity.ok) {
+        return NextResponse.json({ error: purity.error }, { status: 400 });
+      }
+      nextPurity = purity.value;
+    }
+    const beforePurity = before.targetUnit?.purity != null ? Number(before.targetUnit.purity) : null;
+    const purityChanged = nextPurity !== null && nextPurity !== beforePurity;
+
+    const tx = await prisma.$transaction(async (db) => {
+      if (purityChanged && before.targetUnitId) {
+        await db.targetUnit.update({
+          where: { id: before.targetUnitId },
+          data:  { purity: nextPurity },
+        });
+      }
+      return db.inventoryTx.update({
+        where: { id: Number(id) },
+        data: {
+          txDate:     body.txDate ? new Date(body.txDate) : undefined,
+          txType:     body.txType     ?? undefined,
+          itemId:     body.itemId     ?? undefined,
+          qty:        body.qty        ?? undefined,
+          unitPrice:  body.unitPrice  ?? undefined,
+          amount:     body.amount     ?? undefined,
+          partnerId:  body.partnerId  ?? undefined,
+          memo:       body.memo       ?? undefined,
+          locationId: body.locationId ?? undefined,
+          barcodeId:  body.barcodeId  ?? undefined,
+          refTxNo:    body.refTxNo !== undefined ? (body.refTxNo ?? null) : undefined,
+          txReasonId: body.txReasonId ?? undefined,
+          currency:   body.currency   ?? undefined,
+          exchangeRateAtEntry: body.exchangeRateAtEntry ?? undefined,
+        },
+      });
     });
 
     // activity_log 기록
@@ -1109,6 +1160,8 @@ export async function PUT(request: NextRequest) {
         const afterBarcode = await prisma.barcode.findUnique({ where: { id: Number(body.barcodeId) } });
         _changes.push(`바코드: ${before.barcode?.code ?? "-"} → ${afterBarcode?.code ?? String(body.barcodeId)}`);
       }
+      if (purityChanged)
+        _changes.push(`순도: ${beforePurity ?? "-"} → ${nextPurity}`);
     }
     const _detail = _changes.length > 0
       ? `${inventoryTxHeader(before)} ${_changes.join(" | ")}`

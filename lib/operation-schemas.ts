@@ -164,12 +164,14 @@ export const OPERATION_SCHEMAS: OperationSchema[] = [
   {
     id: "inventory_inbound_target",
     label: "타겟 입고",
-    description: "새 타겟을 입고한다. 바코드는 시스템이 자동 생성.",
+    description: "새 타겟을 입고한다. 바코드는 시스템이 자동 생성. 순도를 먼저 받은 뒤 바코드를 생성한다 (순도 없이 바코드부터 만들면 입고가 거부되어 쓰지 않는 바코드가 남는다).",
     triggers: ["타겟 입고", "타겟 들어왔어"],
     appliesWhen: { categoryName: "타겟" },
     fields: [
       { name: "itemId",     label: "품목(타겟)", type: "id_ref", required: true, lookup: "search_items" },
       { name: "locationId", label: "위치",       type: "id_ref", required: true, lookup: "list_locations" },
+      { name: "purity",     label: "순도(%)",    type: "number", required: true,
+        validation: "0 초과 100 이하 숫자(%), 예: 99.99. 추측하지 말고 반드시 사용자에게 받는다" },
       { name: "memo",       label: "비고",       type: "text",   required: false },
       { name: "barcodeId",  label: "바코드",     type: "barcode", required: true, auto: "system_generate" },
       { name: "txDate",     label: "입고일",     type: "date",   required: true, auto: "today" },
@@ -177,10 +179,10 @@ export const OPERATION_SCHEMAS: OperationSchema[] = [
     steps: [
       { api: "POST /api/internal/barcodes", body: ["itemId"], returns: "barcodeId" },
       { api: "POST /api/internal/inventory",
-        body: ["txType=입고", "itemId", "qty=1", "locationId", "barcodeId", "memo", "txDate"] },
+        body: ["txType=입고", "itemId", "qty=1", "locationId", "purity", "barcodeId", "memo", "txDate"] },
     ],
     cardTitle: "타겟 입고 확인",
-    cardShow: ["itemId", "locationId", "memo"],
+    cardShow: ["itemId", "locationId", "purity", "memo"],
   },
   {
     id: "inventory_inbound_wafer",
