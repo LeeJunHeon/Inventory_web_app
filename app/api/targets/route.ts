@@ -6,6 +6,7 @@ import { buildTargetLogDetail } from "@/lib/logDetail";
 import { createDisposalTxForTarget } from "@/lib/txTypes";
 import { checkAndSendConsumeAlert } from "@/lib/targetConsumeAlert";
 import { formatKstDateTime, kstTodayDbDate } from "@/lib/kst";
+import { PURITY_FORMAT_ERROR, parsePuritySearch } from "@/lib/targetPurity";
 
 // GET /api/targets?barcode=T-0187&page=1&limit=50
 export async function GET(request: NextRequest) {
@@ -14,19 +15,28 @@ export async function GET(request: NextRequest) {
     const barcode   = searchParams.get("barcode")   || "";
     const itemCode  = searchParams.get("itemCode")  || "";
     const itemName  = searchParams.get("itemName")  || "";
+    const purityQ   = searchParams.get("purity")    || "";
     const page    = Math.max(1, parseInt(searchParams.get("page")  || "1", 10));
     const limit   = Math.max(1, parseInt(searchParams.get("limit") || "50", 10));
     const skip    = (page - 1) * limit;
     const all     = searchParams.get("all") === "true";
 
-    // 품목코드 또는 품목명 검색: 해당 품목의 타겟 목록 반환
-    if (itemCode || itemName) {
+    // 품목코드 / 품목명 / 순도 검색: 해당 조건의 타겟 목록 반환 (순도는 숫자 일치)
+    if (itemCode || itemName || purityQ) {
       const whereItem: any = {};
       if (itemCode) whereItem.code = { contains: itemCode, mode: "insensitive" };
       if (itemName) whereItem.name = { contains: itemName, mode: "insensitive" };
+      const purity = purityQ ? parsePuritySearch(purityQ) : null;
+      if (purityQ && purity == null) {
+        return NextResponse.json({ error: PURITY_FORMAT_ERROR }, { status: 400 });
+      }
 
       const targetUnits = await prisma.targetUnit.findMany({
-        where: { category: "sputter", item: whereItem },
+        where: {
+          category: "sputter",
+          ...(itemCode || itemName ? { item: whereItem } : {}),
+          ...(purity != null ? { purity } : {}),
+        },
         include: {
           item: { include: { category: true, targetSpec: true } },
           barcodes: { take: 1 },
@@ -41,6 +51,7 @@ export async function GET(request: NextRequest) {
         itemName:     tu.item?.name                     || "",
         materialName: tu.item?.targetSpec?.materialCode || "",
         status:       tu.status,
+        purity:       tu.purity != null ? Number(tu.purity) : null,
       }));
 
       return NextResponse.json({ targetList });
@@ -112,6 +123,7 @@ export async function GET(request: NextRequest) {
           itemName:     bcItem?.name                      || "",
           materialName: bcItem?.targetSpec?.materialCode  || "",
           status:       bc.targetUnit.status,
+          purity:       bc.targetUnit.purity != null ? Number(bc.targetUnit.purity) : null,
           note:         bc.targetUnit.note                || "",
           consumeAlertG,
           firstWeight,

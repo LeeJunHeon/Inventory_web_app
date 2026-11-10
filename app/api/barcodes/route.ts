@@ -5,6 +5,7 @@ import { requireAuth, getSessionUserId, logActivity } from "@/lib/auth-helpers";
 import { formatBarcodeDetail, formatAldBarcodeDetail, barcodeHeader } from "@/lib/logDetail";
 import { expandBarcodeVariants } from "@/lib/barcodeUtils";
 import { barcodePrefixFor } from "@/lib/barcodePrefix";
+import { parsePuritySearch } from "@/lib/targetPurity";
 import { STOCK_PLUS_TYPES, STOCK_MINUS_TYPES, pickStockMinusDisposalIds } from "@/lib/txTypes";
 
 // GET /api/barcodes — 바코드 목록 조회
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
           where.OR = codeOR;
         }
       } else {
-        let searchOR;
+        let searchOR: object[];
         if (searchType === "품목코드") {
           searchOR = [
             { item: { code: { contains: search, mode: "insensitive" as const } } },
@@ -69,6 +70,9 @@ export async function GET(request: NextRequest) {
             { targetUnit: { item: { code: { contains: search, mode: "insensitive" as const } } } },
             { targetUnit: { item: { name: { contains: search, mode: "insensitive" as const } } } },
           ];
+          // 검색어가 순도 숫자면 실물 순도 일치도 OR (항상 숫자 equals)
+          const puritySearch = parsePuritySearch(search);
+          if (puritySearch != null) searchOR.push({ targetUnit: { purity: puritySearch } });
         }
         // category 필터와 search가 동시에 적용될 때 AND 조건으로 결합
         if (where.OR) {
@@ -121,6 +125,7 @@ export async function GET(request: NextRequest) {
         itemName:     item?.name     || "",
         category:     item?.category?.name || "",
         targetUnitId: b.targetUnit?.id ?? null,
+        purity:       b.targetUnit?.purity != null ? Number(b.targetUnit.purity) : null,
         isActive:     b.isActive,
         memo:         b.memo ?? null,
         remainQty,

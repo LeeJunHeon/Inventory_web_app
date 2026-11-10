@@ -20,6 +20,7 @@ interface UsingLot {
   locationId: number;
   locationName: string;
   barcodeCode: string;
+  purity?: number | null;
 }
 import BarcodeCameraScanner from "./BarcodeCameraScanner";
 import BarcodeLabelModal from "./BarcodeLabelModal";
@@ -29,7 +30,7 @@ import DatePicker           from "./DatePicker";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
 import { WAFER_SPEC_KEYS, hasOrientation, waferSpecLabelsT } from "@/lib/waferSpec";
 import type { WaferSpecValues } from "@/lib/waferSpec";
-import { TARGET_CATEGORY, PURITY_REQUIRED_ERROR, validateTargetPurity } from "@/lib/targetPurity";
+import { TARGET_CATEGORY, PURITY_REQUIRED_ERROR, formatPurity, validateTargetPurity } from "@/lib/targetPurity";
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -53,7 +54,7 @@ interface PartnerOption  {
 interface TxReasonOption { id: number; name: string; }
 interface UserOption { id: number; name: string; role: string; }
 interface LocationOption { id: number; name: string; }
-interface BarcodeOption  { id: number; code: string; itemCode: string; itemName: string; isActive: string; remainQty: number; }
+interface BarcodeOption  { id: number; code: string; itemCode: string; itemName: string; isActive: string; remainQty: number; purity?: number | null; }
 type WaferSpecInfo = WaferSpecValues;
 interface SelectedInbound {
   txNo: string;
@@ -66,6 +67,7 @@ interface SelectedInbound {
   partnerName: string;
   itemCode:     string;
   barcodeCode:  string;
+  purity?:      number | null;
 }
 
 
@@ -97,6 +99,8 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
   const [barcodeInput, setBarcodeInput] = useState("");
   const [barcodeId, setBarcodeId]     = useState<number | null>(null);
   const [targetUnitId, setTargetUnitId] = useState<number | null>(null);
+  // 연결 실물의 순도 (표시 전용) — targetUnitId 와 함께 설정된다
+  const [linkedPurity, setLinkedPurity] = useState<number | null>(null);
   const [refTxNo, setRefTxNo]         = useState<string | null>(null);
   const [quantity, setQuantity]     = useState("");
   const [unitPrice, setUnitPrice]   = useState("");
@@ -394,6 +398,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
 
         setBarcodeId(bc.barcodeId);
         setTargetUnitId(bc.targetUnitId ?? null);
+        setLinkedPurity(bc.purity ?? null);
         setRefTxNo(usingRef ? usingRef.txNo : (bc.refTxNo ?? null));
         if (usingRef) setLocationId(usingRef.locationId);
         if (bc.category && bc.category !== category) {
@@ -433,6 +438,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                   partnerName:  found.partnerName,
                   itemCode:     found.itemCode     ?? "",
                   barcodeCode:  found.barcodeCode  ?? "",
+                  purity:       found.purity       ?? null,
                 });
                 // 이동: 원본 로트 위치가 출발지 → 반대편을 도착지로 자동 설정
                 if (type === "이동" && found.locationId) {
@@ -462,6 +468,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
         }
         setBarcodeId(bc.barcodeId);
         setTargetUnitId(bc.targetUnitId ?? null);
+        setLinkedPurity(bc.purity ?? null);
         if (bc.category && bc.category !== category) {
           // setCategory → category useEffect가, setItemCode/setItemName을 "" 로 초기화
           // await 이전에 먼저 하면, setItemCode/setItemName이 날려 이후
@@ -496,9 +503,10 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
       partnerName: inbound.partnerName,
       itemCode:    inbound.itemCode    ?? "",
       barcodeCode: inbound.barcodeCode ?? "",
+      purity:      inbound.purity      ?? null,
     });
     if (inbound.barcodeId)    setBarcodeId(inbound.barcodeId);
-    if (inbound.targetUnitId) setTargetUnitId(inbound.targetUnitId);
+    if (inbound.targetUnitId) { setTargetUnitId(inbound.targetUnitId); setLinkedPurity(inbound.purity ?? null); }
     // 이동: 원본 로트의 위치가 출발지 → 반대편을 도착지로 자동 설정 (본사=1/공덕=2)
     if (type === "이동" && inbound.locationId) {
       setLocationId(inbound.locationId === 1 ? 2 : 1);
@@ -787,7 +795,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 <div className="flex items-center justify-between w-full">
                   <div>
                     <p className="text-sm font-mono font-semibold text-gray-900">{b.code}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{b.itemName} <span className="text-gray-400 font-mono">· {b.itemCode}</span></p>
+                    <p className="text-xs text-gray-500 mt-0.5">{b.itemName} <span className="text-gray-400 font-mono">· {b.itemCode}</span>{formatPurity(b.purity) && <span className="text-gray-400"> · 순도 {formatPurity(b.purity)}</span>}</p>
                   </div>
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ml-2 shrink-0 ${
                     b.remainQty > 0
@@ -969,6 +977,9 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                 {t.tx.targetLinked(String(targetUnitId).padStart(3, "0"))}
               </span>
             )}
+            {targetUnitId && formatPurity(linkedPurity) && (
+              <span className="ml-2 text-xs text-gray-500">순도 {formatPurity(linkedPurity)}</span>
+            )}
             {/* 충진 입고 시 물질 선택 + Gross Weight */}
             {category === "ALD Canister" && type === "입고" && inboundType === "충진" && barcodeId && (
               <div className="mt-3 space-y-3">
@@ -1111,7 +1122,7 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                       <option value="">-</option>
                       {usingLots.map(l => (
                         <option key={l.txNo} value={l.txNo}>
-                          #{l.txNo} · {l.txDate}{l.barcodeCode ? ` · ${l.barcodeCode}` : ""} · {t.tx.remainQty(l.remainQty)}{l.locationName ? ` · ${l.locationName}` : ""}
+                          #{l.txNo} · {l.txDate}{l.barcodeCode ? ` · ${l.barcodeCode}` : ""}{formatPurity(l.purity) ? ` · 순도 ${formatPurity(l.purity)}` : ""} · {t.tx.remainQty(l.remainQty)}{l.locationName ? ` · ${l.locationName}` : ""}
                         </option>
                       ))}
                     </select>
@@ -1132,6 +1143,9 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }: Transac
                         <span className="text-emerald-500">{selectedInbound.txDate}</span>
                         {selectedInbound.partnerName && (
                           <span className="text-emerald-500">· {selectedInbound.partnerName}</span>
+                        )}
+                        {formatPurity(selectedInbound.purity) && (
+                          <span className="text-gray-500">· 순도 {formatPurity(selectedInbound.purity)}</span>
                         )}
                       </div>
                       <p className="text-emerald-400">{t.tx.remainQty(selectedInbound.remainQty)}</p>

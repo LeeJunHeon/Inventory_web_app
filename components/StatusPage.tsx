@@ -13,6 +13,7 @@ import type { XlsxSheet } from "@/lib/xlsxUtils";
 import { kstToday } from "@/lib/kst";
 import { WAFER_SPEC_KEYS, WAFER_SPEC_TEXT_KEYS, hasOrientation, formatWaferSpecSummary, waferSpecLabelsT } from "@/lib/waferSpec";
 import type { WaferSpecValues } from "@/lib/waferSpec";
+import { parsePuritySearch } from "@/lib/targetPurity";
 
 interface LocationOption { id: number; name: string; }
 
@@ -214,8 +215,11 @@ export default function StatusPage({ initialLocationId, initialStockFilter }: St
     return u.status === f;
   };
 
+  // 검색어가 순도 숫자면 실물 순도 숫자 일치도 통과
+  const puritySearch = parsePuritySearch(search);
   const searchedTargets = targetUnits.filter(u =>
-    matchAny([u.barcodeCode, u.itemCode, u.itemName]));
+    matchAny([u.barcodeCode, u.itemCode, u.itemName]) ||
+    (puritySearch != null && u.purity === puritySearch));
   const searchedAld = aldUnits.filter(u =>
     matchAny([u.barcodeCode, u.itemCode, u.itemName, u.materialName]));
 

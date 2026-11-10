@@ -5,7 +5,7 @@ import { InventoryItem, TYPE_COLORS } from "@/lib/data";
 import { useT } from "@/lib/i18n";
 import InboundSelectModal, { InboundTx } from "@/components/InboundSelectModal";
 import BarcodeLabelModal from "@/components/BarcodeLabelModal";
-import { TARGET_CATEGORY, PURITY_REQUIRED_ERROR, isPurityEmpty, validateTargetPurity } from "@/lib/targetPurity";
+import { TARGET_CATEGORY, PURITY_REQUIRED_ERROR, formatPurity, isPurityEmpty, validateTargetPurity } from "@/lib/targetPurity";
 
 interface LocationOption { id: number; name: string; }
 
@@ -339,6 +339,9 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
                       <span className="text-emerald-500">{selectedInbound.txDate}</span>
                       {selectedInbound.partnerName && (
                         <span className="text-emerald-500">· {selectedInbound.partnerName}</span>
+                      )}
+                      {formatPurity(selectedInbound.purity) && (
+                        <span className="text-gray-500">· 순도 {formatPurity(selectedInbound.purity)}</span>
                       )}
                     </div>
                     <p className="text-emerald-400">{t.tx.remainQty(selectedInbound.remainQty)}</p>

@@ -61,6 +61,7 @@ export async function GET(request: NextRequest) {
       itemName:     item?.name     ?? "",
       category:     item?.category?.name ?? "",
       targetUnitId: barcode.targetUnitId ?? null,
+      purity:       barcode.targetUnit?.purity != null ? Number(barcode.targetUnit.purity) : null,
       refTxNo,
       inboundCount: inbounds.length,
       ambiguous:    inbounds.length > 1,

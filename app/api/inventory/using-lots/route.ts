@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-helpers";
+import { txUnitPurity } from "@/lib/targetPurity";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
         txNo: { not: null },
         ...(locationIdParam ? { locationId: Number(locationIdParam) } : {}),
       },
-      include: { location: true, barcode: true },
+      include: { location: true, barcode: { include: { targetUnit: { select: { purity: true } } } }, targetUnit: { select: { purity: true } } },
       orderBy: { id: "desc" },
     });
 
@@ -59,6 +60,7 @@ export async function GET(request: NextRequest) {
         locationId:   tx.locationId,
         locationName: tx.location?.name ?? "",
         barcodeCode:  tx.barcode?.code  ?? "",
+        purity:       txUnitPurity(tx),
       }))
       .filter(tx => tx.remainQty > 0);
 

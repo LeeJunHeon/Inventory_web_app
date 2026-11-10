@@ -6,12 +6,20 @@ import { requireAuth, getSessionUser, getSessionUserId, logActivity } from "@/li
 import { buildInventoryTxDetail, formatInventoryTxDetail, inventoryTxHeader } from "@/lib/logDetail";
 import { LOT_CONSUME_TYPES, MOVE_IN, MOVE_OUT, recordAutoTransition, resolveAutoTransitionRevert } from "@/lib/txTypes";
 import { kstTodayDbDate } from "@/lib/kst";
-import { TARGET_CATEGORY, isPurityEmpty, txUnitId, txUnitPurity, validateTargetPurity } from "@/lib/targetPurity";
+import {
+  TARGET_CATEGORY, formatPurity, isPurityEmpty, parsePuritySearch, txUnitId, txUnitPurity, validateTargetPurity,
+} from "@/lib/targetPurity";
 
 
 // "이동"은 클라이언트가 보내는 별칭 — 서버가 이동출고/이동입고 두 행으로 변환한다.
 // 이동출고/이동입고는 직접 제출을 막기 위해 여기에 넣지 않는다.
 const VALID_TYPES = ["입고", "출고", "불출", "충진 입고", "사용중", "폐기", "이동"];
+
+/** 타겟 행의 스펙 칸 — labeled: "순도: 99.99%", 아니면 "순도 99.99%". 순도 없으면 null */
+function purityText(v: number | null, labeled: boolean): string | null {
+  const f = formatPurity(v);
+  return f ? `순도${labeled ? ":" : ""} ${f}` : null;
+}
 
 /** activity_log.snapshot 에 굳혀 둘 inventory_tx 스칼라 컬럼 전체 */
 function txRowSnapshot(row: {
@@ -157,6 +165,14 @@ export async function GET(request: NextRequest) {
       exact
         ? { equals: value, mode: "insensitive" as const }
         : { contains: value, mode: "insensitive" as const };
+    // 검색어가 순도 숫자로 읽히면 실물 순도 일치도 OR 로 (항상 숫자 equals)
+    const puritySearch = parsePuritySearch(search);
+    const purityWhere = puritySearch != null
+      ? [
+          { targetUnit: { purity: puritySearch } },
+          { barcode: { targetUnit: { purity: puritySearch } } },
+        ]
+      : [];
     if (search) {
       if (searchField === "품목명") {
         andConditions.push({ item: { name: textMatch(search) } });
@@ -167,7 +183,11 @@ export async function GET(request: NextRequest) {
       } else if (searchField === "거래처") {
         andConditions.push({ partner: { name: textMatch(search) } });
       } else if (searchField === "품목스펙") {
-        andConditions.push({ item: waferSpecSearchWhere(search, exact) });
+        andConditions.push(
+          purityWhere.length > 0
+            ? { OR: [{ item: waferSpecSearchWhere(search, exact) }, ...purityWhere] }
+            : { item: waferSpecSearchWhere(search, exact) }
+        );
       } else {
         andConditions.push({
           OR: [
@@ -178,6 +198,7 @@ export async function GET(request: NextRequest) {
               : { contains: search, mode: "insensitive" as const } } },
             { partner: { name: textMatch(search) } },
             { item: waferSpecSearchWhere(search, exact) },
+            ...purityWhere,
           ],
         });
       }
@@ -252,10 +273,14 @@ export async function GET(request: NextRequest) {
       txReasonId: tx.txReasonId ?? null,
       txReason:   tx.txReason?.name  || "",
       userName:   tx.user?.name      ?? null,
-      itemSpec:   formatWaferSpecSummary(tx.item.waferSpec, { labeled: true }),
+      itemSpec:   tx.item.category.name === TARGET_CATEGORY
+        ? purityText(txUnitPurity(tx), true)
+        : formatWaferSpecSummary(tx.item.waferSpec, { labeled: true }),
       itemSpecShort: tx.item.category.name === WAFER_CATEGORY
         ? formatWaferSpecSummary(tx.item.waferSpec, { labeled: false })
-        : null,
+        : tx.item.category.name === TARGET_CATEGORY
+          ? purityText(txUnitPurity(tx), false)
+          : null,
       createdAt:  tx.createdAt?.toISOString() ?? null,
     }));
 

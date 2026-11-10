@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, Loader2 } from "lucide-react";
+import { formatPurity } from "@/lib/targetPurity";
 
 export interface InboundTx {
   txNo: string;
@@ -19,6 +20,7 @@ export interface InboundTx {
   itemCode:     string;
   itemName:     string;
   barcodeCode:  string;
+  purity?:      number | null;
 }
 
 interface InboundSelectModalProps {
@@ -110,6 +112,9 @@ export default function InboundSelectModal({ isOpen, itemId, barcodeId, defaultL
                     )}
                     {tx.partnerName && (
                       <span className="text-xs text-gray-500">{tx.partnerName}</span>
+                    )}
+                    {formatPurity(tx.purity) && (
+                      <span className="text-xs text-gray-500">순도 {formatPurity(tx.purity)}</span>
                     )}
                   </div>
                   {tx.memo && (

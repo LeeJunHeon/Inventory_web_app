@@ -41,3 +41,26 @@ export function txUnitPurity(tx: TxUnitRef): number | null {
   const p = tx.targetUnit?.purity ?? tx.barcode?.targetUnit?.purity;
   return p != null ? Number(p) : null;
 }
+
+/** 순도 표시 — 99.99 → "99.99%", 값이 없으면 null. 화면·엑셀·API 공용 */
+export function formatPurity(v: number | null | undefined): string | null {
+  return v != null && Number.isFinite(v) ? `${v}%` : null;
+}
+
+/**
+ * 검색어를 순도 숫자로 읽는다. 앞뒤 공백과 끝의 % 를 떼고 validateTargetPurity 를 통과하면 그 숫자, 아니면 null.
+ * 순도 검색은 항상 숫자 일치(equals) — contains 를 쓰면 99.99 검색에 99.999 가 섞인다.
+ */
+export function parsePuritySearch(q: string | null | undefined): number | null {
+  if (q == null) return null;
+  const text = q.trim().replace(/%$/, "").trim();
+  if (text === "") return null;
+  const r = validateTargetPurity(text);
+  return r.ok ? r.value : null;
+}
+
+/** 바코드 옆 순도 — "T-55 · 99.999%", 순도 없으면 바코드만 */
+export function barcodeWithPurity(code: string, purity: number | null | undefined): string {
+  const f = formatPurity(purity);
+  return f ? `${code} · ${f}` : code;
+}

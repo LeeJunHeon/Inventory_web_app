@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { expandBarcodeVariants } from "@/lib/barcodeUtils";
 import { createHrCalendarEvent } from "@/lib/hrCalendar";
 import { isInternalClient } from "@/lib/internal-network";
+import { PURITY_FORMAT_ERROR, parsePuritySearch } from "@/lib/targetPurity";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,13 @@ export async function GET(request: NextRequest) {
         where = { item: { code: { contains: q, mode: "insensitive" } } };
       } else if (type === "품목명") {
         where = { item: { name: { contains: q, mode: "insensitive" } } };
+      } else if (type === "순도") {
+        // 스퍼터 실물 중 그 순도 (숫자 일치)
+        const purity = parsePuritySearch(q);
+        if (purity == null) {
+          return NextResponse.json({ error: PURITY_FORMAT_ERROR }, { status: 400 });
+        }
+        where = { category: "sputter", purity };
       }
 
       const targets = await prisma.targetUnit.findMany({
@@ -57,6 +65,7 @@ export async function GET(request: NextRequest) {
           itemCode:     tu.item?.code                            ?? "",
           materialCode: tu.item?.targetSpec?.materialCode        ?? "",
           status:       tu.status,
+          purity:       tu.purity != null ? Number(tu.purity) : null,
         }))
       );
     } catch (error) {
@@ -99,6 +108,7 @@ export async function GET(request: NextRequest) {
         itemName: s.targetUnit?.item?.name ?? null,
         itemCode: s.targetUnit?.item?.code ?? null,
         materialCode: s.targetUnit?.item?.targetSpec?.materialCode ?? null,
+        purity: s.targetUnit?.purity != null ? Number(s.targetUnit.purity) : null,
         latestWeight: s.targetUnit?.targetLogs[0]?.weight
           ? Number(s.targetUnit.targetLogs[0].weight)
           : null,

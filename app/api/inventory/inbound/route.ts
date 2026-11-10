@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { LOT_CONSUME_TYPES, MOVE_IN } from "@/lib/txTypes";
+import { txUnitPurity } from "@/lib/targetPurity";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,10 @@ export async function GET(request: NextRequest) {
             ...(locationIdParam ? { locationId: Number(locationIdParam) } : {}),
             ...(barcodeIdParam  ? { barcodeId:  Number(barcodeIdParam)  } : {}),
           },
-      include: { partner: true, location: true, item: true, barcode: true },
+      include: {
+        partner: true, location: true, item: true,
+        barcode: { include: { targetUnit: { select: { purity: true } } } }, targetUnit: { select: { purity: true } },
+      },
       orderBy: { id: "desc" },
     });
 
@@ -68,6 +72,7 @@ export async function GET(request: NextRequest) {
           itemCode:      tx.item?.code     ?? "",
           itemName:      tx.item?.name     ?? "",
           barcodeCode:   tx.barcode?.code  ?? "",
+          purity:        txUnitPurity(tx),
         };
       })
       .filter(tx => tx.remainQty > 0);

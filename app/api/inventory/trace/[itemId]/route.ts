@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth-helpers";
+import { txUnitPurity } from "@/lib/targetPurity";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +30,8 @@ export async function GET(
       },
       include: {
         partner:  { select: { name: true } },
-        barcode:  { select: { code: true } },
+        barcode:  { select: { code: true, targetUnit: { select: { purity: true } } } },
+        targetUnit: { select: { purity: true } },
         location: { select: { name: true } },
         txReason: { select: { name: true } },
         user:     { select: { name: true } },
@@ -49,6 +51,7 @@ export async function GET(
       memo:         tx.memo        ?? "",
       partnerName:  tx.partner?.name   ?? "",
       barcodeCode:  tx.barcode?.code   ?? "",
+      purity:       txUnitPurity(tx),
       locationName: tx.location?.name  ?? "",
       reasonName:   tx.txReason?.name  ?? "",
       userName:     tx.user?.name      ?? "",

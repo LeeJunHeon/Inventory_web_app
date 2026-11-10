@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getStockMinusDisposals, sumDisposalsByItem, MOVE_IN, MOVE_OUT } from "@/lib/txTypes";
 import { WAFER_CATEGORY, formatWaferSpecSummary } from "@/lib/waferSpec";
 import { waferSpecSearchWhere } from "@/lib/waferSpecServer";
+import { TARGET_CATEGORY, formatPurity, parsePuritySearch } from "@/lib/targetPurity";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,9 @@ export async function GET(request: NextRequest) {
 
     if (!query) return NextResponse.json([]);
 
+    // 전체 검색어가 순도 숫자면 실물 순도 일치도 OR (항상 숫자 equals)
+    const puritySearch = searchType === "전체" ? parsePuritySearch(query) : null;
+
     const whereCondition = (() => {
       if (searchType === "바코드")  return { barcodes: { some: { code: { equals: query, mode: "insensitive" as const } } } };
       if (searchType === "품목코드") return { code: { contains: query, mode: "insensitive" as const } };
@@ -25,6 +29,7 @@ export async function GET(request: NextRequest) {
           { name: { contains: query, mode: "insensitive" as const } },
           { barcodes: { some: { code: { contains: query, mode: "insensitive" as const } } } },
           waferSpecSearchWhere(query, false),
+          ...(puritySearch != null ? [{ targetUnits: { some: { purity: puritySearch } } }] : []),
         ],
       };
     })();
@@ -33,7 +38,8 @@ export async function GET(request: NextRequest) {
       where: whereCondition,
       include: {
         category: { select: { name: true } },
-        barcodes: { select: { id: true, code: true, isActive: true } },
+        barcodes: { select: { id: true, code: true, isActive: true, targetUnit: { select: { purity: true } } } },
+        targetUnits: { select: { purity: true } },
         inventoryTxs: { select: { txType: true, qty: true } },
         waferSpec: true,
       },
@@ -47,9 +53,21 @@ export async function GET(request: NextRequest) {
 
     const result = items.map(item => {
       // 바코드 검색 시 해당 바코드만 필터링
+      // 순도 검색으로 걸린 품목이면 그 순도인 바코드만 (순도 바코드가 없으면 다른 조건으로 걸린 것이므로 전부)
+      const purityOf = (b: { targetUnit: { purity: unknown } | null }) =>
+        b.targetUnit?.purity != null ? Number(b.targetUnit.purity) : null;
+      const purityBarcodes = puritySearch != null
+        ? item.barcodes.filter(b => purityOf(b) === puritySearch)
+        : [];
       const filteredBarcodes = searchType === "바코드"
         ? item.barcodes.filter(b => b.code.toLowerCase() === query.toLowerCase())
-        : item.barcodes;
+        : purityBarcodes.length > 0 ? purityBarcodes : item.barcodes;
+
+      // 타겟 품목 카드: 실물 순도 종류 (작은 값부터, 중복 제거, 순도 없는 실물 무시)
+      const purities = [...new Set(
+        item.targetUnits.map(u => u.purity != null ? Number(u.purity) : null)
+          .filter((v): v is number => v != null)
+      )].sort((a, b) => a - b);
 
       const inbound  = item.inventoryTxs.filter(t => t.txType === "입고");
       const outbound = item.inventoryTxs.filter(t => t.txType === "출고");
@@ -77,8 +95,10 @@ export async function GET(request: NextRequest) {
         category:  item.category?.name ?? "",
         specSummary: item.category?.name === WAFER_CATEGORY
           ? formatWaferSpecSummary(item.waferSpec, { labeled: false })
-          : null,
-        barcodes:  filteredBarcodes.map(b => ({ id: b.id, code: b.code, isActive: b.isActive })),
+          : item.category?.name === TARGET_CATEGORY && purities.length > 0
+            ? `순도 ${purities.map(v => formatPurity(v)).join(" · ")}`
+            : null,
+        barcodes:  filteredBarcodes.map(b => ({ id: b.id, code: b.code, isActive: b.isActive, purity: purityOf(b) })),
         txCount:   {
           inbound:  inbound.length,
           outbound: outbound.length,

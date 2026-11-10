@@ -9,12 +9,17 @@ import { buildSheet, exportXLSXSheets } from "@/lib/xlsxUtils";
 import type { XlsxColumn } from "@/lib/xlsxUtils";
 import { kstToday } from "@/lib/kst";
 import BarcodeLabelModal from "@/components/BarcodeLabelModal";
+import { TARGET_CATEGORY, formatPurity } from "@/lib/targetPurity";
 
 interface BarcodeItem {
   id: number; code: string; itemCode: string; itemName: string;
   category: string; targetUnitId: number | null; isActive: string;
+  purity?: number | null;
   memo?: string;
 }
+
+/** 타겟 바코드의 순도, 타겟이 아니거나 순도가 없으면 null */
+const barcodePurity = (b: BarcodeItem) => b.category === TARGET_CATEGORY ? formatPurity(b.purity) : null;
 interface ItemOption { id: number; code: string; name: string; }
 interface BlockedDeleteInfo {
   barcode: BarcodeItem;
@@ -71,6 +76,7 @@ export default function BarcodePage() {
       { header: "품목명",   value: b => b.itemName },
       { header: "품목군",   value: b => b.category },
       { header: "타겟ID",   value: b => b.targetUnitId ? formatTargetUnitId(b.targetUnitId) : "-" },
+      { header: "순도(%)",  value: b => b.category === TARGET_CATEGORY && b.purity != null ? b.purity : "-" },
       { header: "활성여부", value: b => b.isActive === "Y" ? t.barcode.active : t.barcode.inactive },
       { header: "메모",     value: b => b.memo ?? "" },
     ];
@@ -614,12 +620,13 @@ export default function BarcodePage() {
                   <div className="flex items-center gap-1">{t.barcode.catLabel} <SortIcon field="category" /></div>
                 </th>
                 <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.barcode.colTargetId}</th>
+                <th className="text-left text-xs font-semibold text-gray-500 px-5 py-3">{t.barcode.colPurity}</th>
                 <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">{t.barcode.colActive}</th>
                 <th className="text-center text-xs font-semibold text-gray-500 px-5 py-3">{t.inventory.colAction}</th>
               </tr></thead>
               <tbody>
                 {sortedBarcodes.length === 0 ? (
-                  <tr><td colSpan={8} className="px-5 py-12 text-center text-sm text-gray-400">{t.barcode.noData}</td></tr>
+                  <tr><td colSpan={9} className="px-5 py-12 text-center text-sm text-gray-400">{t.barcode.noData}</td></tr>
                 ) : sortedBarcodes.map((b) => (
                   <tr key={b.id}
                     className="border-b border-gray-50 hover:bg-blue-50/30"
@@ -635,6 +642,7 @@ export default function BarcodePage() {
                     <td className="px-5 py-3 text-sm text-gray-500 font-mono">
                       {b.targetUnitId ? formatTargetUnitId(b.targetUnitId) : "-"}
                     </td>
+                    <td className="px-5 py-3 text-sm text-gray-500">{barcodePurity(b) ?? "-"}</td>
                     <td className="px-5 py-3 text-center">
                       {b.isActive === "Y"
                         ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full"><Check size={12} />{t.barcode.active}</span>
@@ -682,7 +690,7 @@ export default function BarcodePage() {
                 <p className="text-sm text-gray-700">{b.itemName}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-400">
-                    {b.itemCode}{b.targetUnitId ? ` · ${formatTargetUnitId(b.targetUnitId)}` : ""}
+                    {b.itemCode}{b.targetUnitId ? ` · ${formatTargetUnitId(b.targetUnitId)}` : ""}{barcodePurity(b) ? ` · 순도 ${barcodePurity(b)}` : ""}
                   </span>
                   <div className="flex items-center gap-1">
                     <button onClick={() => setPrintItem(b)}

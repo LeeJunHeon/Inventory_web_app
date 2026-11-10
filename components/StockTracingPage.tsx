@@ -10,8 +10,9 @@ import { STOCK_PLUS_TYPES, MOVE_IN, MOVE_OUT } from "@/lib/txTypeConstants";
 import { buildSheet, exportXLSXSheets } from "@/lib/xlsxUtils";
 import type { XlsxColumn } from "@/lib/xlsxUtils";
 import { kstToday } from "@/lib/kst";
+import { barcodeWithPurity, formatPurity } from "@/lib/targetPurity";
 
-interface BarcodeInfo  { id: number; code: string; isActive: string; }
+interface BarcodeInfo  { id: number; code: string; isActive: string; purity?: number | null; }
 interface TxCount      { inbound: number; outbound: number; disburse: number; using?: number; disposal?: number; moveIn?: number; moveOut?: number; }
 interface SearchResult {
   itemId: number; itemCode: string; itemName: string; category: string;
@@ -23,7 +24,7 @@ interface TxRecord {
   id: number; txType: string; txNo: string | null; refTxNo: string | null;
   txDate: string; qty: number; unitPrice: number | null; currency: string;
   memo: string; partnerName: string; barcodeCode: string; locationName: string;
-  reasonName: string; userName: string;
+  reasonName: string; userName: string; purity?: number | null;
 }
 
 const TYPE_STYLE: Record<string, string> = {
@@ -77,6 +78,7 @@ export default function StockTracingPage() {
       { header: t.tracing.detailCurrency,  value: tx => tx.currency,         money: true },
       { header: t.tracing.detailLocation,  value: tx => tx.locationName || "" },
       { header: t.tracing.detailBarcode,   value: tx => tx.barcodeCode || "" },
+      { header: t.tracing.xlsxPurity,      value: tx => tx.purity ?? "" },
       { header: t.tracing.detailManager,   value: tx => tx.userName || "" },
       { header: t.tracing.detailMemo,      value: tx => tx.memo || "" },
     ];
@@ -313,7 +315,7 @@ export default function StockTracingPage() {
                             : "bg-white text-gray-600 border-gray-300 hover:border-blue-400"
                         }`}
                       >
-                        {b.code}
+                        {barcodeWithPurity(b.code, b.purity)}
                       </button>
                     ))}
                   </div>
@@ -376,7 +378,7 @@ export default function StockTracingPage() {
                           </td>
                           )}
                           <td className="px-4 py-3 text-xs font-mono text-gray-400 whitespace-nowrap">
-                            {tx.barcodeCode || "-"}
+                            {tx.barcodeCode ? barcodeWithPurity(tx.barcodeCode, tx.purity) : "-"}
                           </td>
                         </tr>
                       ))}
@@ -446,6 +448,7 @@ export default function StockTracingPage() {
                 { label: t.tracing.detailReason,     value: selectedTx.reasonName || "-" },
                 { label: t.tracing.detailLocation,   value: selectedTx.locationName || "-" },
                 { label: t.tracing.detailBarcode,    value: selectedTx.barcodeCode || "-" },
+                ...(selectedTx.purity != null ? [{ label: t.tracing.detailPurity, value: formatPurity(selectedTx.purity) ?? "-" }] : []),
                 { label: t.tracing.detailManager,    value: selectedTx.userName || "-" },
                 { label: t.tracing.detailMemo,       value: selectedTx.memo || "-" },
               ].map(({ label, value }) => (

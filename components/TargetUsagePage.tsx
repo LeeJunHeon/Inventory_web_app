@@ -15,10 +15,14 @@ import DatePicker from "@/components/DatePicker";
 import { normalizeBarcodeInput } from "@/lib/barcodeUtils";
 import { TargetPhoto } from "@/lib/targetPhotoTypes";
 import TargetPhotoGallery from "@/components/TargetPhotoGallery";
+import { formatPurity, parsePuritySearch } from "@/lib/targetPurity";
+
+type TargetSearchType = "바코드" | "품목코드" | "품목명" | "순도";
 
 interface TargetInfo {
   id: number; barcodeCode: string; itemCode: string; itemName: string;
   materialName: string; status: string; memo: string;
+  purity?: number | null;
   consumeAlertG?: number | null;
   firstWeight?: number | null;
   currentWeight?: number | null;
@@ -35,6 +39,7 @@ interface TargetListItem {
   itemName: string;
   materialName: string;
   status: string;
+  purity?: number | null;
 }
 
 interface TargetSearchResult {
@@ -44,6 +49,7 @@ interface TargetSearchResult {
   itemCode: string;
   materialCode: string;
   status: string;
+  purity?: number | null;
 }
 
 interface ChamberSlot {
@@ -55,6 +61,7 @@ interface ChamberSlot {
   itemName: string | null;
   itemCode: string | null;
   materialCode: string | null;
+  purity?: number | null;
   latestWeight: number | null;
   latestLoggedAt: string | null;
   loadedAt: string | null;
@@ -116,8 +123,9 @@ export default function TargetUsagePage() {
     "바코드":  t.target.searchTypeBarcode,
     "품목코드": t.target.searchTypeItemCode,
     "품목명":  t.target.searchTypeItemName,
+    "순도":    t.target.searchTypePurity,
   };
-  const [searchType, setSearchType]         = useState<"바코드" | "품목코드" | "품목명">("바코드");
+  const [searchType, setSearchType]         = useState<TargetSearchType>("바코드");
   const [targetList, setTargetList]         = useState<TargetListItem[]>([]);
   const [barcodeInput, setBarcodeInput]     = useState("");
   const barcodeInputRef                     = useRef<HTMLInputElement>(null);
@@ -231,7 +239,8 @@ export default function TargetUsagePage() {
   const [historyPage, setHistoryPage] = useState(1);
   const [historyTotal, setHistoryTotal] = useState(0);
   const [editingSlot, setEditingSlot]       = useState<ChamberSlot | null>(null);
-  const [slotSearchType, setSlotSearchType] = useState<"바코드" | "품목코드" | "품목명">("바코드");
+  const [slotSearchType, setSlotSearchType] = useState<TargetSearchType>("바코드");
+  const [slotSearchError, setSlotSearchError] = useState("");
   const [slotSearchQuery, setSlotSearchQuery] = useState("");
   const [slotSearchResults, setSlotSearchResults] = useState<TargetSearchResult[]>([]);
   const [slotSelectedTarget, setSlotSelectedTarget] = useState<TargetSearchResult | null>(null);
@@ -344,9 +353,17 @@ export default function TargetUsagePage() {
   useEffect(() => {
     if (!slotSearchQuery.trim()) {
       setSlotSearchResults([]);
+      setSlotSearchError("");
       return;
     }
     const timer = setTimeout(async () => {
+      // 순도는 숫자로 읽히지 않으면 조회하지 않는다
+      if (slotSearchType === "순도" && parsePuritySearch(slotSearchQuery) == null) {
+        setSlotSearchResults([]);
+        setSlotSearchError(t.tx.purityInvalid);
+        return;
+      }
+      setSlotSearchError("");
       setSlotSearchLoading(true);
       try {
         const res = await fetch(
@@ -361,7 +378,7 @@ export default function TargetUsagePage() {
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [slotSearchQuery, slotSearchType]);
+  }, [slotSearchQuery, slotSearchType, t]);
 
   // 타겟을 조회하지 않은 "전체" 상태에서는 화면을 덜 차지하게 10줄만 본다.
   // 타겟을 선택하면 그 타겟 기록만 나오므로 줄일 이유가 없어 50줄 그대로.
@@ -553,6 +570,11 @@ export default function TargetUsagePage() {
         const params = new URLSearchParams();
         if (searchType === "품목코드") params.set("itemCode", code);
         if (searchType === "품목명")   params.set("itemName", code);
+        if (searchType === "순도") {
+          const purity = parsePuritySearch(code);
+          if (purity == null) { setSearchError(t.tx.purityInvalid); return; }
+          params.set("purity", String(purity));
+        }
         const res = await fetch(`/api/targets?${params}`);
         const data = await res.json();
         if (!data.targetList?.length) {
@@ -814,7 +836,7 @@ export default function TargetUsagePage() {
                 <select
                   value={slotSearchType}
                   onChange={e => {
-                    setSlotSearchType(e.target.value as "바코드" | "품목코드" | "품목명");
+                    setSlotSearchType(e.target.value as TargetSearchType);
                     setSlotSearchQuery("");
                     setSlotSearchResults([]);
                   }}
@@ -823,6 +845,7 @@ export default function TargetUsagePage() {
                   <option value="바코드">{t.target.searchTypeBarcode}</option>
                   <option value="품목코드">{t.target.searchTypeItemCode}</option>
                   <option value="품목명">{t.target.searchTypeItemName}</option>
+                  <option value="순도">{t.target.searchTypePurity}</option>
                 </select>
                 <div className="relative flex-1">
                   <input
@@ -835,7 +858,8 @@ export default function TargetUsagePage() {
                     )}
                     placeholder={
                       slotSearchType === "바코드"   ? t.target.slotBarcodePlaceholder :
-                      slotSearchType === "품목코드" ? t.target.slotItemCodePlaceholder : t.target.slotItemNamePlaceholder
+                      slotSearchType === "품목코드" ? t.target.slotItemCodePlaceholder :
+                      slotSearchType === "순도"     ? t.target.slotPurityPlaceholder : t.target.slotItemNamePlaceholder
                     }
                     className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 pr-8"
                   />
@@ -854,6 +878,8 @@ export default function TargetUsagePage() {
                 )}
               </div>
 
+              {slotSearchError && <p className="text-xs text-red-500">{slotSearchError}</p>}
+
               {/* 검색 결과 목록 */}
               {slotSearchResults.length > 0 && (
                 <div className="max-h-48 overflow-y-auto space-y-1 border border-gray-100 rounded-xl p-1">
@@ -869,6 +895,7 @@ export default function TargetUsagePage() {
                     >
                       <p className="text-sm font-semibold text-gray-900">{tu.barcodeCode}</p>
                       <p className="text-xs text-gray-500">{tu.itemName}</p>
+                      {formatPurity(tu.purity) && <p className="text-xs text-gray-400">순도 {formatPurity(tu.purity)}</p>}
                     </button>
                   ))}
                 </div>
@@ -1100,6 +1127,7 @@ export default function TargetUsagePage() {
                                 itemCode: slot.itemCode ?? "",
                                 materialCode: slot.materialCode ?? "",
                                 status: "사용중",
+                                purity: slot.purity ?? null,
                               }
                             : null
                         );
@@ -1122,6 +1150,9 @@ export default function TargetUsagePage() {
                       <p className="text-xs text-gray-500 truncate">{slot.itemName}</p>
                       {slot.materialCode && (
                         <p className="text-xs text-gray-400">{slot.materialCode}</p>
+                      )}
+                      {formatPurity(slot.purity) && (
+                        <p className="text-xs text-gray-400">순도 {formatPurity(slot.purity)}</p>
                       )}
                     </div>
                     <div className="flex items-center justify-between pt-1 border-t border-gray-50">
@@ -1157,7 +1188,7 @@ export default function TargetUsagePage() {
           <select
             value={searchType}
             onChange={e => {
-              setSearchType(e.target.value as "바코드" | "품목코드" | "품목명");
+              setSearchType(e.target.value as TargetSearchType);
               setBarcodeInput("");
               setTargetList([]);
               setSelectedTarget(null);
@@ -1170,6 +1201,7 @@ export default function TargetUsagePage() {
             <option value="바코드">{t.target.searchTypeBarcode}</option>
             <option value="품목코드">{t.target.searchTypeItemCode}</option>
             <option value="품목명">{t.target.searchTypeItemName}</option>
+            <option value="순도">{t.target.searchTypePurity}</option>
           </select>
           <div className="relative flex-1 min-w-0">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -1179,6 +1211,7 @@ export default function TargetUsagePage() {
               placeholder={
                 searchType === "바코드"   ? t.target.barcodePlaceholder :
                 searchType === "품목코드" ? t.target.itemCodePlaceholder :
+                searchType === "순도"     ? t.target.purityPlaceholder :
                 t.target.itemNamePlaceholder
               }
               value={barcodeInput}
@@ -1253,6 +1286,9 @@ export default function TargetUsagePage() {
                       <p className="text-xs text-gray-500 mt-0.5 font-mono">
                         {tu.barcodeCode} · {tu.itemCode}
                       </p>
+                      {formatPurity(tu.purity) && (
+                        <p className="text-xs text-gray-400 mt-0.5">순도 {formatPurity(tu.purity)}</p>
+                      )}
                     </div>
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                       tu.status === "미사용" ? "bg-emerald-100 text-emerald-700" :
@@ -1291,6 +1327,7 @@ export default function TargetUsagePage() {
                 <div><p className="text-xs text-gray-400 mb-1">{t.target.barcodeLabel}</p><p className="text-sm font-mono font-semibold text-gray-900 truncate">{selectedTarget.barcodeCode}</p></div>
                 <div><p className="text-xs text-gray-400 mb-1">{t.target.itemCodeLabel}</p><p className="text-sm text-gray-700 truncate">{selectedTarget.itemCode || "-"}</p></div>
                 <div><p className="text-xs text-gray-400 mb-1">{t.target.itemNameLabel}</p><p className="text-sm text-gray-700 truncate">{selectedTarget.itemName || "-"}</p></div>
+                <div><p className="text-xs text-gray-400 mb-1">{t.target.purityLabel}</p><p className="text-sm text-gray-700">{formatPurity(selectedTarget.purity) ?? "-"}</p></div>
               </div>
               <div>
                 <p className="text-xs text-gray-400 mb-1">{t.target.materialNameLabel}</p>
