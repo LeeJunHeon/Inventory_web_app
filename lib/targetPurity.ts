@@ -23,3 +23,21 @@ export function validateTargetPurity(input: unknown): PurityResult {
 export function isPurityEmpty(input: unknown): boolean {
   return input == null || (typeof input === "string" && input.trim() === "");
 }
+
+type PurityHolder = { purity: unknown } | null | undefined;
+type TxUnitRef = {
+  targetUnitId?: number | null;
+  targetUnit?: PurityHolder;
+  barcode?: { targetUnitId?: number | null; targetUnit?: PurityHolder } | null;
+};
+
+/** 전표의 실물 id — tx.targetUnitId, 없으면 바코드의 실물 (옛 전표는 바코드로만 연결된 경우가 있다) */
+export function txUnitId(tx: TxUnitRef): number | null {
+  return tx.targetUnitId ?? tx.barcode?.targetUnitId ?? null;
+}
+
+/** 전표의 실물 순도 — tx.targetUnit, 없으면 tx.barcode.targetUnit */
+export function txUnitPurity(tx: TxUnitRef): number | null {
+  const p = tx.targetUnit?.purity ?? tx.barcode?.targetUnit?.purity;
+  return p != null ? Number(p) : null;
+}

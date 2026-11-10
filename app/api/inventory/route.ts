@@ -6,7 +6,7 @@ import { requireAuth, getSessionUser, getSessionUserId, logActivity } from "@/li
 import { buildInventoryTxDetail, formatInventoryTxDetail, inventoryTxHeader } from "@/lib/logDetail";
 import { LOT_CONSUME_TYPES, MOVE_IN, MOVE_OUT, recordAutoTransition, resolveAutoTransitionRevert } from "@/lib/txTypes";
 import { kstTodayDbDate } from "@/lib/kst";
-import { TARGET_CATEGORY, isPurityEmpty, validateTargetPurity } from "@/lib/targetPurity";
+import { TARGET_CATEGORY, isPurityEmpty, txUnitId, txUnitPurity, validateTargetPurity } from "@/lib/targetPurity";
 
 
 // "이동"은 클라이언트가 보내는 별칭 — 서버가 이동출고/이동입고 두 행으로 변환한다.
@@ -209,7 +209,7 @@ export async function GET(request: NextRequest) {
         include: {
           item:     { include: { category: true, waferSpec: true } },
           partner:  true,
-          barcode:  true,
+          barcode:  { include: { targetUnit: { select: { purity: true } } } },
           location: true,
           txReason: true,
           user:     true,
@@ -246,8 +246,8 @@ export async function GET(request: NextRequest) {
       refTxNo:    tx.refTxNo    ?? null,
       itemId:     tx.itemId,
       barcodeId:  tx.barcodeId  ?? null,
-      targetUnitId: tx.targetUnitId ?? null,
-      purity:     tx.targetUnit?.purity != null ? Number(tx.targetUnit.purity) : null,
+      targetUnitId: txUnitId(tx),
+      purity:     txUnitPurity(tx),
       partnerId:  tx.partnerId  ?? null,
       txReasonId: tx.txReasonId ?? null,
       txReason:   tx.txReason?.name  || "",
@@ -944,7 +944,8 @@ export async function PUT(request: NextRequest) {
     const before = await prisma.inventoryTx.findUnique({
       where: { id: Number(id) },
       include: {
-        item: { include: { category: true } }, partner: true, location: true, barcode: true,
+        item: { include: { category: true } }, partner: true, location: true,
+        barcode: { include: { targetUnit: { select: { purity: true } } } },
         targetUnit: { select: { purity: true } },
       },
     });
@@ -1086,10 +1087,12 @@ export async function PUT(request: NextRequest) {
     }
 
     // 타겟 입고 전표의 순도 수정 — 칸이 비어 있으면 순도는 바꾸지 않는다
+    // 대상 실물: before.targetUnitId, 없으면 바코드의 실물 (옛 전표)
+    const purityUnitId = txUnitId(before);
     let nextPurity: number | null = null;
     if (
       !isPurityEmpty(body.purity) && before.txType === "입고" &&
-      before.item.category.name === TARGET_CATEGORY && before.targetUnitId
+      before.item.category.name === TARGET_CATEGORY && purityUnitId
     ) {
       const purity = validateTargetPurity(body.purity);
       if (!purity.ok) {
@@ -1097,13 +1100,13 @@ export async function PUT(request: NextRequest) {
       }
       nextPurity = purity.value;
     }
-    const beforePurity = before.targetUnit?.purity != null ? Number(before.targetUnit.purity) : null;
+    const beforePurity = txUnitPurity(before);
     const purityChanged = nextPurity !== null && nextPurity !== beforePurity;
 
     const tx = await prisma.$transaction(async (db) => {
-      if (purityChanged && before.targetUnitId) {
+      if (purityChanged && purityUnitId) {
         await db.targetUnit.update({
-          where: { id: before.targetUnitId },
+          where: { id: purityUnitId },
           data:  { purity: nextPurity },
         });
       }
