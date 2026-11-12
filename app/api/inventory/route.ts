@@ -109,6 +109,18 @@ async function validateRefIntegrity(opts: {
   return "참조 전표가 입고 건이 아닙니다.";
 }
 
+/** PUT body 의 단가·금액 — 빈 값은 null(비움), 숫자가 아니면 undefined(거부) */
+function moneyOrNull(v: unknown): number | null | undefined {
+  if (v == null || v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+/** PUT body 의 id 값 — 빈 값·0 은 null */
+function idOrNull(v: unknown): number | null {
+  return v ? Number(v) : null;
+}
+
 /** 참조 전표(refTxNo)가 반드시 있어야 하는 유형 */
 const REF_REQUIRED_TYPES = ["출고", "불출", "사용중", "폐기"];
 
@@ -967,11 +979,14 @@ export async function PUT(request: NextRequest) {
     }
 
     const sessionUserId = await getSessionUserId();
+    // employee 는 단가·금액을 볼 수 없으므로(GET 이 null 로 준다) 수정도 받지 않는다
+    const sessionUser = await getSessionUser();
+    const isEmployee = !("error" in sessionUser) && sessionUser.role === "employee";
 
     const before = await prisma.inventoryTx.findUnique({
       where: { id: Number(id) },
       include: {
-        item: { include: { category: true } }, partner: true, location: true,
+        item: { include: { category: true } }, partner: true, location: true, txReason: true,
         barcode: { include: { targetUnit: { select: { purity: true } } } },
         targetUnit: { select: { purity: true } },
       },
@@ -1041,11 +1056,37 @@ export async function PUT(request: NextRequest) {
     const nextItemId     = body.itemId     !== undefined ? Number(body.itemId)     : before.itemId;
     const nextLocationId = body.locationId !== undefined ? Number(body.locationId) : before.locationId;
     const nextQty        = body.qty        !== undefined ? Number(body.qty)        : before.qty;
-    const nextRefTxNo    = body.refTxNo    !== undefined ? (body.refTxNo ?? null)  : before.refTxNo;
+    const nextRefTxNo    = body.refTxNo    !== undefined ? (body.refTxNo || null)  : before.refTxNo;
     const isInboundType  = nextTxType === "입고" || nextTxType === "충진 입고";
 
+    // 수정 모달은 qty·refTxNo·locationId·txType 을 항상 보낸다 — 키 유무가 아니라
+    // 기존 값과 실제로 달라졌는지로 판정해야 메모만 고친 저장이 검사에 걸리지 않는다.
+    const qtyChanged  = nextQty !== before.qty;
+    const refChanged  = (nextRefTxNo ?? null) !== (before.refTxNo ?? null);
+    const itemChanged = nextItemId !== before.itemId;
+    const locChanged  = nextLocationId !== before.locationId;
+
+    // 단가·금액: employee 는 무시. 그 외에는 키가 있고 실제로 다를 때만 저장 (null = 비움)
+    const beforeUnitPrice = before.unitPrice != null ? Number(before.unitPrice) : null;
+    const beforeAmount    = before.amount    != null ? Number(before.amount)    : null;
+    const bodyUnitPrice = !isEmployee && "unitPrice" in body ? moneyOrNull(body.unitPrice) : beforeUnitPrice;
+    const bodyAmount    = !isEmployee && "amount"    in body ? moneyOrNull(body.amount)    : beforeAmount;
+    if (bodyUnitPrice === undefined || bodyAmount === undefined) {
+      return NextResponse.json({ error: "단가·금액은 숫자여야 합니다." }, { status: 400 });
+    }
+    const unitPriceChanged = bodyUnitPrice !== beforeUnitPrice;
+    const amountChanged    = bodyAmount    !== beforeAmount;
+    const nextCurrency: string | undefined = isEmployee ? undefined : (body.currency ?? undefined);
+    const currencyChanged = nextCurrency !== undefined && nextCurrency !== (before.currency ?? "");
+
+    // 거래처·불출유형: 키가 있으면 null 포함 그대로 저장 (없으면 기존 값 유지)
+    const nextPartnerId  = "partnerId"  in body ? idOrNull(body.partnerId)  : before.partnerId;
+    const nextTxReasonId = "txReasonId" in body ? idOrNull(body.txReasonId) : before.txReasonId;
+    const partnerChanged  = (nextPartnerId  ?? null) !== (before.partnerId  ?? null);
+    const txReasonChanged = (nextTxReasonId ?? null) !== (before.txReasonId ?? null);
+
     // ⑤ 이미 소비된 수량 아래로 입고 수량을 줄이면 원장이 음수가 된다
-    if (isInboundType && body.qty !== undefined && before.txNo) {
+    if (isInboundType && qtyChanged && before.txNo) {
       const consumedAgg = await prisma.inventoryTx.aggregate({
         where: { refTxNo: before.txNo, txType: { in: LOT_CONSUME_TYPES } },
         _sum:  { qty: true },
@@ -1062,8 +1103,7 @@ export async function PUT(request: NextRequest) {
     // ⑥ 자식(참조 건)이 있는 입고건의 위치를 바꾸면 참조 건과 위치가 어긋난다.
     //    자식이 0건이면 자유롭게 변경 가능 — 기존 보정 작업을 막지 않는다.
     if (
-      isInboundType && body.locationId !== undefined &&
-      Number(body.locationId) !== before.locationId && before.txNo
+      isInboundType && locChanged && before.txNo
     ) {
       const childCount = await prisma.inventoryTx.count({
         where: { refTxNo: before.txNo, NOT: { id: Number(id) } },
@@ -1076,16 +1116,20 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // ⑦⑧⑨ 는 수량·참조·품목·위치 중 하나라도 실제로 바뀐 경우에만 검사한다.
+    //     구분만 바뀌는 것은 잔여 점유가 변하지 않으므로 대상이 아니다.
+    const refAffecting = qtyChanged || refChanged || itemChanged || locChanged;
+
     // ⑦ 출고/불출/사용중/폐기의 위치는 참조 건과 반드시 같아야 한다
     if (
       REF_REQUIRED_TYPES.includes(nextTxType) && nextRefTxNo &&
-      body.locationId !== undefined
+      refAffecting && nextLocationId != null
     ) {
       const refLoc = await prisma.inventoryTx.findUnique({
         where:  { txNo: nextRefTxNo },
         select: { locationId: true, location: { select: { name: true } } },
       });
-      if (refLoc && refLoc.locationId !== Number(body.locationId)) {
+      if (refLoc && refLoc.locationId !== nextLocationId) {
         return NextResponse.json(
           { error: `참조 건의 위치(${refLoc.location?.name ?? refLoc.locationId})와 달라집니다. 같은 위치에서만 처리할 수 있습니다.` },
           { status: 400 }
@@ -1095,12 +1139,6 @@ export async function PUT(request: NextRequest) {
 
     // ⑧⑨ 수량 증가 / 참조 전표 변경 / 품목·위치 변경 시 POST와 동일한 무결성 검증.
     //     자기 자신의 기존 qty 는 소비량에서 제외한다(excludeTxId).
-    const refAffecting =
-      body.qty        !== undefined ||
-      body.refTxNo    !== undefined ||
-      body.itemId     !== undefined ||
-      body.locationId !== undefined ||
-      body.txType     !== undefined;
     if (REF_REQUIRED_TYPES.includes(nextTxType) && nextRefTxNo && refAffecting && nextLocationId != null) {
       const refError = await validateRefIntegrity({
         txType:      nextTxType,
@@ -1144,16 +1182,16 @@ export async function PUT(request: NextRequest) {
           txType:     body.txType     ?? undefined,
           itemId:     body.itemId     ?? undefined,
           qty:        body.qty        ?? undefined,
-          unitPrice:  body.unitPrice  ?? undefined,
-          amount:     body.amount     ?? undefined,
-          partnerId:  body.partnerId  ?? undefined,
+          unitPrice:  unitPriceChanged ? bodyUnitPrice : undefined,
+          amount:     amountChanged    ? bodyAmount    : undefined,
+          partnerId:  partnerChanged   ? nextPartnerId : undefined,
           memo:       body.memo       ?? undefined,
           locationId: body.locationId ?? undefined,
           barcodeId:  body.barcodeId  ?? undefined,
-          refTxNo:    body.refTxNo !== undefined ? (body.refTxNo ?? null) : undefined,
-          txReasonId: body.txReasonId ?? undefined,
-          currency:   body.currency   ?? undefined,
-          exchangeRateAtEntry: body.exchangeRateAtEntry ?? undefined,
+          refTxNo:    refChanged ? nextRefTxNo : undefined,
+          txReasonId: txReasonChanged ? nextTxReasonId : undefined,
+          currency:   nextCurrency,
+          exchangeRateAtEntry: isEmployee ? undefined : (body.exchangeRateAtEntry ?? undefined),
         },
       });
     });
@@ -1176,15 +1214,23 @@ export async function PUT(request: NextRequest) {
       }
       if (body.memo !== undefined && (before.memo ?? "") !== (body.memo ?? ""))
         _changes.push(`비고: ${before.memo || "-"} → ${body.memo || "-"}`);
-      if (body.unitPrice !== undefined && String(before.unitPrice ?? "") !== String(body.unitPrice ?? ""))
-        _changes.push(`단가: ${before.unitPrice ?? "-"} → ${body.unitPrice ?? "-"}`);
-      if (body.currency !== undefined && (before.currency ?? "") !== (body.currency ?? ""))
-        _changes.push(`통화: ${before.currency ?? "-"} → ${body.currency ?? "-"}`);
-      if (body.refTxNo !== undefined && (before.refTxNo ?? "") !== (body.refTxNo ?? ""))
-        _changes.push(`참조입고: ${before.refTxNo ?? "-"} → ${body.refTxNo ?? "-"}`);
-      if (body.partnerId !== undefined && String(before.partnerId ?? "") !== String(body.partnerId)) {
-        const afterPartner = await prisma.partner.findUnique({ where: { id: Number(body.partnerId) } });
-        _changes.push(`거래처: ${before.partner?.name ?? "-"} → ${afterPartner?.name ?? String(body.partnerId)}`);
+      if (unitPriceChanged)
+        _changes.push(`단가: ${beforeUnitPrice ?? "-"} → ${bodyUnitPrice ?? "-"}`);
+      if (currencyChanged)
+        _changes.push(`통화: ${before.currency ?? "-"} → ${nextCurrency ?? "-"}`);
+      if (refChanged)
+        _changes.push(`참조입고: ${before.refTxNo ?? "-"} → ${nextRefTxNo ?? "-"}`);
+      if (partnerChanged) {
+        const afterPartner = nextPartnerId
+          ? await prisma.partner.findUnique({ where: { id: nextPartnerId } })
+          : null;
+        _changes.push(`거래처: ${before.partner?.name ?? "-"} → ${afterPartner?.name ?? (nextPartnerId ? String(nextPartnerId) : "-")}`);
+      }
+      if (txReasonChanged) {
+        const afterReason = nextTxReasonId
+          ? await prisma.txReason.findUnique({ where: { id: nextTxReasonId } })
+          : null;
+        _changes.push(`불출유형: ${before.txReason?.name ?? "-"} → ${afterReason?.name ?? (nextTxReasonId ? String(nextTxReasonId) : "-")}`);
       }
       if (body.barcodeId !== undefined && String(before.barcodeId ?? "") !== String(body.barcodeId)) {
         const afterBarcode = await prisma.barcode.findUnique({ where: { id: Number(body.barcodeId) } });

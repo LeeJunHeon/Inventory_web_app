@@ -11,11 +11,13 @@ interface LocationOption { id: number; name: string; }
 
 interface Props {
   item: InventoryItem;
+  /** employee 는 단가·금액·통화·환율을 보지도 보내지도 않는다 */
+  isEmployee?: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export default function EditTransactionModal({ item, onClose, onSuccess }: Props) {
+export default function EditTransactionModal({ item, isEmployee = false, onClose, onSuccess }: Props) {
   const { t } = useT();
 
   const [date, setDate]           = useState(item.date.replace(/\./g, "-"));
@@ -25,8 +27,10 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
   const isMoveTx     = item.type === "이동출고" || item.type === "이동입고";
   const isTypeLocked = item.type === "사용중" || item.type === "폐기" || isMoveTx;
   const [quantity, setQuantity]   = useState(String(item.qty));
-  const [unitPrice, setUnitPrice] = useState(String(item.price));
-  const [currency, setCurrency]   = useState(item.currency ?? "KRW");
+  const initialUnitPrice = item.price != null ? String(item.price) : "";
+  const initialCurrency  = item.currency ?? "KRW";
+  const [unitPrice, setUnitPrice] = useState(initialUnitPrice);
+  const [currency, setCurrency]   = useState(initialCurrency);
   const [exchangeRateAtEntry, setExchangeRateAtEntry] = useState<number | null>(
     item.exchangeRateAtEntry ?? null
   );
@@ -82,9 +86,17 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
     }
   };
 
-  const amount = currency === "USD"
-    ? Number(unitPrice || 0)
-    : Number(quantity || 0) * Number(unitPrice || 0);
+  // 단가 칸이 비어 있으면 0 이 아니라 null(비움) — 금액도 null
+  const unitPriceValue = unitPrice.trim() === "" || !Number.isFinite(Number(unitPrice))
+    ? null : Number(unitPrice);
+  // 수량·단가·통화를 건드리지 않았으면 저장된 금액을 그대로 둔다 (메모만 고쳐도 금액이 다시 계산되지 않게)
+  const moneyTouched =
+    quantity !== String(item.qty) || unitPrice !== initialUnitPrice || currency !== initialCurrency;
+  const amount: number | null = !moneyTouched
+    ? item.amount
+    : unitPriceValue == null
+      ? null
+      : currency === "USD" ? unitPriceValue : Number(quantity || 0) * unitPriceValue;
 
   const handleSave = async () => {
     if (!quantity || Number(quantity) <= 0) {
@@ -110,15 +122,17 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
           txDate:   date,
           txType:   type,
           qty:      Number(quantity),
-          unitPrice:  Number(unitPrice) || 0,
-          amount,
           memo,
           locationId,
           refTxNo:    refTxNo ?? null,
           partnerId:  partnerId ?? null,
           txReasonId: txReasonId ?? null,
-          currency,
-          exchangeRateAtEntry: exchangeRateAtEntry ?? null,
+          ...(!isEmployee && {
+            unitPrice: unitPriceValue,
+            amount,
+            currency,
+            exchangeRateAtEntry: exchangeRateAtEntry ?? null,
+          }),
           ...(purityValue != null && { purity: purityValue }),
         }),
       });
@@ -218,7 +232,7 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
           </div>
 
           {/* 통화 선택 */}
-          <div className="flex justify-end">
+          {!isEmployee && <div className="flex justify-end">
             <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
               {(["KRW", "USD"] as const).map(c => (
                 <button
@@ -235,15 +249,15 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
                 </button>
               ))}
             </div>
-          </div>
-          {/* 수량 / 단가 / 금액 */}
-          <div className="grid grid-cols-3 gap-3">
+          </div>}
+          {/* 수량 / 단가 / 금액 (employee 는 수량만) */}
+          <div className={isEmployee ? "" : "grid grid-cols-3 gap-3"}>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">{t.tx.qtyLabel}</label>
               <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)}
                 className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
-            <div>
+            {!isEmployee && <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">{t.tx.unitPriceLabel}</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
@@ -252,17 +266,17 @@ export default function EditTransactionModal({ item, onClose, onSuccess }: Props
                 <input type="number" value={unitPrice} onChange={e => setUnitPrice(e.target.value)}
                   className="w-full pl-7 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
-            </div>
-            <div>
+            </div>}
+            {!isEmployee && <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">{t.tx.amountLabel}</label>
               <input readOnly
                 value={currency === "USD"
                   ? (amount ? `$${amount.toLocaleString()}` : "")
                   : (amount ? `₩${amount.toLocaleString()}` : "")}
                 className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
-            </div>
+            </div>}
           </div>
-          {currency === "USD" && (
+          {!isEmployee && currency === "USD" && (
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">
                 {t.tx.entryRate ?? "등록 환율"}

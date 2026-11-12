@@ -645,6 +645,7 @@ export default function InventoryPage({
       {editItem && (
         <EditTransactionModal
           item={editItem}
+          isEmployee={isEmployee}
           onClose={() => setEditItem(null)}
           onSuccess={() => { setEditItem(null); fetchData(); }}
         />
