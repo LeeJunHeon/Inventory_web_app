@@ -124,6 +124,10 @@ function idOrNull(v: unknown): number | null {
 /** 참조 전표(refTxNo)가 반드시 있어야 하는 유형 */
 const REF_REQUIRED_TYPES = ["출고", "불출", "사용중", "폐기"];
 
+/** 수정(PUT)에서 서로 바꿀 수 있는 구분 — 셋 다 보유수량·입고분 잔여에서 똑같이 빠지므로
+ *  이 사이의 변경은 재고 숫자를 바꾸지 않는다. */
+const SWAPPABLE_TYPES = ["출고", "불출", "사용중"];
+
 /** 재고 원장에 허용되는 위치 — 본사(1)/공덕(2)만.
  *  챔버·Vault 등 세부 물리 위치는 target_log·chamber_slot·ald_port_slot의 영역이다. */
 const VALID_LOCATION_IDS = [1, 2];
@@ -1015,41 +1019,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // ② 입고건을 출고/불출로 구분 변경 차단
-    if (
-      before.txType === "입고" &&
-      body.txType &&
-      (body.txType === "출고" || body.txType === "불출")
-    ) {
-      return NextResponse.json(
-        { error: "입고 건은 출고/불출로 변경할 수 없습니다. 삭제 후 새로 등록해 주세요." },
-        { status: 400 }
-      );
-    }
-
-    // ③ 출고/불출건을 입고로 구분 변경 차단
-    if (
-      (before.txType === "출고" || before.txType === "불출") &&
-      body.txType === "입고"
-    ) {
-      return NextResponse.json(
-        { error: "출고/불출 건은 입고로 변경할 수 없습니다. 삭제 후 새로 등록해 주세요." },
-        { status: 400 }
-      );
-    }
-
-    // ④ 사용중/폐기는 참조 체인의 기준점이므로 구분 변경 자체를 차단
-    const USING_DISPOSE = ["사용중", "폐기"];
-    if (
-      body.txType && body.txType !== before.txType &&
-      (USING_DISPOSE.includes(before.txType) || USING_DISPOSE.includes(body.txType))
-    ) {
-      return NextResponse.json(
-        { error: "사용중/폐기 건은 구분을 변경할 수 없습니다. 삭제 후 새로 등록해 주세요." },
-        { status: 400 }
-      );
-    }
-
     // ── 정합성 가드 ⑤~⑨ ─────────────────────────────────
     // 수정 후 실제로 적용될 값들 (body에 없으면 기존 값 유지)
     const nextTxType     = body.txType     ?? before.txType;
@@ -1080,10 +1049,48 @@ export async function PUT(request: NextRequest) {
     const currencyChanged = nextCurrency !== undefined && nextCurrency !== (before.currency ?? "");
 
     // 거래처·불출유형: 키가 있으면 null 포함 그대로 저장 (없으면 기존 값 유지)
-    const nextPartnerId  = "partnerId"  in body ? idOrNull(body.partnerId)  : before.partnerId;
-    const nextTxReasonId = "txReasonId" in body ? idOrNull(body.txReasonId) : before.txReasonId;
+    //   구분이 바뀌면 body 값보다 우선해 정리한다 — 사용중·불출은 거래처 없음, 사용중·출고는 불출유형 없음
+    const typeChanged = nextTxType !== before.txType;
+    const nextPartnerId =
+      typeChanged && (nextTxType === "사용중" || nextTxType === "불출") ? null
+      : "partnerId" in body ? idOrNull(body.partnerId) : before.partnerId;
+    const nextTxReasonId =
+      typeChanged && (nextTxType === "사용중" || nextTxType === "출고") ? null
+      : "txReasonId" in body ? idOrNull(body.txReasonId) : before.txReasonId;
     const partnerChanged  = (nextPartnerId  ?? null) !== (before.partnerId  ?? null);
     const txReasonChanged = (nextTxReasonId ?? null) !== (before.txReasonId ?? null);
+
+    // ②③④ 구분 변경 — 출고·불출·사용중 사이, 실물(타겟·캐니스터)이 연결되지 않은 건만 허용
+    if (typeChanged) {
+      if (!SWAPPABLE_TYPES.includes(before.txType) || !SWAPPABLE_TYPES.includes(nextTxType)) {
+        return NextResponse.json(
+          { error: "이 구분은 변경할 수 없습니다. 삭제 후 새로 등록해 주세요." },
+          { status: 400 }
+        );
+      }
+      // 등록(POST) 때는 실물 상태가 함께 바뀌지만 수정에는 그 처리가 없다 — 어긋나지 않게 막는다
+      if (txUnitId(before)) {
+        return NextResponse.json(
+          { error: "타겟·캐니스터가 연결된 건은 구분을 변경할 수 없습니다. 삭제 후 새로 등록해 주세요." },
+          { status: 400 }
+        );
+      }
+      // 사용중을 참조한 폐기가 남아 있으면 그 폐기의 기준점이 사라진다
+      if (before.txType === "사용중" && before.txNo) {
+        const childCount = await prisma.inventoryTx.count({
+          where: { refTxNo: before.txNo, NOT: { id: Number(id) } },
+        });
+        if (childCount > 0) {
+          return NextResponse.json(
+            { error: `이 사용중 건을 참조한 폐기가 ${childCount}건 있습니다. 먼저 해당 폐기를 삭제해 주세요.` },
+            { status: 400 }
+          );
+        }
+      }
+      if (!nextRefTxNo) {
+        return NextResponse.json({ error: "참조 입고건을 선택해주세요." }, { status: 400 });
+      }
+    }
 
     // ⑤ 이미 소비된 수량 아래로 입고 수량을 줄이면 원장이 음수가 된다
     if (isInboundType && qtyChanged && before.txNo) {
@@ -1179,7 +1186,7 @@ export async function PUT(request: NextRequest) {
         where: { id: Number(id) },
         data: {
           txDate:     body.txDate ? new Date(body.txDate) : undefined,
-          txType:     body.txType     ?? undefined,
+          txType:     typeChanged ? nextTxType : undefined,
           itemId:     body.itemId     ?? undefined,
           qty:        body.qty        ?? undefined,
           unitPrice:  unitPriceChanged ? bodyUnitPrice : undefined,
@@ -1206,8 +1213,8 @@ export async function PUT(request: NextRequest) {
       }
       if (body.qty !== undefined && String(before.qty) !== String(body.qty))
         _changes.push(`수량: ${before.qty} → ${body.qty}`);
-      if (body.txType !== undefined && before.txType !== body.txType)
-        _changes.push(`구분: ${before.txType} → ${body.txType}`);
+      if (typeChanged)
+        _changes.push(`구분: ${before.txType} → ${nextTxType}`);
       if (body.locationId !== undefined && String(before.locationId ?? "") !== String(body.locationId)) {
         const afterLoc = await prisma.location.findUnique({ where: { id: Number(body.locationId) } });
         _changes.push(`위치: ${before.location?.name ?? "-"} → ${afterLoc?.name ?? String(body.locationId)}`);

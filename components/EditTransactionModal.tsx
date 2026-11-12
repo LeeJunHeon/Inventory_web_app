@@ -9,6 +9,9 @@ import { TARGET_CATEGORY, PURITY_REQUIRED_ERROR, formatPurity, isPurityEmpty, va
 
 interface LocationOption { id: number; name: string; }
 
+/** 수정 화면에서 서로 바꿀 수 있는 구분 */
+const SWAPPABLE_TYPES: string[] = ["출고", "불출", "사용중"];
+
 interface Props {
   item: InventoryItem;
   /** employee 는 단가·금액·통화·환율을 보지도 보내지도 않는다 */
@@ -22,10 +25,14 @@ export default function EditTransactionModal({ item, isEmployee = false, onClose
 
   const [date, setDate]           = useState(item.date.replace(/\./g, "-"));
   const [type, setType]           = useState(item.type);
-  // 사용중/폐기는 참조 체인의 기준점이라 구분 변경이 서버에서 차단된다.
+  // 구분은 출고·불출·사용중 사이에서만, 실물(타겟·캐니스터)이 연결되지 않은 건만 바꿀 수 있다 (서버 PUT 과 같은 규칙).
   // 이동출고/이동입고는 쌍 전표라 수정 자체가 서버에서 차단된다.
   const isMoveTx     = item.type === "이동출고" || item.type === "이동입고";
-  const isTypeLocked = item.type === "사용중" || item.type === "폐기" || isMoveTx;
+  const isSwapType   = SWAPPABLE_TYPES.includes(item.type);
+  const hasUnit      = item.targetUnitId != null;
+  const isTypeLocked = !isSwapType || hasUnit;
+  const typeButtons: string[] = isTypeLocked ? [item.type] : SWAPPABLE_TYPES;
+  const needsRef     = SWAPPABLE_TYPES.includes(type);
   const [quantity, setQuantity]   = useState(String(item.qty));
   const initialUnitPrice = item.price != null ? String(item.price) : "";
   const initialCurrency  = item.currency ?? "KRW";
@@ -77,6 +84,16 @@ export default function EditTransactionModal({ item, isEmployee = false, onClose
       .then(r => r.json()).then(setTxReasons).catch(console.error);
   }, []);
 
+  // 구분 변경 — 서버의 값 정리와 같게 맞춘다. 원래 구분으로 돌아오면 원래 값으로 복원,
+  // 다른 구분으로 가면 거래처·불출유형을 비운다 (출고의 거래처, 불출의 불출유형은 이후 직접 선택).
+  const handleTypeChange = (tp: string) => {
+    if (tp === type) return;
+    setType(tp as InventoryItem["type"]);
+    const back = tp === item.type;
+    setPartnerId(back ? item.partnerId ?? null : null);
+    setTxReasonId(back ? item.txReasonId ?? null : null);
+  };
+
   // 위치 변경 시 참조입고건 초기화
   const handleLocationChange = (newLocId: number) => {
     setLocationId(newLocId);
@@ -102,7 +119,7 @@ export default function EditTransactionModal({ item, isEmployee = false, onClose
     if (!quantity || Number(quantity) <= 0) {
       setError(t.tx.enterQty); return;
     }
-    if ((type === '출고' || type === '불출') && !refTxNo) {
+    if (needsRef && !refTxNo) {
       setError('참조 입고건을 선택해주세요.'); return;
     }
     let purityValue: number | null = null;
@@ -206,8 +223,8 @@ export default function EditTransactionModal({ item, isEmployee = false, onClose
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">{t.tx.typeLabel}</label>
             <div className="flex gap-2">
-              {(["입고", "출고", "불출"] as const).map((tp) => (
-                <button key={tp} onClick={() => setType(tp)} disabled={isTypeLocked}
+              {typeButtons.map((tp) => (
+                <button key={tp} onClick={() => handleTypeChange(tp)} disabled={isTypeLocked}
                   className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
                     type === tp
                       ? `${TYPE_COLORS[tp].bg} ${TYPE_COLORS[tp].text} ${TYPE_COLORS[tp].border} border-2`
@@ -219,7 +236,9 @@ export default function EditTransactionModal({ item, isEmployee = false, onClose
               <p className="mt-1.5 text-xs text-gray-500">
                 {isMoveTx
                   ? `${item.type} 건은 수정할 수 없습니다. 삭제 후 다시 등록해 주세요.`
-                  : `${item.type} 건은 구분을 변경할 수 없습니다. 삭제 후 새로 등록해 주세요.`}
+                  : isSwapType
+                    ? "타겟·캐니스터가 연결된 건은 구분을 변경할 수 없습니다. 삭제 후 새로 등록해 주세요."
+                    : `${item.type} 건은 구분을 변경할 수 없습니다. 삭제 후 새로 등록해 주세요.`}
               </p>
             )}
           </div>
@@ -339,8 +358,8 @@ export default function EditTransactionModal({ item, isEmployee = false, onClose
             </div>
           )}
 
-          {/* 참조 입고건 — 출고/불출일 때만 표시 */}
-          {(type === "출고" || type === "불출") && (
+          {/* 참조 입고건 — 출고/불출/사용중일 때 표시 */}
+          {needsRef && (
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">
                 {t.tx.inboundRefLabel ?? "참조 입고건"}
