@@ -109,7 +109,7 @@ async function validateRefIntegrity(opts: {
   return "참조 전표가 입고 건이 아닙니다.";
 }
 
-/** PUT body 의 단가·금액 — 빈 값은 null(비움), 숫자가 아니면 undefined(거부) */
+/** PUT body 의 단가 — 빈 값은 null(비움), 숫자가 아니면 undefined(거부) */
 function moneyOrNull(v: unknown): number | null | undefined {
   if (v == null || v === "") return null;
   const n = Number(v);
@@ -1035,16 +1035,27 @@ export async function PUT(request: NextRequest) {
     const itemChanged = nextItemId !== before.itemId;
     const locChanged  = nextLocationId !== before.locationId;
 
-    // 단가·금액: employee 는 무시. 그 외에는 키가 있고 실제로 다를 때만 저장 (null = 비움)
+    // 단가: employee 는 무시. 그 외에는 키가 있고 실제로 다를 때만 저장 (null = 비움)
     const beforeUnitPrice = before.unitPrice != null ? Number(before.unitPrice) : null;
     const beforeAmount    = before.amount    != null ? Number(before.amount)    : null;
     const bodyUnitPrice = !isEmployee && "unitPrice" in body ? moneyOrNull(body.unitPrice) : beforeUnitPrice;
-    const bodyAmount    = !isEmployee && "amount"    in body ? moneyOrNull(body.amount)    : beforeAmount;
-    if (bodyUnitPrice === undefined || bodyAmount === undefined) {
-      return NextResponse.json({ error: "단가·금액은 숫자여야 합니다." }, { status: 400 });
+    if (bodyUnitPrice === undefined) {
+      return NextResponse.json({ error: "단가는 숫자여야 합니다." }, { status: 400 });
     }
     const unitPriceChanged = bodyUnitPrice !== beforeUnitPrice;
-    const amountChanged    = bodyAmount    !== beforeAmount;
+
+    // 금액: body.amount 는 쓰지 않는다 — 서버가 POST 와 같은 식(수량 × 단가, 통화 무관)으로 정한다.
+    // 수량·단가가 실제로 바뀐 경우에만 다시 계산한다 (옛 데이터의 금액을 조용히 바꾸지 않기 위함).
+    // 단가가 원래 null 이고 수량만 바뀐 경우는 금액을 그대로 둔다.
+    let nextAmount = beforeAmount;
+    if (qtyChanged || unitPriceChanged) {
+      if (bodyUnitPrice != null) {
+        nextAmount = Math.round(nextQty * bodyUnitPrice * 100) / 100; // amount 는 Decimal(15,2)
+      } else if (unitPriceChanged) {
+        nextAmount = null;
+      }
+    }
+    const amountChanged = nextAmount !== beforeAmount;
     const nextCurrency: string | undefined = isEmployee ? undefined : (body.currency ?? undefined);
     const currencyChanged = nextCurrency !== undefined && nextCurrency !== (before.currency ?? "");
 
@@ -1190,7 +1201,7 @@ export async function PUT(request: NextRequest) {
           itemId:     body.itemId     ?? undefined,
           qty:        body.qty        ?? undefined,
           unitPrice:  unitPriceChanged ? bodyUnitPrice : undefined,
-          amount:     amountChanged    ? bodyAmount    : undefined,
+          amount:     amountChanged    ? nextAmount    : undefined,
           partnerId:  partnerChanged   ? nextPartnerId : undefined,
           memo:       body.memo       ?? undefined,
           locationId: body.locationId ?? undefined,
@@ -1223,6 +1234,9 @@ export async function PUT(request: NextRequest) {
         _changes.push(`비고: ${before.memo || "-"} → ${body.memo || "-"}`);
       if (unitPriceChanged)
         _changes.push(`단가: ${beforeUnitPrice ?? "-"} → ${bodyUnitPrice ?? "-"}`);
+      // employee 가 수정한 경우 금액 줄은 남기지 않는다 (가려진 값이 로그로 드러나지 않게)
+      if (amountChanged && !isEmployee)
+        _changes.push(`금액: ${beforeAmount ?? "-"} → ${nextAmount ?? "-"}`);
       if (currencyChanged)
         _changes.push(`통화: ${before.currency ?? "-"} → ${nextCurrency ?? "-"}`);
       if (refChanged)

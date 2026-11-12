@@ -106,14 +106,14 @@ export default function EditTransactionModal({ item, isEmployee = false, onClose
   // 단가 칸이 비어 있으면 0 이 아니라 null(비움) — 금액도 null
   const unitPriceValue = unitPrice.trim() === "" || !Number.isFinite(Number(unitPrice))
     ? null : Number(unitPrice);
-  // 수량·단가·통화를 건드리지 않았으면 저장된 금액을 그대로 둔다 (메모만 고쳐도 금액이 다시 계산되지 않게)
-  const moneyTouched =
-    quantity !== String(item.qty) || unitPrice !== initialUnitPrice || currency !== initialCurrency;
+  // 금액은 서버(PUT)가 정한다 — 이 칸은 같은 식으로 미리 보여 주기만 한다.
+  // 수량·단가를 건드리지 않았으면 저장된 금액, 건드렸으면 수량 × 단가(통화 무관), 단가가 비면 빈 칸.
+  const moneyTouched = quantity !== String(item.qty) || unitPrice !== initialUnitPrice;
   const amount: number | null = !moneyTouched
     ? item.amount
     : unitPriceValue == null
       ? null
-      : currency === "USD" ? unitPriceValue : Number(quantity || 0) * unitPriceValue;
+      : Math.round(Number(quantity || 0) * unitPriceValue * 100) / 100;
 
   const handleSave = async () => {
     if (!quantity || Number(quantity) <= 0) {
@@ -146,7 +146,6 @@ export default function EditTransactionModal({ item, isEmployee = false, onClose
           txReasonId: txReasonId ?? null,
           ...(!isEmployee && {
             unitPrice: unitPriceValue,
-            amount,
             currency,
             exchangeRateAtEntry: exchangeRateAtEntry ?? null,
           }),
